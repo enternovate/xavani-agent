@@ -17,8 +17,8 @@ Usage:
     python xavani.py --message "do X"         # Single query
     python xavani.py --gateway                # Start gateway server
     python xavani.py --install postgres       # Install MCP server
-    python xavani.py --migrate-from-hermes    # Migrate from Hermes Agent
-    python xavani.py --migrate-from-openclaw  # Migrate from OpenClaw Agent
+    python xavani.py --migrate-from-agent    # Import settings from another agent
+    python xavani.py --migrate-from-openclaw  # Migrate from OpenClaw
 """
 
 import os
@@ -179,7 +179,7 @@ def show_xavani_banner(console: Console = None):
 # ── Xavani CLI Class ──────────────────────────────────────────────
 
 class XavaniCLI(HermesCLI):
-    """Xavani Agent CLI — extending Hermes with OAG gateway commands."""
+    """Xavani Agent CLI — the open-source AI agent gateway."""
 
     def __init__(self, *args, **kwargs):
         # Register OAG commands before init
@@ -191,7 +191,7 @@ class XavaniCLI(HermesCLI):
         show_xavani_banner(self.console)
 
     def process_command(self, cmd_name: str, args: str = "") -> bool:
-        """Handle Xavani-specific commands, then fall through to Hermes."""
+        """Handle Xavani-specific commands, then fall through to standard dispatch."""
         handler = OAG_COMMAND_HANDLERS.get(cmd_name)
         if handler:
             handler(args, cli=self)
@@ -201,8 +201,8 @@ class XavaniCLI(HermesCLI):
 
 # ── Migration helpers ──────────────────────────────────────────────
 
-def _run_migrate_hermes(dry_run: bool):
-    """Run Hermes → Xavani migration."""
+def _run_migrate_agent(dry_run: bool):
+    """Run config migration from another agent."""
     try:
         from scripts.migrate_from_hermes import migrate_hermes
         migrate_hermes(dry_run=dry_run)
@@ -240,7 +240,7 @@ def xavani_main(
     list_tools: bool = False,
     version: bool = False,
     tui: bool = False,
-    migrate_from_hermes: str = "",
+    migrate_from_agent: str = "",
     migrate_from_openclaw: str = "",
 ):
     """Xavani Agent — Open-source AI agent gateway by Enternovate.
@@ -254,7 +254,7 @@ def xavani_main(
         list_tools: List available tools and exit
         version: Show version and exit
         tui: Start TUI mode
-        migrate_from_hermes: Migrate from Hermes Agent (--dry-run or --apply)
+        migrate_from_agent: Import settings from another agent (--dry-run or --apply)
         migrate_from_openclaw: Migrate from OpenClaw Agent (--dry-run or --apply)
     """
     if version:
@@ -265,11 +265,11 @@ def xavani_main(
         return
 
     # Migration flags
-    if migrate_from_hermes:
-        dry_run = migrate_from_hermes.lower() in ("", "1", "true", "--dry-run", "dry-run")
-        if migrate_from_hermes.lower() in ("--apply", "apply", "1", "true"):
+    if migrate_from_agent:
+        dry_run = migrate_from_agent.lower() in ("", "1", "true", "--dry-run", "dry-run")
+        if migrate_from_agent.lower() in ("--apply", "apply", "1", "true"):
             dry_run = False
-        _run_migrate_hermes(dry_run=dry_run)
+        _run_migrate_agent(dry_run=dry_run)
         return
 
     if migrate_from_openclaw:
