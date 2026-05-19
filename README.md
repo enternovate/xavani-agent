@@ -93,6 +93,29 @@ and confirm understanding before executing.
 better it understands your preferences. After about 10 sessions, it will
 start anticipating what you need.
 
+### Slash Commands (Use Inside Interactive Mode)
+
+| Command | Description | Example |
+|---------|-------------|---------|
+| `/model <name>` | Switch AI model mid-session | `/model claude-sonnet-4-6` |
+| `/reasoning` | Toggle reasoning effort (low/medium/high) | `/reasoning high` |
+| `/fast` | Toggle fast mode (priority processing) | `/fast` |
+| `/steer <message>` | Inject context without interrupting | `/steer don't touch the database` |
+| `/goal <goal>` | Set a standing goal across turns | `/goal finish this PR` |
+| `/subgoal <criteria>` | Add criteria to active goal | `/subgoal add tests` |
+| `/personality <name>` | Set a predefined personality | `/personality pirate` |
+| `/install <name>` | Install an MCP server | `/install postgres` |
+| `/gateway-up` | Start the MCP proxy gateway | `/gateway-up` |
+| `/gateway-down` | Stop the gateway | `/gateway-down` |
+| `/registry-status` | Show installed servers | `/registry-status` |
+| `/policy-add <file>` | Add a security policy | `/policy-add strict.yaml` |
+| `/audit [--since N]` | View audit log | `/audit --since 24h` |
+| `/clear` | Clear screen and start fresh | `/clear` |
+| `/retry` | Retry the last message | `/retry` |
+| `/undo` | Remove last exchange | `/undo` |
+| `/status` | Show session info | `/status` |
+| `/help` | Show all commands | `/help` |
+
 ### Mode 2: The MCP Gateway (Secure Tool Proxy)
 
 ```bash

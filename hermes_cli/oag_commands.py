@@ -91,8 +91,8 @@ OAG_COMMAND_DEFS: List[CommandDef] = [
         cli_only=True,
     ),
     CommandDef(
-        name="audit",
-        description="Show the OAG audit log",
+        name="help",
+        description="Show all available commands (including model, reasoning, steer)",
         category="Xavani Gateway",
         args_hint="[--since 24h]",
         cli_only=True,
