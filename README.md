@@ -71,14 +71,18 @@ Xavani works with virtually every major AI provider — global and Chinese.
 
 ### Global Providers
 
-| Provider | Env Variable | Models |
-|----------|-------------|--------|
-| OpenAI | `OPENAI_API_KEY` | GPT-4o, GPT-4.5, o-series |
-| Anthropic | `ANTHROPIC_API_KEY` | Claude Opus, Sonnet, Haiku |
-| Google Gemini | `GOOGLE_API_KEY` | Gemini 2.5 Flash, Pro |
-| OpenRouter | `OPENROUTER_API_KEY` | 200+ models, all providers |
-| xAI Grok | `XAI_API_KEY` | Grok 3 |
-| Ollama (local) | None needed | Llama 4, Qwen, Mistral, DeepSeek |
+| Provider | Env Variable | Models | Sign Up |
+|----------|-------------|--------|---------|
+| OpenAI | `OPENAI_API_KEY` | GPT-4o, GPT-4.5, o-series | platform.openai.com |
+| Anthropic | `ANTHROPIC_API_KEY` | Claude Opus 4.6, Sonnet 4, Haiku | console.anthropic.com |
+| Google Gemini | `GOOGLE_API_KEY` | Gemini 2.5 Flash, Gemini 2.5 Pro | aistudio.google.com |
+| OpenRouter | `OPENROUTER_API_KEY` | 200+ models across all providers | openrouter.ai/keys |
+| xAI Grok | `XAI_API_KEY` | Grok 3, Grok 3 Mini | console.x.ai |
+| Groq | `GROQ_API_KEY` | Llama 3, Mixtral, Whisper (fast) | console.groq.com |
+| NVIDIA NIM | `NVIDIA_API_KEY` | Llama 3.1 Nemotron, Mistral, +40 models | build.nvidia.com |
+| HuggingFace | `HF_TOKEN` | 20+ open-source models | huggingface.co/settings/tokens |
+| Ollama (local) | None needed | Llama 4, Qwen, Mistral, DeepSeek | ollama.com |
+| LM Studio (local) | None needed | Any local model | lmstudio.ai |
 
 ### Chinese AI Providers
 
@@ -103,14 +107,13 @@ Xavani works with virtually every major AI provider — global and Chinese.
 
 | Provider | Env Variable | Notes |
 |----------|-------------|-------|
-| Groq | `GROQ_API_KEY` | Fast inference, free tier |
-| HuggingFace | `HF_TOKEN` | 20+ open models |
-| NVIDIA NIM | `NVIDIA_API_KEY` | build.nvidia.com |
-| Arcee AI | `ARCEEAI_API_KEY` | Trinity models |
-| NovitaAI | `NOVITA_API_KEY` | 90+ models |
-| Azure Foundry | `AZURE_API_KEY` | Azure OpenAI |
-| AWS Bedrock | `AWS_ACCESS_KEY_ID` | Bedrock models |
-| Copilot/GitHub Models | `GITHUB_TOKEN` | GitHub Models |
+| Arcee AI | `ARCEEAI_API_KEY` | Trinity models — chat.arcee.ai |
+| NovitaAI | `NOVITA_API_KEY` | 90+ models — novita.ai |
+| Azure Foundry | `AZURE_API_KEY` | Azure OpenAI — portal.azure.com |
+| AWS Bedrock | `AWS_ACCESS_KEY_ID` | Bedrock models — aws.amazon.com |
+| GitHub Models | `GITHUB_TOKEN` | Models via Copilot — github.com |
+| KiloCode | `KILOCODE_API_KEY` | KiloCode gateway |
+| Vercel AI Gateway | `AI_GATEWAY_API_KEY` | Vercel AI proxy |
 
 To use a provider, set the env variable in `~/.xavani/.env` and either configure
 in `~/.xavani/config.yaml` or use `/model <name>` in the CLI:
@@ -167,6 +170,28 @@ level, favorite project types, and communication preferences.
 | `/status` | Show session info | `/status` |
 | `/help` | Show all commands | `/help` |
 
+### Connect via Telegram
+
+Xavani has a built-in Telegram bot gateway. You can control Xavani from your
+phone — send messages, run commands, receive responses — all through Telegram:
+
+```bash
+# 1. Get a bot token from @BotFather on Telegram
+# 2. Set it in ~/.xavani/.env:
+echo "TELEGRAM_BOT_TOKEN=your_bot_token" >> ~/.xavani/.env
+echo "TELEGRAM_ALLOWED_USERS=your_telegram_id" >> ~/.xavani/.env
+
+# 3. Start the gateway (runs bot + MCP proxy)
+xavani --gateway
+```
+
+Now message your bot on Telegram. Every slash command works — `/model`,
+`/reasoning`, `/gateway-up`, `/install`, `/audit`, `/help`. Same Xavani,
+now in your pocket.
+
+Also supported: Discord, Slack, WhatsApp, Signal, Matrix, Email, SMS,
+and 20+ other messaging platforms. Configure them in `~/.xavani/config.yaml`.
+
 ### Mode 2: The MCP Gateway
 
 ```bash
@@ -177,11 +202,21 @@ Starts a secure MCP proxy on `localhost:8080` that sits between any AI client
 and your tool servers, enforcing policies, rate limits, auth, and audit on
 every call.
 
+**How to set up and use the gateway:**
+
+1. **Start the gateway:** `xavani --gateway` (or `/gateway-up` in CLI)
+2. **Connect any MCP client** to `http://localhost:8080/mcp`
+3. **Secure it with your API key:** The gateway generates a token on first run
+4. **Install tool servers:** `/install postgres`, `/install brave-search`
+5. **Add policies:** `/policy-add my-rules.yaml`
+6. **View audit trail:** `/audit --since 24h`
+7. **Stop the gateway:** `/gateway-down`
+
 **What the gateway enforces:**
 - Rate limits: 30 calls/min per user (configurable)
 - Policies: allow/deny specific tools and resources
 - Auth: API key or JWT required for access
-- Audit: every request logged with full trace
+- Audit: every request logged with full trace to SQLite
 
 ### Mode 3: The Protocol Bridge
 
