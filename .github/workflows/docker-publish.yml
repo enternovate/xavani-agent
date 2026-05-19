@@ -37,7 +37,7 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 env:
-  IMAGE_NAME: nousresearch/hermes-agent
+  IMAGE_NAME: enternovate/xavani-agent
 
 jobs:
   # ---------------------------------------------------------------------------
@@ -346,7 +346,7 @@ jobs:
         id: main_check
         run: |
           set -euo pipefail
-          image=nousresearch/hermes-agent
+          image=enternovate/xavani-agent
 
           # Pull the JSON for the linux/amd64 sub-manifest's config and extract
           # the OCI revision label with jq — Go template field access can't
@@ -414,7 +414,7 @@ jobs:
         if: steps.main_check.outputs.push_main == 'true'
         run: |
           set -euo pipefail
-          image=nousresearch/hermes-agent
+          image=enternovate/xavani-agent
           docker buildx imagetools create \
             --tag "${image}:main" \
             "${image}:sha-${GITHUB_SHA}"
@@ -462,7 +462,7 @@ jobs:
         id: latest_check
         run: |
           set -euo pipefail
-          image=nousresearch/hermes-agent
+          image=enternovate/xavani-agent
 
           image_json=$(
             docker buildx imagetools inspect "${image}:latest" \
@@ -528,7 +528,7 @@ jobs:
           RELEASE_TAG: ${{ needs.merge.outputs.release_tag }}
         run: |
           set -euo pipefail
-          image=nousresearch/hermes-agent
+          image=enternovate/xavani-agent
           docker buildx imagetools create \
             --tag "${image}:latest" \
             "${image}:${RELEASE_TAG}"
