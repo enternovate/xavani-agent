@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Tests for the broken-set short-circuit added to handle outer-timeout failures.
 
 When ``snapshot_baseline`` or ``get_diagnostics_sync`` time out from the

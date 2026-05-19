@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Tests for the config.yaml → env var bridge logic in gateway/run.py.
 
 Specifically tests that top-level `cwd:` and `backend:` in config.yaml

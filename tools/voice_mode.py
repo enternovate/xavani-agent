@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Voice Mode -- Push-to-talk audio recording and playback for the CLI.
 
 Provides audio capture via sounddevice, WAV encoding via stdlib wave,

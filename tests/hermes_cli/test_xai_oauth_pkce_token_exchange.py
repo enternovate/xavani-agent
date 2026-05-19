@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Regression coverage for xAI OAuth PKCE token exchange (issue #26990).
 
 Issue [#26990] reported that ``hermes auth add xai-oauth`` succeeds at the

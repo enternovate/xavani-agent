@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Tests for SessionStore.prune_old_entries and the gateway watcher that calls it.
 
 The SessionStore in-memory dict (and its backing sessions.json) grew

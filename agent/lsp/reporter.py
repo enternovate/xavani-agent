@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Format LSP diagnostics for inclusion in tool output.
 
 The model sees a compact, severity-filtered, line-bounded summary of

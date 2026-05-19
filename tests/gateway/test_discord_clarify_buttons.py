@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Tests for Discord clarify button rendering and resolution.
 
 Mirrors test_telegram_clarify_buttons.py for the Discord ``send_clarify``

@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Regression test for issue #22357 — gateway memory-nudge counter hydration.
 
 The gateway creates a fresh AIAgent for each inbound message in several

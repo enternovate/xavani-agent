@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Kanban decomposer — fan a triage task out into a graph of child tasks.
 
 Invoked by ``hermes kanban decompose [task_id | --all]`` and the

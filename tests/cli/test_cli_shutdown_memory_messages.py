@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Regression tests for #15165 (CLI sibling site) — CLI exit cleanup must
 forward the agent's conversation transcript to ``shutdown_memory_provider``
 so memory providers' ``on_session_end`` hooks see the real messages.

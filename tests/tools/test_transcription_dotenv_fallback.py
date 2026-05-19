@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Regression tests for the transcription_tools variant of #17140.
 
 Same class of bug as ``tools/tts_tool.py`` (fixed in PR #17163): the STT

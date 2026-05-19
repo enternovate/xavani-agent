@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Shared model-switching logic for CLI and gateway /model commands.
 
 Both the CLI (cli.py) and gateway (gateway/run.py) /model handlers

@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """OpenAI Responses API (Codex) transport.
 
 Delegates to the existing adapter functions in agent/codex_responses_adapter.py.

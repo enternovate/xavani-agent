@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Regression for #21454: re-running install.sh on a symlinked prior install.
 
 Older versions of ``install.sh`` created ``$command_link_dir/hermes`` as a

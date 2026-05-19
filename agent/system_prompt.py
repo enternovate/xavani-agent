@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """System-prompt assembly for :class:`AIAgent`.
 
 The agent's system prompt is built once per session and reused across all

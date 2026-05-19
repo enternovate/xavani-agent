@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Profile describer — auto-generate ``description`` for a profile.
 
 Used by ``hermes profile describe <name> --auto`` and the dashboard's

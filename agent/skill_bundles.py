@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Skill bundles — aliases that load multiple skills under one slash command.
 
 A skill bundle is a small YAML file that names a set of skills to load

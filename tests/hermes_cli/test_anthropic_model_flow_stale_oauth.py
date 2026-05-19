@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Tests for Bug #12905 fix — stale OAuth token detection in hermes model flow.
 
 Bug 3: `hermes model` with `provider=anthropic` skips OAuth re-authentication

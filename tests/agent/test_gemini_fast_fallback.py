@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Regression tests for #13636 — CloudCode / Gemini CLI rate-limit fallback.
 
 _pool_may_recover_from_rate_limit() is the hinge between credential-pool

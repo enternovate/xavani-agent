@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Regression tests for issue #22379 — Ctrl+Enter newline over SSH/WSL.
 
 prompt_toolkit treats c-j (LF) as Enter on POSIX so thin PTYs (docker exec,

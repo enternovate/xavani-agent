@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Regression tests for the fresh-final-for-long-lived-previews path.
 
 Ported from openclaw/openclaw#72038.  When a streamed preview has been

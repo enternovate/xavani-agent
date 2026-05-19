@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Tests for credential_pool .env fallback and auth credential_pool lookup.
 
 Covers the fix from #15914 / PR #15920:

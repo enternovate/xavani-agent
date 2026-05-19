@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Camofox browser backend — local anti-detection browser via REST API.
 
 Camofox-browser is a self-hosted Node.js server wrapping Camoufox (Firefox

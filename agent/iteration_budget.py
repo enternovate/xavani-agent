@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Per-agent iteration budget — thread-safe consume/refund counter.
 
 Extracted from ``run_agent.py``.  Each ``AIAgent`` instance (parent or

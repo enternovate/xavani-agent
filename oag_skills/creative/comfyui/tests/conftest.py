@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Pytest configuration for the comfyui skill test suite.
 
 Adds `scripts/` to sys.path so tests can `from _common import ...`, and

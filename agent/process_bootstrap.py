@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Process-level bootstrap helpers for ``run_agent``.
 
 Three concerns, all tied to ``AIAgent`` boot-time / runtime IO setup:

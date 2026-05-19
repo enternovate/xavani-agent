@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Tests for tool call argument repair in the streaming assembly path.
 
 The streaming path (run_agent._call_chat_completions) assembles tool call

@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Lightweight skill metadata utilities shared by prompt_builder and skills_tool.
 
 This module intentionally avoids importing the tool registry, CLI config, or any

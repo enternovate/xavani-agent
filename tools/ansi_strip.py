@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Strip ANSI escape sequences from subprocess output.
 
 Used by terminal_tool, code_execution_tool, and process_registry to clean

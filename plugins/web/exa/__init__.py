@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Exa web search + extract plugin — bundled, auto-loaded.
 
 Backed by the official Exa SDK (``exa-py``). Both search and extract are

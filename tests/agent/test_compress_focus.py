@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Tests for focus_topic flowing through the compressor.
 
 Verifies that _generate_summary and compress accept and use the focus_topic

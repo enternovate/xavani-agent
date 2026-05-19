@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Tests that init_session() respects the configured cwd.
 
 The bug: when terminal.cwd is set in config.yaml, the configured path was

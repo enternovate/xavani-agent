@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Tests for the ``pinPeerName`` config flag (#14984).
 
 By default, when Hermes runs under a gateway (Telegram, Discord, Slack, ...)

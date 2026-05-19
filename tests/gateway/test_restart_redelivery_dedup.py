@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Tests for /restart idempotency guard against Telegram update re-delivery.
 
 When PTB's graceful-shutdown ACK call (the final `get_updates` on exit) fails

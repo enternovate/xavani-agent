@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Regression tests for issue #17335.
 
 The ``quiet_mode=True`` fast path in :func:`model_tools.get_tool_definitions`

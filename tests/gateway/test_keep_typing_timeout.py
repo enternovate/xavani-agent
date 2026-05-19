@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Tests for BasePlatformAdapter._keep_typing timeout-per-tick behavior.
 
 When the gateway is waiting on a long upstream provider response (e.g.

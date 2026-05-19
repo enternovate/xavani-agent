@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Target the reclaim race specifically.
 
 Workers claim tasks with a 1s TTL but sleep 2s before completing. The

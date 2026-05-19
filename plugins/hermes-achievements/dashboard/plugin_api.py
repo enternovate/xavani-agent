@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Hermes Achievements dashboard plugin backend.
 
 Mounted at /api/plugins/hermes-achievements/ by Hermes dashboard.

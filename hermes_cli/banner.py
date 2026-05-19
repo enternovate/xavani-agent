@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Welcome banner, ASCII art, skills summary, and update check for the CLI.
 
 Pure display functions with no HermesCLI state dependency.

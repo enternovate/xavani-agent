@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Regression test for /model context-length display on provider-capped models.
 
 Bug (April 2026): `/model gpt-5.5` on openai-codex (ChatGPT OAuth) showed

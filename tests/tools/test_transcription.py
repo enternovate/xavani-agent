@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Tests for transcription_tools.py — local (faster-whisper) and OpenAI providers.
 
 Tests cover provider selection, config loading, validation, and transcription

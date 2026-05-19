@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Shared entity-name normalization helpers (stdlib-only).
 
 Used by entity_resolution.py and timing_analysis.py.

@@ -1,4 +1,9 @@
 #!/usr/bin/env python3
+
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Memento card storage, spaced-repetition engine, and CSV I/O.
 
 Stdlib-only. All output is JSON for agent parsing.

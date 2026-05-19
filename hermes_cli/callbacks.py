@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Interactive prompt callbacks for terminal_tool integration.
 
 These bridge terminal_tool's interactive prompts (clarify, sudo, approval)

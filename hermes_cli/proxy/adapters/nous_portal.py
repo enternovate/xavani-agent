@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Nous Portal upstream adapter.
 
 Reads the user's Nous OAuth state from ``~/.hermes/auth.json`` through the

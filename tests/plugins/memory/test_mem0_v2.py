@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Tests for Mem0 API v2 compatibility — filters param and dict response unwrapping.
 
 Salvaged from PRs #5301 (qaqcvc) and #5117 (vvvanguards).

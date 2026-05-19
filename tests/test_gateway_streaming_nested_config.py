@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Regression test for #25676 — nested gateway.streaming config must be loaded."""
 from pathlib import Path
 from unittest.mock import patch, MagicMock

@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Tests for the symlink boundary check prefix confusion fix in skills_guard.py.
 
 Regression test: the original check used startswith() without a trailing

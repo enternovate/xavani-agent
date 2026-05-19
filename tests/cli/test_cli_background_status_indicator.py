@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Tests for the /background indicator in the CLI status bar.
 
 The classic prompt_toolkit status bar shows `▶ N` when N tasks launched via

@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Tests for cron.jobs.rewrite_skill_refs — the curator integration that
 keeps scheduled cron jobs pointing at the right skill names after a
 consolidation / pruning pass.

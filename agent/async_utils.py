@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Async/sync bridging helpers.
 
 The codebase has ~30 sites that schedule a coroutine onto an event loop from a

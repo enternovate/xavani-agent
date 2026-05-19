@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Regression test: DeepSeek V4 thinking mode reasoning_content echo.
 
 DeepSeek V4-flash / V4-pro thinking mode requires ``reasoning_content`` on

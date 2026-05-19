@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Regression test for TUI v2 blitz bug: explicit /model --provider switch
 silently fell back to the old primary provider on the next turn because the
 fallback chain — seeded from config at agent __init__ — kept entries for the

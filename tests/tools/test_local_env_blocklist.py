@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Tests for subprocess env sanitization in LocalEnvironment.
 
 Verifies that Hermes-managed provider, tool, and gateway env vars are

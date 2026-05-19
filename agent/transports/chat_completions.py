@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """OpenAI Chat Completions transport.
 
 Handles the default api_mode ('chat_completions') used by ~16 OpenAI-compatible

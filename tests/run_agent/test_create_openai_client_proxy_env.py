@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Regression guard: _create_openai_client must honor HTTP(S)_PROXY env vars.
 
 When #11277 re-landed TCP keepalives, ``_create_openai_client`` began passing

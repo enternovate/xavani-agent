@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Schema-shape tests for the built-in memory tool.
 
 The memory tool previously used ``allOf: [{if: ..., then: {required: ...}}]``

@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Tests for the gateway's destructive-slash-confirm wrapper.
 
 When ``approvals.destructive_slash_confirm`` is True (default), /new,

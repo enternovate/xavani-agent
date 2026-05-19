@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Harder concurrency stress: mixed operations + larger scale.
 
 Scales to 500 tasks, 10 workers, 60s runtime. Each worker randomly:

@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Tests for the 1M-context beta header on AWS Bedrock Claude models.
 
 Claude Opus 4.6/4.7 and Sonnet 4.6 support a 1M context window, but on AWS

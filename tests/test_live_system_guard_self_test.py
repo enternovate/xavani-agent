@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Self-test for the live-system guard fixture in tests/conftest.py.
 
 This file is the canary. If anyone removes a guard or weakens it, these

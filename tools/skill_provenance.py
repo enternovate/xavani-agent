@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Skill write-origin provenance — ContextVar for distinguishing agent-sediment skill writes from foreground user-directed writes.
 
 The curator only consolidates/prunes skills it autonomously created via the

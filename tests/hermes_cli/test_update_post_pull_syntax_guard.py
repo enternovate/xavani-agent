@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Tests for the post-pull syntax guard in ``hermes update``.
 
 When a bad commit lands on ``main`` with a syntax error in a critical file

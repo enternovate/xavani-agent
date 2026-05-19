@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """End-to-end tests for ACP MCP server registration and tool-result reporting.
 
 Exercises the full flow through the ACP server layer:

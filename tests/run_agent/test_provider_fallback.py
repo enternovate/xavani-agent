@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Tests for ordered provider fallback chain (salvage of PR #1761).
 
 Extends the single-fallback tests in test_fallback_model.py to cover

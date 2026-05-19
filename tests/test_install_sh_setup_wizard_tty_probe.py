@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Regression for #16746: install.sh /dev/tty gates must actually open /dev/tty.
 
 In a Docker build, ``/dev/tty`` exists as a device node (so a bare ``-e``

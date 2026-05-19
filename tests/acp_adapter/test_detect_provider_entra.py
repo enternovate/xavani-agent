@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Regression tests for ACP adapter detection under Azure Foundry Entra ID.
 
 The ACP adapter's ``detect_provider`` previously gated on

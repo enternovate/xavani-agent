@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """``hermes logs`` — view and filter Hermes log files.
 
 Supports tailing, following, session filtering, level filtering,

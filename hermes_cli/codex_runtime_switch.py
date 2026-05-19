@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Shared logic for the /codex-runtime slash command.
 
 Toggles `model.openai_runtime` between "auto" (= chat_completions, Hermes'

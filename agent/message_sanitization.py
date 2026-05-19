@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Message and tool-payload sanitization helpers.
 
 Pure functions extracted from ``run_agent.py`` so the AIAgent module can

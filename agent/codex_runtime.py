@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Codex API runtime — App Server and Responses-API streaming paths.
 
 Extracted from :class:`AIAgent` to keep the agent loop file focused.

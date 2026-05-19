@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Integration tests against the live Comfy Cloud API.
 
 These tests are auto-skipped when COMFY_CLOUD_API_KEY is not set.

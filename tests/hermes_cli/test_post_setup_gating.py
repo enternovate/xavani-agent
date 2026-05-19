@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Tests for the post_setup install-state gate in `_toolset_needs_configuration_prompt`.
 
 Regression coverage for the cua-driver silent-no-op bug (issue #22737).

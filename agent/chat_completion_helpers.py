@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Helper functions for the chat-completions code path.
 
 Extracted from :class:`AIAgent` for cleanliness — bodies of the

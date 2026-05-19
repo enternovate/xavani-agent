@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Implementation of :meth:`AIAgent.__init__` — extracted as a module function.
 
 ``AIAgent.__init__`` is one of the longest methods in the codebase (60+

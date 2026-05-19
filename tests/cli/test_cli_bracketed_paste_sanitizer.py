@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Tests for defensive bracketed-paste wrapper stripping in the CLI."""
 
 from cli import _strip_leaked_bracketed_paste_wrappers

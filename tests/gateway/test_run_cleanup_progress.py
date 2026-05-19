@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Tests for opt-in cleanup of temporary progress bubbles.
 
 When ``display.platforms.<plat>.cleanup_progress: true`` is set for a

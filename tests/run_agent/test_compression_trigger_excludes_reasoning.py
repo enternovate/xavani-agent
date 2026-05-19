@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Verify compression trigger excludes reasoning/completion tokens (#12026).
 
 Thinking models (GLM-5.1, QwQ, DeepSeek R1) inflate completion_tokens with

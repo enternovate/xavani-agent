@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Shared debug session infrastructure for Hermes tools.
 
 Replaces the identical DEBUG_MODE / _log_debug_call / _save_debug_log /

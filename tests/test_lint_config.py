@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Tests for ruff lint config — guards against accidental rule removal.
 
 PLW1514 (unspecified-encoding) was enabled after a debug session on

@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Tests for agent/curator.py — orchestrator, idle gating, state transitions.
 
 LLM spawning is never exercised here — `_run_llm_review` is monkeypatched so

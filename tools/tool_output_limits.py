@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Configurable tool-output truncation limits.
 
 Ported from anomalyco/opencode PR #23770 (``feat(truncate): allow

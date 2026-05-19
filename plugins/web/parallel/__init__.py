@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Parallel.ai web search + extract plugin — bundled, auto-loaded.
 
 First plugin in this repo to expose an async :meth:`extract` — Parallel's

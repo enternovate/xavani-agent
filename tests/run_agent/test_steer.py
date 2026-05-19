@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Tests for AIAgent.steer() — mid-run user message injection.
 
 /steer lets the user add a note to the agent's next tool result without

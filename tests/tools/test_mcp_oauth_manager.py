@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Tests for the MCP OAuth manager (tools/mcp_oauth_manager.py).
 
 The manager consolidates the eight scattered MCP-OAuth call sites into a

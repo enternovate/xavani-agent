@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Targeted tests for ``utils.base_url_hostname`` and ``base_url_host_matches``.
 
 These helpers are used across provider routing, auxiliary client, setup

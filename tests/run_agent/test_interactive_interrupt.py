@@ -1,4 +1,9 @@
 #!/usr/bin/env python3
+
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Interactive interrupt test that mimics the exact CLI flow.
 
 Starts an agent in a thread with a mock delegate_task that takes a while,

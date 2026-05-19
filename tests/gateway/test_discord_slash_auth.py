@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Security regression tests: slash commands honor on_message authorization gates.
 
 Slash invocations (``_run_simple_slash``, ``_handle_thread_create_slash``)

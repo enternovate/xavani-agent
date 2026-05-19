@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Tests for the bundled OpenAI image_gen plugin (gpt-image-2, three tiers)."""
 
 from __future__ import annotations

@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Diff-aware line-shift map for cross-edit LSP delta filtering.
 
 When an edit deletes or inserts lines in the middle of a file, every

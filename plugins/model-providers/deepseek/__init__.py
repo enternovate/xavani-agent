@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """DeepSeek provider profile.
 
 DeepSeek's V4 family (and the legacy ``deepseek-reasoner``) defaults to

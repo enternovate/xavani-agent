@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Live integration tests for file operations and terminal tools.
 
 These tests run REAL commands through the LocalEnvironment -- no mocks.

@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Background memory/skill review — fork the agent to evaluate the turn.
 
 After every turn, ``AIAgent.run_conversation`` may call

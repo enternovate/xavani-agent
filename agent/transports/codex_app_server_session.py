@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Session adapter for codex app-server runtime.
 
 Owns one Codex thread per Hermes session. Drives `turn/start`, consumes

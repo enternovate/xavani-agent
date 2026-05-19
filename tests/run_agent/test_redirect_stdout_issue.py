@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Verify that redirect_stdout in _run_single_child is process-wide.
 
 This demonstrates that contextlib.redirect_stdout changes sys.stdout

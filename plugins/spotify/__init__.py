@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Spotify integration plugin — bundled, auto-loaded.
 
 Registers 7 tools (playback, devices, queue, search, playlists, albums,

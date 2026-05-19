@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Tests for _resolve_requests_verify() env var precedence.
 
 Verifies that custom provider `/models` fetches honour the three supported

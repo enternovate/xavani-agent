@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Kanban triage specifier — flesh out a one-liner into a real spec.
 
 Used by ``hermes kanban specify [task_id | --all]``. Takes a task that

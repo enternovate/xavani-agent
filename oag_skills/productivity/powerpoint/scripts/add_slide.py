@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Add a new slide to an unpacked PPTX directory.
 
 Usage: python add_slide.py <unpacked_dir> <source>

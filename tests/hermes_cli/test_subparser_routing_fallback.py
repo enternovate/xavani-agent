@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Tests for the defensive subparser routing workaround (bpo-9338).
 
 The main() function in hermes_cli/main.py sets subparsers.required=True

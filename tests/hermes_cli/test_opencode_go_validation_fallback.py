@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Tests for the static-catalog fallback in validate_requested_model.
 
 OpenCode Go and OpenCode Zen publish an OpenAI-compatible API at paths that do

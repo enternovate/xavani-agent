@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Tests for the thinking-only assistant message sanitizer.
 
 Covers _is_thinking_only_assistant() + _drop_thinking_only_and_merge_users()

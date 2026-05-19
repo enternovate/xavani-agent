@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Shared fixtures for gateway tests.
 
 The ``_ensure_telegram_mock`` helper guarantees that a minimal mock of

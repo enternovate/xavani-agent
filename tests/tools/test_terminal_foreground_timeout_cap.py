@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Tests for foreground timeout cap in terminal_tool.
 
 Ensures that foreground commands with timeout > FOREGROUND_MAX_TIMEOUT

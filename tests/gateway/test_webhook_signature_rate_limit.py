@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Test that HMAC signature validation happens BEFORE rate limiting.
 
 This verifies the fix for bug #12544: invalid signature requests must NOT

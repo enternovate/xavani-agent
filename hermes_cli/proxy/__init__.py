@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Local OpenAI-compatible proxy that forwards to OAuth-authenticated upstreams.
 
 Lets external apps (OpenViking, Karakeep, Open WebUI, ...) ride the user's

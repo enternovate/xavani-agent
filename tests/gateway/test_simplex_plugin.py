@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Tests for the SimpleX Chat platform-plugin adapter.
 
 Loaded via the ``_plugin_adapter_loader`` helper so this lives under

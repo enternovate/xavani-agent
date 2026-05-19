@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Projects codex app-server events into Hermes' messages list.
 
 The translator that lets Hermes' memory/skill review keep working under the

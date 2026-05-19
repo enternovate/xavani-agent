@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Discord adapter race polish: concurrent join_voice_channel must not
 double-invoke channel.connect() on the same guild."""
 

@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Kanban Swarm v1: thin swarm topology helpers on top of Kanban.
 
 This module intentionally does not introduce a second scheduler. It writes a

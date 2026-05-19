@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Xavani Agent — Installer
-# Built by Entornovate. Open source.
+# Built by Enternovate. Open source.
 set -e
 
 BOLD='\033[1m'
@@ -12,7 +12,7 @@ echo -e "${BLUE}${BOLD}"
 cat << "LOGO"
                           ╔══════════════════════════════╗
                           ║   XAVANI AGENT              ║
-                          ║   by Entornovate             ║
+                          ║   by Enternovate             ║
                           ╚══════════════════════════════╝
 LOGO
 echo -e "${NC}"

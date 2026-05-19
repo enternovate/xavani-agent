@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Tests that the background review fork inherits the parent's cached system prompt.
 
 Regression coverage for issue #25322 (and PR #17276's first root cause): the

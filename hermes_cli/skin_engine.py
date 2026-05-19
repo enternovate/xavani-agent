@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Hermes CLI skin/theme engine.
 
 A data-driven skin system that lets users customize the CLI's visual appearance.

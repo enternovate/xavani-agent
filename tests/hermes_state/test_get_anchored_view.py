@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Tests for SessionDB.get_anchored_view — anchored window + session bookends.
 
 Used by the discovery shape of session_search: an FTS5 match becomes the

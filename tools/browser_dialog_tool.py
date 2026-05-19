@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Agent-facing tool: respond to a native JS dialog captured by the CDP supervisor.
 
 This tool is response-only — the agent first reads ``pending_dialogs`` from

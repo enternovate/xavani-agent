@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Tests for ``_is_anthropic_oauth`` guard against third-party Anthropic-compatible providers.
 
 The invariant: ``self._is_anthropic_oauth`` must only ever be True when

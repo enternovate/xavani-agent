@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """QQ Bot inline keyboards + approval / update-prompt senders.
 
 QQ Bot v2 supports attaching inline keyboards to outbound messages. When a

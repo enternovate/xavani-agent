@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Feishu Drive Tools -- document comment operations via Feishu/Lark API.
 
 Provides tools for listing, replying to, and adding document comments.

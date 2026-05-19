@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Tests for ``BasePlatformAdapter.register_post_delivery_callback`` chaining.
 
 When two features want to run after the final response lands on the same

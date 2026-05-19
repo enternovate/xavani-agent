@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Tests for post-compression historical-media stripping.
 
 Port of Kilo-Org/kilocode#9434 (adapted for OpenAI-style message lists).

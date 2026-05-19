@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Auto-generate short session titles from the first user/assistant exchange.
 
 Runs asynchronously after the first response is delivered so it never

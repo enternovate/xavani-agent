@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Tests for user-defined providers (providers: dict) in /model.
 
 These tests ensure that providers defined in the config.yaml ``providers:`` section

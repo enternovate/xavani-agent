@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Shutdown forensics — capture context when the gateway receives SIGTERM/SIGINT.
 
 The gateway's ``shutdown_signal_handler`` runs synchronously inside the

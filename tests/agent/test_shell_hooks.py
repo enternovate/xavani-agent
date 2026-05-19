@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Tests for the shell-hooks subprocess bridge (agent.shell_hooks).
 
 These tests focus on the pure translation layer — JSON serialisation,

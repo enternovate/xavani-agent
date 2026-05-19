@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Tests for busy-session acknowledgment when user sends messages during active agent runs.
 
 Verifies that users get an immediate status response instead of total silence

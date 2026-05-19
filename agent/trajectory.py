@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Trajectory saving utilities and static helpers.
 
 _convert_to_trajectory_format stays as an AIAgent method (batch_runner.py

@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Tests for CodexAppServerSession — drive turns through a mock client.
 
 The session adapter has the most complex behavior of the three new modules:

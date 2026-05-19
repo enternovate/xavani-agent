@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Realtime speech subpackage for the google_meet plugin (v2).
 
 Provides a thin OpenAI Realtime API client and a file-queue speaker

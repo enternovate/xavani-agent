@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Tests for cross-profile auth fallback.
 
 When ``HERMES_HOME`` points to a named profile, ``read_credential_pool()``

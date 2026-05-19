@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Test that overlay providers with mismatched models.dev keys resolve correctly.
 
 HERMES_OVERLAYS keys may be models.dev IDs (e.g. "github-copilot") while

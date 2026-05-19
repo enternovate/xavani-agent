@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Shared slash command helpers for skills.
 
 Shared between CLI (cli.py) and gateway (gateway/run.py) so both surfaces

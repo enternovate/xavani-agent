@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Tests for file write safety and HERMES_WRITE_SAFE_ROOT sandboxing.
 
 Based on PR #1085 by ismoilh (salvaged).

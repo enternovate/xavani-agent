@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """PTY bridge for `hermes dashboard` chat tab.
 
 Wraps a child process behind a pseudo-terminal so its ANSI output can be

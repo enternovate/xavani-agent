@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Tests for the hermes-tools-as-MCP server module surface.
 
 We don't run a live MCP session in unit tests — that requires the codex

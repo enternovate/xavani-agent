@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Tests for AIAgent._repair_tool_call — tool-name normalization.
 
 Regression guard for #14784: Claude-style models sometimes emit

@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Headless Google Meet bot — Playwright + live-caption scraping.
 
 Runs as a standalone subprocess spawned by ``process_manager.py``. Reads config

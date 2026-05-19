@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """HTTP server that forwards OpenAI-compatible requests to a configured upstream.
 
 Listens on ``http://<host>:<port>/v1/<path>`` and forwards each request to

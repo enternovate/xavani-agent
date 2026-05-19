@@ -1,5 +1,5 @@
 name: xavani-darkblue
-description: Xavani Agent — dark blue buffalo theme by Entornovate
+description: Xavani Agent — dark blue buffalo theme by Enternovate
 
 colors:
   banner_border: "#1a3a6b"
@@ -65,7 +65,7 @@ spinner:
 
 branding:
   agent_name: "Xavani Agent"
-  welcome: "Xavani Agent — built by Entornovate. Open source. Private. Local."
+  welcome: "Xavani Agent — built by Enternovate. Open source. Private. Local."
   goodbye: "Power down. ⚡ Buffalo out."
   response_label: " ⚡ Xavani "
   prompt_symbol: "➤"

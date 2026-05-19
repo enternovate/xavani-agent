@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Tests for MessageDeduplicator TTL enforcement (#10306).
 
 Previously, is_duplicate() returned True for any previously seen ID without

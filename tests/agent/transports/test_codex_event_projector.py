@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Tests for CodexEventProjector — codex item/* events → Hermes messages list.
 
 Drives projection against fixture notifications captured from codex 0.130.0

@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Shared watermark helper used by the three watcher scripts.
 
 A watermark is just a JSON file that records the IDs we've seen on previous

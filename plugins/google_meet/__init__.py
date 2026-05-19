@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """google_meet plugin — let the agent join a Meet call, transcribe it, follow up.
 
 v1: transcribe-only. Spawns a headless Chromium via Playwright, joins the Meet

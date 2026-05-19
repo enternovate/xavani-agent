@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Invariants for what is eager vs lazy in the root ``package.json``.
 
 The root ``package.json`` is installed by ``hermes update`` on every user,

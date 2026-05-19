@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Tests for hermes_cli.runtime_provider._detect_api_mode_for_url.
 
 The helper maps base URLs to api_modes for three cases:

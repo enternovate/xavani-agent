@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """
 Tests for send_image_file() on Telegram, Discord, and Slack platforms,
 and MEDIA: .png extraction/routing in the base platform adapter.

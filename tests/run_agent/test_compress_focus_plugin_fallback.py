@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Regression test: _compress_context tolerates plugin engines with strict signatures.
 
 Added to ``ContextEngine.compress`` ABC signature (Apr 2026) allows passing

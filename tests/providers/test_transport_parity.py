@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Parity tests: pin the exact current transport behavior per provider.
 
 These tests document the flag-based contract between run_agent.py and

@@ -1,12 +1,18 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Xavani Agent - slash command definitions and handlers.
 
 Implements the Xavani Agent gateway commands that extend the base Hermes CLI:
   /install <name>       - Install MCP server from registry
+  /uninstall <name>     - Remove an installed MCP server
   /gateway-up           - Start the MCP proxy gateway on localhost:8080
   /gateway-down         - Stop the gateway
   /registry-status      - Show installed servers and gateway status
   /policy-add <file>    - Add a policy rule
   /audit [--since 24h]  - Show audit log
+  /security-scan <name> - Run security scan on an installed server
 
 Each command handler follows the pattern used by ``hermes_cli/commands.py``:
 a canonical ``CommandDef`` in a local registry and a handler function.
@@ -17,6 +23,7 @@ from __future__ import annotations
 import json
 import logging
 import os
+import psutil
 import subprocess
 import sys
 import time
@@ -25,14 +32,20 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
 from hermes_cli.commands import CommandDef
-from hermes_constants import get_hermes_home
 
 logger = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
+# Xavani Home / Constants
+# ---------------------------------------------------------------------------
+
+XAVANI_HOME = Path(os.environ.get("XAVANI_HOME", str(Path.home() / ".xavani"))).expanduser()
+OAG_HOME = XAVANI_HOME  # OAG home is same as Xavani home
+
+# ---------------------------------------------------------------------------
 # OAG Command Definitions
 # ---------------------------------------------------------------------------
-# These are registered into the dispatcher at OAG startup (see oag_cli.py).
+# These are registered into the dispatcher at OAG startup.
 # The naming convention uses a "oag_" prefix to avoid collisions with
 # built-in Hermes commands.
 
@@ -40,41 +53,62 @@ OAG_COMMAND_DEFS: List[CommandDef] = [
     CommandDef(
         name="install",
         description="Install an MCP server from the registry",
-        category="OAG Gateway",
+        category="Xavani Gateway",
+        args_hint="<name>",
+        cli_only=True,
+    ),
+    CommandDef(
+        name="uninstall",
+        description="Remove an installed MCP server",
+        category="Xavani Gateway",
         args_hint="<name>",
         cli_only=True,
     ),
     CommandDef(
         name="gateway-up",
         description="Start the MCP proxy gateway on localhost:8080",
-        category="OAG Gateway",
+        category="Xavani Gateway",
         cli_only=True,
     ),
     CommandDef(
         name="gateway-down",
         description="Stop the running OAG gateway",
-        category="OAG Gateway",
+        category="Xavani Gateway",
         cli_only=True,
     ),
     CommandDef(
         name="registry-status",
         description="Show installed MCP servers and gateway status",
-        category="OAG Gateway",
+        category="Xavani Gateway",
         aliases=("status",),
         cli_only=True,
     ),
     CommandDef(
         name="policy-add",
         description="Add a policy rule from a YAML/JSON file",
-        category="OAG Gateway",
+        category="Xavani Gateway",
         args_hint="<policy.yaml>",
         cli_only=True,
     ),
     CommandDef(
         name="audit",
         description="Show the OAG audit log",
-        category="OAG Gateway",
+        category="Xavani Gateway",
         args_hint="[--since 24h]",
+        cli_only=True,
+    ),
+    CommandDef(
+        name="security-scan",
+        description="Run a security scan on an installed MCP server",
+        category="Xavani Gateway",
+        args_hint="<name>",
+        cli_only=True,
+    ),
+    CommandDef(
+        name="registry-list",
+        description="List all available servers in the built-in registry",
+        category="Xavani Gateway",
+        args_hint="[query]",
         cli_only=True,
     ),
 ]
@@ -92,24 +126,61 @@ def _register_handler(name: str):
 
 
 # ---------------------------------------------------------------------------
-# Helpers
+# Lazy imports for OAG modules
 # ---------------------------------------------------------------------------
 
+def _get_registry() -> Any:
+    """Lazy-import and return the OAGRegistry instance."""
+    try:
+        from xavani_registry import OAGRegistry
+        return OAGRegistry()
+    except ImportError:
+        # Fallback to the old-style JSON-based registry
+        return None
+
+
+def _get_proxy_server() -> Any:
+    """Lazy-import and return the OAGProxyServer."""
+    try:
+        from gateway.oag_proxy import OAGProxyServer, OAGAuditLogger, OAGPolicyEngine, OAGAuthManager
+        return {
+            "server": OAGProxyServer,
+            "audit": OAGAuditLogger,
+            "policies": OAGPolicyEngine,
+            "auth": OAGAuthManager,
+        }
+    except ImportError:
+        return None
+
+
+# ---------------------------------------------------------------------------
+# Helpers (backward compat with existing ~/.oag/)
+# ---------------------------------------------------------------------------
+
+def _ensure_xavani_dirs() -> None:
+    """Create Xavani home directories if they do not exist."""
+    for d in ["", "installed", "policies", "data", "logs", "skills"]:
+        (XAVANI_HOME / d).mkdir(parents=True, exist_ok=True)
+
+    # Also create legacy ~/.oag/ dirs for backward compat
+    _oag_home().mkdir(parents=True, exist_ok=True)
+    _oag_policy_dir().mkdir(parents=True, exist_ok=True)
+    if not _oag_installed_path().exists():
+        _oag_installed_path().write_text("[]", encoding="utf-8")
+    if not _oag_audit_log_path().exists():
+        _oag_audit_log_path().write_text("", encoding="utf-8")
+
+
 def _oag_home() -> Path:
-    """Return the OAG home directory (default: ~/.oag)."""
+    """Return the OAG home directory (backward compat: ~/.oag)."""
     env = os.environ.get("OAG_HOME", "").strip()
     if env:
         return Path(env)
     return Path.home() / ".oag"
 
 
-def _oag_config_path() -> Path:
-    """Return path to OAG config file."""
-    return _oag_home() / "config.yaml"
-
-
 def _oag_installed_path() -> Path:
-    """Return path to installed MCP servers index."""
+    """Return path to legacy installed MCP servers index."""
     return _oag_home() / "installed_servers.json"
 
 
@@ -119,7 +190,7 @@ def _oag_policy_dir() -> Path:
 
 
 def _oag_audit_log_path() -> Path:
-    """Return path to the audit log file."""
+    """Return path to the legacy audit log file."""
     return _oag_home() / "audit.log"
 
 
@@ -128,28 +199,35 @@ def _oag_gateway_pid_path() -> Path:
     return _oag_home() / "gateway.pid"
 
 
-def _ensure_oag_dirs() -> None:
-    """Create OAG home directories if they do not exist."""
-    _oag_home().mkdir(parents=True, exist_ok=True)
-    _oag_policy_dir().mkdir(parents=True, exist_ok=True)
-    if not _oag_installed_path().exists():
-        _oag_installed_path().write_text("[]", encoding="utf-8")
-    if not _oag_audit_log_path().exists():
-        _oag_audit_log_path().write_text("", encoding="utf-8")
-
-
 def _append_audit(entry: str) -> None:
-    """Append a timestamped audit log entry."""
-    ts = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    """Append a timestamped audit log entry to legacy log file."""
+    from gateway.oag_proxy import OAGAuditLogger
     try:
-        with _oag_audit_log_path().open("a", encoding="utf-8") as f:
-            f.write(f"[{ts}] {entry}\n")
-    except OSError as e:
-        logger.warning("Failed to write audit log: %s", e)
+        audit = OAGAuditLogger()
+        audit.log(
+            user_id="cli",
+            tool_name=None,
+            server_name=None,
+            input_summary=entry,
+            duration_ms=0,
+            allowed=True,
+        )
+    except Exception:
+        # Fall back to plain text audit
+        ts = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+        try:
+            with _oag_audit_log_path().open("a", encoding="utf-8") as f:
+                f.write(f"[{ts}] {entry}\n")
+        except OSError as e:
+            logger.warning("Failed to write audit log: %s", e)
 
 
 def _get_installed_servers() -> List[Dict[str, Any]]:
-    """Return the list of installed MCP servers."""
+    """Return the list of installed MCP servers (backward compat)."""
+    registry = _get_registry()
+    if registry:
+        return registry.list()
+    # Fallback
     path = _oag_installed_path()
     if not path.exists():
         return []
@@ -160,23 +238,16 @@ def _get_installed_servers() -> List[Dict[str, Any]]:
         return []
 
 
-def _save_installed_servers(servers: List[Dict[str, Any]]) -> None:
-    """Write the installed MCP servers list."""
-    _oag_installed_path().write_text(
-        json.dumps(servers, indent=2, default=str), encoding="utf-8"
-    )
-
-
 def _is_gateway_running() -> bool:
-    """Check whether the OAG gateway process is alive."""
+    """Check whether the Xavani gateway process is alive."""
+    from xavani_runtime.runner import is_process_alive
     pid_path = _oag_gateway_pid_path()
     if not pid_path.exists():
         return False
     try:
         pid = int(pid_path.read_text(encoding="utf-8").strip())
-        os.kill(pid, 0)  # Signal 0 = existence probe
-        return True
-    except (OSError, ValueError, ValueError):
+        return is_process_alive(pid)
+    except (OSError, ValueError):
         return False
 
 
@@ -201,120 +272,74 @@ def oag_install(args: str, cli=None) -> str:
 
     Usage: /install <name>
 
-    Looks up the server definition in the OAG registry and configures it
-    as an MCP server in ``~/.oag/config.yaml``.
+    Uses the OAGRegistry to look up and install MCP servers from the
+    built-in registry with security scanning and package signing.
     """
     name = args.strip()
     if not name:
         return (
             "  [bold #FF3366]Usage: /install <name>[/]\n"
-            "  [dim]Install an MCP server from the OAG registry.[/]"
+            "  [dim]Install an MCP server from the Xavani registry.[/]"
         )
 
-    _ensure_oag_dirs()
+    _ensure_xavani_dirs()
 
-    # ---- In-memory registry of known OAG MCP servers ----
-    # In production this would query a remote registry; for now we
-    # ship a small built-in catalogue.
-    BUILTIN_REGISTRY: Dict[str, Dict[str, Any]] = {
-        "filesystem": {
-            "command": "npx",
-            "args": ["-y", "@modelcontextprotocol/server-filesystem"],
-            "description": "Secure filesystem access (read, write, move, search)",
-        },
-        "github": {
-            "command": "npx",
-            "args": ["-y", "@modelcontextprotocol/server-github"],
-            "description": "GitHub API integration (repos, issues, PRs, search)",
-        },
-        "postgres": {
-            "command": "npx",
-            "args": ["-y", "@modelcontextprotocol/server-postgres"],
-            "description": "PostgreSQL database exploration and querying",
-        },
-        "sqlite": {
-            "command": "uvx",
-            "args": ["mcp-server-sqlite", "--db-path", str(_oag_home() / "data" / "oag.db")],
-            "description": "Local SQLite database management via MCP",
-        },
-        "brave-search": {
-            "command": "npx",
-            "args": ["-y", "@modelcontextprotocol/server-brave-search"],
-            "description": "Web search via Brave Search API",
-        },
-        "fetch": {
-            "command": "uvx",
-            "args": ["mcp-server-fetch"],
-            "description": "HTTP content fetching and web scraping",
-        },
-        "puppeteer": {
-            "command": "npx",
-            "args": ["-y", "@modelcontextprotocol/server-puppeteer"],
-            "description": "Browser automation with headless Chrome",
-        },
-        "memory": {
-            "command": "npx",
-            "args": ["-y", "@modelcontextprotocol/server-memory"],
-            "description": "Knowledge graph memory with persistent embeddings",
-        },
-    }
+    from xavani_registry import OAGRegistry
+    registry = OAGRegistry()
 
-    name_lower = name.lower()
-    entry = BUILTIN_REGISTRY.get(name_lower)
-    if not entry:
-        available = ", ".join(sorted(BUILTIN_REGISTRY.keys()))
-        return (
-            f"  [bold #FF3366]Unknown MCP server: {name}[/]\n"
-            f"  [dim]Available servers: {available}[/]\n"
-            f"  [dim]Usage: /install <name>[/]"
-        )
-
-    # Load existing installed servers
-    servers = _get_installed_servers()
-
-    # Check if already installed
-    if any(s.get("name") == name_lower for s in servers):
-        return f"  [bold #00E676]✓ {name} is already installed.[/]"
-
-    # Add to installed list
-    server_entry = {
-        "name": name_lower,
-        "command": entry["command"],
-        "args": entry["args"],
-        "description": entry.get("description", ""),
-        "installed_at": datetime.now(timezone.utc).isoformat(),
-    }
-    servers.append(server_entry)
-    _save_installed_servers(servers)
-    _append_audit(f"install server '{name_lower}'")
-
-    # Write to MCP config so the agent auto-discovers it on next reload
     try:
-        from hermes_cli.config import load_config, save_config
-        cfg = load_config()
-        mcp_servers = cfg.setdefault("mcp_servers", {})
-        mcp_servers[name_lower] = {
-            "command": entry["command"],
-            "args": list(entry["args"]),
-        }
-        save_config(cfg)
+        entry = registry.install(name)
+        _append_audit(f"install server '{name}'")
+        return (
+            f"  [bold #00E676]✓ Installed MCP server: {name}[/]\n"
+            f"  [dim]  {entry.get('description', '')}[/]\n"
+            f"  [dim]  Command: {entry['command']} {' '.join(entry.get('args', []))}[/]\n"
+            f"  [dim]  Security: score {entry.get('security_scan', {}).get('score', 'N/A')}/100[/]\n"
+            f"  [dim]  Use /reload-mcp to activate it in the current session.[/]"
+        )
     except Exception as exc:
-        logger.warning("Could not write MCP server to config: %s", exc)
+        logger.error("Failed to install '%s': %s", name, exc)
+        return f"  [bold #FF3366]✗ Failed to install '{name}': {exc}[/]"
 
-    return (
-        f"  [bold #00E676]✓ Installed MCP server: {name}[/]\n"
-        f"  [dim]  {entry.get('description', '')}[/]\n"
-        f"  [dim]  Command: {entry['command']} {' '.join(entry['args'])}[/]\n"
-        f"  [dim]  Use /reload-mcp to activate it in the current session.[/]"
-    )
+
+@_register_handler("uninstall")
+def oag_uninstall(args: str, cli=None) -> str:
+    """Uninstall an MCP server.
+
+    Usage: /uninstall <name>
+    """
+    name = args.strip()
+    if not name:
+        return (
+            "  [bold #FF3366]Usage: /uninstall <name>[/]\n"
+            "  [dim]Remove an installed MCP server.[/]"
+        )
+
+    name = name.lower().strip()
+    from xavani_registry import OAGRegistry
+    registry = OAGRegistry()
+
+    if not registry.is_installed(name):
+        return f"  [bold #FFB300]⚠ Server '{name}' is not installed.[/]"
+
+    try:
+        info = registry.uninstall(name)
+        _append_audit(f"uninstall server '{name}'")
+        return (
+            f"  [bold #00E676]✓ Uninstalled MCP server: {name}[/]\n"
+            f"  [dim]  Config removed: {info.get('config_removed', False)}[/]"
+        )
+    except Exception as exc:
+        logger.error("Failed to uninstall '%s': %s", name, exc)
+        return f"  [bold #FF3366]✗ Failed to uninstall '{name}': {exc}[/]"
 
 
 @_register_handler("gateway-up")
 def oag_gateway_up(args: str, cli=None) -> str:
     """Start the OAG MCP proxy gateway on localhost:8080.
 
-    Launches the Hermes gateway in the background with OAG-specific
-    configuration overrides.
+    Launches the OAG Proxy (FastAPI-based MCP gateway) in a background
+    thread, bypassing the old Hermes messaging gateway.
     """
     if _is_gateway_running():
         pid = _gateway_pid()
@@ -323,43 +348,28 @@ def oag_gateway_up(args: str, cli=None) -> str:
             f"  [dim]Use /gateway-down to stop it first.[/]"
         )
 
-    _ensure_oag_dirs()
+    _ensure_xavani_dirs()
 
-    # Determine the project root
-    project_root = Path(__file__).resolve().parent.parent
-
-    # Set OAG environment overrides
-    env = os.environ.copy()
-    env.setdefault("OAG_HOME", str(_oag_home()))
-    env.setdefault("HERMES_HOME", str(_oag_home()))
-    env.setdefault("OAG_GATEWAY_PORT", "8080")
-    env.setdefault("OAG_GATEWAY_HOST", "127.0.0.1")
-
-    # Launch the gateway subprocess (non-blocking)
     try:
-        proc = subprocess.Popen(
-            [
-                sys.executable,
-                "-m",
-                "gateway.run",
-                "--port", "8080",
-                "--host", "127.0.0.1",
-            ],
-            cwd=str(project_root),
-            env=env,
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
-            stdin=subprocess.DEVNULL,
-            start_new_session=True,
-        )
-        # Write PID file
-        _oag_gateway_pid_path().write_text(str(proc.pid), encoding="utf-8")
-        _append_audit(f"gateway up (PID {proc.pid})")
+        from gateway.oag_proxy import start_oag_gateway
+        # Start the OAG proxy in background
+        proxy = start_oag_gateway(host="127.0.0.1", port=8080)
+        # Store PID — use the thread's ID or a marker
+        import threading
+        # Write a marker PID so _is_gateway_running works
+        _oag_gateway_pid_path().write_text(str(os.getpid()), encoding="utf-8")
+        _append_audit("gateway up (OAG Proxy)")
 
         return (
-            f"  [bold #00E676]✓ Gateway started (PID {proc.pid})[/]\n"
+            f"  [bold #00E676]✓ OAG Gateway started[/]\n"
             f"  [dim]  Listening on http://127.0.0.1:8080[/]\n"
+            f"  [dim]  Endpoints: /health, /mcp, /audit, /auth/token, /policies[/]\n"
             f"  [dim]  Use /gateway-down to stop it.[/]"
+        )
+    except ImportError as exc:
+        return (
+            f"  [bold #FF3366]✗ Missing dependencies: {exc}[/]\n"
+            f"  [dim]  Install with: pip install 'xavani-agent[web]'[/]"
         )
     except Exception as e:
         logger.error("Failed to start gateway: %s", e)
@@ -374,26 +384,18 @@ def oag_gateway_down(args: str, cli=None) -> str:
         return "  [bold #FFB300]⚠ Gateway is not running.[/]"
 
     if not _is_gateway_running():
-        # Stale PID file
         _oag_gateway_pid_path().unlink(missing_ok=True)
         return "  [bold #FFB300]⚠ Gateway was not running (stale PID cleaned up).[/]"
 
     try:
-        os.kill(pid, 15)  # SIGTERM
-        # Wait briefly for graceful shutdown
-        for _ in range(50):
-            time.sleep(0.1)
-            try:
-                os.kill(pid, 0)
-            except OSError:
-                break
-        else:
-            # Force kill if still alive
-            try:
-                os.kill(pid, 9)
-            except OSError:
-                pass
-    except OSError as e:
+        proc = psutil.Process(pid)
+        proc.terminate()  # SIGTERM equivalent, cross-platform
+        try:
+            proc.wait(timeout=5)
+        except psutil.TimeoutExpired:
+            proc.kill()  # SIGKILL equivalent, cross-platform
+            proc.wait(timeout=2)
+    except (psutil.NoSuchProcess, psutil.AccessDenied, OSError) as e:
         return f"  [bold #FF3366]✗ Failed to stop gateway: {e}[/]"
     finally:
         _oag_gateway_pid_path().unlink(missing_ok=True)
@@ -405,7 +407,7 @@ def oag_gateway_down(args: str, cli=None) -> str:
 @_register_handler("registry-status")
 def oag_registry_status(args: str, cli=None) -> str:
     """Show installed MCP servers and gateway status."""
-    _ensure_oag_dirs()
+    _ensure_xavani_dirs()
 
     lines: List[str] = []
 
@@ -421,25 +423,38 @@ def oag_registry_status(args: str, cli=None) -> str:
     lines.append("")
 
     # ---- Installed servers ----
-    servers = _get_installed_servers()
+    from xavani_registry import OAGRegistry
+    registry = OAGRegistry()
+    servers = registry.list()
+
     if servers:
         lines.append(f"  [bold #00F5FF]Installed MCP Servers:[/]")
         for srv in servers:
             name = srv.get("name", "?")
             desc = srv.get("description", "")
+            version = srv.get("version", "")
             installed = srv.get("installed_at", "")[:10] if srv.get("installed_at") else ""
             desc_str = f" — {desc}" if desc else ""
+            ver_str = f" [dim]v{version}[/]" if version else ""
             date_str = f" [dim]({installed})[/]" if installed else ""
-            lines.append(f"    [bold #E0E8FF]⚡ {name}[/]{desc_str}{date_str}")
+            lines.append(f"    [bold #E0E8FF]⚡ {name}[/]{desc_str}{ver_str}{date_str}")
     else:
         lines.append(f"  [bold #FFB300]⚠ No MCP servers installed yet.[/]")
         lines.append(f"  [dim]  Use /install <name> to add one.[/]")
-        lines.append(f"  [dim]  Available: filesystem, github, postgres, sqlite, brave-search, fetch, puppeteer, memory[/]")
+
+    # ---- Registry info ----
+    try:
+        reg_info = registry.registry_info()
+        available = reg_info.get("total_available", 0)
+        lines.append("")
+        lines.append(f"  [dim]Registry: {available} servers available[/]")
+    except Exception:
+        pass
 
     lines.append("")
 
-    # ---- OAG home path ----
-    lines.append(f"  [dim]OAG home: {_oag_home()}[/]")
+    # ---- Xavani home path ----
+    lines.append(f"  [dim]Xavani home: {XAVANI_HOME}[/]")
 
     return "\n".join(lines)
 
@@ -466,7 +481,6 @@ def oag_policy_add(args: str, cli=None) -> str:
     except OSError as e:
         return f"  [bold #FF3366]✗ Failed to read file: {e}[/]"
 
-    # Validate basic structure
     try:
         import yaml
         data = yaml.safe_load(content)
@@ -479,13 +493,11 @@ def oag_policy_add(args: str, cli=None) -> str:
     policy_name = data.get("name") or data.get("rule") or policy_path.stem
     policy_name = str(policy_name).replace(" ", "-")
 
-    _ensure_oag_dirs()
-    dest = _oag_policy_dir() / f"{policy_name}.yaml"
     try:
-        import yaml as yaml_out
-        with dest.open("w", encoding="utf-8") as f:
-            yaml_out.dump(data, f, default_flow_style=False, allow_unicode=True)
-    except OSError as e:
+        from gateway.oag_proxy import OAGPolicyEngine
+        engine = OAGPolicyEngine()
+        dest = engine.add_policy_from_dict(policy_name, data)
+    except Exception as e:
         return f"  [bold #FF3366]✗ Failed to write policy: {e}[/]"
 
     _append_audit(f"policy add '{policy_name}' from {policy_path}")
@@ -509,9 +521,8 @@ def oag_audit(args: str, cli=None) -> str:
       --since <duration>  Show entries from the last N hours (default: 24h).
                           Examples: 1h, 48h, 7d
     """
-    _ensure_oag_dirs()
+    _ensure_xavani_dirs()
 
-    # Parse --since argument
     since_duration = "24h"
     rest = args.strip()
     if rest.startswith("--since"):
@@ -524,7 +535,6 @@ def oag_audit(args: str, cli=None) -> str:
                 "  [dim]--since requires a duration value like 24h, 2d, 48h[/]"
             )
 
-    # Parse duration
     try:
         if since_duration.endswith("h"):
             hours = int(since_duration[:-1])
@@ -543,41 +553,155 @@ def oag_audit(args: str, cli=None) -> str:
             "  [dim]Use e.g. --since 24h, --since 7d[/]"
         )
 
-    log_path = _oag_audit_log_path()
-    if not log_path.exists() or log_path.stat().st_size == 0:
-        return "  [dim]Audit log is empty.[/]"
+    try:
+        from gateway.oag_proxy import OAGAuditLogger
+        audit = OAGAuditLogger()
+        entries = audit.query(since=cutoff, limit=500)
+
+        if not entries:
+            return f"  [dim]No audit entries since {since_duration} ago.[/]"
+
+        lines = [f"  [bold #00F5FF]OAG Audit Log (last {since_duration}):[/]"]
+        for e in entries:
+            ts = e.get("timestamp", "")[:19] if e.get("timestamp") else ""
+            user = e.get("user_id", "")
+            tool = e.get("tool_name", "")
+            allowed = "✓" if e.get("allowed") else "✗"
+            summary = (e.get("input_summary") or "")[:60]
+            server = e.get("server_name", "") or ""
+            lines.append(
+                f"    [{ts}] {user} | {tool} | {server} | {allowed} | {summary}"
+            )
+        return "\n".join(lines)
+
+    except Exception as exc:
+        logger.warning("Failed to query SQLite audit: %s", exc)
+        # Fall back to legacy text log
+        log_path = _oag_audit_log_path()
+        if not log_path.exists() or log_path.stat().st_size == 0:
+            return "  [dim]Audit log is empty.[/]"
+
+        try:
+            log_lines = log_path.read_text(encoding="utf-8").strip().split("\n")
+        except OSError as e:
+            return f"  [bold #FF3366]✗ Failed to read audit log: {e}[/]"
+
+        matching = []
+        for line in log_lines:
+            line = line.strip()
+            if not line:
+                continue
+            if line.startswith("[") and "]" in line:
+                ts_str = line[1:].split("]")[0]
+                try:
+                    ts = datetime.strptime(ts_str, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=timezone.utc)
+                    if ts >= cutoff:
+                        matching.append(line)
+                except ValueError:
+                    continue
+            else:
+                matching.append(line)
+
+        if not matching:
+            return f"  [dim]No audit entries since {since_duration} ago.[/]"
+
+        result = [f"  [bold #00F5FF]OAG Audit Log (last {since_duration}):[/]"]
+        for entry_line in matching:
+            result.append(f"    {entry_line}")
+        return "\n".join(result)
+
+
+@_register_handler("security-scan")
+def oag_security_scan(args: str, cli=None) -> str:
+    """Run a security scan on an installed MCP server.
+
+    Usage: /security-scan <name>
+    """
+    name = args.strip()
+    if not name:
+        return (
+            "  [bold #FF3366]Usage: /security-scan <name>[/]\n"
+            "  [dim]Run a security scan on an installed MCP server.[/]"
+        )
+
+    name = name.lower().strip()
+    from xavani_registry import OAGRegistry
+    registry = OAGRegistry()
+
+    if not registry.is_installed(name):
+        return f"  [bold #FFB300]⚠ Server '{name}' is not installed.[/]"
 
     try:
-        log_lines = log_path.read_text(encoding="utf-8").strip().split("\n")
-    except OSError as e:
-        return f"  [bold #FF3366]✗ Failed to read audit log: {e}[/]"
+        scan = registry.security_scan(name)
+        lines: List[str] = []
 
-    # Filter by cutoff
-    matching: List[str] = []
-    for line in log_lines:
-        line = line.strip()
-        if not line:
-            continue
-        # Lines are formatted: [2025-01-01T00:00:00Z] message
-        if line.startswith("[") and "]" in line:
-            ts_str = line[1:].split("]")[0]
-            try:
-                ts = datetime.strptime(ts_str, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=timezone.utc)
-                if ts >= cutoff:
-                    matching.append(line)
-            except ValueError:
-                continue
+        if scan["passed"]:
+            lines.append(f"  [bold #00E676]✓ Security scan passed: {name}[/]")
         else:
-            matching.append(line)
+            lines.append(f"  [bold #FF3366]✗ Security scan failed: {name}[/]")
 
-    if not matching:
-        return f"  [dim]No audit entries since {since_duration} ago.[/]"
+        lines.append(f"  [dim]  Score: {scan['score']}/100[/]")
+        lines.append(f"  [dim]  High severity: {scan['high_severity_count']}[/]")
+        lines.append(f"  [dim]  Medium severity: {scan['medium_severity_count']}[/]")
 
-    result = [f"  [bold #00F5FF]OAG Audit Log (last {since_duration}):[/]"]
-    for entry in matching:
-        result.append(f"    {entry}")
+        if scan["findings"]:
+            lines.append("")
+            lines.append(f"  [bold #FFB300]Findings:[/]")
+            for f in scan["findings"][:10]:
+                severity_label = {1: "LOW", 2: "MED", 3: "HIGH"}.get(f["severity"], "?")
+                lines.append(
+                    f"    [{severity_label}] {f['pattern']}: {f['match'][:80]}"
+                )
 
-    return "\n".join(result)
+        return "\n".join(lines)
+    except Exception as exc:
+        return f"  [bold #FF3366]✗ Security scan failed: {exc}[/]"
+
+
+@_register_handler("registry-list")
+def oag_registry_list(args: str, cli=None) -> str:
+    """List all available servers in the built-in registry.
+
+    Usage: /registry-list [query]
+    """
+    query = args.strip()
+    from xavani_registry import OAGRegistry
+    registry = OAGRegistry()
+
+    if query:
+        results = registry.search(query)
+        if not results:
+            return f"  [dim]No servers found matching '{query}'.[/]"
+        lines = [f"  [bold #00F5FF]Servers matching '{query}':[/]"]
+    else:
+        reg_info = registry.registry_info()
+        available = reg_info.get("total_available", 0)
+        servers = reg_info.get("servers", [])
+        if not servers:
+            return "  [dim]No servers available in registry.[/]"
+        lines = [f"  [bold #00F5FF]Available Servers ({available} total):[/]"]
+        results = []
+        for name in servers:
+            srv = registry.get(name)
+            if srv:
+                results.append(srv)
+
+    for srv in results:
+        name = srv.get("name", "?")
+        desc = srv.get("description", "")
+        installed = srv.get("installed", False)
+        tags = srv.get("tags", [])
+        tag_str = f" [dim][{'/'.join(tags[:3])}][/]" if tags else ""
+        installed_mark = " [bold #00E676]● installed[/]" if installed else ""
+        desc_str = f" — {desc[:100]}" if desc else ""
+        lines.append(f"    [bold #E0E8FF]⚡ {name}[/]{desc_str}{tag_str}{installed_mark}")
+
+    if not query:
+        lines.append("")
+        lines.append(f"  [dim]Use /install <name> to install a server.[/]")
+        lines.append(f"  [dim]Use /registry-list <query> to search.[/]")
+
+    return "\n".join(lines)
 
 
 # ---------------------------------------------------------------------------

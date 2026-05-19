@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Tavily web search + extract + crawl plugin — bundled, auto-loaded.
 
 First plugin in this codebase to advertise ``supports_crawl=True``. The

@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Guardrail: _create_openai_client must not mutate its input kwargs.
 
 #10933 injected an httpx.Client directly into the caller's ``client_kwargs``.

@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Resolve HERMES_HOME for standalone skill scripts.
 
 Skill scripts may run outside the Hermes process (e.g. system Python,

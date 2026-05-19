@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Live regression guardrail for the keepalive/transport bug class (#10933).
 
 AlexKucera reported on Discord (2026-04-16) that after ``hermes update`` pulled

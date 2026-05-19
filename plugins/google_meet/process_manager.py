@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Subprocess lifecycle manager for the google_meet bot.
 
 Single active meeting at a time. Stores the running pid + out_dir in a

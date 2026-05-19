@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Integration tests for Home Assistant (tool + gateway).
 
 Spins up a real in-process fake HA server (HTTP + WebSocket) and exercises

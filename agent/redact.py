@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Regex-based secret redaction for logs and tool output.
 
 Applies pattern matching to mask API keys, tokens, and credentials

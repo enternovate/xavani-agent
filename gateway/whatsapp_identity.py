@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Shared helpers for canonicalising WhatsApp sender identity.
 
 WhatsApp's bridge can surface the same human under two different JID shapes

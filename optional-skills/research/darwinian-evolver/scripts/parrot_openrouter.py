@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """
 parrot_openrouter: same as the upstream `parrot` example but the LLM call goes
 through OpenRouter (OpenAI SDK) instead of Anthropic native. Lets us run an

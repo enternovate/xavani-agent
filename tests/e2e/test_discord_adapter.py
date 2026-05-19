@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Minimal e2e tests for Discord mention stripping + /command detection.
 
 Covers the fix for slash commands not being recognized when sent via

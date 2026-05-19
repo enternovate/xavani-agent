@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Pixel art video — overlay procedural animations onto a source image.
 
 Takes any image (typically pre-processed with pixel_art()) and overlays

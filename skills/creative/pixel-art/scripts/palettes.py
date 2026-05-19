@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Named RGB palettes for pixel_art() and pixel_art_video().
 
 Palette RGB values sourced from pixel-art-studio (MIT License)

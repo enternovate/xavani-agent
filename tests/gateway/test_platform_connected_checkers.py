@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """
 Verify that every gateway platform — built-in and plugin — has a connection
 checker so ``GatewayConfig.get_connected_platforms()`` doesn't silently drop

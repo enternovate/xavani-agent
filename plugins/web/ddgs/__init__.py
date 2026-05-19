@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """DuckDuckGo search plugin — bundled, auto-loaded.
 
 Backed by the community ``ddgs`` Python package which scrapes DDG's HTML

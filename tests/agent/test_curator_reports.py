@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Tests for the curator per-run report writer (run.json + REPORT.md).
 
 Reports live under ``~/.hermes/logs/curator/{YYYYMMDD-HHMMSS}/`` alongside

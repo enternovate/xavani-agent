@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Tests for agent/skill_utils.py — extract_skill_conditions metadata handling."""
 
 from agent.skill_utils import extract_skill_conditions

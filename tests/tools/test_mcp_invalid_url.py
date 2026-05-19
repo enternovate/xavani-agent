@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Tests for the MCP remote-URL validator.
 
 Ported from anomalyco/opencode#25019 (``fix: handle invalid mcp urls``).

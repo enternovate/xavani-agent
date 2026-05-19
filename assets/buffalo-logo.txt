@@ -1,6 +1,6 @@
                           ╔══════════════════════════════╗
                           ║   XAVANI AGENT              ║
-                          ║   by Entornovate             ║
+                          ║   by Enternovate             ║
                           ╚══════════════════════════════╝
 
                  ,_   _  ,_,_   _,  ___ ___  ,  ,_
@@ -14,4 +14,4 @@
                 ⚡ MCP gateway on localhost:8080
                 ⚡ Zero telemetry. Fully private. Cross-platform.
 
-            Built by Entornovate. Provided as open source.
+            Built by Enternovate. Provided as open source.

@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Regression tests for ``cmd_whatsapp`` env-var write ordering.
 
 Before the fix, ``hermes whatsapp`` wrote ``WHATSAPP_ENABLED=true`` at

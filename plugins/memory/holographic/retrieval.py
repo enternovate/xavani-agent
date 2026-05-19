@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Hybrid keyword/BM25 retrieval for the memory store.
 
 Ported from KIK memory_agent.py — combines FTS5 full-text search with

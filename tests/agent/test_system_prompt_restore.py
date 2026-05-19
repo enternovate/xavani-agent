@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Tests for ``agent.conversation_loop._restore_or_build_system_prompt``.
 
 Validates the gateway DB-roundtrip path that keeps the system prompt

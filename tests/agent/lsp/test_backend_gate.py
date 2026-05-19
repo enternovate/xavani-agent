@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Integration test: LSP layer is skipped on non-local backends.
 
 The host-side LSP server can't see files inside a Docker/Modal/SSH

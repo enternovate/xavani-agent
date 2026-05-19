@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Migrate Hermes' MCP server config and Codex's installed curated plugins
 to the format Codex expects in ~/.codex/config.toml.
 

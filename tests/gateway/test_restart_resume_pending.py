@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Tests for the resume_pending session continuity path.
 
 Covers the behaviour introduced to fix the ``Gateway shutting down ...

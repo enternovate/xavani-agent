@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """File passthrough registry for remote terminal backends.
 
 Remote backends (Docker, Modal, SSH) create sandboxes with no host files.

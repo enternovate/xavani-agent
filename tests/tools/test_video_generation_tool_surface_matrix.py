@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Tool-surface routing matrix: every (provider, model, modality) combo.
 
 This is the integration test for the question Teknium asked: regardless

@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Randomized property testing for the Kanban kernel.
 
 Generates 1000 random operation sequences, each 20-50 ops, on small

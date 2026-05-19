@@ -1,4 +1,9 @@
 #!/usr/bin/env python3
+
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Watch an RSS 2.0 or Atom feed; print new items to stdout, silent on empty.
 
 Usage (via cron with --no-agent):

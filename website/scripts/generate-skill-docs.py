@@ -1,4 +1,9 @@
 #!/usr/bin/env python3
+
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Generate per-skill Docusaurus pages from skills/ and optional-skills/ SKILL.md files.
 
 Each skill gets website/docs/user-guide/skills/<source>/<category>/<skill-name>.md

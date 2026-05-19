@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Tests for tools/image_generation_tool.py — FAL multi-model support.
 
 Covers the pure logic of the new wrapper: catalog integrity, the three size
