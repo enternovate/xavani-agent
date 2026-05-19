@@ -635,7 +635,7 @@ class TestPromptPluginEnvVars:
         mock_save.assert_called_once_with("LANGFUSE_PUBLIC_KEY", "pk-lf-123")
         # Should show url hint
         printed = " ".join(str(c) for c in console.print.call_args_list)
-        assert "langfuse.com" in printed
+        assert urllib.parse.urlparse(printed).hostname and urllib.parse.urlparse(printed).hostname.lower() == "langfuse.com"
 
     def test_secret_uses_getpass(self):
         from xavani_cli.plugins_cmd import _prompt_plugin_env_vars

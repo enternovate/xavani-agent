@@ -3652,7 +3652,7 @@ def _model_flow_azure_foundry(config, current_model=""):
     if current_auth_mode == "entra_id":
         print(f"  Current auth mode: Microsoft Entra ID (keyless)")
     elif current_api_key:
-        print(f"  Current auth mode: API key ({current_api_key[:8]}...)")
+        print(f"  Current auth mode: API key (********)")
     print()
 
     # ── Step 1: endpoint URL ─────────────────────────────────────────
@@ -4173,6 +4173,8 @@ def _model_flow_named_custom(config, provider_info):
 
 # Curated model lists for direct API-key providers — single source in models.py
 from xavani_cli.models import _PROVIDER_MODELS
+from xavani_cli.safe_logging import install as _install_safe_logging
+_install_safe_logging()
 
 
 def _current_reasoning_effort(config) -> str:

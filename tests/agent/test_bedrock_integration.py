@@ -17,6 +17,7 @@ import os
 from unittest.mock import MagicMock, patch
 
 import pytest
+import urllib.parse
 
 
 class TestProviderRegistry:
@@ -82,13 +83,13 @@ class TestModelCatalog:
     def test_bedrock_models_include_claude(self):
         from xavani_cli.models import _PROVIDER_MODELS
         models = _PROVIDER_MODELS.get("bedrock", [])
-        claude_models = [m for m in models if "anthropic.claude" in m]
+        claude_models = [m for m in models if m.startswith("anthropic.claude")]
         assert len(claude_models) > 0
 
     def test_bedrock_models_include_nova(self):
         from xavani_cli.models import _PROVIDER_MODELS
         models = _PROVIDER_MODELS.get("bedrock", [])
-        nova_models = [m for m in models if "amazon.nova" in m]
+        nova_models = [m for m in models if m.startswith("amazon.nova")]
         assert len(nova_models) > 0
 
 
@@ -151,7 +152,7 @@ class TestRuntimeProvider:
         assert result["provider"] == "bedrock"
         assert result["api_mode"] == "bedrock_converse"
         assert result["region"] == "eu-west-1"
-        assert "bedrock-runtime.eu-west-1.amazonaws.com" in result["base_url"]
+        assert urllib.parse.urlparse(result["base_url"]).hostname == "bedrock-runtime.eu-west-1.amazonaws.com"
         assert result["api_key"] == "aws-sdk"
 
     def test_bedrock_runtime_default_region(self, monkeypatch):

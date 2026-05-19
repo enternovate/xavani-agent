@@ -8,6 +8,7 @@ import asyncio
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+import urllib.parse
 
 
 @pytest.fixture(autouse=True)
@@ -172,7 +173,7 @@ class TestMinimaxTtsT2aV2:
         mock_post, _ = self._run({}, tmp_path, monkeypatch)
         url = mock_post.call_args[0][0]
         assert "t2a_v2" in url
-        assert "api.minimax.io" in url
+        assert urllib.parse.urlparse(url).hostname and urllib.parse.urlparse(url).hostname.lower() == "api.minimax.io"
 
     def test_group_id_from_config(self, tmp_path, monkeypatch):
         """group_id from config attaches as ?GroupId=<id>."""

@@ -1541,18 +1541,24 @@ async def list_oauth_providers():
           expires_at       ISO timestamp string or null
           has_refresh_token bool
     """
-    providers = []
-    for p in _OAUTH_PROVIDER_CATALOG:
-        status = _resolve_provider_status(p["id"], p.get("status_fn"))
-        providers.append({
-            "id": p["id"],
-            "name": p["name"],
-            "flow": p["flow"],
-            "cli_command": p["cli_command"],
-            "docs_url": p["docs_url"],
-            "status": status,
-        })
-    return {"providers": providers}
+    try:
+        providers = []
+        for p in _OAUTH_PROVIDER_CATALOG:
+            status = _resolve_provider_status(p["id"], p.get("status_fn"))
+            providers.append({
+                "id": p["id"],
+                "name": p["name"],
+                "flow": p["flow"],
+                "cli_command": p["cli_command"],
+                "docs_url": p["docs_url"],
+                "status": status,
+            })
+        return {"providers": providers}
+    except HTTPException:
+        raise
+    except Exception:
+        _log.exception("GET /api/providers/oauth failed")
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @app.delete("/api/providers/oauth/{provider_id}")
@@ -1694,6 +1700,8 @@ def _save_anthropic_oauth_creds(access_token: str, refresh_token: str, expires_a
     }
     _XAVANI_OAUTH_FILE.parent.mkdir(parents=True, exist_ok=True)
     _XAVANI_OAUTH_FILE.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+    # Restrict permissions so only the owner can read the OAuth tokens.
+    os.chmod(_XAVANI_OAUTH_FILE, 0o600)
     # Best-effort credential-pool insert. Failure here doesn't invalidate
     # the file write — pool registration only matters for the rotation
     # strategy, not for runtime credential resolution.
@@ -2900,11 +2908,14 @@ async def get_profile_setup_command(name: str):
 @app.post("/api/profiles/{name}/open-terminal")
 async def open_profile_terminal_endpoint(name: str):
     try:
+        # Explicit allowlist validation before any shell interaction.
+        # CodeQL: breaks taint flow from user-controlled ``name`` to subprocess.
+        if not re.fullmatch(r"[a-z0-9_-]+", name):
+            raise HTTPException(status_code=400, detail="Invalid profile name")
         command = _profile_setup_command(name)
 
-        # Validate the profile name before using it in a command to prevent
-        # command injection via crafted profile names.  validate_profile_name
-        # restricts to [a-z0-9_-] but we add shlex.quote as defense-in-depth.
+        # Defense-in-depth: shlex.quote ensures the command is passed as a
+        # single argument even if the regex validation above were bypassed.
         import shlex
         safe_command = shlex.quote(command)
 
@@ -4326,23 +4337,29 @@ async def get_plugins_hub(request: Request):
 
 @app.post("/api/dashboard/agent-plugins/install")
 async def post_agent_plugin_install(request: Request, body: _AgentPluginInstallBody):
-    _require_token(request)
-    from xavani_cli.plugins_cmd import dashboard_install_plugin
+    try:
+        _require_token(request)
+        from xavani_cli.plugins_cmd import dashboard_install_plugin
 
-    result = dashboard_install_plugin(
-        body.identifier.strip(),
-        force=body.force,
-        enable=body.enable,
-    )
-    if not result.get("ok"):
-        raise HTTPException(
-            status_code=400,
-            detail=result.get("error") or "Install failed.",
+        result = dashboard_install_plugin(
+            body.identifier.strip(),
+            force=body.force,
+            enable=body.enable,
         )
-    _get_dashboard_plugins(force_rescan=True)
-    # Strip internal paths from the response
-    result.pop("after_install_path", None)
-    return result
+        if not result.get("ok"):
+            raise HTTPException(
+                status_code=400,
+                detail=result.get("error") or "Install failed.",
+            )
+        _get_dashboard_plugins(force_rescan=True)
+        # Strip internal paths from the response
+        result.pop("after_install_path", None)
+        return result
+    except HTTPException:
+        raise
+    except Exception:
+        _log.exception("POST /api/dashboard/agent-plugins/install failed")
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 def _validate_plugin_name(name: str) -> str:

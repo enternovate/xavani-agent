@@ -16,6 +16,7 @@ Covers:
 import os
 import pytest
 from unittest.mock import patch, MagicMock
+import urllib.parse
 
 
 # ---------------------------------------------------------------------------
@@ -280,7 +281,7 @@ class TestFallbackBaseUrlPassthrough:
         fb_base_url_hint = (fb.get("base_url") or "").strip() or None
         fb_api_key_hint = (fb.get("api_key") or "").strip() or None
 
-        if fb_base_url_hint and "ollama.com" in fb_base_url_hint.lower() and not fb_api_key_hint:
+        if fb_base_url_hint and urllib.parse.urlparse(fb_base_url_hint.lower).hostname and urllib.parse.urlparse(fb_base_url_hint.lower).hostname.lower() == "ollama.com"() and not fb_api_key_hint:
             fb_api_key_hint = os.getenv("OLLAMA_API_KEY") or None
 
         assert fb_api_key_hint == "fb-ollama-key"
@@ -621,7 +622,7 @@ class TestFallbackEdgeCases:
         fb_base_url_hint = (fb.get("base_url") or "").strip() or None
         fb_api_key_hint = (fb.get("api_key") or "").strip() or None
 
-        if fb_base_url_hint and "ollama.com" in fb_base_url_hint.lower() and not fb_api_key_hint:
+        if fb_base_url_hint and urllib.parse.urlparse(fb_base_url_hint.lower).hostname and urllib.parse.urlparse(fb_base_url_hint.lower).hostname.lower() == "ollama.com"() and not fb_api_key_hint:
             fb_api_key_hint = os.getenv("OLLAMA_API_KEY") or None
 
         assert fb_api_key_hint is None
@@ -640,7 +641,7 @@ class TestFallbackEdgeCases:
         fb_base_url_hint = (fb.get("base_url") or "").strip() or None
         fb_api_key_hint = (fb.get("api_key") or "").strip() or None
 
-        if fb_base_url_hint and "ollama.com" in fb_base_url_hint.lower() and not fb_api_key_hint:
+        if fb_base_url_hint and urllib.parse.urlparse(fb_base_url_hint.lower).hostname and urllib.parse.urlparse(fb_base_url_hint.lower).hostname.lower() == "ollama.com"() and not fb_api_key_hint:
             fb_api_key_hint = os.getenv("OLLAMA_API_KEY") or None
 
         assert fb_api_key_hint == "explicit-key"
@@ -654,7 +655,7 @@ class TestFallbackEdgeCases:
         fb_base_url_hint = (fb.get("base_url") or "").strip() or None
         fb_api_key_hint = (fb.get("api_key") or "").strip() or None
 
-        if fb_base_url_hint and "ollama.com" in fb_base_url_hint.lower() and not fb_api_key_hint:
+        if fb_base_url_hint and urllib.parse.urlparse(fb_base_url_hint.lower).hostname and urllib.parse.urlparse(fb_base_url_hint.lower).hostname.lower() == "ollama.com"() and not fb_api_key_hint:
             fb_api_key_hint = os.getenv("OLLAMA_API_KEY") or None
 
         assert fb_base_url_hint is None

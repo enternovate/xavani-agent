@@ -13,6 +13,7 @@ from xavani_cli.models import _PROVIDER_MODELS, _PROVIDER_LABELS, _PROVIDER_ALIA
 from xavani_cli.model_normalize import normalize_model_for_provider, detect_vendor
 from agent.model_metadata import get_model_context_length
 from agent.models_dev import PROVIDER_TO_MODELS_DEV, list_agentic_models, _NOISE_PATTERNS
+import urllib.parse
 
 
 # ── Provider Registry ──
@@ -34,7 +35,7 @@ class TestGeminiProviderRegistry:
         assert pconfig.base_url_env_var == "GEMINI_BASE_URL"
 
     def test_gemini_base_url(self):
-        assert "generativelanguage.googleapis.com" in PROVIDER_REGISTRY["gemini"].inference_base_url
+        assert urllib.parse.urlparse(PROVIDER_REGISTRY["gemini"].inference_base_url).hostname == "generativelanguage.googleapis.com"
 
 
 # ── Provider Aliases ──

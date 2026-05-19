@@ -8,6 +8,7 @@ import os
 from unittest.mock import patch, MagicMock
 
 import pytest
+import urllib.parse
 
 
 @pytest.fixture(autouse=True)
@@ -90,7 +91,7 @@ class TestResolveProviderClientMainAlias:
         client, model = resolve_provider_client("main", "override-model")
         assert client is not None
         assert model == "override-model"
-        assert "beans.local" in str(client.base_url)
+        assert urllib.parse.urlparse(str).hostname and urllib.parse.urlparse(str).hostname.lower() == "beans.local"(client.base_url)
 
     def test_main_with_custom_colon_prefix(self, tmp_path):
         _write_config(tmp_path, {
@@ -102,7 +103,7 @@ class TestResolveProviderClientMainAlias:
         from agent.auxiliary_client import resolve_provider_client
         client, model = resolve_provider_client("main", "test")
         assert client is not None
-        assert "beans.local" in str(client.base_url)
+        assert urllib.parse.urlparse(str).hostname and urllib.parse.urlparse(str).hostname.lower() == "beans.local"(client.base_url)
 
     def test_main_resolves_github_copilot_alias(self, tmp_path):
         _write_config(tmp_path, {
@@ -139,7 +140,7 @@ class TestResolveProviderClientNamedCustom:
         client, model = resolve_provider_client("beans", "my-model")
         assert client is not None
         assert model == "my-model"
-        assert "beans.local" in str(client.base_url)
+        assert urllib.parse.urlparse(str).hostname and urllib.parse.urlparse(str).hostname.lower() == "beans.local"(client.base_url)
 
     def test_named_custom_provider_default_model(self, tmp_path):
         _write_config(tmp_path, {
@@ -459,7 +460,7 @@ class TestCustomProviderAliasCollision:
         from openai import OpenAI
         client, model = resolve_provider_client("kimi", model="my-kimi-model", raw_codex=True)
         assert isinstance(client, OpenAI)
-        assert "my-custom-kimi.example.com" in str(client.base_url)
+        assert urllib.parse.urlparse(str).hostname and urllib.parse.urlparse(str).hostname.lower() == "my-custom-kimi.example.com"(client.base_url)
         assert client.api_key == "my-kimi-key"
         assert model == "my-kimi-model"
 
@@ -494,5 +495,5 @@ class TestCustomProviderAliasCollision:
             explicit_api_key="override-key",
         )
         assert isinstance(client, OpenAI)
-        assert "override.example.com" in str(client.base_url)
+        assert urllib.parse.urlparse(str).hostname and urllib.parse.urlparse(str).hostname.lower() == "override.example.com"(client.base_url)
         assert client.api_key == "override-key"

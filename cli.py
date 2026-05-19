@@ -29,6 +29,8 @@ except ModuleNotFoundError:
     pass
 
 import logging
+from xavani_cli.safe_logging import install as _install_safe_logging
+_install_safe_logging()
 import os
 import shutil
 import sys

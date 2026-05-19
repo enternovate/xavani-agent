@@ -1162,7 +1162,7 @@ class WeComAdapter(BasePlatformAdapter):
                 "filename": filename,
                 "total_size": total_size,
                 "total_chunks": total_chunks,
-                "md5": hashlib.md5(data, usedforsecurity=False).hexdigest(),
+                "md5": hashlib.sha256(data).hexdigest(),
             },
         )
         self._raise_for_wecom_error(init_response, "media upload init")

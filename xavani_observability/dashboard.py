@@ -217,7 +217,7 @@ class DashboardHTTPHandler(BaseHTTPRequestHandler):
                 allowed_origin = origin
             else:
                 allowed_origin = ""
-        self.send_header("Access-Control-Allow-Origin", allowed_origin)
+        self.send_header("Access-Control-Allow-Origin", allowed_origin.replace("\n", "").replace("\r", ""))
         self.end_headers()
         self.wfile.write(body.encode("utf-8"))
 

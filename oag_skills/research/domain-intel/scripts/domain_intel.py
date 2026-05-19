@@ -90,6 +90,8 @@ def check_ssl(host, port=443, timeout=10):
     warning = None
     try:
         ctx = ssl.create_default_context()
+        ctx.check_hostname = True
+        ctx.verify_mode = ssl.CERT_REQUIRED
         with socket.create_connection((host, port), timeout=timeout) as sock:
             with ctx.wrap_socket(sock, server_hostname=host) as s:
                 cert, cipher, proto = s.getpeercert(), s.cipher(), s.version()
@@ -290,6 +292,8 @@ def check_available(domain):
     ssl_up = False
     try:
         ctx = ssl.create_default_context()
+        ctx.check_hostname = True
+        ctx.verify_mode = ssl.CERT_REQUIRED
         # Security: Verify certificate properly instead of disabling verification.
         # Only report ssl_up=True if certificate is genuinely valid.
         with socket.create_connection((domain, 443), timeout=3) as s:

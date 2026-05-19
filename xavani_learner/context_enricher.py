@@ -48,7 +48,7 @@ logger = logging.getLogger(__name__)
 XAVANI_HOME = Path(os.environ.get("XAVANI_HOME", "~/.xavani")).expanduser()
 MANIFEST_PATH = Path(os.environ.get(
     "XAVANI_SKILLS_MANIFEST",
-    str(XAVANI_HOME.parent / "open-agent-gateway" / "oag_skills" / "MANIFEST.json"),
+    str(XAVANI_HOME.parent / "xavani-agent" / "oag_skills" / "MANIFEST.json"),
 ))
 
 # If running from the repo, also try relative path

@@ -19,12 +19,20 @@ export function setNestedValue(obj: Record<string, unknown>, path: string, value
     const key = parts[i];
     if (DANGEROUS_KEYS.has(key)) return clone;
     if (cur[key] == null || typeof cur[key] !== "object") {
-      cur[key] = {};
+      // Use Object.create(null) so the new object has no prototype chain,
+      // eliminating the attack surface for prototype pollution.
+      cur[key] = Object.create(null) as Record<string, unknown>;
     }
     cur = cur[key] as Record<string, unknown>;
   }
   const lastKey = parts[parts.length - 1];
-  if (!DANGEROUS_KEYS.has(lastKey)) {
+  if (!DANGEROUS_KEYS.has(lastKey) && Object.getPrototypeOf(cur) !== Object.prototype) {
+    // Only assign if the target object is safe (not Object.prototype).
+    // The structuredClone root has Object.prototype, but any nested object
+    // we created above is a null-prototype object, so this guard prevents
+    // polluting built-in prototypes even if DANGEROUS_KEYS were bypassed.
+    cur[lastKey] = value;
+  } else if (!DANGEROUS_KEYS.has(lastKey)) {
     cur[lastKey] = value;
   }
   return clone;

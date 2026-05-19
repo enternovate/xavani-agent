@@ -2525,11 +2525,16 @@ def get_copilot_model_context(model_id: str, api_key: Optional[str] = None) -> O
 
 
 def _is_github_models_base_url(base_url: Optional[str]) -> bool:
+    from urllib.parse import urlparse
     normalized = (base_url or "").strip().rstrip("/").lower()
+    # Use hostname comparison instead of string prefix to avoid
+    # incomplete-URL-substring bypasses (e.g. evil.com/.../models...).
+    parsed = urlparse(normalized)
+    hostname = (parsed.hostname or "").lower()
     return (
         normalized.startswith(COPILOT_BASE_URL)
-        or normalized.startswith("https://models.github.ai/inference")
-        or normalized.startswith("https://models.inference.ai.azure.com")
+        or hostname == "models.github.ai"
+        or hostname == "models.inference.ai.azure.com"
     )
 
 

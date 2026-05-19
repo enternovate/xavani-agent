@@ -62,13 +62,54 @@ _MESSAGE_EVENTS = {"new-message", "message", "updated-message"}
 
 # Log redaction patterns
 _PHONE_RE = re.compile(r"\+?\d{7,15}")
-_EMAIL_RE = re.compile(r"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}")
+
+
+def _redact_email(text: str) -> str:
+    """Redact email-like substrings without a backtracking regex.
+
+    Uses a simple linear scan: look for '@', then verify the surrounding
+    characters look like a local-part and domain.  This avoids the polynomial
+    ReDoS that CodeQL flags in full email regexes.
+    """
+    import re as _re
+    result = []
+    i = 0
+    while i < len(text):
+        at = text.find("@", i)
+        if at == -1:
+            result.append(text[i:])
+            break
+        # Scan backwards for local-part start
+        start = at
+        while start > i and text[start - 1] in _EMAIL_LOCAL_OK:
+            start -= 1
+        # Scan forwards for domain end
+        end = at + 1
+        dot_seen = False
+        while end < len(text) and text[end] in _EMAIL_DOMAIN_OK:
+            if text[end] == ".":
+                dot_seen = True
+            end += 1
+        # Only redact if we have a plausible domain with a dot after @
+        if dot_seen and end > at + 2 and start < at:
+            result.append(text[i:start])
+            result.append("[REDACTED]")
+            i = end
+        else:
+            result.append(text[i:at + 1])
+            i = at + 1
+    return "".join(result)
+
+
+# Character sets for the linear email scanner (avoiding backtracking regex)
+_EMAIL_LOCAL_OK = set("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789._%+-")
+_EMAIL_DOMAIN_OK = set("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789.-")
 
 
 def _redact(text: str) -> str:
     """Redact phone numbers and emails from log output."""
     text = _PHONE_RE.sub("[REDACTED]", text)
-    text = _EMAIL_RE.sub("[REDACTED]", text)
+    text = _redact_email(text)
     return text
 
 

@@ -805,6 +805,8 @@ class HindsightMemoryProvider(MemoryProvider):
                 if k not in updated_keys:
                     new_lines.append(f"{k}={v}")
             env_path.write_text("\n".join(new_lines) + "\n")
+            # Restrict permissions so only the owner can read the .env file.
+            os.chmod(env_path, 0o600)
 
         if mode == "local_embedded":
             materialized_config = dict(provider_config)

@@ -958,7 +958,7 @@ def _generate_xai_tts(text: str, output_path: str, tts_config: Dict[str, Any]) -
     response.raise_for_status()
 
     with open(output_path, "wb") as f:
-        f.write(response.content)
+        f.write(response.content)  # nosec: binary audio response bytes, not sensitive text
 
     return output_path
 

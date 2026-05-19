@@ -15,6 +15,7 @@ import httpx
 import pytest
 
 from xavani_cli.auth import AuthError, get_provider_auth_state, resolve_nous_runtime_credentials
+import urllib.parse
 
 
 # =============================================================================
@@ -668,7 +669,7 @@ def test_get_nous_auth_status_checks_credential_pool(tmp_path, monkeypatch):
 
     status = get_nous_auth_status()
     assert status["logged_in"] is True
-    assert "example.com" in str(status.get("portal_base_url", ""))
+    assert urllib.parse.urlparse(str).hostname and urllib.parse.urlparse(str).hostname.lower() == "example.com"(status.get("portal_base_url", ""))
 
 
 def test_get_nous_auth_status_auth_store_fallback(tmp_path, monkeypatch):

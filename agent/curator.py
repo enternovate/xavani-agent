@@ -1135,8 +1135,10 @@ def _write_run_report(
 
     # run.json — machine-readable, full fidelity
     try:
+        from agent.redact import redact_sensitive_text
+        safe_payload = json.loads(redact_sensitive_text(json.dumps(payload, ensure_ascii=False)))
         (run_dir / "run.json").write_text(
-            json.dumps(payload, indent=2, ensure_ascii=False) + "\n",
+            json.dumps(safe_payload, indent=2, ensure_ascii=False) + "\n",
             encoding="utf-8",
         )
     except Exception as e:
@@ -1145,7 +1147,9 @@ def _write_run_report(
     # REPORT.md — human-readable
     try:
         md = _render_report_markdown(payload)
-        (run_dir / "REPORT.md").write_text(md, encoding="utf-8")
+        from agent.redact import redact_sensitive_text
+        safe_md = redact_sensitive_text(md)
+        (run_dir / "REPORT.md").write_text(safe_md, encoding="utf-8")
     except Exception as e:
         logger.debug("Curator REPORT.md write failed: %s", e)
 
@@ -1153,8 +1157,10 @@ def _write_run_report(
     # keep run dirs uncluttered for the common no-op case.
     try:
         if int(cron_rewrites.get("jobs_updated", 0)) > 0:
+            from agent.redact import redact_sensitive_text
+            safe_cron = json.loads(redact_sensitive_text(json.dumps(cron_rewrites, ensure_ascii=False)))
             (run_dir / "cron_rewrites.json").write_text(
-                json.dumps(cron_rewrites, indent=2, ensure_ascii=False) + "\n",
+                json.dumps(safe_cron, indent=2, ensure_ascii=False) + "\n",
                 encoding="utf-8",
             )
     except Exception as e:

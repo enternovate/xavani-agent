@@ -863,20 +863,30 @@ class OpenAPIAdapter:
 
     @staticmethod
     def _is_safe_url(url: str) -> bool:
-        """Block SSRF: reject non-HTTPS URLs and internal/private network hosts."""
+        """Block SSRF: reject non-HTTPS URLs and internal/private network hosts.
+
+        Called before any outbound request in :meth:`_load_spec_url`.
+        """
         from urllib.parse import urlparse
         import ipaddress
         try:
             parsed = urlparse(url)
         except Exception:
             return False
+        # Reject non-HTTP(S) schemes and URLs containing embedded credentials
         if parsed.scheme not in ("https", "http"):
+            return False
+        if parsed.username is not None or parsed.password is not None:
             return False
         hostname = parsed.hostname
         if not hostname:
             return False
         # Block obvious internal hostnames
         if hostname in ("localhost", "127.0.0.1", "::1") or hostname.endswith(".local"):
+            return False
+        # Reject unusual characters that could be used for DNS rebinding or
+        # scheme-smuggling (e.g. newlines, null bytes, control chars).
+        if any(ord(c) < 32 for c in hostname):
             return False
         # Resolve and block private IPs (10.x, 172.16-31.x, 192.168.x, 169.254.x, etc.)
         import socket

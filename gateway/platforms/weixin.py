@@ -181,13 +181,17 @@ def _pkcs7_pad(data: bytes, block_size: int = 16) -> bytes:
 
 
 def _aes128_ecb_encrypt(plaintext: bytes, key: bytes) -> bytes:
-    cipher = Cipher(algorithms.AES(key), modes.ECB(), backend=default_backend())
+    # Security: AES-ECB is mandated by the WeChat Work message-cryptography
+    # protocol (see WeChat developer docs).  It is NOT used for general-purpose
+    # encryption — this is strictly interop with WeChat's expected format.
+    cipher = Cipher(algorithms.AES(key), modes.ECB(), backend=default_backend())  # nosec: B305
     encryptor = cipher.encryptor()
     return encryptor.update(_pkcs7_pad(plaintext)) + encryptor.finalize()
 
 
 def _aes128_ecb_decrypt(ciphertext: bytes, key: bytes) -> bytes:
-    cipher = Cipher(algorithms.AES(key), modes.ECB(), backend=default_backend())
+    # Security: AES-ECB is required by the WeChat Work protocol.
+    cipher = Cipher(algorithms.AES(key), modes.ECB(), backend=default_backend())  # nosec: B305
     decryptor = cipher.decryptor()
     padded = decryptor.update(ciphertext) + decryptor.finalize()
     if not padded:

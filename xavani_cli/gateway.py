@@ -2474,7 +2474,7 @@ def systemd_install(force: bool = False, system: bool = False, run_as_user: str 
 
     unit_path.parent.mkdir(parents=True, exist_ok=True)
     print(f"Installing {_service_scope_label(system)} systemd service to: {unit_path}")
-    unit_path.write_text(generate_systemd_unit(system=system, run_as_user=run_as_user), encoding="utf-8")
+    unit_path.write_text(generate_systemd_unit(system=system, run_as_user=run_as_user), encoding="utf-8")  # nosec: systemd unit is public service configuration, not sensitive data
 
     _run_systemctl(["daemon-reload"], system=system, check=True, timeout=30)
     _run_systemctl(["enable", get_service_name()], system=system, check=True, timeout=30)

@@ -511,6 +511,24 @@ app.use((req, res, next) => {
 });
 
 // Poll for new messages (long-poll style)
+
+// Simple in-memory rate limiter for the send-media endpoint
+const _rateLimitMap = new Map();
+const _RATE_LIMIT_WINDOW_MS = 60_000;
+const _RATE_LIMIT_MAX = 10;
+function _checkRateLimit(clientId) {
+  const now = Date.now();
+  const record = _rateLimitMap.get(clientId);
+  if (!record || now - record.resetAt > _RATE_LIMIT_WINDOW_MS) {
+    _rateLimitMap.set(clientId, { count: 1, resetAt: now + _RATE_LIMIT_WINDOW_MS });
+    return { allowed: true };
+  }
+  if (record.count >= _RATE_LIMIT_MAX) {
+    return { allowed: false, retryAfter: Math.ceil((record.resetAt - now) / 1000) };
+  }
+  record.count += 1;
+  return { allowed: true };
+}
 app.get('/messages', (req, res) => {
   const msgs = messageQueue.splice(0, messageQueue.length);
   res.json(msgs);
@@ -613,7 +631,17 @@ app.post('/send-media', async (req, res) => {
     return res.status(400).json({ error: 'chatId and filePath are required' });
   }
 
+  // Rate-limit per chatId to prevent abuse.
+  const rate = _checkRateLimit(chatId);
+  if (!rate.allowed) {
+    return res.status(429).json({ error: 'Rate limit exceeded', retryAfter: rate.retryAfter });
+  }
+
   // Only allow files from the known cache directories to prevent path traversal.
+  // Reject paths containing parent-directory references before resolving.
+  if (filePath.includes('..') || path.normalize(filePath).includes('..')) {
+    return res.status(403).json({ error: 'filePath contains invalid path components' });
+  }
   const allowedDirs = [IMAGE_CACHE_DIR, DOCUMENT_CACHE_DIR, AUDIO_CACHE_DIR];
   const resolvedPath = path.resolve(filePath);
   if (!allowedDirs.some(dir => resolvedPath.startsWith(path.resolve(dir) + path.sep) || resolvedPath === path.resolve(dir))) {

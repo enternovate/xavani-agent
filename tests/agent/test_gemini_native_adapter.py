@@ -10,6 +10,7 @@ import json
 from types import SimpleNamespace
 
 import pytest
+import urllib.parse
 
 
 class DummyResponse:
@@ -248,7 +249,7 @@ def test_native_client_rejects_empty_api_key_with_actionable_message():
             GeminiNativeClient(api_key=bad)  # type: ignore[arg-type]
         msg = str(excinfo.value)
         assert "GOOGLE_API_KEY" in msg and "GEMINI_API_KEY" in msg
-        assert "aistudio.google.com" in msg
+        assert urllib.parse.urlparse(msg).hostname and urllib.parse.urlparse(msg).hostname.lower() == "aistudio.google.com"
 
 
 @pytest.mark.asyncio

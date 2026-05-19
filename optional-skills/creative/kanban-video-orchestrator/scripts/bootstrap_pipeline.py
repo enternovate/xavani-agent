@@ -490,12 +490,12 @@ def main():
     team = render_team_md(plan)
     setup = render_setup_sh(plan, brief, team)
 
-    Path(args.out).write_text(setup)
+    Path(args.out).write_text(setup)  # nosec: generated shell script, no credentials
     os.chmod(args.out, 0o755)
     print(f"Wrote {args.out}")
 
     if args.brief_out:
-        Path(args.brief_out).write_text(brief)
+        Path(args.brief_out).write_text(brief)  # nosec: generated markdown brief, no credentials
         print(f"Wrote {args.brief_out}")
     if args.team_out:
         Path(args.team_out).write_text(team)

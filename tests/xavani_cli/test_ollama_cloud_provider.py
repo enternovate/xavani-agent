@@ -13,6 +13,7 @@ from xavani_cli.models import _PROVIDER_MODELS, _PROVIDER_LABELS, _PROVIDER_ALIA
 from xavani_cli.model_normalize import normalize_model_for_provider
 from agent.model_metadata import _URL_TO_PROVIDER, _PROVIDER_PREFIXES
 from agent.models_dev import PROVIDER_TO_MODELS_DEV, list_agentic_models
+import urllib.parse
 
 
 # ── Provider Registry ──
@@ -34,7 +35,7 @@ class TestOllamaCloudProviderRegistry:
         assert pconfig.base_url_env_var == "OLLAMA_BASE_URL"
 
     def test_ollama_cloud_base_url(self):
-        assert "ollama.com" in PROVIDER_REGISTRY["ollama-cloud"].inference_base_url
+        assert urllib.parse.urlparse(PROVIDER_REGISTRY["ollama-cloud"].inference_base_url).hostname == "ollama.com"
 
 
 # ── Provider Aliases ──

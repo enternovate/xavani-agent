@@ -208,6 +208,8 @@ from agent.tool_dispatch_helpers import (
 )
 from utils import atomic_json_write, base_url_host_matches, base_url_hostname, env_var_enabled, normalize_proxy_url
 from xavani_cli.config import cfg_get
+from xavani_cli.safe_logging import install as _install_safe_logging
+_install_safe_logging()
 
 
 
@@ -4113,9 +4115,11 @@ def main(
         }
         
         try:
+            from agent.redact import redact_sensitive_text
+            safe_entry = json.loads(redact_sensitive_text(json.dumps(entry, ensure_ascii=False, indent=2)))
             with open(sample_filename, "w", encoding="utf-8") as f:
                 # Pretty-print JSON with indent for readability
-                f.write(json.dumps(entry, ensure_ascii=False, indent=2))
+                f.write(json.dumps(safe_entry, ensure_ascii=False, indent=2))
             print(f"\n💾 Sample trajectory saved to: {sample_filename}")
         except Exception as e:
             print(f"\n⚠️ Failed to save sample: {e}")

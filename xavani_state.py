@@ -2033,7 +2033,13 @@ class SessionDB:
         # Step 4: Remove dangling boolean operators at start/end that would
         # cause syntax errors (e.g. "hello AND" or "OR world")
         sanitized = re.sub(r"(?i)^(AND|OR|NOT)\b\s*", "", sanitized.strip())
-        sanitized = re.sub(r"(?i)\s+(AND|OR|NOT)\s*$", "", sanitized.strip())
+        # Fixed polynomial ReDoS: use string rstrip instead of regex for suffix
+        sanitized = sanitized.rstrip()
+        _lower = sanitized.lower()
+        for _suffix in (" and", " or", " not"):
+            if _lower.endswith(_suffix):
+                sanitized = sanitized[: -len(_suffix)].rstrip()
+                break
 
         # Step 5: Wrap unquoted dotted and/or hyphenated terms in double
         # quotes.  FTS5's tokenizer splits on dots and hyphens, turning

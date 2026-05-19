@@ -7,6 +7,7 @@
 import pytest
 from providers import get_provider_profile, _REGISTRY
 from providers.base import ProviderProfile, OMIT_TEMPERATURE
+import urllib.parse
 
 
 class TestRegistry:
@@ -44,7 +45,7 @@ class TestNvidiaProfile:
 
     def test_base_url(self):
         p = get_provider_profile("nvidia")
-        assert "nvidia.com" in p.base_url
+        assert urllib.parse.urlparse(p.base_url).hostname and urllib.parse.urlparse(p.base_url).hostname.lower() == "nvidia.com"
 
     def test_billing_header_not_profile_wide(self):
         p = get_provider_profile("nvidia")
@@ -64,7 +65,7 @@ class TestKimiProfile:
         p = get_provider_profile("kimi-coding-cn")
         assert p.name == "kimi-coding-cn"
         assert p.env_vars == ("KIMI_CN_API_KEY",)
-        assert "moonshot.cn" in p.base_url
+        assert urllib.parse.urlparse(p.base_url).hostname and urllib.parse.urlparse(p.base_url).hostname.lower() == "moonshot.cn"
 
     def test_cn_not_alias_of_kimi(self):
         kimi = get_provider_profile("kimi-coding")

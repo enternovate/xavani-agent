@@ -7,6 +7,7 @@
 import json
 from unittest.mock import patch, MagicMock
 import pytest
+import urllib.parse
 
 
 def _mock_urlopen(response_data, status=200):
@@ -80,7 +81,7 @@ class TestInitRegistration:
         _init_registration("lark")
         call_args = mock_urlopen_fn.call_args
         request = call_args[0][0]
-        assert "larksuite.com" in request.full_url
+        assert urllib.parse.urlparse(request.full_url).hostname and urllib.parse.urlparse(request.full_url).hostname.lower() == "larksuite.com"
 
 
 class TestBeginRegistration:
@@ -100,7 +101,7 @@ class TestBeginRegistration:
         result = _begin_registration("feishu")
         assert result["device_code"] == "dc_123"
         assert "qr_url" in result
-        assert "accounts.feishu.cn" in result["qr_url"]
+        assert urllib.parse.urlparse(result["qr_url"]).hostname == "accounts.feishu.cn"
         assert result["user_code"] == "ABCD-1234"
         assert result["interval"] == 5
         assert result["expire_in"] == 600

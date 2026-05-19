@@ -180,6 +180,7 @@ _teams_mod.AIOHTTP_AVAILABLE = True
 # Ensure SDK symbols that were None (import failed on Python <3.12) are
 # replaced with the mocked versions so runtime calls don't silently no-op.
 import sys as _sys
+import urllib.parse
 _mt = _sys.modules.get("microsoft_teams.api.activities.typing")
 if _mt and _teams_mod.TypingActivityInput is None:
     _teams_mod.TypingActivityInput = _mt.TypingActivityInput
@@ -804,7 +805,7 @@ class TestTeamsStandaloneSend:
 
         activity_url, activity_kwargs = session.calls[1]
         # Default service URL when TEAMS_SERVICE_URL is unset
-        assert "smba.trafficmanager.net" in activity_url
+        assert urllib.parse.urlparse(activity_url).hostname and urllib.parse.urlparse(activity_url).hostname.lower() == "smba.trafficmanager.net"
         assert "/v3/conversations/19:abc@thread.skype/activities" in activity_url
         assert activity_kwargs["headers"]["Authorization"] == "Bearer the-token"
         assert activity_kwargs["json"]["text"] == "hello cron"

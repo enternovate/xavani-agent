@@ -221,7 +221,7 @@ def auth_add_command(args) -> None:
             base_url=_provider_base_url(provider),
         )
         pool.add_entry(entry)
-        print(f'Added {provider} credential #{len(pool.entries())}: "{label}"')
+        print(f'Added {provider} credential #{len(pool.entries())}: "{label[:20]}..."')
         return
 
     if provider == "anthropic":

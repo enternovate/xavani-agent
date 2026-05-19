@@ -1300,6 +1300,8 @@ def _format_gateway_process_notification(evt: dict) -> "str | None":
 # Used by tools (e.g. send_message) that need to route through a live
 # adapter for plugin platforms.  Set in GatewayRunner.__init__().
 import weakref as _weakref
+from xavani_cli.safe_logging import install as _install_safe_logging
+_install_safe_logging()
 _gateway_runner_ref: _weakref.ref = lambda: None
 
 

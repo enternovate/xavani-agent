@@ -488,8 +488,13 @@ def _process_batch_worker(args: Tuple) -> Dict[str, Any]:
             }
             
             # Append to batch output file
+            try:
+                from agent.redact import redact_sensitive_text
+                safe_entry = json.loads(redact_sensitive_text(json.dumps(trajectory_entry, ensure_ascii=False)))
+            except Exception:
+                safe_entry = trajectory_entry
             with open(batch_output_file, 'a', encoding='utf-8') as f:
-                f.write(json.dumps(trajectory_entry, ensure_ascii=False) + "\n")
+                f.write(json.dumps(safe_entry, ensure_ascii=False) + "\n")
         
         # Aggregate tool statistics
         for tool_name, stats in result.get("tool_stats", {}).items():

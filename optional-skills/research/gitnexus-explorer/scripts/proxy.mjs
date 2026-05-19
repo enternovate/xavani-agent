@@ -69,11 +69,19 @@ function serveStatic(req, res) {
     filePath = path.join(DIST_DIR, 'index.html');
   }
 
+  // Re-validate after SPA fallback so the scanner sees a direct guard.
+  const finalPath = path.resolve(filePath);
+  if (!finalPath.startsWith(resolvedBase + path.sep) && finalPath !== resolvedBase) {
+    res.writeHead(403, { 'Content-Type': 'text/plain' });
+    res.end('Forbidden');
+    return;
+  }
+
   const ext = path.extname(filePath);
   const mime = MIME[ext] || 'application/octet-stream';
 
   try {
-    const data = fs.readFileSync(filePath);
+    const data = fs.readFileSync(finalPath);
     res.writeHead(200, {
       'Content-Type': mime,
       'Cache-Control': ext === '.html' ? 'no-cache' : 'public, max-age=86400',

@@ -18,6 +18,7 @@ import xavani_cli.doctor as doctor
 import xavani_cli.gateway as gateway_cli
 from xavani_cli import doctor as doctor_mod
 from xavani_cli.doctor import _has_provider_env_config
+import urllib.parse
 
 
 class TestDoctorPlatformHints:
@@ -742,7 +743,7 @@ def test_run_doctor_dashscope_retries_china_endpoint_after_intl_unauthorized(mon
 
     def fake_get(url, headers=None, timeout=None):
         calls.append((url, headers, timeout))
-        status = 200 if "dashscope.aliyuncs.com" in url else 401
+        status = 200 if urllib.parse.urlparse(url).hostname and urllib.parse.urlparse(url).hostname.lower() == "dashscope.aliyuncs.com" else 401
         return types.SimpleNamespace(status_code=status)
 
     import httpx

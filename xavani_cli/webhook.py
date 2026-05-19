@@ -180,7 +180,7 @@ def _cmd_subscribe(args):
 
     print(f"\n  {status} webhook subscription: {name}")
     print(f"  URL:    {base_url}/webhooks/{name}")
-    print(f"  Secret: {secret}")
+    print(f"  Secret: {'[REDACTED]'}")
     if events:
         print(f"  Events: {', '.join(events)}")
     else:
