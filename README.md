@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/xavani-buffalo.png" alt="Xavani Agent" width="200"/>
+  <img src="assets/xavani-buffalo.jpg" alt="Xavani Agent" width="200"/>
 </p>
 
 <h1 align="center">Xavani Agent</h1>
@@ -8,7 +8,8 @@
   <b>The open-source AI agent gateway.</b><br>
   Fully local. Private. Cross-platform. Zero telemetry.<br>
   Built by <a href="https://enternovate.com">Enternovate</a> — Open Source.<br>
-  <i>Pronounced: shahr-vaa-nee</i>
+  <i>Pronounced: shahr-vaa-nee</i><br>
+  <sub>Photo by <a href="https://unsplash.com/@andymcclan?utm_source=xavani-agent&utm_medium=referral">Andy McClanahan</a> on <a href="https://unsplash.com/photos/water-buffalo-on-wheat-field-thC1uwWdMfM?utm_source=xavani-agent&utm_medium=referral">Unsplash</a></sub>
 </p>
 
 <p align="center">
