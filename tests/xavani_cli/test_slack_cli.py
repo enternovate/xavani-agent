@@ -1,0 +1,34 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
+"""Tests for Slack CLI helpers."""
+
+from xavani_cli.slack_cli import _build_full_manifest
+
+
+class TestSlackFullManifest:
+    """Generated full Slack app manifest used by `xavani slack manifest`."""
+
+    def test_app_home_messages_are_writable(self):
+        manifest = _build_full_manifest("Xavani", "Your Xavani agent on Slack")
+
+        assert manifest["features"]["app_home"] == {
+            "home_tab_enabled": False,
+            "messages_tab_enabled": True,
+            "messages_tab_read_only_enabled": False,
+        }
+
+    def test_private_channel_directory_scope_is_included(self):
+        manifest = _build_full_manifest("Xavani", "Your Xavani agent on Slack")
+
+        bot_scopes = manifest["oauth_config"]["scopes"]["bot"]
+        assert "groups:read" in bot_scopes
+
+    def test_assistant_features_remain_enabled(self):
+        manifest = _build_full_manifest("Xavani", "Your Xavani agent on Slack")
+
+        assert "assistant_view" in manifest["features"]
+        assert "assistant:write" in manifest["oauth_config"]["scopes"]["bot"]
+        bot_events = manifest["settings"]["event_subscriptions"]["bot_events"]
+        assert "assistant_thread_started" in bot_events

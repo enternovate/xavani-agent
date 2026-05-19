@@ -29,9 +29,9 @@ from agent.skill_utils import (
 
 
 @pytest.fixture
-def hermes_home_with_config(tmp_path, monkeypatch):
-    """Isolated ``~/.hermes/`` with a config.yaml referencing one external dir."""
-    home = tmp_path / ".hermes"
+def xavani_home_with_config(tmp_path, monkeypatch):
+    """Isolated ``~/.xavani/`` with a config.yaml referencing one external dir."""
+    home = tmp_path / ".xavani"
     home.mkdir()
     external = tmp_path / "external_skills"
     external.mkdir()
@@ -44,22 +44,22 @@ def hermes_home_with_config(tmp_path, monkeypatch):
         encoding="utf-8",
     )
 
-    monkeypatch.setenv("HERMES_HOME", str(home))
+    monkeypatch.setenv("XAVANI_HOME", str(home))
     monkeypatch.setattr(Path, "home", lambda: tmp_path)
     _external_dirs_cache_clear()
     yield home, external, config
     _external_dirs_cache_clear()
 
 
-def test_returns_configured_external_dir(hermes_home_with_config):
-    _home, external, _cfg = hermes_home_with_config
+def test_returns_configured_external_dir(xavani_home_with_config):
+    _home, external, _cfg = xavani_home_with_config
     result = get_external_skills_dirs()
     assert result == [external.resolve()]
 
 
-def test_cache_reuses_result_without_reparsing(hermes_home_with_config):
+def test_cache_reuses_result_without_reparsing(xavani_home_with_config):
     """Subsequent calls hit the cache and skip YAML parsing entirely."""
-    _home, _external, _cfg = hermes_home_with_config
+    _home, _external, _cfg = xavani_home_with_config
 
     # Prime cache
     get_external_skills_dirs()
@@ -75,9 +75,9 @@ def test_cache_reuses_result_without_reparsing(hermes_home_with_config):
             get_external_skills_dirs()
 
 
-def test_cache_invalidates_on_mtime_change(hermes_home_with_config):
+def test_cache_invalidates_on_mtime_change(xavani_home_with_config):
     """A config.yaml edit invalidates the cache on the next call."""
-    _home, external, config = hermes_home_with_config
+    _home, external, config = xavani_home_with_config
     other = external.parent / "other_skills"
     other.mkdir()
 
@@ -104,16 +104,16 @@ def test_cache_invalidates_on_mtime_change(hermes_home_with_config):
 
 def test_returns_empty_when_config_missing(tmp_path, monkeypatch):
     """No config file → empty list, cached as empty."""
-    home = tmp_path / ".hermes"
+    home = tmp_path / ".xavani"
     home.mkdir()
-    monkeypatch.setenv("HERMES_HOME", str(home))
+    monkeypatch.setenv("XAVANI_HOME", str(home))
     monkeypatch.setattr(Path, "home", lambda: tmp_path)
     _external_dirs_cache_clear()
 
     assert get_external_skills_dirs() == []
 
 
-def test_returned_list_is_a_copy(hermes_home_with_config):
+def test_returned_list_is_a_copy(xavani_home_with_config):
     """Callers can't poison the cache by mutating the returned list."""
     first = get_external_skills_dirs()
     first.append(Path("/tmp/should-not-persist"))
@@ -123,8 +123,8 @@ def test_returned_list_is_a_copy(hermes_home_with_config):
 
 
 def test_cache_key_is_per_config_path(tmp_path, monkeypatch):
-    """Two different HERMES_HOMEs keep separate cache entries."""
-    home_a = tmp_path / "home_a" / ".hermes"
+    """Two different XAVANI_HOMEs keep separate cache entries."""
+    home_a = tmp_path / "home_a" / ".xavani"
     home_a.mkdir(parents=True)
     ext_a = tmp_path / "ext_a"
     ext_a.mkdir()
@@ -132,7 +132,7 @@ def test_cache_key_is_per_config_path(tmp_path, monkeypatch):
         f"skills:\n  external_dirs:\n    - {ext_a}\n", encoding="utf-8"
     )
 
-    home_b = tmp_path / "home_b" / ".hermes"
+    home_b = tmp_path / "home_b" / ".xavani"
     home_b.mkdir(parents=True)
     ext_b = tmp_path / "ext_b"
     ext_b.mkdir()
@@ -142,12 +142,12 @@ def test_cache_key_is_per_config_path(tmp_path, monkeypatch):
 
     _external_dirs_cache_clear()
 
-    monkeypatch.setenv("HERMES_HOME", str(home_a))
+    monkeypatch.setenv("XAVANI_HOME", str(home_a))
     assert get_external_skills_dirs() == [ext_a.resolve()]
 
-    monkeypatch.setenv("HERMES_HOME", str(home_b))
+    monkeypatch.setenv("XAVANI_HOME", str(home_b))
     assert get_external_skills_dirs() == [ext_b.resolve()]
 
     # And switching back still works — both entries coexist in the cache.
-    monkeypatch.setenv("HERMES_HOME", str(home_a))
+    monkeypatch.setenv("XAVANI_HOME", str(home_a))
     assert get_external_skills_dirs() == [ext_a.resolve()]

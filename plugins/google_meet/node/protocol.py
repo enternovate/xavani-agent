@@ -11,7 +11,7 @@ Everything is a JSON object with the same envelope shape:
     Error:     {"type": "error", "id": <req-id>, "error": <str>}
 
 Requests must carry the shared bearer token (set up via
-``hermes meet node approve`` on the gateway and read off disk on the
+``xavani meet node approve`` on the gateway and read off disk on the
 server). Mismatched tokens are rejected before dispatch.
 """
 

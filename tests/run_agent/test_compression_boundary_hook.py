@@ -6,10 +6,10 @@
 
 When _compress_context rotates session_id (compression split), the active
 context engine receives on_session_start(new_sid, boundary_reason="compression",
-old_session_id=<old>). This lets plugin engines (e.g. hermes-lcm) preserve
+old_session_id=<old>). This lets plugin engines (e.g. xavani-lcm) preserve
 DAG lineage across the split instead of treating it as a fresh /new.
 
-See hermes-lcm#68: after Hermes compresses and mints a new physical session,
+See xavani-lcm#68: after Xavani compresses and mints a new physical session,
 LCM was losing continuity (compression_count: 1, store_messages: 0,
 dag_nodes: 0). With boundary_reason="compression" plugins can distinguish
 this from a real user-initiated /new.
@@ -39,7 +39,7 @@ class TestCompressionBoundaryHook:
             )
 
     def test_on_session_start_called_with_compression_boundary(self):
-        from hermes_state import SessionDB
+        from xavani_state import SessionDB
 
         with tempfile.TemporaryDirectory() as tmpdir:
             db = SessionDB(db_path=Path(tmpdir) / "test.db")
@@ -134,7 +134,7 @@ class TestCompressionBoundaryHook:
 
     def test_hook_failure_does_not_break_compression(self):
         """If the context engine raises from on_session_start, compression still completes."""
-        from hermes_state import SessionDB
+        from xavani_state import SessionDB
 
         with tempfile.TemporaryDirectory() as tmpdir:
             db = SessionDB(db_path=Path(tmpdir) / "test.db")

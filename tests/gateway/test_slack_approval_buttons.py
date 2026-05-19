@@ -99,10 +99,10 @@ class TestSlackExecApproval:
         elements = blocks[1]["elements"]
         assert len(elements) == 4
         action_ids = [e["action_id"] for e in elements]
-        assert "hermes_approve_once" in action_ids
-        assert "hermes_approve_session" in action_ids
-        assert "hermes_approve_always" in action_ids
-        assert "hermes_deny" in action_ids
+        assert "xavani_approve_once" in action_ids
+        assert "xavani_approve_session" in action_ids
+        assert "xavani_approve_always" in action_ids
+        assert "xavani_deny" in action_ids
         # Each button carries the session key as value
         for e in elements:
             assert e["value"] == "agent:main:slack:group:C1:1111"
@@ -174,7 +174,7 @@ class TestSlackApprovalAction:
             "user": {"name": "norbert"},
         }
         action = {
-            "action_id": "hermes_approve_once",
+            "action_id": "xavani_approve_once",
             "value": "agent:main:slack:group:C1:1111",
         }
 
@@ -204,7 +204,7 @@ class TestSlackApprovalAction:
             "user": {"name": "norbert"},
         }
         action = {
-            "action_id": "hermes_approve_once",
+            "action_id": "xavani_approve_once",
             "value": "some-session",
         }
 
@@ -228,7 +228,7 @@ class TestSlackApprovalAction:
             "channel": {"id": "C1"},
             "user": {"name": "alice"},
         }
-        action = {"action_id": "hermes_deny", "value": "session-key"}
+        action = {"action_id": "xavani_deny", "value": "session-key"}
 
         mock_client = adapter._team_clients["T1"]
         mock_client.chat_update = AsyncMock()

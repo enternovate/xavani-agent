@@ -5,7 +5,7 @@
 # Built by Enternovate -- Open source. Private. Local.
 
 """
-stocks_client.py - Stock market data CLI tool for the Hermes Agent project.
+stocks_client.py - Stock market data CLI tool for the Xavani Agent project.
 Zero external dependencies - Python stdlib only.
 """
 
@@ -24,7 +24,7 @@ from http.cookiejar import CookieJar
 # Constants
 # ---------------------------------------------------------------------------
 
-USER_AGENT = "Mozilla/5.0 (compatible; HermesAgent/1.0)"
+USER_AGENT = "Mozilla/5.0 (compatible; XavaniAgent/1.0)"
 YF_BASE = "https://query1.finance.yahoo.com"
 YF_BASE2 = "https://query2.finance.yahoo.com"
 AV_BASE = "https://www.alphavantage.co/query"
@@ -678,7 +678,7 @@ def cmd_crypto(symbol: str, vs: str = "USD") -> None:
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="stocks_client",
-        description="Stock & crypto market data CLI — Hermes Agent",
+        description="Stock & crypto market data CLI — Xavani Agent",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:

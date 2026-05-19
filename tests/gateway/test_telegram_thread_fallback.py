@@ -4,7 +4,7 @@
 
 """Tests for Telegram topic/thread routing fallbacks.
 
-Supergroup forum topics route with ``message_thread_id``. Hermes-created
+Supergroup forum topics route with ``message_thread_id``. Xavani-created
 private DM topic lanes are different: live Telegram testing showed they only
 stay in the expected lane when sends include both the private topic
 ``message_thread_id`` and a ``reply_to_message_id`` anchor to the triggering
@@ -305,7 +305,7 @@ async def test_send_typing_does_not_fall_back_to_root_for_dm_topic():
 
 @pytest.mark.asyncio
 async def test_send_typing_attempts_api_call_for_dm_topic_reply_fallback():
-    """Hermes-created DM topic lanes should still attempt scoped typing.
+    """Xavani-created DM topic lanes should still attempt scoped typing.
 
     Some private DM topic lanes route message sends through reply-anchor
     fallback, but live Telegram testing shows sendChatAction accepts the lane's
@@ -514,7 +514,7 @@ async def test_gateway_runner_busy_ack_replies_to_triggering_message_for_telegra
     """GatewayRunner's duplicate thread metadata must match the base helper."""
     from gateway import run as gateway_run
 
-    monkeypatch.setattr(gateway_run, "_hermes_home", tmp_path)
+    monkeypatch.setattr(gateway_run, "_xavani_home", tmp_path)
     GatewayRunner = gateway_run.GatewayRunner
 
     class BusyAdapter:
@@ -573,8 +573,8 @@ async def test_gateway_runner_busy_ack_replies_to_triggering_message_for_telegra
 
 
 @pytest.mark.asyncio
-async def test_send_uses_reply_fallback_for_hermes_dm_topics():
-    """Hermes-created Telegram DM topics route with thread id plus reply anchor."""
+async def test_send_uses_reply_fallback_for_xavani_dm_topics():
+    """Xavani-created Telegram DM topics route with thread id plus reply anchor."""
     adapter = _make_adapter()
     call_log = []
 
@@ -602,7 +602,7 @@ async def test_send_uses_reply_fallback_for_hermes_dm_topics():
 
 @pytest.mark.asyncio
 async def test_send_uses_metadata_reply_fallback_for_streaming_dm_topics():
-    """Metadata-only sends still stay in Hermes-created Telegram DM topics."""
+    """Metadata-only sends still stay in Xavani-created Telegram DM topics."""
     adapter = _make_adapter()
     call_log = []
 

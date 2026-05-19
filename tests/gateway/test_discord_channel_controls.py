@@ -60,7 +60,7 @@ class FakeDMChannel:
 
 
 class FakeTextChannel:
-    def __init__(self, channel_id: int = 1, name: str = "general", guild_name: str = "Hermes Server"):
+    def __init__(self, channel_id: int = 1, name: str = "general", guild_name: str = "Xavani Server"):
         self.id = channel_id
         self.name = name
         self.guild = SimpleNamespace(name=guild_name)
@@ -68,7 +68,7 @@ class FakeTextChannel:
 
 
 class FakeThread:
-    def __init__(self, channel_id: int = 1, name: str = "thread", parent=None, guild_name: str = "Hermes Server"):
+    def __init__(self, channel_id: int = 1, name: str = "thread", parent=None, guild_name: str = "Xavani Server"):
         self.id = channel_id
         self.name = name
         self.parent = parent
@@ -297,7 +297,7 @@ def test_config_bridges_ignored_channels(monkeypatch, tmp_path):
             "ignored_channels": ["111", "222"],
         },
     }))
-    monkeypatch.setenv("HERMES_HOME", str(tmp_path))
+    monkeypatch.setenv("XAVANI_HOME", str(tmp_path))
     # Use setenv (not delenv) so monkeypatch registers cleanup even when
     # the var doesn't exist yet — load_gateway_config will overwrite it.
     monkeypatch.setenv("DISCORD_IGNORED_CHANNELS", "")
@@ -318,7 +318,7 @@ def test_config_bridges_no_thread_channels(monkeypatch, tmp_path):
             "no_thread_channels": ["333"],
         },
     }))
-    monkeypatch.setenv("HERMES_HOME", str(tmp_path))
+    monkeypatch.setenv("XAVANI_HOME", str(tmp_path))
     monkeypatch.setenv("DISCORD_NO_THREAD_CHANNELS", "")
 
     from gateway.config import load_gateway_config
@@ -337,7 +337,7 @@ def test_config_env_var_takes_precedence(monkeypatch, tmp_path):
             "ignored_channels": ["111"],
         },
     }))
-    monkeypatch.setenv("HERMES_HOME", str(tmp_path))
+    monkeypatch.setenv("XAVANI_HOME", str(tmp_path))
     monkeypatch.setenv("DISCORD_IGNORED_CHANNELS", "999")
 
     from gateway.config import load_gateway_config

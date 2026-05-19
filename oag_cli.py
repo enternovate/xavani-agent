@@ -7,7 +7,7 @@
 """
 Open Agent Gateway (OAG) CLI — Interactive Gateway Interface.
 
-A cyberpunk-themed interactive CLI that wraps the Hermes Agent AI framework
+A cyberpunk-themed interactive CLI that wraps the Xavani Agent AI framework
 with OAG-specific branding, commands, and gateway management capabilities.
 
 Usage:
@@ -17,7 +17,7 @@ Usage:
     python oag_cli.py --install <name>       # Install an MCP server
 """
 
-# Force the OAG home directory early, before any Hermes imports resolve.
+# Force the OAG home directory early, before any Xavani imports resolve.
 import os as _os
 import sys as _sys
 from pathlib import Path as _Path
@@ -27,14 +27,14 @@ if not _OAG_HOME:
     _OAG_HOME = str(_Path.home() / ".oag")
     _os.environ.setdefault("OAG_HOME", _OAG_HOME)
 
-# Set HERMES_HOME to OAG_HOME so all Hermes internals use .oag/ instead of .hermes/
-_os.environ.setdefault("HERMES_HOME", _OAG_HOME)
+# Set XAVANI_HOME to OAG_HOME so all Xavani internals use .oag/ instead of .xavani/
+_os.environ.setdefault("XAVANI_HOME", _OAG_HOME)
 
 # Ensure OAG home directory exists
 _Path(_OAG_HOME).mkdir(parents=True, exist_ok=True)
 
 # ---------------------------------------------------------------------------
-# Now it is safe to import Hermes modules
+# Now it is safe to import Xavani modules
 # ---------------------------------------------------------------------------
 
 import logging
@@ -52,29 +52,29 @@ logging.basicConfig(
 import atexit
 
 # Setup OAG telemetry opt-out before any import that might read it
-_os.environ["HERMES_DISABLE_TELEMETRY"] = "1"
+_os.environ["XAVANI_DISABLE_TELEMETRY"] = "1"
 _os.environ["DO_NOT_TRACK"] = "1"
 
 # ---------------------------------------------------------------------------
-# Pre-init: set the OAG skin before HermesCLI is constructed
+# Pre-init: set the OAG skin before XavaniCLI is constructed
 # ---------------------------------------------------------------------------
 try:
-    from hermes_cli.skin_engine import set_active_skin
+    from xavani_cli.skin_engine import set_active_skin
     set_active_skin("oag-default")
 except Exception:
     pass  # Skin engine unavailable; default skin will be used
 
 import fire
 
-from cli import HermesCLI, CLI_CONFIG, load_cli_config
+from cli import XavaniCLI, CLI_CONFIG, load_cli_config
 from cli import (
     _build_compact_banner,
     _parse_skills_argument,
     build_preloaded_skills_prompt,
     get_tool_definitions,
 )
-from hermes_cli.banner import build_welcome_banner
-from hermes_cli.commands import (
+from xavani_cli.banner import build_welcome_banner
+from xavani_cli.commands import (
     COMMAND_REGISTRY,
     _COMMAND_LOOKUP,
     _build_command_lookup,
@@ -82,7 +82,7 @@ from hermes_cli.commands import (
 )
 
 # Import OAG command definitions and handlers
-from hermes_cli.oag_commands import (
+from xavani_cli.oag_commands import (
     OAG_COMMAND_DEFS,
     OAG_COMMAND_HANDLERS,
     register_oag_commands,
@@ -117,11 +117,11 @@ OAG_STARTUP_BANNER = r"""[bold #00E5FF]  ██████╗  █████�
 
 
 # ---------------------------------------------------------------------------
-# OAGCLI — extended HermesCLI with OAG-specific overrides
+# OAGCLI — extended XavaniCLI with OAG-specific overrides
 # ---------------------------------------------------------------------------
 
-class OAGCLI(HermesCLI):
-    """OAG-branded CLI that extends HermesCLI with gateway management commands."""
+class OAGCLI(XavaniCLI):
+    """OAG-branded CLI that extends XavaniCLI with gateway management commands."""
 
     def __init__(self, *args, **kwargs):
         # Register OAG commands before base init so they are available
@@ -133,11 +133,11 @@ class OAGCLI(HermesCLI):
         super().__init__(*args, **kwargs)
 
         # Force OAG home in environment for child processes
-        _os.environ["HERMES_HOME"] = str(_oag_home())
+        _os.environ["XAVANI_HOME"] = str(_oag_home())
         _os.environ["OAG_HOME"] = str(_oag_home())
 
         # Disable telemetry
-        _os.environ["HERMES_DISABLE_TELEMETRY"] = "1"
+        _os.environ["XAVANI_DISABLE_TELEMETRY"] = "1"
         _os.environ["DO_NOT_TRACK"] = "1"
 
     def show_banner(self):
@@ -194,7 +194,7 @@ class OAGCLI(HermesCLI):
         """Process a slash command, including OAG-specific ones.
 
         Extends the base process_command to handle OAG gateway commands
-        before falling through to the Hermes dispatcher.
+        before falling through to the Xavani dispatcher.
         """
         cmd_stripped = command.strip()
         if not cmd_stripped:
@@ -220,23 +220,23 @@ class OAGCLI(HermesCLI):
                 )
             return True
 
-        # Fall through to the built-in Hermes dispatch
+        # Fall through to the built-in Xavani dispatch
         return super().process_command(command)
 
     def _console_print(self, *args, **kwargs):
         """Thread-safe console print using the Rich console or ChatConsole."""
         safe_kwargs = dict(kwargs)
         if self._app:
-            from hermes_cli.cli_output import ChatConsole
+            from xavani_cli.cli_output import ChatConsole
             cc = ChatConsole()
             cc.print(*args, **safe_kwargs)
         else:
             self.console.print(*args, **safe_kwargs)
 
     def _show_security_advisories(self):
-        """Override to suppress Hermes-specific security banners that
-        reference .hermes/ paths or assume Hermes branding."""
-        pass  # OAG does not use Hermes security advisory banners by default
+        """Override to suppress Xavani-specific security banners that
+        reference .xavani/ paths or assume Xavani branding."""
+        pass  # OAG does not use Xavani security advisory banners by default
 
 
 # ---------------------------------------------------------------------------
@@ -255,10 +255,10 @@ def _min_term_width() -> int:
 def _get_platform_tools(config: dict) -> list:
     """Return the platform toolset list for the CLI."""
     try:
-        from hermes_cli.tools_config import _get_platform_tools
+        from xavani_cli.tools_config import _get_platform_tools
         return sorted(_get_platform_tools(config, "cli"))
     except Exception:
-        return ["hermes-cli"]
+        return ["xavani-cli"]
 
 
 # ---------------------------------------------------------------------------
@@ -336,7 +336,7 @@ def oag_main(
     """
     # Handle --install flag (non-interactive MCP server install)
     if install:
-        from hermes_cli.oag_commands import oag_install
+        from xavani_cli.oag_commands import oag_install
         result = oag_install(install)
         _append_audit(f"CLI install '{install}'")
         print(result)
@@ -350,7 +350,7 @@ def oag_main(
         except ImportError:
             print(
                 "[ERROR] Gateway module not available. "
-                "Make sure hermes-agent is properly installed.",
+                "Make sure xavani-agent is properly installed.",
                 file=sys.stderr,
             )
             sys.exit(1)
@@ -360,12 +360,12 @@ def oag_main(
 
     # Force UTF-8 stdio on Windows
     try:
-        from hermes_cli.stdio import configure_windows_stdio
+        from xavani_cli.stdio import configure_windows_stdio
         configure_windows_stdio()
     except Exception:
         pass
 
-    _os.environ["HERMES_INTERACTIVE"] = "1"
+    _os.environ["XAVANI_INTERACTIVE"] = "1"
 
     # Install signal handlers
     try:
@@ -470,7 +470,7 @@ def _oag_cleanup():
         pass
     # Remove stale gateway PID if we own it and it's not running
     try:
-        from hermes_cli.oag_commands import _oag_gateway_pid_path, _is_gateway_running
+        from xavani_cli.oag_commands import _oag_gateway_pid_path, _is_gateway_running
         pid_path = _oag_gateway_pid_path()
         if pid_path.exists() and not _is_gateway_running():
             pid_path.unlink(missing_ok=True)

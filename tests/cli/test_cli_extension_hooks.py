@@ -2,7 +2,7 @@
 # MIT License -- See LICENSE file for full terms.
 # Built by Enternovate -- Open source. Private. Local.
 
-"""Tests for protected HermesCLI TUI extension hooks.
+"""Tests for protected XavaniCLI TUI extension hooks.
 
 Verifies that wrapper CLIs can extend the TUI via:
   - _get_extra_tui_widgets()
@@ -21,7 +21,7 @@ from prompt_toolkit.key_binding import KeyBindings
 
 
 def _make_cli(**kwargs):
-    """Create a HermesCLI with prompt_toolkit stubs (same pattern as test_cli_init)."""
+    """Create a XavaniCLI with prompt_toolkit stubs (same pattern as test_cli_init)."""
     _clean_config = {
         "model": {
             "default": "anthropic/claude-opus-4.6",
@@ -32,7 +32,7 @@ def _make_cli(**kwargs):
         "agent": {},
         "terminal": {"env_type": "local"},
     }
-    clean_env = {"LLM_MODEL": "", "HERMES_MAX_ITERATIONS": ""}
+    clean_env = {"LLM_MODEL": "", "XAVANI_MAX_ITERATIONS": ""}
     prompt_toolkit_stubs = {
         "prompt_toolkit": MagicMock(),
         "prompt_toolkit.history": MagicMock(),
@@ -59,7 +59,7 @@ def _make_cli(**kwargs):
         with patch.object(_cli_mod, "get_tool_definitions", return_value=[]), patch.dict(
             _cli_mod.__dict__, {"CLI_CONFIG": _clean_config}
         ):
-            return _cli_mod.HermesCLI(**kwargs)
+            return _cli_mod.XavaniCLI(**kwargs)
 
 
 class TestExtensionHookDefaults:

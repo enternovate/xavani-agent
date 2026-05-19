@@ -2,4 +2,4 @@
 # MIT License -- See LICENSE file for full terms.
 # Built by Enternovate -- Open source. Private. Local.
 
-"""ACP (Agent Communication Protocol) adapter for hermes-agent."""
+"""ACP (Agent Communication Protocol) adapter for xavani-agent."""

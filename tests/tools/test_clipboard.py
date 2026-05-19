@@ -6,7 +6,7 @@
 and CLI integration.
 
 Coverage:
-  hermes_cli/clipboard.py  — platform-specific image extraction (macOS, WSL, Wayland, X11)
+  xavani_cli/clipboard.py  — platform-specific image extraction (macOS, WSL, Wayland, X11)
   cli.py                   — _try_attach_clipboard_image, _build_multimodal_content,
                               image attachment state, queue tuple routing
 """
@@ -21,7 +21,7 @@ from unittest.mock import patch, MagicMock, PropertyMock, mock_open
 
 import pytest
 
-from hermes_cli.clipboard import (
+from xavani_cli.clipboard import (
     save_clipboard_image,
     has_clipboard_image,
     _is_wsl,
@@ -53,33 +53,33 @@ FAKE_JPEG = b"\xff\xd8\xff\xe0" + b"\x00" * 100
 class TestSaveClipboardImage:
     def test_dispatches_to_macos_on_darwin(self, tmp_path):
         dest = tmp_path / "out.png"
-        with patch("hermes_cli.clipboard.sys") as mock_sys:
+        with patch("xavani_cli.clipboard.sys") as mock_sys:
             mock_sys.platform = "darwin"
-            with patch("hermes_cli.clipboard._macos_save", return_value=False) as m:
+            with patch("xavani_cli.clipboard._macos_save", return_value=False) as m:
                 save_clipboard_image(dest)
                 m.assert_called_once_with(dest)
 
     def test_dispatches_to_windows_on_win32(self, tmp_path):
         dest = tmp_path / "out.png"
-        with patch("hermes_cli.clipboard.sys") as mock_sys:
+        with patch("xavani_cli.clipboard.sys") as mock_sys:
             mock_sys.platform = "win32"
-            with patch("hermes_cli.clipboard._windows_save", return_value=False) as m:
+            with patch("xavani_cli.clipboard._windows_save", return_value=False) as m:
                 save_clipboard_image(dest)
                 m.assert_called_once_with(dest)
 
     def test_dispatches_to_linux_on_linux(self, tmp_path):
         dest = tmp_path / "out.png"
-        with patch("hermes_cli.clipboard.sys") as mock_sys:
+        with patch("xavani_cli.clipboard.sys") as mock_sys:
             mock_sys.platform = "linux"
-            with patch("hermes_cli.clipboard._linux_save", return_value=False) as m:
+            with patch("xavani_cli.clipboard._linux_save", return_value=False) as m:
                 save_clipboard_image(dest)
                 m.assert_called_once_with(dest)
 
     def test_creates_parent_dirs(self, tmp_path):
         dest = tmp_path / "deep" / "nested" / "out.png"
-        with patch("hermes_cli.clipboard.sys") as mock_sys:
+        with patch("xavani_cli.clipboard.sys") as mock_sys:
             mock_sys.platform = "linux"
-            with patch("hermes_cli.clipboard._linux_save", return_value=False):
+            with patch("xavani_cli.clipboard._linux_save", return_value=False):
                 save_clipboard_image(dest)
         assert dest.parent.exists()
 
@@ -92,17 +92,17 @@ class TestMacosPngpaste:
         def fake_run(cmd, **kw):
             dest.write_bytes(FAKE_PNG)
             return MagicMock(returncode=0)
-        with patch("hermes_cli.clipboard.subprocess.run", side_effect=fake_run):
+        with patch("xavani_cli.clipboard.subprocess.run", side_effect=fake_run):
             assert _macos_pngpaste(dest) is True
         assert dest.stat().st_size == len(FAKE_PNG)
 
     def test_not_installed(self, tmp_path):
-        with patch("hermes_cli.clipboard.subprocess.run", side_effect=FileNotFoundError):
+        with patch("xavani_cli.clipboard.subprocess.run", side_effect=FileNotFoundError):
             assert _macos_pngpaste(tmp_path / "out.png") is False
 
     def test_no_image_in_clipboard(self, tmp_path):
         dest = tmp_path / "out.png"
-        with patch("hermes_cli.clipboard.subprocess.run") as mock_run:
+        with patch("xavani_cli.clipboard.subprocess.run") as mock_run:
             mock_run.return_value = MagicMock(returncode=1)
             assert _macos_pngpaste(dest) is False
         assert not dest.exists()
@@ -112,33 +112,33 @@ class TestMacosPngpaste:
         def fake_run(cmd, **kw):
             dest.write_bytes(b"")
             return MagicMock(returncode=0)
-        with patch("hermes_cli.clipboard.subprocess.run", side_effect=fake_run):
+        with patch("xavani_cli.clipboard.subprocess.run", side_effect=fake_run):
             assert _macos_pngpaste(dest) is False
 
     def test_timeout_returns_false(self, tmp_path):
         dest = tmp_path / "out.png"
-        with patch("hermes_cli.clipboard.subprocess.run",
+        with patch("xavani_cli.clipboard.subprocess.run",
                    side_effect=subprocess.TimeoutExpired("pngpaste", 3)):
             assert _macos_pngpaste(dest) is False
 
 
 class TestMacosHasImage:
     def test_png_detected(self):
-        with patch("hermes_cli.clipboard.subprocess.run") as mock_run:
+        with patch("xavani_cli.clipboard.subprocess.run") as mock_run:
             mock_run.return_value = MagicMock(
                 stdout="«class PNGf», «class ut16»", returncode=0
             )
             assert _macos_has_image() is True
 
     def test_tiff_detected(self):
-        with patch("hermes_cli.clipboard.subprocess.run") as mock_run:
+        with patch("xavani_cli.clipboard.subprocess.run") as mock_run:
             mock_run.return_value = MagicMock(
                 stdout="«class TIFF»", returncode=0
             )
             assert _macos_has_image() is True
 
     def test_text_only(self):
-        with patch("hermes_cli.clipboard.subprocess.run") as mock_run:
+        with patch("xavani_cli.clipboard.subprocess.run") as mock_run:
             mock_run.return_value = MagicMock(
                 stdout="«class ut16», «class utf8»", returncode=0
             )
@@ -147,14 +147,14 @@ class TestMacosHasImage:
 
 class TestMacosOsascript:
     def test_no_image_type_in_clipboard(self, tmp_path):
-        with patch("hermes_cli.clipboard.subprocess.run") as mock_run:
+        with patch("xavani_cli.clipboard.subprocess.run") as mock_run:
             mock_run.return_value = MagicMock(
                 stdout="«class ut16», «class utf8»", returncode=0
             )
             assert _macos_osascript(tmp_path / "out.png") is False
 
     def test_clipboard_info_fails(self, tmp_path):
-        with patch("hermes_cli.clipboard.subprocess.run", side_effect=Exception("fail")):
+        with patch("xavani_cli.clipboard.subprocess.run", side_effect=Exception("fail")):
             assert _macos_osascript(tmp_path / "out.png") is False
 
     def test_success_with_png(self, tmp_path):
@@ -166,7 +166,7 @@ class TestMacosOsascript:
                 return MagicMock(stdout="«class PNGf», «class ut16»", returncode=0)
             dest.write_bytes(FAKE_PNG)
             return MagicMock(stdout="", returncode=0)
-        with patch("hermes_cli.clipboard.subprocess.run", side_effect=fake_run):
+        with patch("xavani_cli.clipboard.subprocess.run", side_effect=fake_run):
             assert _macos_osascript(dest) is True
         assert dest.stat().st_size > 0
 
@@ -179,7 +179,7 @@ class TestMacosOsascript:
                 return MagicMock(stdout="«class TIFF»", returncode=0)
             dest.write_bytes(FAKE_PNG)
             return MagicMock(stdout="", returncode=0)
-        with patch("hermes_cli.clipboard.subprocess.run", side_effect=fake_run):
+        with patch("xavani_cli.clipboard.subprocess.run", side_effect=fake_run):
             assert _macos_osascript(dest) is True
 
     def test_extraction_returns_fail(self, tmp_path):
@@ -190,7 +190,7 @@ class TestMacosOsascript:
             if len(calls) == 1:
                 return MagicMock(stdout="«class PNGf»", returncode=0)
             return MagicMock(stdout="fail", returncode=0)
-        with patch("hermes_cli.clipboard.subprocess.run", side_effect=fake_run):
+        with patch("xavani_cli.clipboard.subprocess.run", side_effect=fake_run):
             assert _macos_osascript(dest) is False
 
     def test_extraction_writes_empty_file(self, tmp_path):
@@ -202,7 +202,7 @@ class TestMacosOsascript:
                 return MagicMock(stdout="«class PNGf»", returncode=0)
             dest.write_bytes(b"")
             return MagicMock(stdout="", returncode=0)
-        with patch("hermes_cli.clipboard.subprocess.run", side_effect=fake_run):
+        with patch("xavani_cli.clipboard.subprocess.run", side_effect=fake_run):
             assert _macos_osascript(dest) is False
 
 
@@ -210,18 +210,18 @@ class TestMacosOsascript:
 
 class TestIsWsl:
     def setup_method(self):
-        # _is_wsl is hermes_constants.is_wsl; reset the function's own module
-        # globals so this stays stable even if hermes_constants was imported
+        # _is_wsl is xavani_constants.is_wsl; reset the function's own module
+        # globals so this stays stable even if xavani_constants was imported
         # through a different module object earlier in a large xdist run.
-        import hermes_constants
-        hermes_constants._wsl_detected = None
+        import xavani_constants
+        xavani_constants._wsl_detected = None
         _is_wsl.__globals__["_wsl_detected"] = None
 
     def teardown_method(self):
         # Reset again after the test so we don't leak a cached value
         # (True/False) into whichever test the xdist worker runs next.
-        import hermes_constants
-        hermes_constants._wsl_detected = None
+        import xavani_constants
+        xavani_constants._wsl_detected = None
         _is_wsl.__globals__["_wsl_detected"] = None
 
     def test_wsl2_detected(self):
@@ -237,7 +237,7 @@ class TestIsWsl:
     def test_regular_linux(self):
         # GHA hosted runners are Azure VMs whose real /proc/version often
         # contains "microsoft". Patching builtins.open with mock_open is
-        # supposed to intercept hermes_constants.is_wsl's `open` call,
+        # supposed to intercept xavani_constants.is_wsl's `open` call,
         # but if another test on the same xdist worker already cached
         # _wsl_detected=True, the mock never runs because the function
         # short-circuits on the cache. setup_method resets, so we just
@@ -263,17 +263,17 @@ class TestIsWsl:
 
 class TestWslHasImage:
     def test_clipboard_has_image(self):
-        with patch("hermes_cli.clipboard.subprocess.run") as mock_run:
+        with patch("xavani_cli.clipboard.subprocess.run") as mock_run:
             mock_run.return_value = MagicMock(stdout="True\n", returncode=0)
             assert _wsl_has_image() is True
 
     def test_clipboard_no_image(self):
-        with patch("hermes_cli.clipboard.subprocess.run") as mock_run:
+        with patch("xavani_cli.clipboard.subprocess.run") as mock_run:
             mock_run.return_value = MagicMock(stdout="False\n", returncode=0)
             assert _wsl_has_image() is False
 
     def test_falls_back_to_get_clipboard_image(self):
-        with patch("hermes_cli.clipboard.subprocess.run") as mock_run:
+        with patch("xavani_cli.clipboard.subprocess.run") as mock_run:
             mock_run.side_effect = [
                 MagicMock(stdout="False\n", returncode=0),
                 MagicMock(stdout="True\n", returncode=0),
@@ -282,11 +282,11 @@ class TestWslHasImage:
             assert mock_run.call_count == 2
 
     def test_powershell_not_found(self):
-        with patch("hermes_cli.clipboard.subprocess.run", side_effect=FileNotFoundError):
+        with patch("xavani_cli.clipboard.subprocess.run", side_effect=FileNotFoundError):
             assert _wsl_has_image() is False
 
     def test_powershell_error(self):
-        with patch("hermes_cli.clipboard.subprocess.run") as mock_run:
+        with patch("xavani_cli.clipboard.subprocess.run") as mock_run:
             mock_run.return_value = MagicMock(stdout="", returncode=1)
             assert _wsl_has_image() is False
 
@@ -295,7 +295,7 @@ class TestWslSave:
     def test_successful_extraction(self, tmp_path):
         dest = tmp_path / "out.png"
         b64_png = base64.b64encode(FAKE_PNG).decode()
-        with patch("hermes_cli.clipboard.subprocess.run") as mock_run:
+        with patch("xavani_cli.clipboard.subprocess.run") as mock_run:
             mock_run.return_value = MagicMock(stdout=b64_png + "\n", returncode=0)
             assert _wsl_save(dest) is True
         assert dest.read_bytes() == FAKE_PNG
@@ -303,7 +303,7 @@ class TestWslSave:
     def test_falls_back_to_get_clipboard_extraction(self, tmp_path):
         dest = tmp_path / "out.png"
         b64_png = base64.b64encode(FAKE_PNG).decode()
-        with patch("hermes_cli.clipboard.subprocess.run") as mock_run:
+        with patch("xavani_cli.clipboard.subprocess.run") as mock_run:
             mock_run.side_effect = [
                 MagicMock(stdout="", returncode=1),
                 MagicMock(stdout=b64_png + "\n", returncode=0),
@@ -314,31 +314,31 @@ class TestWslSave:
 
     def test_no_image_returns_false(self, tmp_path):
         dest = tmp_path / "out.png"
-        with patch("hermes_cli.clipboard.subprocess.run") as mock_run:
+        with patch("xavani_cli.clipboard.subprocess.run") as mock_run:
             mock_run.return_value = MagicMock(stdout="", returncode=1)
             assert _wsl_save(dest) is False
         assert not dest.exists()
 
     def test_empty_output(self, tmp_path):
         dest = tmp_path / "out.png"
-        with patch("hermes_cli.clipboard.subprocess.run") as mock_run:
+        with patch("xavani_cli.clipboard.subprocess.run") as mock_run:
             mock_run.return_value = MagicMock(stdout="", returncode=0)
             assert _wsl_save(dest) is False
 
     def test_powershell_not_found(self, tmp_path):
         dest = tmp_path / "out.png"
-        with patch("hermes_cli.clipboard.subprocess.run", side_effect=FileNotFoundError):
+        with patch("xavani_cli.clipboard.subprocess.run", side_effect=FileNotFoundError):
             assert _wsl_save(dest) is False
 
     def test_invalid_base64(self, tmp_path):
         dest = tmp_path / "out.png"
-        with patch("hermes_cli.clipboard.subprocess.run") as mock_run:
+        with patch("xavani_cli.clipboard.subprocess.run") as mock_run:
             mock_run.return_value = MagicMock(stdout="not-valid-base64!!!", returncode=0)
             assert _wsl_save(dest) is False
 
     def test_timeout(self, tmp_path):
         dest = tmp_path / "out.png"
-        with patch("hermes_cli.clipboard.subprocess.run",
+        with patch("xavani_cli.clipboard.subprocess.run",
                    side_effect=subprocess.TimeoutExpired("powershell.exe", 15)):
             assert _wsl_save(dest) is False
 
@@ -347,28 +347,28 @@ class TestWslSave:
 
 class TestWaylandHasImage:
     def test_has_png(self):
-        with patch("hermes_cli.clipboard.subprocess.run") as mock_run:
+        with patch("xavani_cli.clipboard.subprocess.run") as mock_run:
             mock_run.return_value = MagicMock(
                 stdout="image/png\ntext/plain\n", returncode=0
             )
             assert _wayland_has_image() is True
 
     def test_has_bmp_only(self):
-        with patch("hermes_cli.clipboard.subprocess.run") as mock_run:
+        with patch("xavani_cli.clipboard.subprocess.run") as mock_run:
             mock_run.return_value = MagicMock(
                 stdout="text/html\nimage/bmp\n", returncode=0
             )
             assert _wayland_has_image() is True
 
     def test_text_only(self):
-        with patch("hermes_cli.clipboard.subprocess.run") as mock_run:
+        with patch("xavani_cli.clipboard.subprocess.run") as mock_run:
             mock_run.return_value = MagicMock(
                 stdout="text/plain\ntext/html\n", returncode=0
             )
             assert _wayland_has_image() is False
 
     def test_wl_paste_not_installed(self):
-        with patch("hermes_cli.clipboard.subprocess.run", side_effect=FileNotFoundError):
+        with patch("xavani_cli.clipboard.subprocess.run", side_effect=FileNotFoundError):
             assert _wayland_has_image() is False
 
 
@@ -384,7 +384,7 @@ class TestWaylandSave:
             if "stdout" in kw and hasattr(kw["stdout"], "write"):
                 kw["stdout"].write(FAKE_PNG)
             return MagicMock(returncode=0)
-        with patch("hermes_cli.clipboard.subprocess.run", side_effect=fake_run):
+        with patch("xavani_cli.clipboard.subprocess.run", side_effect=fake_run):
             assert _wayland_save(dest) is True
         assert dest.stat().st_size > 0
 
@@ -404,8 +404,8 @@ class TestWaylandSave:
             path.write_bytes(FAKE_PNG)
             return True
 
-        with patch("hermes_cli.clipboard.subprocess.run", side_effect=fake_run):
-            with patch("hermes_cli.clipboard._convert_to_png", side_effect=fake_convert):
+        with patch("xavani_cli.clipboard.subprocess.run", side_effect=fake_run):
+            with patch("xavani_cli.clipboard._convert_to_png", side_effect=fake_convert):
                 assert _wayland_save(dest) is True
 
     def test_jpeg_extraction_converts_to_real_png(self, tmp_path):
@@ -423,8 +423,8 @@ class TestWaylandSave:
             path.write_bytes(FAKE_PNG)
             return True
 
-        with patch("hermes_cli.clipboard.subprocess.run", side_effect=fake_run):
-            with patch("hermes_cli.clipboard._convert_to_png", side_effect=fake_convert) as mock_convert:
+        with patch("xavani_cli.clipboard.subprocess.run", side_effect=fake_run):
+            with patch("xavani_cli.clipboard._convert_to_png", side_effect=fake_convert) as mock_convert:
                 assert _wayland_save(dest) is True
 
         mock_convert.assert_called_once_with(dest)
@@ -440,15 +440,15 @@ class TestWaylandSave:
                 kw["stdout"].write(FAKE_JPEG)
             return MagicMock(returncode=0)
 
-        with patch("hermes_cli.clipboard.subprocess.run", side_effect=fake_run):
-            with patch("hermes_cli.clipboard._convert_to_png", return_value=True):
+        with patch("xavani_cli.clipboard.subprocess.run", side_effect=fake_run):
+            with patch("xavani_cli.clipboard._convert_to_png", return_value=True):
                 assert _wayland_save(dest) is False
 
         assert not dest.exists()
 
     def test_no_image_types(self, tmp_path):
         dest = tmp_path / "out.png"
-        with patch("hermes_cli.clipboard.subprocess.run") as mock_run:
+        with patch("xavani_cli.clipboard.subprocess.run") as mock_run:
             mock_run.return_value = MagicMock(
                 stdout="text/plain\ntext/html\n", returncode=0
             )
@@ -456,12 +456,12 @@ class TestWaylandSave:
 
     def test_wl_paste_not_installed(self, tmp_path):
         dest = tmp_path / "out.png"
-        with patch("hermes_cli.clipboard.subprocess.run", side_effect=FileNotFoundError):
+        with patch("xavani_cli.clipboard.subprocess.run", side_effect=FileNotFoundError):
             assert _wayland_save(dest) is False
 
     def test_list_types_fails(self, tmp_path):
         dest = tmp_path / "out.png"
-        with patch("hermes_cli.clipboard.subprocess.run") as mock_run:
+        with patch("xavani_cli.clipboard.subprocess.run") as mock_run:
             mock_run.return_value = MagicMock(stdout="", returncode=1)
             assert _wayland_save(dest) is False
 
@@ -478,7 +478,7 @@ class TestWaylandSave:
             if "stdout" in kw and hasattr(kw["stdout"], "write"):
                 kw["stdout"].write(FAKE_PNG)
             return MagicMock(returncode=0)
-        with patch("hermes_cli.clipboard.subprocess.run", side_effect=fake_run):
+        with patch("xavani_cli.clipboard.subprocess.run", side_effect=fake_run):
             assert _wayland_save(dest) is True
         # Verify PNG was requested, not BMP
         extract_cmd = calls[1]
@@ -489,31 +489,31 @@ class TestWaylandSave:
 
 class TestXclipHasImage:
     def test_has_image(self):
-        with patch("hermes_cli.clipboard.subprocess.run") as mock_run:
+        with patch("xavani_cli.clipboard.subprocess.run") as mock_run:
             mock_run.return_value = MagicMock(
                 stdout="image/png\ntext/plain\n", returncode=0
             )
             assert _xclip_has_image() is True
 
     def test_no_image(self):
-        with patch("hermes_cli.clipboard.subprocess.run") as mock_run:
+        with patch("xavani_cli.clipboard.subprocess.run") as mock_run:
             mock_run.return_value = MagicMock(
                 stdout="text/plain\n", returncode=0
             )
             assert _xclip_has_image() is False
 
     def test_xclip_not_installed(self):
-        with patch("hermes_cli.clipboard.subprocess.run", side_effect=FileNotFoundError):
+        with patch("xavani_cli.clipboard.subprocess.run", side_effect=FileNotFoundError):
             assert _xclip_has_image() is False
 
 
 class TestXclipSave:
     def test_no_xclip_installed(self, tmp_path):
-        with patch("hermes_cli.clipboard.subprocess.run", side_effect=FileNotFoundError):
+        with patch("xavani_cli.clipboard.subprocess.run", side_effect=FileNotFoundError):
             assert _xclip_save(tmp_path / "out.png") is False
 
     def test_no_image_in_clipboard(self, tmp_path):
-        with patch("hermes_cli.clipboard.subprocess.run") as mock_run:
+        with patch("xavani_cli.clipboard.subprocess.run") as mock_run:
             mock_run.return_value = MagicMock(stdout="text/plain\n", returncode=0)
             assert _xclip_save(tmp_path / "out.png") is False
 
@@ -525,7 +525,7 @@ class TestXclipSave:
             if "stdout" in kw and hasattr(kw["stdout"], "write"):
                 kw["stdout"].write(FAKE_PNG)
             return MagicMock(returncode=0)
-        with patch("hermes_cli.clipboard.subprocess.run", side_effect=fake_run):
+        with patch("xavani_cli.clipboard.subprocess.run", side_effect=fake_run):
             assert _xclip_save(dest) is True
         assert dest.stat().st_size > 0
 
@@ -535,12 +535,12 @@ class TestXclipSave:
             if "TARGETS" in cmd:
                 return MagicMock(stdout="image/png\n", returncode=0)
             raise subprocess.SubprocessError("pipe broke")
-        with patch("hermes_cli.clipboard.subprocess.run", side_effect=fake_run):
+        with patch("xavani_cli.clipboard.subprocess.run", side_effect=fake_run):
             assert _xclip_save(dest) is False
         assert not dest.exists()
 
     def test_targets_check_timeout(self, tmp_path):
-        with patch("hermes_cli.clipboard.subprocess.run",
+        with patch("xavani_cli.clipboard.subprocess.run",
                    side_effect=subprocess.TimeoutExpired("xclip", 3)):
             assert _xclip_save(tmp_path / "out.png") is False
 
@@ -551,47 +551,47 @@ class TestLinuxSave:
     """Test that _linux_save dispatches correctly to WSL → Wayland → X11."""
 
     def setup_method(self):
-        import hermes_cli.clipboard as cb
+        import xavani_cli.clipboard as cb
         cb._wsl_detected = None
 
     def test_wsl_tried_first(self, tmp_path):
         dest = tmp_path / "out.png"
-        with patch("hermes_cli.clipboard._is_wsl", return_value=True):
-            with patch("hermes_cli.clipboard._wsl_save", return_value=True) as m:
+        with patch("xavani_cli.clipboard._is_wsl", return_value=True):
+            with patch("xavani_cli.clipboard._wsl_save", return_value=True) as m:
                 assert _linux_save(dest) is True
                 m.assert_called_once_with(dest)
 
     def test_wsl_fails_falls_through_to_xclip(self, tmp_path):
         dest = tmp_path / "out.png"
-        with patch("hermes_cli.clipboard._is_wsl", return_value=True):
-            with patch("hermes_cli.clipboard._wsl_save", return_value=False):
+        with patch("xavani_cli.clipboard._is_wsl", return_value=True):
+            with patch("xavani_cli.clipboard._wsl_save", return_value=False):
                 with patch.dict(os.environ, {}, clear=True):
-                    with patch("hermes_cli.clipboard._xclip_save", return_value=True) as m:
+                    with patch("xavani_cli.clipboard._xclip_save", return_value=True) as m:
                         assert _linux_save(dest) is True
                         m.assert_called_once_with(dest)
 
     def test_wayland_tried_when_display_set(self, tmp_path):
         dest = tmp_path / "out.png"
-        with patch("hermes_cli.clipboard._is_wsl", return_value=False):
+        with patch("xavani_cli.clipboard._is_wsl", return_value=False):
             with patch.dict(os.environ, {"WAYLAND_DISPLAY": "wayland-0"}):
-                with patch("hermes_cli.clipboard._wayland_save", return_value=True) as m:
+                with patch("xavani_cli.clipboard._wayland_save", return_value=True) as m:
                     assert _linux_save(dest) is True
                     m.assert_called_once_with(dest)
 
     def test_wayland_fails_falls_through_to_xclip(self, tmp_path):
         dest = tmp_path / "out.png"
-        with patch("hermes_cli.clipboard._is_wsl", return_value=False):
+        with patch("xavani_cli.clipboard._is_wsl", return_value=False):
             with patch.dict(os.environ, {"WAYLAND_DISPLAY": "wayland-0"}):
-                with patch("hermes_cli.clipboard._wayland_save", return_value=False):
-                    with patch("hermes_cli.clipboard._xclip_save", return_value=True) as m:
+                with patch("xavani_cli.clipboard._wayland_save", return_value=False):
+                    with patch("xavani_cli.clipboard._xclip_save", return_value=True) as m:
                         assert _linux_save(dest) is True
                         m.assert_called_once_with(dest)
 
     def test_xclip_used_on_plain_x11(self, tmp_path):
         dest = tmp_path / "out.png"
-        with patch("hermes_cli.clipboard._is_wsl", return_value=False):
+        with patch("xavani_cli.clipboard._is_wsl", return_value=False):
             with patch.dict(os.environ, {}, clear=True):
-                with patch("hermes_cli.clipboard._xclip_save", return_value=True) as m:
+                with patch("xavani_cli.clipboard._xclip_save", return_value=True) as m:
                     assert _linux_save(dest) is True
                     m.assert_called_once_with(dest)
 
@@ -600,24 +600,24 @@ class TestLinuxSave:
 
 class TestWindowsHasImage:
     def setup_method(self):
-        import hermes_cli.clipboard as cb
+        import xavani_cli.clipboard as cb
         cb._ps_exe = False  # reset cache
 
     def test_clipboard_has_image(self):
-        with patch("hermes_cli.clipboard._get_ps_exe", return_value="powershell"):
-            with patch("hermes_cli.clipboard.subprocess.run") as mock_run:
+        with patch("xavani_cli.clipboard._get_ps_exe", return_value="powershell"):
+            with patch("xavani_cli.clipboard.subprocess.run") as mock_run:
                 mock_run.return_value = MagicMock(stdout="True\n", returncode=0)
                 assert _windows_has_image() is True
 
     def test_clipboard_no_image(self):
-        with patch("hermes_cli.clipboard._get_ps_exe", return_value="powershell"):
-            with patch("hermes_cli.clipboard.subprocess.run") as mock_run:
+        with patch("xavani_cli.clipboard._get_ps_exe", return_value="powershell"):
+            with patch("xavani_cli.clipboard.subprocess.run") as mock_run:
                 mock_run.return_value = MagicMock(stdout="False\n", returncode=0)
                 assert _windows_has_image() is False
 
     def test_falls_back_to_get_clipboard_image(self):
-        with patch("hermes_cli.clipboard._get_ps_exe", return_value="powershell"):
-            with patch("hermes_cli.clipboard.subprocess.run") as mock_run:
+        with patch("xavani_cli.clipboard._get_ps_exe", return_value="powershell"):
+            with patch("xavani_cli.clipboard.subprocess.run") as mock_run:
                 mock_run.side_effect = [
                     MagicMock(stdout="False\n", returncode=0),
                     MagicMock(stdout="True\n", returncode=0),
@@ -626,32 +626,32 @@ class TestWindowsHasImage:
                 assert mock_run.call_count == 2
 
     def test_no_powershell_available(self):
-        with patch("hermes_cli.clipboard._get_ps_exe", return_value=None):
+        with patch("xavani_cli.clipboard._get_ps_exe", return_value=None):
             assert _windows_has_image() is False
 
     def test_powershell_error(self):
-        with patch("hermes_cli.clipboard._get_ps_exe", return_value="powershell"):
-            with patch("hermes_cli.clipboard.subprocess.run") as mock_run:
+        with patch("xavani_cli.clipboard._get_ps_exe", return_value="powershell"):
+            with patch("xavani_cli.clipboard.subprocess.run") as mock_run:
                 mock_run.return_value = MagicMock(stdout="", returncode=1)
                 assert _windows_has_image() is False
 
     def test_subprocess_exception(self):
-        with patch("hermes_cli.clipboard._get_ps_exe", return_value="powershell"):
-            with patch("hermes_cli.clipboard.subprocess.run",
+        with patch("xavani_cli.clipboard._get_ps_exe", return_value="powershell"):
+            with patch("xavani_cli.clipboard.subprocess.run",
                        side_effect=subprocess.TimeoutExpired("powershell", 5)):
                 assert _windows_has_image() is False
 
 
 class TestWindowsSave:
     def setup_method(self):
-        import hermes_cli.clipboard as cb
+        import xavani_cli.clipboard as cb
         cb._ps_exe = False  # reset cache
 
     def test_successful_extraction(self, tmp_path):
         dest = tmp_path / "out.png"
         b64_png = base64.b64encode(FAKE_PNG).decode()
-        with patch("hermes_cli.clipboard._get_ps_exe", return_value="powershell"):
-            with patch("hermes_cli.clipboard.subprocess.run") as mock_run:
+        with patch("xavani_cli.clipboard._get_ps_exe", return_value="powershell"):
+            with patch("xavani_cli.clipboard.subprocess.run") as mock_run:
                 mock_run.return_value = MagicMock(stdout=b64_png + "\n", returncode=0)
                 assert _windows_save(dest) is True
         assert dest.read_bytes() == FAKE_PNG
@@ -659,8 +659,8 @@ class TestWindowsSave:
     def test_falls_back_to_filedrop_image(self, tmp_path):
         dest = tmp_path / "out.png"
         b64_png = base64.b64encode(FAKE_PNG).decode()
-        with patch("hermes_cli.clipboard._get_ps_exe", return_value="powershell"):
-            with patch("hermes_cli.clipboard.subprocess.run") as mock_run:
+        with patch("xavani_cli.clipboard._get_ps_exe", return_value="powershell"):
+            with patch("xavani_cli.clipboard.subprocess.run") as mock_run:
                 mock_run.side_effect = [
                     MagicMock(stdout="", returncode=1),
                     MagicMock(stdout="", returncode=1),
@@ -672,35 +672,35 @@ class TestWindowsSave:
 
     def test_no_image_returns_false(self, tmp_path):
         dest = tmp_path / "out.png"
-        with patch("hermes_cli.clipboard._get_ps_exe", return_value="powershell"):
-            with patch("hermes_cli.clipboard.subprocess.run") as mock_run:
+        with patch("xavani_cli.clipboard._get_ps_exe", return_value="powershell"):
+            with patch("xavani_cli.clipboard.subprocess.run") as mock_run:
                 mock_run.return_value = MagicMock(stdout="", returncode=1)
                 assert _windows_save(dest) is False
         assert not dest.exists()
 
     def test_empty_output(self, tmp_path):
         dest = tmp_path / "out.png"
-        with patch("hermes_cli.clipboard._get_ps_exe", return_value="powershell"):
-            with patch("hermes_cli.clipboard.subprocess.run") as mock_run:
+        with patch("xavani_cli.clipboard._get_ps_exe", return_value="powershell"):
+            with patch("xavani_cli.clipboard.subprocess.run") as mock_run:
                 mock_run.return_value = MagicMock(stdout="", returncode=0)
                 assert _windows_save(dest) is False
 
     def test_no_powershell_returns_false(self, tmp_path):
         dest = tmp_path / "out.png"
-        with patch("hermes_cli.clipboard._get_ps_exe", return_value=None):
+        with patch("xavani_cli.clipboard._get_ps_exe", return_value=None):
             assert _windows_save(dest) is False
 
     def test_invalid_base64(self, tmp_path):
         dest = tmp_path / "out.png"
-        with patch("hermes_cli.clipboard._get_ps_exe", return_value="powershell"):
-            with patch("hermes_cli.clipboard.subprocess.run") as mock_run:
+        with patch("xavani_cli.clipboard._get_ps_exe", return_value="powershell"):
+            with patch("xavani_cli.clipboard.subprocess.run") as mock_run:
                 mock_run.return_value = MagicMock(stdout="not-valid-base64!!!", returncode=0)
                 assert _windows_save(dest) is False
 
     def test_timeout(self, tmp_path):
         dest = tmp_path / "out.png"
-        with patch("hermes_cli.clipboard._get_ps_exe", return_value="powershell"):
-            with patch("hermes_cli.clipboard.subprocess.run",
+        with patch("xavani_cli.clipboard._get_ps_exe", return_value="powershell"):
+            with patch("xavani_cli.clipboard.subprocess.run",
                        side_effect=subprocess.TimeoutExpired("powershell", 15)):
                 assert _windows_save(dest) is False
 
@@ -709,9 +709,9 @@ class TestHasClipboardImageWin32:
     """Verify has_clipboard_image dispatches to _windows_has_image on win32."""
 
     def test_dispatches_on_win32(self):
-        with patch("hermes_cli.clipboard.sys") as mock_sys:
+        with patch("xavani_cli.clipboard.sys") as mock_sys:
             mock_sys.platform = "win32"
-            with patch("hermes_cli.clipboard._windows_has_image", return_value=True) as m:
+            with patch("xavani_cli.clipboard._windows_has_image", return_value=True) as m:
                 assert has_clipboard_image() is True
                 m.assert_called_once()
 
@@ -742,9 +742,9 @@ class TestConvertToPng:
             return MagicMock(returncode=0)
 
         with patch.dict(sys.modules, {"PIL": None, "PIL.Image": None}):
-            with patch("hermes_cli.clipboard.subprocess.run", side_effect=fake_run):
+            with patch("xavani_cli.clipboard.subprocess.run", side_effect=fake_run):
                 # Force ImportError for Pillow
-                import hermes_cli.clipboard as cb
+                import xavani_cli.clipboard as cb
                 original = cb._convert_to_png
 
                 def patched_convert(path):
@@ -771,7 +771,7 @@ class TestConvertToPng:
         dest.write_bytes(FAKE_BMP)  # it's a BMP but named .png
         # Both Pillow and ImageMagick unavailable
         with patch.dict(sys.modules, {"PIL": None, "PIL.Image": None}):
-            with patch("hermes_cli.clipboard.subprocess.run", side_effect=FileNotFoundError):
+            with patch("xavani_cli.clipboard.subprocess.run", side_effect=FileNotFoundError):
                 result = _convert_to_png(dest)
                 # Raw BMP is better than nothing — function should return True
                 assert result is True
@@ -788,7 +788,7 @@ class TestConvertToPng:
             return MagicMock(returncode=1)
 
         with patch.dict(sys.modules, {"PIL": None, "PIL.Image": None}):
-            with patch("hermes_cli.clipboard.subprocess.run", side_effect=fake_run_fail):
+            with patch("xavani_cli.clipboard.subprocess.run", side_effect=fake_run_fail):
                 _convert_to_png(dest)
 
         # Original file must still exist with original content
@@ -802,7 +802,7 @@ class TestConvertToPng:
         dest.write_bytes(original_data)
 
         with patch.dict(sys.modules, {"PIL": None, "PIL.Image": None}):
-            with patch("hermes_cli.clipboard.subprocess.run", side_effect=FileNotFoundError):
+            with patch("xavani_cli.clipboard.subprocess.run", side_effect=FileNotFoundError):
                 _convert_to_png(dest)
 
         assert dest.exists(), "Original file was lost when ImageMagick not installed"
@@ -816,7 +816,7 @@ class TestConvertToPng:
         dest.write_bytes(original_data)
 
         with patch.dict(sys.modules, {"PIL": None, "PIL.Image": None}):
-            with patch("hermes_cli.clipboard.subprocess.run", side_effect=subprocess.TimeoutExpired("convert", 5)):
+            with patch("xavani_cli.clipboard.subprocess.run", side_effect=subprocess.TimeoutExpired("convert", 5)):
                 _convert_to_png(dest)
 
         assert dest.exists(), "Original file was lost after timeout"
@@ -827,51 +827,51 @@ class TestConvertToPng:
 
 class TestHasClipboardImage:
     def setup_method(self):
-        import hermes_cli.clipboard as cb
+        import xavani_cli.clipboard as cb
         cb._wsl_detected = None
 
     def test_macos_dispatch(self):
-        with patch("hermes_cli.clipboard.sys") as mock_sys:
+        with patch("xavani_cli.clipboard.sys") as mock_sys:
             mock_sys.platform = "darwin"
-            with patch("hermes_cli.clipboard._macos_has_image", return_value=True) as m:
+            with patch("xavani_cli.clipboard._macos_has_image", return_value=True) as m:
                 assert has_clipboard_image() is True
                 m.assert_called_once()
 
     def test_linux_wsl_dispatch(self):
-        with patch("hermes_cli.clipboard.sys") as mock_sys:
+        with patch("xavani_cli.clipboard.sys") as mock_sys:
             mock_sys.platform = "linux"
-            with patch("hermes_cli.clipboard._is_wsl", return_value=True):
-                with patch("hermes_cli.clipboard._wsl_has_image", return_value=True) as m:
+            with patch("xavani_cli.clipboard._is_wsl", return_value=True):
+                with patch("xavani_cli.clipboard._wsl_has_image", return_value=True) as m:
                     assert has_clipboard_image() is True
                     m.assert_called_once()
 
     def test_wsl_falls_through_to_wayland_when_windows_path_empty(self):
         """WSLg often bridges images to wl-paste even when powershell.exe check fails."""
-        with patch("hermes_cli.clipboard.sys") as mock_sys:
+        with patch("xavani_cli.clipboard.sys") as mock_sys:
             mock_sys.platform = "linux"
-            with patch("hermes_cli.clipboard._is_wsl", return_value=True):
-                with patch("hermes_cli.clipboard._wsl_has_image", return_value=False) as wsl:
+            with patch("xavani_cli.clipboard._is_wsl", return_value=True):
+                with patch("xavani_cli.clipboard._wsl_has_image", return_value=False) as wsl:
                     with patch.dict(os.environ, {"WAYLAND_DISPLAY": "wayland-0"}):
-                        with patch("hermes_cli.clipboard._wayland_has_image", return_value=True) as wl:
+                        with patch("xavani_cli.clipboard._wayland_has_image", return_value=True) as wl:
                             assert has_clipboard_image() is True
                             wsl.assert_called_once()
                             wl.assert_called_once()
 
     def test_linux_wayland_dispatch(self):
-        with patch("hermes_cli.clipboard.sys") as mock_sys:
+        with patch("xavani_cli.clipboard.sys") as mock_sys:
             mock_sys.platform = "linux"
-            with patch("hermes_cli.clipboard._is_wsl", return_value=False):
+            with patch("xavani_cli.clipboard._is_wsl", return_value=False):
                 with patch.dict(os.environ, {"WAYLAND_DISPLAY": "wayland-0"}):
-                    with patch("hermes_cli.clipboard._wayland_has_image", return_value=True) as m:
+                    with patch("xavani_cli.clipboard._wayland_has_image", return_value=True) as m:
                         assert has_clipboard_image() is True
                         m.assert_called_once()
 
     def test_linux_x11_dispatch(self):
-        with patch("hermes_cli.clipboard.sys") as mock_sys:
+        with patch("xavani_cli.clipboard.sys") as mock_sys:
             mock_sys.platform = "linux"
-            with patch("hermes_cli.clipboard._is_wsl", return_value=False):
+            with patch("xavani_cli.clipboard._is_wsl", return_value=False):
                 with patch.dict(os.environ, {}, clear=True):
-                    with patch("hermes_cli.clipboard._xclip_has_image", return_value=True) as m:
+                    with patch("xavani_cli.clipboard._xclip_has_image", return_value=True) as m:
                         assert has_clipboard_image() is True
                         m.assert_called_once()
 
@@ -885,7 +885,7 @@ class TestPreprocessImagesWithVision:
 
     @pytest.fixture
     def cli(self):
-        """Minimal HermesCLI with mocked internals."""
+        """Minimal XavaniCLI with mocked internals."""
         with patch("cli.load_cli_config") as mock_cfg:
             mock_cfg.return_value = {
                 "model": {"default": "test/model", "base_url": "http://x", "provider": "auto"},
@@ -900,8 +900,8 @@ class TestPreprocessImagesWithVision:
             }
             with patch.dict("os.environ", {"OPENROUTER_API_KEY": "test-key"}):
                 with patch("cli.CLI_CONFIG", mock_cfg.return_value):
-                    from cli import HermesCLI
-                    cli_obj = HermesCLI.__new__(HermesCLI)
+                    from cli import XavaniCLI
+                    cli_obj = XavaniCLI.__new__(XavaniCLI)
                     # Manually init just enough state
                     cli_obj._attached_images = []
                     cli_obj._image_counter = 0
@@ -998,28 +998,28 @@ class TestTryAttachClipboardImage:
 
     @pytest.fixture
     def cli(self):
-        from cli import HermesCLI
-        cli_obj = HermesCLI.__new__(HermesCLI)
+        from cli import XavaniCLI
+        cli_obj = XavaniCLI.__new__(XavaniCLI)
         cli_obj._attached_images = []
         cli_obj._image_counter = 0
         return cli_obj
 
     def test_image_found_attaches(self, cli):
-        with patch("hermes_cli.clipboard.save_clipboard_image", return_value=True):
+        with patch("xavani_cli.clipboard.save_clipboard_image", return_value=True):
             result = cli._try_attach_clipboard_image()
         assert result is True
         assert len(cli._attached_images) == 1
         assert cli._image_counter == 1
 
     def test_no_image_doesnt_attach(self, cli):
-        with patch("hermes_cli.clipboard.save_clipboard_image", return_value=False):
+        with patch("xavani_cli.clipboard.save_clipboard_image", return_value=False):
             result = cli._try_attach_clipboard_image()
         assert result is False
         assert len(cli._attached_images) == 0
         assert cli._image_counter == 0  # rolled back
 
     def test_multiple_attaches_increment_counter(self, cli):
-        with patch("hermes_cli.clipboard.save_clipboard_image", return_value=True):
+        with patch("xavani_cli.clipboard.save_clipboard_image", return_value=True):
             cli._try_attach_clipboard_image()
             cli._try_attach_clipboard_image()
             cli._try_attach_clipboard_image()
@@ -1028,7 +1028,7 @@ class TestTryAttachClipboardImage:
 
     def test_mixed_success_and_failure(self, cli):
         results = [True, False, True]
-        with patch("hermes_cli.clipboard.save_clipboard_image", side_effect=results):
+        with patch("xavani_cli.clipboard.save_clipboard_image", side_effect=results):
             cli._try_attach_clipboard_image()
             cli._try_attach_clipboard_image()
             cli._try_attach_clipboard_image()
@@ -1036,10 +1036,10 @@ class TestTryAttachClipboardImage:
         assert cli._image_counter == 2  # 3 attempts, 1 rolled back
 
     def test_image_path_follows_naming_convention(self, cli):
-        with patch("hermes_cli.clipboard.save_clipboard_image", return_value=True):
+        with patch("xavani_cli.clipboard.save_clipboard_image", return_value=True):
             cli._try_attach_clipboard_image()
         path = cli._attached_images[0]
-        assert path.parent == Path(os.environ["HERMES_HOME"]) / "images"
+        assert path.parent == Path(os.environ["XAVANI_HOME"]) / "images"
         assert path.name.startswith("clip_")
         assert path.suffix == ".png"
 
@@ -1061,8 +1061,8 @@ class TestAutoAttachClipboardImageOnPaste:
 class TestVoiceSubmission:
     @pytest.fixture
     def cli(self):
-        from cli import HermesCLI
-        cli_obj = HermesCLI.__new__(HermesCLI)
+        from cli import XavaniCLI
+        cli_obj = XavaniCLI.__new__(XavaniCLI)
         cli_obj._attached_images = [Path("/tmp/stale.png")]
         cli_obj._pending_input = queue.Queue()
         cli_obj._voice_lock = MagicMock()

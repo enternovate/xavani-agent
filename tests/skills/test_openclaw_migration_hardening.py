@@ -2,7 +2,7 @@
 # MIT License -- See LICENSE file for full terms.
 # Built by Enternovate -- Open source. Private. Local.
 
-"""Tests for the OpenClaw→Hermes migration hardening features.
+"""Tests for the OpenClaw→Xavani migration hardening features.
 
 Covers the changes in the "claw migrate hardening" PR:
   - secret redaction (engine-level, applied to report JSON)
@@ -26,12 +26,12 @@ SCRIPT_PATH = (
     / "migration"
     / "openclaw-migration"
     / "scripts"
-    / "openclaw_to_hermes.py"
+    / "openclaw_to_xavani.py"
 )
 
 
 def _load():
-    spec = importlib.util.spec_from_file_location("openclaw_to_hermes_hard", SCRIPT_PATH)
+    spec = importlib.util.spec_from_file_location("openclaw_to_xavani_hard", SCRIPT_PATH)
     module = importlib.util.module_from_spec(spec)
     assert spec.loader is not None
     sys.modules[spec.name] = module
@@ -102,7 +102,7 @@ def test_redact_is_recursive():
 
 def test_redact_preserves_non_secret_keys_and_values():
     mod = _load()
-    input_data = {"name": "hermes", "count": 42, "tags": ["a", "b"]}
+    input_data = {"name": "xavani", "count": 42, "tags": ["a", "b"]}
     out = mod.redact_migration_value(input_data)
     assert out == input_data
 
@@ -160,7 +160,7 @@ def _make_minimal_migrator(mod, tmp_path, **overrides):
     source.mkdir()
     # Minimal valid OpenClaw layout so the Migrator constructor doesn't choke.
     (source / "openclaw.json").write_text("{}", encoding="utf-8")
-    target = tmp_path / "hermes"
+    target = tmp_path / "xavani"
     target.mkdir()
     defaults = dict(
         source_root=source,
@@ -315,7 +315,7 @@ def test_json_mode_emits_structured_report(tmp_path):
         json.dumps({"agents": {"defaults": {"model": "openrouter/anthropic/claude-sonnet-4"}}}),
         encoding="utf-8",
     )
-    target = tmp_path / "hermes"
+    target = tmp_path / "xavani"
     target.mkdir()
 
     result = subprocess.run(
@@ -348,7 +348,7 @@ def test_json_mode_redacts_secrets_in_output(tmp_path):
     (source / ".env").write_text(
         "OPENROUTER_API_KEY=sk-or-v1-abcdef1234567890abcdef\n", encoding="utf-8"
     )
-    target = tmp_path / "hermes"
+    target = tmp_path / "xavani"
     target.mkdir()
 
     result = subprocess.run(

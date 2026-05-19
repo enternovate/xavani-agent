@@ -6,7 +6,7 @@
 
 Verifies that:
  1. All bundled providers at plugins/model-providers/<name>/ are discovered
- 2. User plugins at $HERMES_HOME/plugins/model-providers/<name>/ override bundled
+ 2. User plugins at $XAVANI_HOME/plugins/model-providers/<name>/ override bundled
  3. plugin.yaml manifests with kind=model-provider are correctly categorized
 """
 
@@ -32,7 +32,7 @@ def _clear_provider_caches():
     for mod in list(sys.modules.keys()):
         if (
             mod.startswith("plugins.model_providers")
-            or mod.startswith("_hermes_user_provider")
+            or mod.startswith("_xavani_user_provider")
         ):
             del sys.modules[mod]
 
@@ -69,15 +69,15 @@ def test_all_34_profiles_register():
 
 def test_user_plugin_overrides_bundled(tmp_path, monkeypatch):
     """A user plugin with the same name must override the bundled profile."""
-    # Point HERMES_HOME at a fresh temp dir
-    hermes_home = tmp_path / ".hermes"
-    hermes_home.mkdir()
-    monkeypatch.setenv("HERMES_HOME", str(hermes_home))
-    # get_hermes_home() may be module-cached depending on codebase; ensure the
+    # Point XAVANI_HOME at a fresh temp dir
+    xavani_home = tmp_path / ".xavani"
+    xavani_home.mkdir()
+    monkeypatch.setenv("XAVANI_HOME", str(xavani_home))
+    # get_xavani_home() may be module-cached depending on codebase; ensure the
     # env var is the source of truth. Most code paths re-read it each call.
 
     # Drop a user plugin that replaces 'gmi'
-    user_gmi = hermes_home / "plugins" / "model-providers" / "gmi"
+    user_gmi = xavani_home / "plugins" / "model-providers" / "gmi"
     user_gmi.mkdir(parents=True)
     (user_gmi / "__init__.py").write_text(
         "from providers import register_provider\n"
@@ -116,14 +116,14 @@ def test_user_plugin_overrides_bundled(tmp_path, monkeypatch):
 def test_general_plugin_manager_skips_model_provider_kind(tmp_path, monkeypatch):
     """The general PluginManager must NOT import model-provider plugins
     (providers/__init__.py handles them). It records the manifest only."""
-    from hermes_cli import plugins as plugin_mod
+    from xavani_cli import plugins as plugin_mod
 
-    hermes_home = tmp_path / ".hermes"
-    hermes_home.mkdir()
-    monkeypatch.setenv("HERMES_HOME", str(hermes_home))
+    xavani_home = tmp_path / ".xavani"
+    xavani_home.mkdir()
+    monkeypatch.setenv("XAVANI_HOME", str(xavani_home))
 
     # Create a user-installed plugin with an explicit kind: model-provider.
-    user_plugin = hermes_home / "plugins" / "test-model-provider"
+    user_plugin = xavani_home / "plugins" / "test-model-provider"
     user_plugin.mkdir(parents=True)
     (user_plugin / "plugin.yaml").write_text(
         "name: test-model-provider\n"

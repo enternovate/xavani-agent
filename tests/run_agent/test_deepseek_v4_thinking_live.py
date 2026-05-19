@@ -5,7 +5,7 @@
 """Live DeepSeek V4 thinking-mode tool-call replay smoke test.
 
 Opt-in only:
-    HERMES_LIVE_TESTS=1 pytest tests/run_agent/test_deepseek_v4_thinking_live.py -q
+    XAVANI_LIVE_TESTS=1 pytest tests/run_agent/test_deepseek_v4_thinking_live.py -q
 
 Requires DEEPSEEK_API_KEY in the process environment. The key is captured at
 module import time because tests/conftest.py intentionally removes credential
@@ -22,13 +22,13 @@ from typing import Any
 import pytest
 
 
-LIVE = os.environ.get("HERMES_LIVE_TESTS") == "1"
+LIVE = os.environ.get("XAVANI_LIVE_TESTS") == "1"
 DEEPSEEK_KEY = os.environ.get("DEEPSEEK_API_KEY", "")
 LIVE_MODELS = ("deepseek-v4-flash", "deepseek-v4-pro")
 LIVE_BASE_URL = "https://api.deepseek.com"
 
 pytestmark = [
-    pytest.mark.skipif(not LIVE, reason="live-only: set HERMES_LIVE_TESTS=1"),
+    pytest.mark.skipif(not LIVE, reason="live-only: set XAVANI_LIVE_TESTS=1"),
     pytest.mark.skipif(not DEEPSEEK_KEY, reason="DEEPSEEK_API_KEY not configured"),
 ]
 

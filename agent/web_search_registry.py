@@ -26,7 +26,7 @@ The active provider is chosen by configuration with this precedence:
    candidate order so installs that never set a config key keep landing
    on the same provider they did before the plugin migration.
 5. Otherwise ``None`` — the tool surfaces a helpful error pointing at
-   ``hermes tools``.
+   ``xavani tools``.
 
 The capability filter (``supports_search`` / ``supports_extract`` /
 ``supports_crawl``) is applied at every step so a search-only provider
@@ -102,7 +102,7 @@ def get_provider(name: str) -> Optional[WebSearchProvider]:
 def _read_config_key(*path: str) -> Optional[str]:
     """Resolve a dotted config key from ``config.yaml``. Returns None on miss."""
     try:
-        from hermes_cli.config import load_config
+        from xavani_cli.config import load_config
 
         cfg = load_config()
         cur = cfg

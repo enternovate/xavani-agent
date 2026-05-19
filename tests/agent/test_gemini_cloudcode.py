@@ -34,20 +34,20 @@ import pytest
 
 @pytest.fixture(autouse=True)
 def _isolate_env(monkeypatch, tmp_path):
-    home = tmp_path / ".hermes"
+    home = tmp_path / ".xavani"
     home.mkdir(parents=True)
     monkeypatch.setattr(Path, "home", lambda: tmp_path)
-    monkeypatch.setenv("HERMES_HOME", str(home))
+    monkeypatch.setenv("XAVANI_HOME", str(home))
     for key in (
-        "HERMES_GEMINI_CLIENT_ID",
-        "HERMES_GEMINI_CLIENT_SECRET",
-        "HERMES_GEMINI_PROJECT_ID",
+        "XAVANI_GEMINI_CLIENT_ID",
+        "XAVANI_GEMINI_CLIENT_SECRET",
+        "XAVANI_GEMINI_PROJECT_ID",
         "GOOGLE_CLOUD_PROJECT",
         "GOOGLE_CLOUD_PROJECT_ID",
         "SSH_CONNECTION",
         "SSH_CLIENT",
         "SSH_TTY",
-        "HERMES_HEADLESS",
+        "XAVANI_HEADLESS",
     ):
         monkeypatch.delenv(key, raising=False)
     return home
@@ -114,7 +114,7 @@ class TestClientCredResolution:
     def test_env_override(self, monkeypatch):
         from agent.google_oauth import _get_client_id
 
-        monkeypatch.setenv("HERMES_GEMINI_CLIENT_ID", "custom-id.apps.googleusercontent.com")
+        monkeypatch.setenv("XAVANI_GEMINI_CLIENT_ID", "custom-id.apps.googleusercontent.com")
         assert _get_client_id() == "custom-id.apps.googleusercontent.com"
 
     def test_shipped_default_used_when_no_env(self):
@@ -342,7 +342,7 @@ class TestGetValidAccessToken:
 
 class TestProjectIdResolution:
     @pytest.mark.parametrize("env_var", [
-        "HERMES_GEMINI_PROJECT_ID",
+        "XAVANI_GEMINI_PROJECT_ID",
         "GOOGLE_CLOUD_PROJECT",
         "GOOGLE_CLOUD_PROJECT_ID",
     ])
@@ -356,7 +356,7 @@ class TestProjectIdResolution:
         from agent.google_oauth import resolve_project_id_from_env
 
         monkeypatch.setenv("GOOGLE_CLOUD_PROJECT", "lower-priority")
-        monkeypatch.setenv("HERMES_GEMINI_PROJECT_ID", "higher-priority")
+        monkeypatch.setenv("XAVANI_GEMINI_PROJECT_ID", "higher-priority")
         assert resolve_project_id_from_env() == "higher-priority"
 
     def test_no_env_returns_empty(self):
@@ -372,10 +372,10 @@ class TestHeadlessDetection:
         monkeypatch.setenv("SSH_CONNECTION", "1.2.3.4 22 5.6.7.8 9876")
         assert _is_headless() is True
 
-    def test_detects_hermes_headless(self, monkeypatch):
+    def test_detects_xavani_headless(self, monkeypatch):
         from agent.google_oauth import _is_headless
 
-        monkeypatch.setenv("HERMES_HEADLESS", "1")
+        monkeypatch.setenv("XAVANI_HEADLESS", "1")
         assert _is_headless() is True
 
     def test_default_not_headless(self):
@@ -1118,20 +1118,20 @@ class TestGeminiHttpErrorParsing:
 
 class TestProviderRegistration:
     def test_registry_entry(self):
-        from hermes_cli.auth import PROVIDER_REGISTRY
+        from xavani_cli.auth import PROVIDER_REGISTRY
 
         assert "google-gemini-cli" in PROVIDER_REGISTRY
         assert PROVIDER_REGISTRY["google-gemini-cli"].auth_type == "oauth_external"
 
     def test_google_gemini_alias_still_goes_to_api_key_gemini(self):
         """Regression guard: don't shadow the existing google-gemini → gemini alias."""
-        from hermes_cli.auth import resolve_provider
+        from xavani_cli.auth import resolve_provider
 
         assert resolve_provider("google-gemini") == "gemini"
 
     def test_runtime_provider_raises_when_not_logged_in(self):
-        from hermes_cli.auth import AuthError
-        from hermes_cli.runtime_provider import resolve_runtime_provider
+        from xavani_cli.auth import AuthError
+        from xavani_cli.runtime_provider import resolve_runtime_provider
 
         with pytest.raises(AuthError) as exc_info:
             resolve_runtime_provider(requested="google-gemini-cli")
@@ -1139,7 +1139,7 @@ class TestProviderRegistration:
 
     def test_runtime_provider_returns_correct_shape_when_logged_in(self):
         from agent.google_oauth import GoogleCredentials, save_credentials
-        from hermes_cli.runtime_provider import resolve_runtime_provider
+        from xavani_cli.runtime_provider import resolve_runtime_provider
 
         save_credentials(GoogleCredentials(
             access_token="live-tok",
@@ -1158,37 +1158,37 @@ class TestProviderRegistration:
         assert result["email"] == "t@e.com"
 
     def test_determine_api_mode(self):
-        from hermes_cli.providers import determine_api_mode
+        from xavani_cli.providers import determine_api_mode
 
         assert determine_api_mode("google-gemini-cli", "cloudcode-pa://google") == "chat_completions"
 
     def test_oauth_capable_set_preserves_existing(self):
-        from hermes_cli.auth_commands import _OAUTH_CAPABLE_PROVIDERS
+        from xavani_cli.auth_commands import _OAUTH_CAPABLE_PROVIDERS
 
         for required in ("anthropic", "nous", "openai-codex", "qwen-oauth", "google-gemini-cli"):
             assert required in _OAUTH_CAPABLE_PROVIDERS
 
     def test_config_env_vars_registered(self):
-        from hermes_cli.config import OPTIONAL_ENV_VARS
+        from xavani_cli.config import OPTIONAL_ENV_VARS
 
         for key in (
-            "HERMES_GEMINI_CLIENT_ID",
-            "HERMES_GEMINI_CLIENT_SECRET",
-            "HERMES_GEMINI_PROJECT_ID",
+            "XAVANI_GEMINI_CLIENT_ID",
+            "XAVANI_GEMINI_CLIENT_SECRET",
+            "XAVANI_GEMINI_PROJECT_ID",
         ):
             assert key in OPTIONAL_ENV_VARS
 
 
 class TestAuthStatus:
     def test_not_logged_in(self):
-        from hermes_cli.auth import get_auth_status
+        from xavani_cli.auth import get_auth_status
 
         s = get_auth_status("google-gemini-cli")
         assert s["logged_in"] is False
 
     def test_logged_in_reports_email_and_project(self):
         from agent.google_oauth import GoogleCredentials, save_credentials
-        from hermes_cli.auth import get_auth_status
+        from xavani_cli.auth import get_auth_status
 
         save_credentials(GoogleCredentials(
             access_token="tok", refresh_token="rt",
@@ -1205,7 +1205,7 @@ class TestAuthStatus:
 
 class TestGquotaCommand:
     def test_gquota_registered(self):
-        from hermes_cli.commands import COMMANDS
+        from xavani_cli.commands import COMMANDS
 
         assert "/gquota" in COMMANDS
 

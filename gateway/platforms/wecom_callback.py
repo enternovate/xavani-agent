@@ -21,7 +21,7 @@ import logging
 import socket as _socket
 import time
 from typing import Any, Dict, List, Optional
-from xml.etree import ElementTree as ET
+from defusedxml.ElementTree import fromstring as _defused_fromstring
 
 try:
     from aiohttp import web
@@ -314,13 +314,13 @@ class WecomCallbackAdapter(BasePlatformAdapter):
         self, app: Dict[str, Any], body: str,
         msg_signature: str, timestamp: str, nonce: str,
     ) -> str:
-        root = ET.fromstring(body)
+        root = _defused_fromstring(body)
         encrypt = root.findtext("Encrypt", default="")
         crypt = self._crypt_for_app(app)
         return crypt.decrypt(msg_signature, timestamp, nonce, encrypt).decode("utf-8")
 
     def _build_event(self, app: Dict[str, Any], xml_text: str) -> Optional[MessageEvent]:
-        root = ET.fromstring(xml_text)
+        root = _defused_fromstring(xml_text)
         msg_type = (root.findtext("MsgType") or "").lower()
         # Silently acknowledge lifecycle events.
         if msg_type == "event":

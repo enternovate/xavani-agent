@@ -30,7 +30,7 @@ is built on these principles:
 
 ### 1. Zero Telemetry
 Xavani collects NOTHING. No analytics, no crash reports, no usage data.
-The `HERMES_DISABLE_TELEMETRY` and `DO_NOT_TRACK` environment variables
+The `XAVANI_DISABLE_TELEMETRY` and `DO_NOT_TRACK` environment variables
 are forced at startup. Your data never leaves your machine.
 
 ### 2. Local-Only Architecture

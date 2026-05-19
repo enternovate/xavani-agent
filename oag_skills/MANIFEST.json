@@ -43,18 +43,18 @@
       "category": "autonomous-ai-agents"
     },
     {
-      "name": "hermes-agent",
-      "description": "Configure, extend, or contribute to Hermes Agent.",
+      "name": "xavani-agent",
+      "description": "Configure, extend, or contribute to Xavani Agent.",
       "category": "autonomous-ai-agents"
     },
     {
       "name": "honcho",
-      "description": "Configure and use Honcho memory with Hermes -- cross-session user modeling, multi-profile peer isolation, observation config, dialectic reasoning, session summaries, and context budget enforcement. Use when setting up Honcho, troubleshooting memory, managing profiles with Honcho peers, or tuning observation, recall, and dialectic settings.",
+      "description": "Configure and use Honcho memory with Xavani -- cross-session user modeling, multi-profile peer isolation, observation config, dialectic reasoning, session summaries, and context budget enforcement. Use when setting up Honcho, troubleshooting memory, managing profiles with Honcho peers, or tuning observation, recall, and dialectic settings.",
       "category": "autonomous-ai-agents"
     },
     {
       "name": "kanban-codex-lane",
-      "description": "Use when a Hermes Kanban worker wants to run Codex CLI as an isolated implementation lane while Hermes keeps ownership of task lifecycle, reconciliation, testing, and handoff.",
+      "description": "Use when a Xavani Kanban worker wants to run Codex CLI as an isolated implementation lane while Xavani keeps ownership of task lifecycle, reconciliation, testing, and handoff.",
       "category": "autonomous-ai-agents"
     },
     {
@@ -114,7 +114,7 @@
     },
     {
       "name": "blender-mcp",
-      "description": "Control Blender directly from Hermes via socket connection to the blender-mcp addon. Create 3D objects, materials, animations, and run arbitrary Blender Python (bpy) code. Use when user wants to create or modify anything in Blender.",
+      "description": "Control Blender directly from Xavani via socket connection to the blender-mcp addon. Create 3D objects, materials, animations, and run arbitrary Blender Python (bpy) code. Use when user wants to create or modify anything in Blender.",
       "category": "creative"
     },
     {
@@ -159,7 +159,7 @@
     },
     {
       "name": "kanban-video-orchestrator",
-      "description": "Plan, set up, and monitor a multi-agent video production pipeline backed by Hermes Kanban. Use when the user wants to make ANY video — narrative film, product/marketing, music video, explainer, ASCII/terminal art, abstract/generative loop, comic, 3D, real-time/installation — and the work warrants decomposition into specialized profiles (writer, designer, animator, renderer, voice, editor, etc.) coordinated through a kanban board. Performs adaptive discovery to scope the brief, designs an appropriate team for the requested style, generates the setup script that creates Hermes profiles + initial kanban task, then helps monitor execution and intervene when tasks stall or fail. Routes scenes to whichever Hermes rendering / audio / design skill fits each beat (`ascii-video`, `manim-video`, `p5js`, `comfyui`, `touchdesigner-mcp`, `blender-mcp`, `pixel-art`, `baoyu-comic`, `claude-design`, `excalidraw`, `songsee`, `heartmula`, …) plus external APIs for TTS, image-gen, and image-to-video as needed.",
+      "description": "Plan, set up, and monitor a multi-agent video production pipeline backed by Xavani Kanban. Use when the user wants to make ANY video — narrative film, product/marketing, music video, explainer, ASCII/terminal art, abstract/generative loop, comic, 3D, real-time/installation — and the work warrants decomposition into specialized profiles (writer, designer, animator, renderer, voice, editor, etc.) coordinated through a kanban board. Performs adaptive discovery to scope the brief, designs an appropriate team for the requested style, generates the setup script that creates Xavani profiles + initial kanban task, then helps monitor execution and intervene when tasks stall or fail. Routes scenes to whichever Xavani rendering / audio / design skill fits each beat (`ascii-video`, `manim-video`, `p5js`, `comfyui`, `touchdesigner-mcp`, `blender-mcp`, `pixel-art`, `baoyu-comic`, `claude-design`, `excalidraw`, `songsee`, `heartmula`, …) plus external APIs for TTS, image-gen, and image-to-video as needed.",
       "category": "creative"
     },
     {
@@ -229,7 +229,7 @@
     },
     {
       "name": "kanban-worker",
-      "description": "Pitfalls, examples, and edge cases for Hermes Kanban workers. The lifecycle itself is auto-injected into every worker's system prompt as KANBAN_GUIDANCE (from agent/prompt_builder.py); this skill is what you load when you want deeper detail on specific scenarios.",
+      "description": "Pitfalls, examples, and edge cases for Xavani Kanban workers. The lifecycle itself is auto-injected into every worker's system prompt as KANBAN_GUIDANCE (from agent/prompt_builder.py); this skill is what you load when you want deeper detail on specific scenarios.",
       "category": "devops"
     },
     {
@@ -259,7 +259,7 @@
     },
     {
       "name": "agentmail",
-      "description": "Give the agent its own dedicated email inbox via AgentMail. Send, receive, and manage email autonomously using agent-owned email addresses (e.g. hermes-agent@agentmail.to).",
+      "description": "Give the agent its own dedicated email inbox via AgentMail. Send, receive, and manage email autonomously using agent-owned email addresses (e.g. xavani-agent@agentmail.to).",
       "category": "email"
     },
     {
@@ -399,7 +399,7 @@
     },
     {
       "name": "openclaw-migration",
-      "description": "Migrate a user's OpenClaw customization footprint into Hermes Agent. Imports Hermes-compatible memories, SOUL.md, command allowlists, user skills, and selected workspace assets from ~/.openclaw, then reports exactly what could not be migrated and why.",
+      "description": "Migrate a user's OpenClaw customization footprint into Xavani Agent. Imports Xavani-compatible memories, SOUL.md, command allowlists, user skills, and selected workspace assets from ~/.openclaw, then reports exactly what could not be migrated and why.",
       "category": "migration"
     },
     {
@@ -659,12 +659,12 @@
     },
     {
       "name": "teams-meeting-pipeline",
-      "description": "Operate the Teams meeting summary pipeline via Hermes CLI — summarize meetings, inspect pipeline status, replay jobs, manage Microsoft Graph subscriptions.",
+      "description": "Operate the Teams meeting summary pipeline via Xavani CLI — summarize meetings, inspect pipeline status, replay jobs, manage Microsoft Graph subscriptions.",
       "category": "productivity"
     },
     {
       "name": "telephony",
-      "description": "Give Hermes phone capabilities without core tool changes. Provision and persist a Twilio number, send and receive SMS/MMS, make direct calls, and place AI-driven outbound calls through Bland.ai or Vapi.",
+      "description": "Give Xavani phone capabilities without core tool changes. Provision and persist a Twilio number, send and receive SMS/MMS, make direct calls, and place AI-driven outbound calls through Bland.ai or Vapi.",
       "category": "productivity"
     },
     {
@@ -778,12 +778,12 @@
       "category": "social-media"
     },
     {
-      "name": "debugging-hermes-tui-commands",
-      "description": "Debug Hermes TUI slash commands: Python, gateway, Ink UI.",
+      "name": "debugging-xavani-tui-commands",
+      "description": "Debug Xavani TUI slash commands: Python, gateway, Ink UI.",
       "category": "software-development"
     },
     {
-      "name": "hermes-agent-skill-authoring",
+      "name": "xavani-agent-skill-authoring",
       "description": "Author in-repo SKILL.md: frontmatter, validator, structure.",
       "category": "software-development"
     },
@@ -794,7 +794,7 @@
     },
     {
       "name": "plan",
-      "description": "Plan mode: write markdown plan to .hermes/plans/, no exec.",
+      "description": "Plan mode: write markdown plan to .xavani/plans/, no exec.",
       "category": "software-development"
     },
     {
@@ -839,7 +839,7 @@
     },
     {
       "name": "page-agent",
-      "description": "Embed alibaba/page-agent into your own web application — a pure-JavaScript in-page GUI agent that ships as a single <script> tag or npm package and lets end-users of your site drive the UI with natural language (\"click login, fill username as John\"). No Python, no headless browser, no extension required. Use this skill when the user is a web developer who wants to add an AI copilot to their SaaS / admin panel / B2B tool, make a legacy web app accessible via natural language, or evaluate page-agent against a local (Ollama) or cloud (Qwen / OpenAI / OpenRouter) LLM. NOT for server-side browser automation — point those users to Hermes' built-in browser tool instead.",
+      "description": "Embed alibaba/page-agent into your own web application — a pure-JavaScript in-page GUI agent that ships as a single <script> tag or npm package and lets end-users of your site drive the UI with natural language (\"click login, fill username as John\"). No Python, no headless browser, no extension required. Use this skill when the user is a web developer who wants to add an AI copilot to their SaaS / admin panel / B2B tool, make a legacy web app accessible via natural language, or evaluate page-agent against a local (Ollama) or cloud (Qwen / OpenAI / OpenRouter) LLM. NOT for server-side browser automation — point those users to Xavani' built-in browser tool instead.",
       "category": "web-development"
     },
     {

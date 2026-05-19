@@ -4,7 +4,7 @@
 
 from unittest.mock import MagicMock, patch
 
-from cli import HermesCLI
+from cli import XavaniCLI
 
 
 class _InsightsEngineStub:
@@ -22,10 +22,10 @@ class _InsightsEngineStub:
 
 
 def _run_show_insights(command: str):
-    cli_obj = HermesCLI.__new__(HermesCLI)
+    cli_obj = XavaniCLI.__new__(XavaniCLI)
     db = MagicMock()
     _InsightsEngineStub.calls = []
-    with patch("hermes_state.SessionDB", return_value=db), \
+    with patch("xavani_state.SessionDB", return_value=db), \
          patch("agent.insights.InsightsEngine", _InsightsEngineStub):
         cli_obj._show_insights(command)
     return _InsightsEngineStub.calls, db

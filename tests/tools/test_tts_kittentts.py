@@ -12,7 +12,7 @@ import pytest
 
 @pytest.fixture(autouse=True)
 def clean_env(monkeypatch):
-    for key in ("HERMES_SESSION_PLATFORM",):
+    for key in ("XAVANI_SESSION_PLATFORM",):
         monkeypatch.delenv(key, raising=False)
 
 
@@ -185,7 +185,7 @@ class TestDispatcherBranch:
         """When provider=kittentts but package missing, return JSON error with setup hint."""
         import sys
         monkeypatch.setitem(sys.modules, "kittentts", None)
-        monkeypatch.setenv("HERMES_HOME", str(tmp_path))
+        monkeypatch.setenv("XAVANI_HOME", str(tmp_path))
 
         from tools.tts_tool import text_to_speech_tool
 
@@ -198,4 +198,4 @@ class TestDispatcherBranch:
         result = json.loads(text_to_speech_tool(text="Hello"))
         assert result["success"] is False
         assert "kittentts" in result["error"].lower()
-        assert "hermes setup tts" in result["error"].lower()
+        assert "xavani setup tts" in result["error"].lower()

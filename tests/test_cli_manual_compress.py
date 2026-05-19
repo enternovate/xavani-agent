@@ -4,7 +4,7 @@
 
 from contextlib import nullcontext
 
-from cli import HermesCLI
+from cli import XavaniCLI
 
 
 class DummyAgent:
@@ -29,7 +29,7 @@ class DummyAgent:
 
 def test_manual_compress_does_not_pass_cached_system_prompt(monkeypatch):
     """Manual /compress should rebuild the next prompt without nesting the old one."""
-    cli = HermesCLI.__new__(HermesCLI)
+    cli = XavaniCLI.__new__(XavaniCLI)
     cli.conversation_history = [
         {"role": "user", "content": "one"},
         {"role": "assistant", "content": "two"},

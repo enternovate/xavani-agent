@@ -79,8 +79,8 @@ SAMPLE_REGISTRY = {
 
 class TestProviderMapping:
     def test_all_mapped_providers_are_strings(self):
-        for hermes_id, mdev_id in PROVIDER_TO_MODELS_DEV.items():
-            assert isinstance(hermes_id, str)
+        for xavani_id, mdev_id in PROVIDER_TO_MODELS_DEV.items():
+            assert isinstance(xavani_id, str)
             assert isinstance(mdev_id, str)
 
     def test_known_providers_mapped(self):
@@ -258,7 +258,7 @@ class TestFetchModelsDev:
     @patch("agent.models_dev.requests.get")
     def test_force_refresh_skips_disk_cache(self, mock_get):
         """force_refresh=True bypasses BOTH the in-mem cache AND the
-        disk-cache fast path. Used by ``hermes config refresh`` and
+        disk-cache fast path. Used by ``xavani config refresh`` and
         anywhere else the user explicitly asked for fresh data.
         """
         import agent.models_dev as md

@@ -29,7 +29,7 @@ def _make_cli(user_message_preview=None):
         "agent": {},
         "terminal": {"env_type": "local"},
     }
-    clean_env = {"LLM_MODEL": "", "HERMES_MAX_ITERATIONS": ""}
+    clean_env = {"LLM_MODEL": "", "XAVANI_MAX_ITERATIONS": ""}
     prompt_toolkit_stubs = {
         "prompt_toolkit": MagicMock(),
         "prompt_toolkit.history": MagicMock(),
@@ -53,7 +53,7 @@ def _make_cli(user_message_preview=None):
         mod = importlib.reload(mod)
         _cli_mod = mod
         with patch.object(mod, "get_tool_definitions", return_value=[]), patch.dict(mod.__dict__, {"CLI_CONFIG": clean_config}):
-            return mod.HermesCLI()
+            return mod.XavaniCLI()
 
 
 class TestSubmittedUserMessagePreview:

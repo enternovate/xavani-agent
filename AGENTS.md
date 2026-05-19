@@ -1,7 +1,7 @@
 # Xavani Agent — Development Guide
 
 Built by [Enternovate](https://enternovate.com).
-Forked from Hermes Agent by Nous Research.
+Forked from Xavani Agent by Nous Research.
 
 ## Quick Start
 
@@ -16,9 +16,9 @@ xavani
 ```
 xavani-agent/
 ├── xavani.py              # Entry point — Xavani CLI
-├── cli.py                 # Hermes CLI core (14,466 lines)
+├── cli.py                 # Xavani CLI core (14,466 lines)
 ├── run_agent.py           # AIAgent class — conversation loop
-├── hermes_cli/
+├── xavani_cli/
 │   ├── skins/
 │   │   └── xavani-darkblue.yaml  # Dark blue buffalo theme skin
 │   ├── oag_commands.py    # OAG-specific commands: /install, /gateway-up, etc.
@@ -40,28 +40,28 @@ xavani-agent/
 
 ```python
 # Forces ~/.xavani/ home directory
-# Sets HERMES_HOME to ~/.xavani/ for internal compat
-# Disables telemetry (HERMES_DISABLE_TELEMETRY, DO_NOT_TRACK)
+# Sets XAVANI_HOME to ~/.xavani/ for internal compat
+# Disables telemetry (XAVANI_DISABLE_TELEMETRY, DO_NOT_TRACK)
 # Loads xavani-darkblue skin
 # Registers OAG commands (/install, /gateway-up, etc.)
-# Launches HermesCLI with Xavani branding
+# Launches XavaniCLI with Xavani branding
 ```
 
 ### Skin System
 
-Skins are YAML files in `hermes_cli/skins/`. No code changes needed to add
+Skins are YAML files in `xavani_cli/skins/`. No code changes needed to add
 a new skin. The `xavani-darkblue` skin uses deep navy/blue/cyan tones with
 a cyberpunk aesthetic.
 
 ### OAG Commands
 
-Implemented in `hermes_cli/oag_commands.py`. Each command is a `CommandDef`
+Implemented in `xavani_cli/oag_commands.py`. Each command is a `CommandDef`
 object registered into the central `COMMAND_REGISTRY`. The `XavaniCLI` class
-in `xavani.py` intercepts OAG commands first, then falls through to Hermes.
+in `xavani.py` intercepts OAG commands first, then falls through to Xavani.
 
 ## Adding a New Skin
 
-Create a YAML file in `hermes_cli/skins/`:
+Create a YAML file in `xavani_cli/skins/`:
 ```yaml
 name: my-skin
 colors:
@@ -77,7 +77,7 @@ Activate with `/skin my-skin` or `set_active_skin("my-skin")`.
 
 Xavani collects NOTHING. No telemetry, no analytics, no phone-home.
 All data stays in `~/.xavani/` on the user's machine.
-The `HERMES_DISABLE_TELEMETRY` env var is forced at startup.
+The `XAVANI_DISABLE_TELEMETRY` env var is forced at startup.
 
 ## Cross-Platform
 

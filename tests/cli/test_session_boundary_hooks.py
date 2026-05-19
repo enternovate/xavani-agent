@@ -4,11 +4,11 @@
 
 import pytest
 from unittest.mock import MagicMock, patch
-from hermes_cli.plugins import VALID_HOOKS, PluginManager
+from xavani_cli.plugins import VALID_HOOKS, PluginManager
 import os
 import shutil
 import tempfile
-from cli import HermesCLI
+from cli import XavaniCLI
 
 
 def test_session_hooks_in_valid_hooks():
@@ -17,10 +17,10 @@ def test_session_hooks_in_valid_hooks():
     assert "on_session_reset" in VALID_HOOKS
 
 
-@patch("hermes_cli.plugins.invoke_hook")
+@patch("xavani_cli.plugins.invoke_hook")
 def test_session_finalize_on_reset(mock_invoke_hook):
     """Verify on_session_finalize fires when /new or /reset is used."""
-    cli = HermesCLI()
+    cli = XavaniCLI()
     cli.agent = MagicMock()
     cli.agent.session_id = "test-session-id"
 
@@ -37,7 +37,7 @@ def test_session_finalize_on_reset(mock_invoke_hook):
     )
 
 
-@patch("hermes_cli.plugins.invoke_hook")
+@patch("xavani_cli.plugins.invoke_hook")
 def test_session_finalize_on_cleanup(mock_invoke_hook):
     """Verify on_session_finalize fires during CLI exit cleanup."""
     import cli as cli_mod
@@ -54,7 +54,7 @@ def test_session_finalize_on_cleanup(mock_invoke_hook):
     )
 
 
-@patch("hermes_cli.plugins.invoke_hook")
+@patch("xavani_cli.plugins.invoke_hook")
 def test_hook_errors_are_caught(mock_invoke_hook):
     """Verify hook exceptions are caught and don't crash the agent."""
     mgr = PluginManager()

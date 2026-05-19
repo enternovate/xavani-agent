@@ -13,7 +13,7 @@ the active one (selected via ``web.search_backend`` / ``web.extract_backend`` /
 ``web_extract`` tool call.
 
 Providers live in ``<repo>/plugins/web/<name>/`` (built-in, auto-loaded as
-``kind: backend``) or ``~/.hermes/plugins/web/<name>/`` (user, opt-in via
+``kind: backend``) or ``~/.xavani/plugins/web/<name>/`` (user, opt-in via
 ``plugins.enabled``).
 
 This ABC is the SINGLE plugin-facing surface for web providers — every
@@ -88,7 +88,7 @@ class WebSearchProvider(abc.ABC):
 
     @property
     def display_name(self) -> str:
-        """Human-readable label shown in ``hermes tools``. Defaults to ``name``."""
+        """Human-readable label shown in ``xavani tools``. Defaults to ``name``."""
         return self.name
 
     @abc.abstractmethod
@@ -97,7 +97,7 @@ class WebSearchProvider(abc.ABC):
 
         Typically a cheap check (env var present, optional Python dep
         importable, instance URL set). Must NOT make network calls — this
-        runs at tool-registration time and on every ``hermes tools`` paint.
+        runs at tool-registration time and on every ``xavani tools`` paint.
         """
 
     def supports_search(self) -> bool:
@@ -198,9 +198,9 @@ class WebSearchProvider(abc.ABC):
         )
 
     def get_setup_schema(self) -> Dict[str, Any]:
-        """Return provider metadata for the ``hermes tools`` picker.
+        """Return provider metadata for the ``xavani tools`` picker.
 
-        Used by ``hermes_cli/tools_config.py`` to inject this provider as a
+        Used by ``xavani_cli/tools_config.py`` to inject this provider as a
         row in the Web Search / Web Extract picker. Shape::
 
             {

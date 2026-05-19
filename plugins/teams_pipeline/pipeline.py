@@ -21,7 +21,7 @@ from typing import Any, Awaitable, Callable, Optional
 import httpx
 
 from agent.auxiliary_client import async_call_llm, extract_content_or_reasoning
-from hermes_constants import get_hermes_home
+from xavani_constants import get_xavani_home
 from plugins.teams_pipeline.meetings import (
     TeamsMeetingArtifactNotFoundError,
     download_recording_artifact,
@@ -459,7 +459,7 @@ class TeamsMeetingPipeline:
         meeting_ref: TeamsMeetingRef,
         recording: MeetingArtifact,
     ) -> str:
-        temp_root = self.config.tmp_dir or (get_hermes_home() / "tmp" / "teams_pipeline")
+        temp_root = self.config.tmp_dir or (get_xavani_home() / "tmp" / "teams_pipeline")
         temp_root.mkdir(parents=True, exist_ok=True)
         with tempfile.TemporaryDirectory(dir=str(temp_root), prefix="teams-recording-") as tmp_dir:
             recording_name = recording.display_name or f"{recording.artifact_id}.mp4"

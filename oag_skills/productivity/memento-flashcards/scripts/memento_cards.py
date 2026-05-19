@@ -7,7 +7,7 @@
 """Memento card storage, spaced-repetition engine, and CSV I/O.
 
 Stdlib-only. All output is JSON for agent parsing.
-Data file: $HERMES_HOME/skills/productivity/memento-flashcards/data/cards.json
+Data file: $XAVANI_HOME/skills/productivity/memento-flashcards/data/cards.json
 """
 
 import argparse
@@ -20,8 +20,8 @@ import uuid
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
-_HERMES_HOME = Path(os.environ.get("HERMES_HOME", Path.home() / ".hermes"))
-DATA_DIR = _HERMES_HOME / "skills" / "productivity" / "memento-flashcards" / "data"
+_XAVANI_HOME = Path(os.environ.get("XAVANI_HOME", Path.home() / ".xavani"))
+DATA_DIR = _XAVANI_HOME / "skills" / "productivity" / "memento-flashcards" / "data"
 CARDS_FILE = DATA_DIR / "cards.json"
 
 RETIRED_SENTINEL = "9999-12-31T23:59:59+00:00"

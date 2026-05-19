@@ -96,7 +96,7 @@ def _make_runner():
 
     # Simulate agent actively running for this session so the guard fires.
     # Note: the stale-eviction branch calls agent.get_activity_summary() and
-    # compares seconds_since_activity against HERMES_AGENT_TIMEOUT. Return a
+    # compares seconds_since_activity against XAVANI_AGENT_TIMEOUT. Return a
     # dict with recent activity so the eviction path doesn't clear our
     # fake running agent before the toggle guard runs.
     import time
@@ -175,7 +175,7 @@ async def test_reasoning_rejected_mid_run():
 async def test_btw_dispatches_mid_run():
     """/btw mid-run must dispatch to /background's handler, not hit the catch-all.
 
-    /btw is an alias of /background (see hermes_cli/commands.py). Typing
+    /btw is an alias of /background (see xavani_cli/commands.py). Typing
     /btw mid-turn must spawn a parallel background task — that's the whole
     point of the command. Before the mid-turn bypass was added for
     /background, /btw fell through to the "Agent is running — wait or

@@ -37,7 +37,7 @@ to suppress.
 
 Grep recipe::
 
-    tail -f ~/.hermes/logs/agent.log | rg 'lsp\\['
+    tail -f ~/.xavani/logs/agent.log | rg 'lsp\\['
 """
 from __future__ import annotations
 
@@ -48,7 +48,7 @@ from typing import Tuple
 
 # Dedicated logger name so the documented grep recipe survives a
 # ``logging.getLogger(__name__)`` rename of any internal module.
-event_log = logging.getLogger("hermes.lint.lsp")
+event_log = logging.getLogger("xavani.lint.lsp")
 
 # ---------------------------------------------------------------------------
 # Once-per-X dedup sets
@@ -152,7 +152,7 @@ def log_server_unavailable(server_id: str, binary_or_pkg: str) -> None:
             server_id,
             logging.WARNING,
             f"server unavailable: {binary_or_pkg} not found "
-            "(install via `hermes lsp install <id>` or set lsp.servers.<id>.command)",
+            "(install via `xavani lsp install <id>` or set lsp.servers.<id>.command)",
         )
     else:
         _emit(server_id, logging.DEBUG, f"server still unavailable: {binary_or_pkg}")

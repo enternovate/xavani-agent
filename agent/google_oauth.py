@@ -14,7 +14,7 @@ Synthesized from:
 - clawdbot/extensions/google/ — refresh-token rotation, VPC-SC handling reference
 - PRs #10176 (@sliverp) and #10779 (@newarthur) — PKCE module structure, cross-process lock
 
-Storage (``~/.hermes/auth/google_oauth.json``, chmod 0o600):
+Storage (``~/.xavani/auth/google_oauth.json``, chmod 0o600):
 
     {
       "refresh": "refreshToken|projectId|managedProjectId",
@@ -63,7 +63,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, Optional, Tuple
 
-from hermes_constants import get_hermes_home
+from xavani_constants import get_xavani_home
 
 logger = logging.getLogger(__name__)
 
@@ -72,7 +72,7 @@ logger = logging.getLogger(__name__)
 # OAuth client credential resolution.
 #
 # Resolution order:
-#   1. HERMES_GEMINI_CLIENT_ID / HERMES_GEMINI_CLIENT_SECRET env vars (power users)
+#   1. XAVANI_GEMINI_CLIENT_ID / XAVANI_GEMINI_CLIENT_SECRET env vars (power users)
 #   2. Shipped defaults — Google's public gemini-cli desktop OAuth client
 #      (baked into every copy of Google's open-source gemini-cli; NOT
 #      confidential — desktop OAuth clients use PKCE, not client_secret, for
@@ -82,8 +82,8 @@ logger = logging.getLogger(__name__)
 #   4. Fail with a helpful error.
 # =============================================================================
 
-ENV_CLIENT_ID = "HERMES_GEMINI_CLIENT_ID"
-ENV_CLIENT_SECRET = "HERMES_GEMINI_CLIENT_SECRET"
+ENV_CLIENT_ID = "XAVANI_GEMINI_CLIENT_ID"
+ENV_CLIENT_SECRET = "XAVANI_GEMINI_CLIENT_SECRET"
 
 # Public gemini-cli desktop OAuth client (shipped in Google's open-source
 # gemini-cli MIT repo). Composed piecewise to keep the constants readable and
@@ -138,7 +138,7 @@ CALLBACK_WAIT_SECONDS = 300
 LOCK_TIMEOUT_SECONDS = 30.0
 
 # Headless env detection
-_HEADLESS_ENV_VARS = ("SSH_CONNECTION", "SSH_CLIENT", "SSH_TTY", "HERMES_HEADLESS")
+_HEADLESS_ENV_VARS = ("SSH_CONNECTION", "SSH_CLIENT", "SSH_TTY", "XAVANI_HEADLESS")
 
 
 # =============================================================================
@@ -158,7 +158,7 @@ class GoogleOAuthError(RuntimeError):
 # =============================================================================
 
 def _credentials_path() -> Path:
-    return get_hermes_home() / "auth" / "google_oauth.json"
+    return get_xavani_home() / "auth" / "google_oauth.json"
 
 
 def _lock_path() -> Path:
@@ -364,10 +364,10 @@ def _require_client_id() -> str:
     if not cid:
         raise GoogleOAuthError(
             "Google OAuth client ID is not available.\n"
-            "Hermes looks for a locally installed gemini-cli to source the OAuth client. "
+            "Xavani looks for a locally installed gemini-cli to source the OAuth client. "
             "Either:\n"
             "  1. Install it: npm install -g @google/gemini-cli  (or brew install gemini-cli)\n"
-            "  2. Set HERMES_GEMINI_CLIENT_ID and HERMES_GEMINI_CLIENT_SECRET in ~/.hermes/.env\n"
+            "  2. Set XAVANI_GEMINI_CLIENT_ID and XAVANI_GEMINI_CLIENT_SECRET in ~/.xavani/.env\n"
             "\n"
             "Register a Desktop OAuth client at:\n"
             "  https://console.cloud.google.com/apis/credentials\n"
@@ -662,7 +662,7 @@ def get_valid_access_token(*, force_refresh: bool = False) -> str:
     creds = load_credentials()
     if creds is None:
         raise GoogleOAuthError(
-            "No Google OAuth credentials found. Run `hermes login --provider google-gemini-cli` first.",
+            "No Google OAuth credentials found. Run `xavani login --provider google-gemini-cli` first.",
             code="google_oauth_not_logged_in",
         )
 
@@ -797,7 +797,7 @@ class _OAuthCallbackHandler(http.server.BaseHTTPRequestHandler):
 
 
 _SUCCESS_PAGE = """<!doctype html>
-<html><head><meta charset="utf-8"><title>Hermes — signed in</title>
+<html><head><meta charset="utf-8"><title>Xavani — signed in</title>
 <style>
 body { font: 16px/1.5 system-ui, sans-serif; margin: 10vh auto; max-width: 32rem; text-align: center; color: #222; }
 h1 { color: #1a7f37; } p { color: #555; }
@@ -807,13 +807,13 @@ h1 { color: #1a7f37; } p { color: #555; }
 """
 
 _ERROR_PAGE = """<!doctype html>
-<html><head><meta charset="utf-8"><title>Hermes — sign-in failed</title>
+<html><head><meta charset="utf-8"><title>Xavani — sign-in failed</title>
 <style>
 body {{ font: 16px/1.5 system-ui, sans-serif; margin: 10vh auto; max-width: 32rem; text-align: center; color: #222; }}
 h1 {{ color: #b42318; }} p {{ color: #555; }}
 </style></head>
 <body><h1>Sign-in failed</h1><p>{message}</p>
-<p>Return to your terminal — Hermes will walk you through a manual paste fallback.</p></body></html>
+<p>Return to your terminal — Xavani will walk you through a manual paste fallback.</p></body></html>
 """
 
 
@@ -891,7 +891,7 @@ def start_oauth_flow(
         "access_type": "offline",
         "prompt": "consent",
     }
-    auth_url = AUTH_ENDPOINT + "?" + urllib.parse.urlencode(params) + "#hermes"
+    auth_url = AUTH_ENDPOINT + "?" + urllib.parse.urlencode(params) + "#xavani"
 
     server_thread = threading.Thread(target=server.serve_forever, daemon=True)
     server_thread.start()
@@ -968,7 +968,7 @@ def _paste_mode_login(
         "access_type": "offline",
         "prompt": "consent",
     }
-    auth_url = AUTH_ENDPOINT + "?" + urllib.parse.urlencode(params) + "#hermes"
+    auth_url = AUTH_ENDPOINT + "?" + urllib.parse.urlencode(params) + "#xavani"
 
     print()
     print("Open this URL in a browser on any device:")
@@ -1055,7 +1055,7 @@ def run_gemini_oauth_login_pure() -> Dict[str, Any]:
 def resolve_project_id_from_env() -> str:
     """Return a GCP project ID from env vars, in priority order."""
     for var in (
-        "HERMES_GEMINI_PROJECT_ID",
+        "XAVANI_GEMINI_PROJECT_ID",
         "GOOGLE_CLOUD_PROJECT",
         "GOOGLE_CLOUD_PROJECT_ID",
     ):

@@ -2,7 +2,7 @@
 # MIT License -- See LICENSE file for full terms.
 # Built by Enternovate -- Open source. Private. Local.
 
-"""ACP permission bridging for Hermes dangerous-command approvals."""
+"""ACP permission bridging for Xavani dangerous-command approvals."""
 
 from __future__ import annotations
 
@@ -19,10 +19,10 @@ from acp.schema import (
 
 logger = logging.getLogger(__name__)
 
-# Maps ACP permission option ids to Hermes approval result strings.
+# Maps ACP permission option ids to Xavani approval result strings.
 # Option ids are stable across both the ``allow_permanent=True`` and
 # ``allow_permanent=False`` paths even though the option list differs.
-_OPTION_ID_TO_HERMES = {
+_OPTION_ID_TO_XAVANI = {
     "allow_once": "once",
     "allow_session": "session",
     "allow_always": "always",
@@ -43,13 +43,13 @@ def _permission_option_supports_kind(kind: str) -> bool:
 
 
 def _build_permission_options(*, allow_permanent: bool) -> list[PermissionOption]:
-    """Return ACP options that match Hermes approval semantics."""
+    """Return ACP options that match Xavani approval semantics."""
     options = [
         PermissionOption(option_id="allow_once", kind="allow_once", name="Allow once"),
         PermissionOption(
             option_id="allow_session",
             # ACP has no session-scoped kind, so use the closest persistent
-            # hint while keeping Hermes semantics in the option id.
+            # hint while keeping Xavani semantics in the option id.
             kind="allow_always",
             name="Allow for session",
         ),
@@ -96,8 +96,8 @@ def _build_permission_tool_call(command: str, description: str):
     )
 
 
-def _map_outcome_to_hermes(outcome: object, *, allowed_option_ids: set[str]) -> str:
-    """Map an ACP permission outcome into Hermes approval strings."""
+def _map_outcome_to_xavani(outcome: object, *, allowed_option_ids: set[str]) -> str:
+    """Map an ACP permission outcome into Xavani approval strings."""
     if not isinstance(outcome, AllowedOutcome):
         return "deny"
 
@@ -105,7 +105,7 @@ def _map_outcome_to_hermes(outcome: object, *, allowed_option_ids: set[str]) -> 
     if option_id not in allowed_option_ids:
         logger.warning("Permission request returned unknown option_id: %s", option_id)
         return "deny"
-    return _OPTION_ID_TO_HERMES.get(option_id, "deny")
+    return _OPTION_ID_TO_XAVANI.get(option_id, "deny")
 
 
 def make_approval_callback(
@@ -115,7 +115,7 @@ def make_approval_callback(
     timeout: float = 60.0,
 ) -> Callable[..., str]:
     """
-    Return a Hermes-compatible approval callback that bridges to ACP.
+    Return a Xavani-compatible approval callback that bridges to ACP.
 
     The callback accepts ``command`` and ``description`` plus optional
     keyword arguments such as ``allow_permanent`` used by
@@ -164,7 +164,7 @@ def make_approval_callback(
             return "deny"
 
         allowed_option_ids = {option.option_id for option in options}
-        return _map_outcome_to_hermes(
+        return _map_outcome_to_xavani(
             response.outcome,
             allowed_option_ids=allowed_option_ids,
         )

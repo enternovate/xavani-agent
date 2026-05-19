@@ -11,9 +11,9 @@ at startup, by THREE separate code paths:
   1. cli.py            -> ``env_mappings`` dict (CLI / TUI startup)
   2. gateway/run.py    -> ``_terminal_env_map`` dict (gateway / messaging
                           platforms)
-  3. hermes_cli/config.py:save_config_value
+  3. xavani_cli/config.py:save_config_value
                        -> ``_config_to_env_sync`` dict (one-shot when the
-                          user runs ``hermes config set …``)
+                          user runs ``xavani config set …``)
 
 If any one of these is missing a key, the corresponding config.yaml setting
 silently does nothing for that entry-point.  This bug already shipped once
@@ -23,8 +23,8 @@ for ``docker_run_as_host_user`` (gateway and CLI maps) and once for
 This test guards against future drift by extracting all three maps via source
 inspection and asserting they all bridge the same set of writable
 ``terminal.*`` keys.  Source inspection (rather than importing the live
-dicts) keeps the test independent of the user's ~/.hermes/config.yaml and
-mirrors the pattern used in tests/hermes_cli/test_config_drift.py.
+dicts) keeps the test independent of the user's ~/.xavani/config.yaml and
+mirrors the pattern used in tests/xavani_cli/test_config_drift.py.
 """
 
 import ast
@@ -91,8 +91,8 @@ def _gateway_env_map_keys() -> set[str]:
 
 
 def _save_config_env_sync_keys() -> set[str]:
-    """terminal config keys bridged by ``hermes config set foo bar``."""
-    from hermes_cli import config as hc_config
+    """terminal config keys bridged by ``xavani config set foo bar``."""
+    from xavani_cli import config as hc_config
     source = inspect.getsource(hc_config.set_config_value)
     keys = _extract_dict_keys(source, "_config_to_env_sync")
     # set_config_value uses fully-qualified ``terminal.foo`` keys; strip the
@@ -159,7 +159,7 @@ def test_cli_and_gateway_env_maps_agree():
 
 
 def test_save_config_set_supports_critical_bridged_keys():
-    """``hermes config set terminal.X true`` must propagate to .env for
+    """``xavani config set terminal.X true`` must propagate to .env for
     known-critical keys.  This used to be an all-keys invariant but several
     pre-existing terminal keys (ssh_*, docker_forward_env, docker_volumes)
     aren't in _config_to_env_sync and are instead handled via the separate
@@ -182,9 +182,9 @@ def test_save_config_set_supports_critical_bridged_keys():
     }
     missing = required - save_keys
     assert not missing, (
-        f"`hermes config set terminal.X` doesn't sync these load-bearing "
+        f"`xavani config set terminal.X` doesn't sync these load-bearing "
         f"keys to .env: {sorted(missing)}.  Add them to _config_to_env_sync "
-        f"in hermes_cli/config.py:set_config_value."
+        f"in xavani_cli/config.py:set_config_value."
     )
 
 

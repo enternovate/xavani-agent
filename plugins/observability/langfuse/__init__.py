@@ -2,27 +2,27 @@
 # MIT License -- See LICENSE file for full terms.
 # Built by Enternovate -- Open source. Private. Local.
 
-"""langfuse — Hermes plugin for Langfuse observability.
+"""langfuse — Xavani plugin for Langfuse observability.
 
-Traces Hermes conversations, LLM calls, and tool usage to Langfuse.
+Traces Xavani conversations, LLM calls, and tool usage to Langfuse.
 
-Activation is handled by the Hermes plugin system — standalone plugins only
-load when listed in ``plugins.enabled`` (via ``hermes plugins enable
+Activation is handled by the Xavani plugin system — standalone plugins only
+load when listed in ``plugins.enabled`` (via ``xavani plugins enable
 observability/langfuse``, or by checking the box in the interactive
-``hermes plugins`` UI). At runtime the plugin also requires the
+``xavani plugins`` UI). At runtime the plugin also requires the
 ``langfuse`` SDK and credentials; if either is missing the hooks are inert.
 
-Required env vars (set in ~/.hermes/.env):
-  HERMES_LANGFUSE_PUBLIC_KEY  - Langfuse project public key (pk-lf-...)
-  HERMES_LANGFUSE_SECRET_KEY  - Langfuse project secret key (sk-lf-...)
-  HERMES_LANGFUSE_BASE_URL    - Langfuse server URL (default: https://cloud.langfuse.com)
+Required env vars (set in ~/.xavani/.env):
+  XAVANI_LANGFUSE_PUBLIC_KEY  - Langfuse project public key (pk-lf-...)
+  XAVANI_LANGFUSE_SECRET_KEY  - Langfuse project secret key (sk-lf-...)
+  XAVANI_LANGFUSE_BASE_URL    - Langfuse server URL (default: https://cloud.langfuse.com)
 
 Optional env vars:
-  HERMES_LANGFUSE_ENV         - environment tag (e.g. "production", "local")
-  HERMES_LANGFUSE_RELEASE     - release/version tag
-  HERMES_LANGFUSE_SAMPLE_RATE - sampling rate 0.0–1.0 (default: 1.0)
-  HERMES_LANGFUSE_MAX_CHARS   - max chars per field (default: 12000)
-  HERMES_LANGFUSE_DEBUG       - set to "true" for verbose logging
+  XAVANI_LANGFUSE_ENV         - environment tag (e.g. "production", "local")
+  XAVANI_LANGFUSE_RELEASE     - release/version tag
+  XAVANI_LANGFUSE_SAMPLE_RATE - sampling rate 0.0–1.0 (default: 1.0)
+  XAVANI_LANGFUSE_MAX_CHARS   - max chars per field (default: 12000)
+  XAVANI_LANGFUSE_DEBUG       - set to "true" for verbose logging
 """
 from __future__ import annotations
 
@@ -70,8 +70,8 @@ _READ_FILE_TAIL_LINES = 15
 # credentials at construction time but drop every trace at flush time.
 # See #23823 — the silent-failure bug this guard fixes.
 _LANGFUSE_KEY_PREFIXES: Dict[str, str] = {
-    "HERMES_LANGFUSE_PUBLIC_KEY": "pk-lf-",
-    "HERMES_LANGFUSE_SECRET_KEY": "sk-lf-",
+    "XAVANI_LANGFUSE_PUBLIC_KEY": "pk-lf-",
+    "XAVANI_LANGFUSE_SECRET_KEY": "sk-lf-",
 }
 
 
@@ -88,7 +88,7 @@ def _env_bool(*names: str) -> bool:
 
 
 def _debug_enabled() -> bool:
-    return _env_bool("HERMES_LANGFUSE_DEBUG")
+    return _env_bool("XAVANI_LANGFUSE_DEBUG")
 
 
 def _debug(message: str) -> None:
@@ -144,7 +144,7 @@ def _validate_langfuse_key(env_name: str, value: str) -> Optional[str]:
 def _get_langfuse() -> Optional[Langfuse]:
     """Return a cached Langfuse client, or ``None`` if unavailable.
 
-    Activation of this plugin is controlled by the Hermes plugin system —
+    Activation of this plugin is controlled by the Xavani plugin system —
     this function only handles the runtime-availability gate (SDK installed
     + credentials present). The result is cached: on the first call we try
     to construct a client, and every subsequent call returns that client
@@ -160,8 +160,8 @@ def _get_langfuse() -> Optional[Langfuse]:
         _LANGFUSE_CLIENT = _INIT_FAILED
         return None
 
-    public_key = _env("HERMES_LANGFUSE_PUBLIC_KEY") or _env("LANGFUSE_PUBLIC_KEY")
-    secret_key = _env("HERMES_LANGFUSE_SECRET_KEY") or _env("LANGFUSE_SECRET_KEY")
+    public_key = _env("XAVANI_LANGFUSE_PUBLIC_KEY") or _env("LANGFUSE_PUBLIC_KEY")
+    secret_key = _env("XAVANI_LANGFUSE_SECRET_KEY") or _env("LANGFUSE_SECRET_KEY")
     if not (public_key and secret_key):
         _LANGFUSE_CLIENT = _INIT_FAILED
         return None
@@ -177,8 +177,8 @@ def _get_langfuse() -> Optional[Langfuse]:
     placeholder_issues = [
         msg
         for msg in (
-            _validate_langfuse_key("HERMES_LANGFUSE_PUBLIC_KEY", public_key),
-            _validate_langfuse_key("HERMES_LANGFUSE_SECRET_KEY", secret_key),
+            _validate_langfuse_key("XAVANI_LANGFUSE_PUBLIC_KEY", public_key),
+            _validate_langfuse_key("XAVANI_LANGFUSE_SECRET_KEY", secret_key),
         )
         if msg
     ]
@@ -186,17 +186,17 @@ def _get_langfuse() -> Optional[Langfuse]:
         logger.warning(
             "Langfuse plugin: credentials look like placeholders, traces will "
             "NOT be emitted (%s). Set real Langfuse keys (pk-lf-... / sk-lf-...) "
-            "or unset HERMES_LANGFUSE_PUBLIC_KEY / HERMES_LANGFUSE_SECRET_KEY to "
+            "or unset XAVANI_LANGFUSE_PUBLIC_KEY / XAVANI_LANGFUSE_SECRET_KEY to "
             "silence this warning.",
             "; ".join(placeholder_issues),
         )
         _LANGFUSE_CLIENT = _INIT_FAILED
         return None
 
-    base_url = _env("HERMES_LANGFUSE_BASE_URL") or _env("LANGFUSE_BASE_URL") or "https://cloud.langfuse.com"
-    environment = _env("HERMES_LANGFUSE_ENV") or _env("LANGFUSE_ENV")
-    release = _env("HERMES_LANGFUSE_RELEASE") or _env("LANGFUSE_RELEASE")
-    sample_rate = _env("HERMES_LANGFUSE_SAMPLE_RATE")
+    base_url = _env("XAVANI_LANGFUSE_BASE_URL") or _env("LANGFUSE_BASE_URL") or "https://cloud.langfuse.com"
+    environment = _env("XAVANI_LANGFUSE_ENV") or _env("LANGFUSE_ENV")
+    release = _env("XAVANI_LANGFUSE_RELEASE") or _env("LANGFUSE_RELEASE")
+    sample_rate = _env("XAVANI_LANGFUSE_SAMPLE_RATE")
 
     kwargs: Dict[str, Any] = {
         "public_key": public_key,
@@ -211,7 +211,7 @@ def _get_langfuse() -> Optional[Langfuse]:
         try:
             kwargs["sample_rate"] = float(sample_rate)
         except ValueError:
-            logger.warning("Invalid HERMES_LANGFUSE_SAMPLE_RATE=%r", sample_rate)
+            logger.warning("Invalid XAVANI_LANGFUSE_SAMPLE_RATE=%r", sample_rate)
 
     try:
         _LANGFUSE_CLIENT = Langfuse(**kwargs)
@@ -367,7 +367,7 @@ def _normalize_payload(value: Any, *, tool_name: str = "", args: Any = None) -> 
 
 def _safe_value(value: Any, *, max_chars: Optional[int] = None, depth: int = 0,
                 parse_json_strings: bool = False) -> Any:
-    max_chars = max_chars if max_chars is not None else int(_env("HERMES_LANGFUSE_MAX_CHARS", "12000") or "12000")
+    max_chars = max_chars if max_chars is not None else int(_env("XAVANI_LANGFUSE_MAX_CHARS", "12000") or "12000")
     if depth > 4:
         return "<max-depth>"
     if value is None or isinstance(value, (int, float, bool)):
@@ -548,7 +548,7 @@ def _start_root_trace(task_key: str, *, task_id: str, session_id: str, platform:
     trace_id = client.create_trace_id(seed=f"{session_id or 'sessionless'}::{task_id or task_key}")
     trace_input = _extract_last_user_message(messages)
     metadata = {
-        "source": "hermes",
+        "source": "xavani",
         "task_id": task_id,
         "platform": platform,
         "provider": provider,
@@ -565,12 +565,12 @@ def _start_root_trace(task_key: str, *, task_id: str, session_id: str, platform:
         try:
             with propagate_attributes(
                 session_id=session_id or task_key,
-                trace_name="Hermes turn",
-                tags=["hermes", "langfuse"],
+                trace_name="Xavani turn",
+                tags=["xavani", "langfuse"],
             ):
                 root_ctx = client.start_as_current_observation(
                     trace_context=trace_ctx,
-                    name="Hermes turn",
+                    name="Xavani turn",
                     as_type="chain",
                     input=trace_input,
                     metadata=metadata,
@@ -580,7 +580,7 @@ def _start_root_trace(task_key: str, *, task_id: str, session_id: str, platform:
         except Exception:
             root_ctx = client.start_as_current_observation(
                 trace_context=trace_ctx,
-                name="Hermes turn",
+                name="Xavani turn",
                 as_type="chain",
                 input=trace_input,
                 metadata=metadata,
@@ -590,7 +590,7 @@ def _start_root_trace(task_key: str, *, task_id: str, session_id: str, platform:
     else:
         root_ctx = client.start_as_current_observation(
             trace_context=trace_ctx,
-            name="Hermes turn",
+            name="Xavani turn",
             as_type="chain",
             input=trace_input,
             metadata=metadata,
@@ -694,8 +694,8 @@ def on_pre_llm_call(*, task_id: str = "", session_id: str = "", platform: str = 
                     provider: str = "", base_url: str = "", api_mode: str = "",
                     api_call_count: int = 0, messages: Any = None, turn_type: str = "user",
                     conversation_history: Any = None, user_message: Any = None, **_: Any) -> None:
-    # Older Hermes branches used pre_llm_call for request-scoped tracing and
-    # passed the actual API messages. Current Hermes also has a turn-scoped
+    # Older Xavani branches used pre_llm_call for request-scoped tracing and
+    # passed the actual API messages. Current Xavani also has a turn-scoped
     # pre_llm_call used for context injection; tracing that hook creates an
     # extra orphan/root trace before the real request trace. Only trace the
     # legacy request-shaped call here.
@@ -706,8 +706,8 @@ def on_pre_llm_call(*, task_id: str = "", session_id: str = "", platform: str = 
     if client is None:
         return
 
-    # messages is a list only for legacy Hermes branches that fired
-    # pre_llm_call with API messages directly. Current Hermes fires
+    # messages is a list only for legacy Xavani branches that fired
+    # pre_llm_call with API messages directly. Current Xavani fires
     # pre_llm_call for context injection (conversation_history/user_message,
     # no messages list) — tracing that would create orphan traces.
     task_key = _trace_key(task_id, session_id)
@@ -998,7 +998,7 @@ def on_post_tool_call(*, tool_name: str = "", args: Any = None, result: Any = No
 
 def register(ctx) -> None:
     # Register for both hook name variants so the plugin works across
-    # Hermes versions.  pre_api_request / post_api_request fire per API
+    # Xavani versions.  pre_api_request / post_api_request fire per API
     # call (preferred); pre_llm_call / post_llm_call fire once per turn.
     ctx.register_hook("pre_api_request", on_pre_llm_request)
     ctx.register_hook("post_api_request", on_post_llm_call)

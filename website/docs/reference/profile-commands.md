@@ -4,15 +4,15 @@ sidebar_position: 7
 
 # Profile Commands Reference
 
-This page covers all commands related to [Hermes profiles](../user-guide/profiles.md). For general CLI commands, see [CLI Commands Reference](./cli-commands.md).
+This page covers all commands related to [Xavani profiles](../user-guide/profiles.md). For general CLI commands, see [CLI Commands Reference](./cli-commands.md).
 
-## `hermes profile`
+## `xavani profile`
 
 ```bash
-hermes profile <subcommand>
+xavani profile <subcommand>
 ```
 
-Top-level command for managing profiles. Running `hermes profile` without a subcommand shows help.
+Top-level command for managing profiles. Running `xavani profile` without a subcommand shows help.
 
 | Subcommand | Description |
 |------------|-------------|
@@ -29,10 +29,10 @@ Top-level command for managing profiles. Running `hermes profile` without a subc
 | `update` | Re-pull a distribution-managed profile and re-apply its bundle. |
 | `info` | Show distribution metadata for a profile (origin URL, commit, last update). |
 
-## `hermes profile list`
+## `xavani profile list`
 
 ```bash
-hermes profile list
+xavani profile list
 ```
 
 Lists all profiles. The currently active profile is marked with `*`.
@@ -40,7 +40,7 @@ Lists all profiles. The currently active profile is marked with `*`.
 **Example:**
 
 ```bash
-$ hermes profile list
+$ xavani profile list
   default
 * work
   dev
@@ -49,13 +49,13 @@ $ hermes profile list
 
 No options.
 
-## `hermes profile use`
+## `xavani profile use`
 
 ```bash
-hermes profile use <name>
+xavani profile use <name>
 ```
 
-Sets `<name>` as the active profile. All subsequent `hermes` commands (without `-p`) will use this profile.
+Sets `<name>` as the active profile. All subsequent `xavani` commands (without `-p`) will use this profile.
 
 | Argument | Description |
 |----------|-------------|
@@ -64,14 +64,14 @@ Sets `<name>` as the active profile. All subsequent `hermes` commands (without `
 **Example:**
 
 ```bash
-hermes profile use work
-hermes profile use default
+xavani profile use work
+xavani profile use default
 ```
 
-## `hermes profile create`
+## `xavani profile create`
 
 ```bash
-hermes profile create <name> [options]
+xavani profile create <name> [options]
 ```
 
 Creates a new profile.
@@ -83,8 +83,8 @@ Creates a new profile.
 | `--clone-all` | Copy everything (config, memories, skills, sessions, state) from the current profile. |
 | `--clone-from <profile>` | Clone from a specific profile instead of the current one. Used with `--clone` or `--clone-all`. |
 | `--no-alias` | Skip wrapper script creation. |
-| `--description "<text>"` | One- or two-sentence description of what this profile is good at. Used by the kanban orchestrator to route tasks based on role instead of profile name alone. Skip and add later via `hermes profile describe`. Persisted in `<profile_dir>/profile.yaml`. |
-| `--no-skills` | Create an **empty** profile with zero bundled skills enabled. Writes a `.no-skills` marker into the profile so future `hermes update` runs won't re-seed the bundled set, and refuses to combine with `--clone` / `--clone-all` (which would copy skills in anyway). Useful for narrow orchestrator profiles or sandbox profiles that should not inherit the full skill catalog. |
+| `--description "<text>"` | One- or two-sentence description of what this profile is good at. Used by the kanban orchestrator to route tasks based on role instead of profile name alone. Skip and add later via `xavani profile describe`. Persisted in `<profile_dir>/profile.yaml`. |
+| `--no-skills` | Create an **empty** profile with zero bundled skills enabled. Writes a `.no-skills` marker into the profile so future `xavani update` runs won't re-seed the bundled set, and refuses to combine with `--clone` / `--clone-all` (which would copy skills in anyway). Useful for narrow orchestrator profiles or sandbox profiles that should not inherit the full skill catalog. |
 
 Creating a profile does **not** make that profile directory the default project/workspace directory for terminal commands. If you want a profile to start in a specific project, set `terminal.cwd` in that profile's `config.yaml`.
 
@@ -92,22 +92,22 @@ Creating a profile does **not** make that profile directory the default project/
 
 ```bash
 # Blank profile — needs full setup
-hermes profile create mybot
+xavani profile create mybot
 
 # Clone config only from current profile
-hermes profile create work --clone
+xavani profile create work --clone
 
 # Clone everything from current profile
-hermes profile create backup --clone-all
+xavani profile create backup --clone-all
 
 # Clone config from a specific profile
-hermes profile create work2 --clone --clone-from work
+xavani profile create work2 --clone --clone-from work
 ```
 
-## `hermes profile describe`
+## `xavani profile describe`
 
 ```bash
-hermes profile describe [<name>] [options]
+xavani profile describe [<name>] [options]
 ```
 
 Read or set a profile's description. The description is consumed by the kanban orchestrator to route tasks based on what each profile is good at, rather than guessing from the profile name alone. Persisted in `<profile_dir>/profile.yaml` so it survives reboots and is shared with the gateway.
@@ -126,22 +126,22 @@ With no flags, prints the current description (or `(no description set for '<nam
 
 ```bash
 # Read the current description
-hermes profile describe researcher
+xavani profile describe researcher
 
 # Set it explicitly
-hermes profile describe researcher --text "Reads source code and writes findings."
+xavani profile describe researcher --text "Reads source code and writes findings."
 
 # Let the LLM generate one
-hermes profile describe researcher --auto
+xavani profile describe researcher --auto
 
 # Fill in descriptions for every profile that doesn't have one
-hermes profile describe --all --auto
+xavani profile describe --all --auto
 ```
 
-## `hermes profile delete`
+## `xavani profile delete`
 
 ```bash
-hermes profile delete <name> [options]
+xavani profile delete <name> [options]
 ```
 
 Deletes a profile and removes its shell alias.
@@ -154,23 +154,23 @@ Deletes a profile and removes its shell alias.
 **Example:**
 
 ```bash
-hermes profile delete mybot
-hermes profile delete mybot --yes
+xavani profile delete mybot
+xavani profile delete mybot --yes
 ```
 
 :::warning
 This permanently deletes the profile's entire directory including all config, memories, sessions, and skills. Cannot delete the currently active profile.
 :::
 
-## `hermes profile show`
+## `xavani profile show`
 
 ```bash
-hermes profile show <name>
+xavani profile show <name>
 ```
 
 Displays details about a profile including its home directory, configured model, gateway status, skills count, and configuration file status.
 
-This shows the profile's Hermes home directory, not the terminal working directory. Terminal commands start from `terminal.cwd` (or the launch directory on the local backend when `cwd: "."`).
+This shows the profile's Xavani home directory, not the terminal working directory. Terminal commands start from `terminal.cwd` (or the launch directory on the local backend when `cwd: "."`).
 
 | Argument | Description |
 |----------|-------------|
@@ -179,9 +179,9 @@ This shows the profile's Hermes home directory, not the terminal working directo
 **Example:**
 
 ```bash
-$ hermes profile show work
+$ xavani profile show work
 Profile: work
-Path:    ~/.hermes/profiles/work
+Path:    ~/.xavani/profiles/work
 Model:   anthropic/claude-sonnet-4 (anthropic)
 Gateway: stopped
 Skills:  12
@@ -190,13 +190,13 @@ SOUL.md: exists
 Alias:   ~/.local/bin/work
 ```
 
-## `hermes profile alias`
+## `xavani profile alias`
 
 ```bash
-hermes profile alias <name> [options]
+xavani profile alias <name> [options]
 ```
 
-Regenerates the shell alias script at `~/.local/bin/<name>`. Useful if the alias was accidentally deleted or if you need to update it after moving your Hermes installation.
+Regenerates the shell alias script at `~/.local/bin/<name>`. Useful if the alias was accidentally deleted or if you need to update it after moving your Xavani installation.
 
 | Argument / Option | Description |
 |-------------------|-------------|
@@ -207,20 +207,20 @@ Regenerates the shell alias script at `~/.local/bin/<name>`. Useful if the alias
 **Example:**
 
 ```bash
-hermes profile alias work
+xavani profile alias work
 # Creates/updates ~/.local/bin/work
 
-hermes profile alias work --name mywork
+xavani profile alias work --name mywork
 # Creates ~/.local/bin/mywork
 
-hermes profile alias work --remove
+xavani profile alias work --remove
 # Removes the wrapper script
 ```
 
-## `hermes profile rename`
+## `xavani profile rename`
 
 ```bash
-hermes profile rename <old-name> <new-name>
+xavani profile rename <old-name> <new-name>
 ```
 
 Renames a profile. Updates the directory and shell alias.
@@ -233,15 +233,15 @@ Renames a profile. Updates the directory and shell alias.
 **Example:**
 
 ```bash
-hermes profile rename mybot assistant
-# ~/.hermes/profiles/mybot → ~/.hermes/profiles/assistant
+xavani profile rename mybot assistant
+# ~/.xavani/profiles/mybot → ~/.xavani/profiles/assistant
 # ~/.local/bin/mybot → ~/.local/bin/assistant
 ```
 
-## `hermes profile export`
+## `xavani profile export`
 
 ```bash
-hermes profile export <name> [options]
+xavani profile export <name> [options]
 ```
 
 Exports a profile as a compressed tar.gz archive.
@@ -254,16 +254,16 @@ Exports a profile as a compressed tar.gz archive.
 **Example:**
 
 ```bash
-hermes profile export work
+xavani profile export work
 # Creates work.tar.gz in the current directory
 
-hermes profile export work -o ./work-2026-03-29.tar.gz
+xavani profile export work -o ./work-2026-03-29.tar.gz
 ```
 
-## `hermes profile import`
+## `xavani profile import`
 
 ```bash
-hermes profile import <archive> [options]
+xavani profile import <archive> [options]
 ```
 
 Imports a profile from a tar.gz archive.
@@ -276,10 +276,10 @@ Imports a profile from a tar.gz archive.
 **Example:**
 
 ```bash
-hermes profile import ./work-2026-03-29.tar.gz
+xavani profile import ./work-2026-03-29.tar.gz
 # Infers profile name from the archive
 
-hermes profile import ./work-2026-03-29.tar.gz --name work-restored
+xavani profile import ./work-2026-03-29.tar.gz --name work-restored
 ```
 
 ## Distribution commands
@@ -301,16 +301,16 @@ The recipient's user data (memories, sessions, auth, their own edits to
 updates.
 
 :::info
-`hermes profile export` / `import` are still the right commands for
+`xavani profile export` / `import` are still the right commands for
 **local backup and restore** of a profile on your own machine. Distribution
 (`install` / `update` / `info`) is a separate concept: ship a profile via
 git so someone else can install it.
 :::
 
-### `hermes profile install`
+### `xavani profile install`
 
 ```bash
-hermes profile install <source> [--name <name>] [--alias] [--force] [--yes]
+xavani profile install <source> [--name <name>] [--alias] [--force] [--yes]
 ```
 
 Installs a profile distribution from a git URL or a local directory.
@@ -319,7 +319,7 @@ Installs a profile distribution from a git URL or a local directory.
 |--------|-------------|
 | `<source>` | Git URL (`github.com/user/repo`, `https://...`, `git@...`, `ssh://`, `git://`) or a local directory containing `distribution.yaml` at its root. |
 | `--name NAME` | Override the profile name from the manifest. |
-| `--alias` | Also create a shell wrapper (e.g. `telemetry` → `hermes -p telemetry`). |
+| `--alias` | Also create a shell wrapper (e.g. `telemetry` → `xavani -p telemetry`). |
 | `--force` | Overwrite an existing profile of the same name. User data is still preserved. |
 | `-y`, `--yes` | Skip the manifest-preview confirmation prompt. |
 
@@ -331,22 +331,22 @@ cron jobs before asking for confirmation. Required env vars go into a
 
 ```bash
 # Install from a GitHub repo (shorthand)
-hermes profile install github.com/kyle/telemetry-distribution --alias
+xavani profile install github.com/kyle/telemetry-distribution --alias
 
 # Install from a full HTTPS git URL
-hermes profile install https://github.com/kyle/telemetry-distribution.git
+xavani profile install https://github.com/kyle/telemetry-distribution.git
 
 # Install from SSH
-hermes profile install git@github.com:kyle/telemetry-distribution.git
+xavani profile install git@github.com:kyle/telemetry-distribution.git
 
 # Install from a local directory during development
-hermes profile install ./telemetry/
+xavani profile install ./telemetry/
 ```
 
-### `hermes profile update`
+### `xavani profile update`
 
 ```bash
-hermes profile update <name> [--force-config] [--yes]
+xavani profile update <name> [--force-config] [--yes]
 ```
 
 Re-clones the distribution from its recorded source and applies updates.
@@ -356,21 +356,21 @@ overwritten; user data (memories, sessions, auth, .env) is never touched.
 `config.yaml` is preserved by default to keep your local overrides.
 Pass `--force-config` to reset it to the distribution's shipped config.
 
-### `hermes profile info`
+### `xavani profile info`
 
 ```bash
-hermes profile info <name>
+xavani profile info <name>
 ```
 
 Prints the profile's distribution manifest — name, version, required
-Hermes version, author, env var requirements, the source URL/path, and
+Xavani version, author, env var requirements, the source URL/path, and
 the `Installed:` timestamp recorded when the distribution was last
 `install`-ed or `update`-d. Useful for checking what a shared profile
 needs before installing it, and for spotting "this profile was installed
 6 months ago and hasn't been updated."
 
-`hermes profile list` also shows the distribution name and version in a
-`Distribution` column, and `hermes profile show <name>` / `delete <name>`
+`xavani profile list` also shows the distribution name and version in a
+`Distribution` column, and `xavani profile show <name>` / `delete <name>`
 surface the source URL so you can tell at a glance which profiles came
 from a git repo vs. were created locally.
 
@@ -384,10 +384,10 @@ transparently.
 
 ```bash
 # Uses your SSH key, the same as any other `git clone`
-hermes profile install git@github.com:your-org/internal-assistant.git
+xavani profile install git@github.com:your-org/internal-assistant.git
 
 # Uses your git credential helper
-hermes profile install https://github.com/your-org/internal-assistant.git
+xavani profile install https://github.com/your-org/internal-assistant.git
 ```
 
 If a clone prompts for credentials interactively in your terminal during
@@ -402,7 +402,7 @@ Every distribution has a `distribution.yaml` at the root of its repository:
 name: telemetry
 version: 0.1.0
 description: "Compliance monitoring harness"
-hermes_requires: ">=0.12.0"
+xavani_requires: ">=0.12.0"
 author: "Your Name"
 license: "MIT"
 env_requires:
@@ -420,9 +420,9 @@ distribution_owned:   # optional; defaults to SOUL.md, config.yaml,
   - cron/
 ```
 
-`hermes_requires` supports `>=`, `<=`, `==`, `!=`, `>`, `<`, or a bare
+`xavani_requires` supports `>=`, `<=`, `==`, `!=`, `>`, `<`, or a bare
 version (treated as `>=`). Install fails with a clear error if the current
-Hermes version doesn't satisfy the spec.
+Xavani version doesn't satisfy the spec.
 
 `distribution_owned` is optional. If set, only those paths are replaced on
 update; anything else in the profile stays user-owned. If omitted, the
@@ -435,20 +435,20 @@ Authoring a distribution is just a git push:
 1. In your profile directory, create `distribution.yaml` with at least `name`
    and `version`.
 2. Initialize a git repo (or use an existing one) and push to GitHub /
-   GitLab / any host Hermes can clone from.
-3. Tell recipients to run `hermes profile install <your-repo-url>`.
+   GitLab / any host Xavani can clone from.
+3. Tell recipients to run `xavani profile install <your-repo-url>`.
 
 Use git tags for versioned releases — recipients who clone `HEAD` get your
 latest state, and you can always bump `version:` in the manifest.
 
-## `hermes -p` / `hermes --profile`
+## `xavani -p` / `xavani --profile`
 
 ```bash
-hermes -p <name> <command> [options]
-hermes --profile <name> <command> [options]
+xavani -p <name> <command> [options]
+xavani --profile <name> <command> [options]
 ```
 
-Global flag to run any Hermes command under a specific profile without changing the sticky default. This overrides the active profile for the duration of the command.
+Global flag to run any Xavani command under a specific profile without changing the sticky default. This overrides the active profile for the duration of the command.
 
 | Option | Description |
 |--------|-------------|
@@ -457,16 +457,16 @@ Global flag to run any Hermes command under a specific profile without changing 
 **Examples:**
 
 ```bash
-hermes -p work chat -q "Check the server status"
-hermes --profile dev gateway start
-hermes -p personal skills list
-hermes -p work config edit
+xavani -p work chat -q "Check the server status"
+xavani --profile dev gateway start
+xavani -p personal skills list
+xavani -p work config edit
 ```
 
-## `hermes completion`
+## `xavani completion`
 
 ```bash
-hermes completion <shell>
+xavani completion <shell>
 ```
 
 Generates shell completion scripts. Includes completions for profile names and profile subcommands.
@@ -479,18 +479,18 @@ Generates shell completion scripts. Includes completions for profile names and p
 
 ```bash
 # Install completions
-hermes completion bash >> ~/.bashrc
-hermes completion zsh >> ~/.zshrc
-hermes completion fish > ~/.config/fish/completions/hermes.fish
+xavani completion bash >> ~/.bashrc
+xavani completion zsh >> ~/.zshrc
+xavani completion fish > ~/.config/fish/completions/xavani.fish
 
 # Reload shell
 source ~/.bashrc
 ```
 
 After installation, tab completion works for:
-- `hermes profile <TAB>` — subcommands (list, use, create, etc.)
-- `hermes profile use <TAB>` — profile names
-- `hermes -p <TAB>` — profile names
+- `xavani profile <TAB>` — subcommands (list, use, create, etc.)
+- `xavani profile use <TAB>` — profile names
+- `xavani -p <TAB>` — profile names
 
 ## See also
 

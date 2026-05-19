@@ -29,10 +29,10 @@ import pytest
 
 @pytest.fixture(autouse=True)
 def _isolate_home(tmp_path, monkeypatch):
-    hermes_home = tmp_path / ".hermes"
-    hermes_home.mkdir()
-    monkeypatch.setenv("HERMES_HOME", str(hermes_home))
-    yield hermes_home
+    xavani_home = tmp_path / ".xavani"
+    xavani_home.mkdir()
+    monkeypatch.setenv("XAVANI_HOME", str(xavani_home))
+    yield xavani_home
 
 
 # ---------------------------------------------------------------------------
@@ -177,9 +177,9 @@ def test_start_spawns_subprocess_and_writes_active_pointer(tmp_path):
     assert res["ok"] is True
     assert res["meeting_id"] == "abc-defg-hij"
     assert res["pid"] == 99999
-    assert captured_env["HERMES_MEET_URL"] == "https://meet.google.com/abc-defg-hij"
-    assert captured_env["HERMES_MEET_GUEST_NAME"] == "Test Bot"
-    assert captured_env["HERMES_MEET_DURATION"] == "15m"
+    assert captured_env["XAVANI_MEET_URL"] == "https://meet.google.com/abc-defg-hij"
+    assert captured_env["XAVANI_MEET_GUEST_NAME"] == "Test Bot"
+    assert captured_env["XAVANI_MEET_DURATION"] == "15m"
     # python -m plugins.google_meet.meet_bot
     assert any("plugins.google_meet.meet_bot" in a for a in captured_argv)
 
@@ -193,7 +193,7 @@ def test_start_spawns_subprocess_and_writes_active_pointer(tmp_path):
 def test_transcript_reads_last_n_lines(tmp_path):
     from plugins.google_meet import process_manager as pm
 
-    meeting_dir = Path(os.environ["HERMES_HOME"]) / "workspace" / "meetings" / "abc-defg-hij"
+    meeting_dir = Path(os.environ["XAVANI_HOME"]) / "workspace" / "meetings" / "abc-defg-hij"
     meeting_dir.mkdir(parents=True)
     (meeting_dir / "transcript.txt").write_text(
         "[10:00:00] Alice: one\n"
@@ -389,7 +389,7 @@ def test_enqueue_say_no_active_meeting():
 def test_enqueue_say_rejects_transcribe_mode(tmp_path):
     from plugins.google_meet import process_manager as pm
 
-    out_dir = Path(os.environ["HERMES_HOME"]) / "workspace" / "meetings" / "abc-defg-hij"
+    out_dir = Path(os.environ["XAVANI_HOME"]) / "workspace" / "meetings" / "abc-defg-hij"
     out_dir.mkdir(parents=True)
     pm._write_active({
         "pid": 0, "meeting_id": "abc-defg-hij",
@@ -404,7 +404,7 @@ def test_enqueue_say_rejects_transcribe_mode(tmp_path):
 def test_enqueue_say_writes_jsonl_in_realtime_mode():
     from plugins.google_meet import process_manager as pm
 
-    out_dir = Path(os.environ["HERMES_HOME"]) / "workspace" / "meetings" / "abc-defg-hij"
+    out_dir = Path(os.environ["XAVANI_HOME"]) / "workspace" / "meetings" / "abc-defg-hij"
     out_dir.mkdir(parents=True)
     pm._write_active({
         "pid": 0, "meeting_id": "abc-defg-hij",
@@ -460,11 +460,11 @@ def test_start_realtime_env_vars_threaded_through():
             realtime_instructions="Be brief.",
             realtime_api_key="sk-test",
         )
-    assert captured_env["HERMES_MEET_MODE"] == "realtime"
-    assert captured_env["HERMES_MEET_REALTIME_MODEL"] == "gpt-realtime"
-    assert captured_env["HERMES_MEET_REALTIME_VOICE"] == "alloy"
-    assert captured_env["HERMES_MEET_REALTIME_INSTRUCTIONS"] == "Be brief."
-    assert captured_env["HERMES_MEET_REALTIME_KEY"] == "sk-test"
+    assert captured_env["XAVANI_MEET_MODE"] == "realtime"
+    assert captured_env["XAVANI_MEET_REALTIME_MODEL"] == "gpt-realtime"
+    assert captured_env["XAVANI_MEET_REALTIME_VOICE"] == "alloy"
+    assert captured_env["XAVANI_MEET_REALTIME_INSTRUCTIONS"] == "Be brief."
+    assert captured_env["XAVANI_MEET_REALTIME_KEY"] == "sk-test"
 
 
 def test_meet_join_accepts_realtime_mode():
@@ -575,11 +575,11 @@ def test_meet_join_auto_node_ambiguous_returns_error():
 
 
 def test_cli_register_includes_node_subcommand():
-    """`hermes meet` argparse tree includes the node subtree."""
+    """`xavani meet` argparse tree includes the node subtree."""
     import argparse
     from plugins.google_meet.cli import register_cli
 
-    parser = argparse.ArgumentParser(prog="hermes meet")
+    parser = argparse.ArgumentParser(prog="xavani meet")
     register_cli(parser)
 
     # Parse a known-good node invocation to prove the subtree is wired.
@@ -592,7 +592,7 @@ def test_cli_join_accepts_mode_and_node_flags():
     import argparse
     from plugins.google_meet.cli import register_cli
 
-    parser = argparse.ArgumentParser(prog="hermes meet")
+    parser = argparse.ArgumentParser(prog="xavani meet")
     register_cli(parser)
 
     ns = parser.parse_args([
@@ -607,7 +607,7 @@ def test_cli_say_subcommand_exists():
     import argparse
     from plugins.google_meet.cli import register_cli
 
-    parser = argparse.ArgumentParser(prog="hermes meet")
+    parser = argparse.ArgumentParser(prog="xavani meet")
     register_cli(parser)
 
     ns = parser.parse_args(["say", "hello team", "--node", "my-mac"])
@@ -654,11 +654,11 @@ def test_looks_like_human_speaker():
     from plugins.google_meet.meet_bot import _looks_like_human_speaker
 
     # Blank, "unknown", "you", and the bot's own name → not human (no barge-in)
-    for s in ("", "   ", "Unknown", "unknown", "You", "you", "Hermes Agent", "hermes agent"):
-        assert not _looks_like_human_speaker(s, "Hermes Agent"), f"{s!r} should NOT be human"
+    for s in ("", "   ", "Unknown", "unknown", "You", "you", "Xavani Agent", "xavani agent"):
+        assert not _looks_like_human_speaker(s, "Xavani Agent"), f"{s!r} should NOT be human"
     # Real names → human (barge-in)
     for s in ("Alice", "Bob Lee", "@teknium"):
-        assert _looks_like_human_speaker(s, "Hermes Agent"), f"{s!r} SHOULD be human"
+        assert _looks_like_human_speaker(s, "Xavani Agent"), f"{s!r} SHOULD be human"
 
 
 def test_detect_admission_returns_false_on_error():
@@ -726,14 +726,14 @@ def test_realtime_session_counters_initialized():
 
 
 # ---------------------------------------------------------------------------
-# hermes meet install CLI
+# xavani meet install CLI
 # ---------------------------------------------------------------------------
 
 def test_cli_install_subcommand_is_registered():
     import argparse
     from plugins.google_meet.cli import register_cli
 
-    parser = argparse.ArgumentParser(prog="hermes meet")
+    parser = argparse.ArgumentParser(prog="xavani meet")
     register_cli(parser)
 
     ns = parser.parse_args(["install"])
@@ -746,7 +746,7 @@ def test_cli_install_flags_parse():
     import argparse
     from plugins.google_meet.cli import register_cli
 
-    parser = argparse.ArgumentParser(prog="hermes meet")
+    parser = argparse.ArgumentParser(prog="xavani meet")
     register_cli(parser)
 
     ns = parser.parse_args(["install", "--realtime", "--yes"])

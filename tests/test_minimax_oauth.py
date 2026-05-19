@@ -2,7 +2,7 @@
 # MIT License -- See LICENSE file for full terms.
 # Built by Enternovate -- Open source. Private. Local.
 
-"""Tests for MiniMax OAuth provider (hermes_cli/auth.py).
+"""Tests for MiniMax OAuth provider (xavani_cli/auth.py).
 
 Covers:
 - PKCE pair generation (S256 challenge)
@@ -24,7 +24,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from hermes_cli.auth import (
+from xavani_cli.auth import (
     PROVIDER_REGISTRY,
     AuthError,
     MINIMAX_OAUTH_CLIENT_ID,
@@ -300,7 +300,7 @@ def test_poll_token_timeout_raises():
     pending_resp = _make_httpx_response(200, {"status": "pending"})
     client.post.return_value = pending_resp
 
-    import hermes_cli.auth as auth_module
+    import xavani_cli.auth as auth_module
     with patch.object(auth_module, "time") as mock_time_mod:
         # We need to patch the 'time' module used inside _minimax_poll_token
         # The function imports 'import time as _time' locally.
@@ -377,7 +377,7 @@ def test_refresh_updates_access_token():
         mock_client_class.return_value = mock_client_instance
 
         # Patch _minimax_save_auth_state to avoid touching the auth store
-        with patch("hermes_cli.auth._minimax_save_auth_state"):
+        with patch("xavani_cli.auth._minimax_save_auth_state"):
             result = _refresh_minimax_oauth_state(state)
 
     assert result["access_token"] == "new-access"
@@ -415,7 +415,7 @@ def test_refresh_updates_access_token_absolute_ms_expired_in():
         mock_client_instance.post.return_value = mock_resp
         mock_client_class.return_value = mock_client_instance
 
-        with patch("hermes_cli.auth._minimax_save_auth_state"):
+        with patch("xavani_cli.auth._minimax_save_auth_state"):
             result = _refresh_minimax_oauth_state(state)
 
     assert result["access_token"] == "new-access"
@@ -465,7 +465,7 @@ def test_refresh_reuse_triggers_relogin_required():
 
 def test_resolve_credentials_requires_login():
     """When no state is stored, resolve_minimax_oauth_runtime_credentials raises."""
-    with patch("hermes_cli.auth.get_provider_auth_state", return_value=None):
+    with patch("xavani_cli.auth.get_provider_auth_state", return_value=None):
         with pytest.raises(AuthError) as exc_info:
             resolve_minimax_oauth_runtime_credentials()
 
@@ -508,9 +508,9 @@ def test_resolve_credentials_quarantines_dead_tokens_on_terminal_refresh_failure
             relogin_required=True,
         )
 
-    with patch("hermes_cli.auth.get_provider_auth_state", return_value=stale_state), \
-         patch("hermes_cli.auth._refresh_minimax_oauth_state", side_effect=_terminal_refresh), \
-         patch("hermes_cli.auth._minimax_save_auth_state", side_effect=_capture_save):
+    with patch("xavani_cli.auth.get_provider_auth_state", return_value=stale_state), \
+         patch("xavani_cli.auth._refresh_minimax_oauth_state", side_effect=_terminal_refresh), \
+         patch("xavani_cli.auth._minimax_save_auth_state", side_effect=_capture_save):
         with pytest.raises(AuthError) as exc_info:
             resolve_minimax_oauth_runtime_credentials()
 
@@ -566,9 +566,9 @@ def test_resolve_credentials_does_not_quarantine_on_transient_refresh_failure():
             relogin_required=False,
         )
 
-    with patch("hermes_cli.auth.get_provider_auth_state", return_value=stale_state), \
-         patch("hermes_cli.auth._refresh_minimax_oauth_state", side_effect=_transient_refresh), \
-         patch("hermes_cli.auth._minimax_save_auth_state", side_effect=lambda s: saved_states.append(dict(s))):
+    with patch("xavani_cli.auth.get_provider_auth_state", return_value=stale_state), \
+         patch("xavani_cli.auth._refresh_minimax_oauth_state", side_effect=_transient_refresh), \
+         patch("xavani_cli.auth._minimax_save_auth_state", side_effect=lambda s: saved_states.append(dict(s))):
         with pytest.raises(AuthError) as exc_info:
             resolve_minimax_oauth_runtime_credentials()
 
@@ -597,7 +597,7 @@ def test_provider_registry_contains_minimax_oauth():
 # ---------------------------------------------------------------------------
 
 def test_minimax_oauth_alias_resolves():
-    from hermes_cli.auth import resolve_provider
+    from xavani_cli.auth import resolve_provider
     # Only test that minimax-oauth itself resolves (alias resolution is tested in models)
     result = resolve_provider("minimax-oauth")
     assert result == "minimax-oauth"
@@ -608,7 +608,7 @@ def test_minimax_oauth_alias_resolves():
 # ---------------------------------------------------------------------------
 
 def test_get_minimax_oauth_auth_status_not_logged_in():
-    with patch("hermes_cli.auth.get_provider_auth_state", return_value=None):
+    with patch("xavani_cli.auth.get_provider_auth_state", return_value=None):
         status = get_minimax_oauth_auth_status()
 
     assert status["logged_in"] is False
@@ -626,7 +626,7 @@ def test_get_minimax_oauth_auth_status_logged_in():
         "region": "global",
     }
 
-    with patch("hermes_cli.auth.get_provider_auth_state", return_value=state):
+    with patch("xavani_cli.auth.get_provider_auth_state", return_value=state):
         status = get_minimax_oauth_auth_status()
 
     assert status["logged_in"] is True
@@ -640,7 +640,7 @@ def test_generic_auth_status_dispatches_minimax_oauth():
         "region": "global",
     }
 
-    with patch("hermes_cli.auth.get_provider_auth_state", return_value=state):
+    with patch("xavani_cli.auth.get_provider_auth_state", return_value=state):
         status = get_auth_status("minimax-oauth")
 
     assert status["logged_in"] is True

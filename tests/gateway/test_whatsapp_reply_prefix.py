@@ -32,7 +32,7 @@ class TestConfigYamlBridging:
         config_yaml = tmp_path / "config.yaml"
         config_yaml.write_text('whatsapp:\n  reply_prefix: "Custom Bot"\n')
 
-        with patch("gateway.config.get_hermes_home", return_value=tmp_path):
+        with patch("gateway.config.get_xavani_home", return_value=tmp_path):
             from gateway.config import load_gateway_config
             # Need to also patch WHATSAPP_ENABLED so the platform exists
             with patch.dict("os.environ", {"WHATSAPP_ENABLED": "true"}, clear=False):
@@ -47,7 +47,7 @@ class TestConfigYamlBridging:
         config_yaml = tmp_path / "config.yaml"
         config_yaml.write_text('whatsapp:\n  reply_prefix: ""\n')
 
-        with patch("gateway.config.get_hermes_home", return_value=tmp_path):
+        with patch("gateway.config.get_xavani_home", return_value=tmp_path):
             from gateway.config import load_gateway_config
             with patch.dict("os.environ", {"WHATSAPP_ENABLED": "true"}, clear=False):
                 config = load_gateway_config()
@@ -61,7 +61,7 @@ class TestConfigYamlBridging:
         config_yaml = tmp_path / "config.yaml"
         config_yaml.write_text("timezone: UTC\n")
 
-        with patch("gateway.config.get_hermes_home", return_value=tmp_path):
+        with patch("gateway.config.get_xavani_home", return_value=tmp_path):
             from gateway.config import load_gateway_config
             with patch.dict("os.environ", {"WHATSAPP_ENABLED": "true"}, clear=False):
                 config = load_gateway_config()
@@ -75,7 +75,7 @@ class TestConfigYamlBridging:
         config_yaml = tmp_path / "config.yaml"
         config_yaml.write_text("whatsapp:\n  other_setting: true\n")
 
-        with patch("gateway.config.get_hermes_home", return_value=tmp_path):
+        with patch("gateway.config.get_xavani_home", return_value=tmp_path):
             from gateway.config import load_gateway_config
             with patch.dict("os.environ", {"WHATSAPP_ENABLED": "true"}, clear=False):
                 config = load_gateway_config()
@@ -121,5 +121,5 @@ class TestConfigVersionCoverage:
 
     def test_default_config_version_covers_env_var_versions(self):
         """_config_version must be >= the highest ENV_VARS_BY_VERSION key."""
-        from hermes_cli.config import DEFAULT_CONFIG, ENV_VARS_BY_VERSION
+        from xavani_cli.config import DEFAULT_CONFIG, ENV_VARS_BY_VERSION
         assert DEFAULT_CONFIG["_config_version"] >= max(ENV_VARS_BY_VERSION)

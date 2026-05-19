@@ -29,9 +29,9 @@ import logging
 # Force Xavani home directory BEFORE any other imports
 _XAVANI_HOME = os.path.expanduser("~/.xavani")
 os.environ.setdefault("XAVANI_HOME", _XAVANI_HOME)
-os.environ.setdefault("HERMES_HOME", _XAVANI_HOME)  # Hermes compat
-os.environ["HERMES_QUIET"] = "1"
-os.environ["HERMES_DISABLE_TELEMETRY"] = "1"
+os.environ.setdefault("XAVANI_HOME", _XAVANI_HOME)  # Xavani compat
+os.environ["XAVANI_QUIET"] = "1"
+os.environ["XAVANI_DISABLE_TELEMETRY"] = "1"
 os.environ["DO_NOT_TRACK"] = "1"
 
 # Create Xavani directories
@@ -41,13 +41,13 @@ for d in ["", "logs", "skills", "policies", "installed", "data"]:
 # ── Imports ────────────────────────────────────────────────────────
 
 # Set skin before any CLI components initialize
-from hermes_cli.skin_engine import set_active_skin, get_active_skin
+from xavani_cli.skin_engine import set_active_skin, get_active_skin
 set_active_skin("xavani-darkblue")
 
-from cli import HermesCLI, main as hermes_main
-from hermes_cli.oag_commands import OAG_COMMAND_DEFS, OAG_COMMAND_HANDLERS, register_oag_commands
-from hermes_cli.commands import COMMAND_REGISTRY
-from hermes_cli.config import cfg_get
+from cli import XavaniCLI, main as xavani_main
+from xavani_cli.oag_commands import OAG_COMMAND_DEFS, OAG_COMMAND_HANDLERS, register_oag_commands
+from xavani_cli.commands import COMMAND_REGISTRY
+from xavani_cli.config import cfg_get
 from agent.display import KawaiiSpinner
 from rich.console import Console
 from rich.panel import Panel
@@ -129,7 +129,7 @@ def show_startup_explanation(console: Console = None):
             "  [#88c0d0]⟡[/#88c0d0]  Or run: [bold]xavani --message \"your task\"[/bold]\n"
             "\n"
             "[#5e81ac]  Migrating from another agent?[/#5e81ac]\n"
-            "  [#88c0d0]⟡[/#88c0d0]  Run: [bold]xavani --migrate-from-hermes[/bold]\n"
+            "  [#88c0d0]⟡[/#88c0d0]  Run: [bold]xavani --migrate-from-xavani[/bold]\n"
             "  [#88c0d0]⟡[/#88c0d0]  Run: [bold]xavani --migrate-from-openclaw[/bold]\n"
             "\n"
             "[#81a1c1]  Buffalo out. ⚡[/#81a1c1]\n"
@@ -178,7 +178,7 @@ def show_xavani_banner(console: Console = None):
 
 # ── Xavani CLI Class ──────────────────────────────────────────────
 
-class XavaniCLI(HermesCLI):
+class XavaniCLI(XavaniCLI):
     """Xavani Agent CLI — the open-source AI agent gateway."""
 
     def __init__(self, *args, **kwargs):
@@ -204,11 +204,11 @@ class XavaniCLI(HermesCLI):
 def _run_migrate_agent(dry_run: bool):
     """Run config migration from another agent."""
     try:
-        from scripts.migrate_from_hermes import migrate_hermes
-        migrate_hermes(dry_run=dry_run)
+        from scripts.migrate_from_xavani import migrate_xavani
+        migrate_xavani(dry_run=dry_run)
     except ImportError as e:
         print(f"Error: Could not load migration script: {e}")
-        print("Make sure scripts/migrate_from_hermes.py exists.")
+        print("Make sure scripts/migrate_from_xavani.py exists.")
         sys.exit(1)
     except Exception as e:
         print(f"Error during migration: {e}")
@@ -280,7 +280,7 @@ def xavani_main(
         return
 
     if install:
-        from hermes_cli.oag_commands import oag_install
+        from xavani_cli.oag_commands import oag_install
         oag_install(install)
         return
 

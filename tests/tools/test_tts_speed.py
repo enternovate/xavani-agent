@@ -16,7 +16,7 @@ def clean_env(monkeypatch):
         "OPENAI_API_KEY",
         "MINIMAX_API_KEY",
         "MINIMAX_GROUP_ID",
-        "HERMES_SESSION_PLATFORM",
+        "XAVANI_SESSION_PLATFORM",
     ):
         monkeypatch.delenv(key, raising=False)
 

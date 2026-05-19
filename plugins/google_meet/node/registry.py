@@ -4,7 +4,7 @@
 
 """Local JSON registry of approved remote meet nodes.
 
-Lives at ``$HERMES_HOME/workspace/meetings/nodes.json``. The gateway
+Lives at ``$XAVANI_HOME/workspace/meetings/nodes.json``. The gateway
 consults it to resolve a ``chrome_node`` name to a ``(url, token)`` pair
 before opening a WebSocket to the remote bot host.
 
@@ -28,11 +28,11 @@ import time
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from hermes_constants import get_hermes_home
+from xavani_constants import get_xavani_home
 
 
 def _default_path() -> Path:
-    return Path(get_hermes_home()) / "workspace" / "meetings" / "nodes.json"
+    return Path(get_xavani_home()) / "workspace" / "meetings" / "nodes.json"
 
 
 class NodeRegistry:

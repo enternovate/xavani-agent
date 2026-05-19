@@ -24,7 +24,7 @@ def _reset_registry():
 
 @pytest.fixture
 def cfg_home(tmp_path, monkeypatch):
-    monkeypatch.setenv("HERMES_HOME", str(tmp_path))
+    monkeypatch.setenv("XAVANI_HOME", str(tmp_path))
     return tmp_path
 
 
@@ -93,7 +93,7 @@ class TestDynamicSchemaBuilder:
 
         desc = _build_dynamic_video_schema()["description"]
         assert "No video backend is configured" in desc
-        assert "hermes tools" in desc
+        assert "xavani tools" in desc
 
     def test_does_not_mention_edit_or_extend(self, cfg_home):
         """The simplified surface only does text→video and image→video.
@@ -116,7 +116,7 @@ class TestDynamicSchemaBuilder:
         _write_cfg(cfg_home, {"video_gen": {"provider": "both"}})
         video_gen_registry.register_provider(_BothModalitiesProvider())
 
-        import hermes_cli.plugins as plugins_module
+        import xavani_cli.plugins as plugins_module
         saved = plugins_module._ensure_plugins_discovered
         plugins_module._ensure_plugins_discovered = lambda *a, **k: None
         try:
@@ -136,7 +136,7 @@ class TestDynamicSchemaBuilder:
         _write_cfg(cfg_home, {"video_gen": {"provider": "img-only"}})
         video_gen_registry.register_provider(_ImageOnlyProvider())
 
-        import hermes_cli.plugins as plugins_module
+        import xavani_cli.plugins as plugins_module
         saved = plugins_module._ensure_plugins_discovered
         plugins_module._ensure_plugins_discovered = lambda *a, **k: None
         try:

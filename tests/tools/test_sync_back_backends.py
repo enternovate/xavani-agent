@@ -120,7 +120,7 @@ class TestSSHBulkDownload:
         cmd_str = " ".join(cmd)
         assert "tar cf -" in cmd_str
         assert "-C /" in cmd_str
-        assert "home/testuser/.hermes" in cmd_str
+        assert "home/testuser/.xavani" in cmd_str
         assert "ssh" in cmd_str
         assert "testuser@example.com" in cmd_str
 
@@ -243,7 +243,7 @@ class TestModalBulkDownload:
     """Unit tests for _modal_bulk_download."""
 
     def test_modal_bulk_download_command(self, tmp_path):
-        """exec should be called with tar cf - -C /root/.hermes ."""
+        """exec should be called with tar cf - -C /root/.xavani ."""
         env = _make_mock_modal_env()
         exec_calls = _wire_modal_download(env, tar_bytes=b"tar-content")
         dest = tmp_path / "backup.tar"
@@ -255,7 +255,7 @@ class TestModalBulkDownload:
         assert args[0] == "bash"
         assert args[1] == "-c"
         assert "tar cf -" in args[2]
-        assert "-C / root/.hermes" in args[2]
+        assert "-C / root/.xavani" in args[2]
 
     def test_modal_bulk_download_writes_to_dest(self, tmp_path):
         """Downloaded tar bytes should be written to the dest path."""
@@ -359,18 +359,18 @@ class TestDaytonaBulkDownload:
         tar_cmd = env._sandbox.process.exec.call_args_list[0][0][0]
         assert "tar cf" in tar_cmd
         # PID-suffixed temp path avoids collisions on sync_back retry
-        assert "/tmp/.hermes_sync." in tar_cmd
+        assert "/tmp/.xavani_sync." in tar_cmd
         assert ".tar" in tar_cmd
-        assert ".hermes" in tar_cmd
+        assert ".xavani" in tar_cmd
 
         cleanup_cmd = env._sandbox.process.exec.call_args_list[1][0][0]
         assert "rm -f" in cleanup_cmd
-        assert "/tmp/.hermes_sync." in cleanup_cmd
+        assert "/tmp/.xavani_sync." in cleanup_cmd
 
         # download_file called once with the same PID-suffixed path
         env._sandbox.fs.download_file.assert_called_once()
         download_args = env._sandbox.fs.download_file.call_args[0]
-        assert download_args[0].startswith("/tmp/.hermes_sync.")
+        assert download_args[0].startswith("/tmp/.xavani_sync.")
         assert download_args[0].endswith(".tar")
         assert download_args[1] == str(dest)
 
@@ -383,7 +383,7 @@ class TestDaytonaBulkDownload:
         env._daytona_bulk_download(dest)
 
         tar_cmd = env._sandbox.process.exec.call_args_list[0][0][0]
-        assert "home/daytona/.hermes" in tar_cmd
+        assert "home/daytona/.xavani" in tar_cmd
 
 
 class TestDaytonaCleanup:
@@ -457,7 +457,7 @@ class TestBulkDownloadWiring:
         # Replicate the wiring done in __init__
         from tools.environments.file_sync import iter_sync_files
         env._sync_manager = modal_env.FileSyncManager(
-            get_files_fn=lambda: iter_sync_files("/root/.hermes"),
+            get_files_fn=lambda: iter_sync_files("/root/.xavani"),
             upload_fn=env._modal_upload,
             delete_fn=env._modal_delete,
             bulk_upload_fn=env._modal_bulk_upload,
@@ -488,7 +488,7 @@ class TestBulkDownloadWiring:
         # Replicate the wiring done in __init__
         from tools.environments.file_sync import iter_sync_files
         env._sync_manager = daytona_env.FileSyncManager(
-            get_files_fn=lambda: iter_sync_files(f"{env._remote_home}/.hermes"),
+            get_files_fn=lambda: iter_sync_files(f"{env._remote_home}/.xavani"),
             upload_fn=env._daytona_upload,
             delete_fn=env._daytona_delete,
             bulk_upload_fn=env._daytona_bulk_upload,

@@ -3,9 +3,9 @@
 # Built by Enternovate -- Open source. Private. Local.
 
 """
-Hermes Gateway - Multi-platform messaging integration.
+Xavani Gateway - Multi-platform messaging integration.
 
-This module provides a unified gateway for connecting the Hermes agent
+This module provides a unified gateway for connecting the Xavani agent
 to various messaging platforms (Telegram, Discord, WhatsApp, Weixin, and more) with:
 - Session management (persistent conversations with reset policies)
 - Dynamic context injection (agent knows where messages come from)
@@ -21,6 +21,7 @@ from .session import (
     build_session_context_prompt,
 )
 from .delivery import DeliveryRouter, DeliveryTarget
+from .security import validate_path, is_safe_url
 
 __all__ = [
     # Config
@@ -36,4 +37,7 @@ __all__ = [
     # Delivery
     "DeliveryRouter",
     "DeliveryTarget",
+    # Security
+    "validate_path",
+    "is_safe_url",
 ]

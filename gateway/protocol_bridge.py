@@ -479,12 +479,13 @@ class MCPToolAdapter:
                     ],
                 }
             except Exception as exc:
+                logger.exception("Skill execution failed: %s", exc)
                 return {
                     "id": _generate_task_id(),
                     "status": A2ATaskState.FAILED,
                     "error": {
                         "code": -1,
-                        "message": str(exc),
+                        "message": "Internal error",
                     },
                 }
 
@@ -860,9 +861,42 @@ class OpenAPIAdapter:
 
         return json.loads(raw)
 
+    @staticmethod
+    def _is_safe_url(url: str) -> bool:
+        """Block SSRF: reject non-HTTPS URLs and internal/private network hosts."""
+        from urllib.parse import urlparse
+        import ipaddress
+        try:
+            parsed = urlparse(url)
+        except Exception:
+            return False
+        if parsed.scheme not in ("https", "http"):
+            return False
+        hostname = parsed.hostname
+        if not hostname:
+            return False
+        # Block obvious internal hostnames
+        if hostname in ("localhost", "127.0.0.1", "::1") or hostname.endswith(".local"):
+            return False
+        # Resolve and block private IPs (10.x, 172.16-31.x, 192.168.x, 169.254.x, etc.)
+        import socket
+        try:
+            resolved = socket.getaddrinfo(hostname, None, socket.AF_UNSPEC, socket.SOCK_STREAM)
+            for entry in resolved:
+                addr = entry[4][0]
+                ip = ipaddress.ip_address(addr)
+                if ip.is_private or ip.is_loopback or ip.is_link_local or ip.is_reserved:
+                    return False
+        except (socket.gaierror, ValueError):
+            pass  # unresolvable hostname will fail at request time
+        return True
+
     def _load_spec_url(self, url: str) -> Dict[str, Any]:
         """Load an OpenAPI spec from a URL."""
         import urllib.request
+
+        if not self._is_safe_url(url):
+            raise ValueError(f"Blocked potentially unsafe URL: {url}")
 
         req = urllib.request.Request(
             url,
@@ -1327,11 +1361,12 @@ class OpenAPIAdapter:
                 }
 
         except Exception as exc:
+            logger.exception("HTTP request failed: %s", exc)
             return {
                 "content": [
                     {
                         "type": "text",
-                        "text": f"HTTP request failed: {exc}",
+                        "text": "HTTP request failed",
                     }
                 ],
                 "isError": True,
@@ -1501,7 +1536,7 @@ class BridgeServer:
                 logger.exception("Bridge request failed: %s", exc)
                 return JSONResponse(
                     status_code=500,
-                    content={"error": str(exc), "success": False},
+                    content={"error": "Internal error", "success": False},
                 )
 
         # ── POST /bridge/mcp-to-a2a ───────────────────────────────
@@ -1572,9 +1607,10 @@ class BridgeServer:
                     "result": result,
                 }
             except Exception as exc:
+                logger.exception("MCP-to-A2A bridge call failed: %s", exc)
                 return {
                     "success": False,
-                    "error": str(exc),
+                    "error": "Internal error",
                     "task_id": task["id"],
                 }
 
@@ -1649,7 +1685,8 @@ class BridgeServer:
                     )
                     result["mcp_result"] = mcp_result
                 except Exception as exc:
-                    result["mcp_error"] = str(exc)
+                    logger.exception("MCP forward failed: %s", exc)
+                    result["mcp_error"] = "Internal error"
                     result["mcp_forwarded"] = False
 
             return result

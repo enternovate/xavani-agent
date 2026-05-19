@@ -4,7 +4,7 @@
 # MIT License -- See LICENSE file for full terms.
 # Built by Enternovate -- Open source. Private. Local.
 
-"""Bridge between Hermes OAuth token and gws CLI.
+"""Bridge between Xavani OAuth token and gws CLI.
 
 Refreshes the token if expired, then executes gws with the valid access token.
 """
@@ -15,16 +15,16 @@ import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
-# Ensure sibling modules (_hermes_home) are importable when run standalone.
+# Ensure sibling modules (_xavani_home) are importable when run standalone.
 _SCRIPTS_DIR = str(Path(__file__).resolve().parent)
 if _SCRIPTS_DIR not in sys.path:
     sys.path.insert(0, _SCRIPTS_DIR)
 
-from _hermes_home import get_hermes_home
+from _xavani_home import get_xavani_home
 
 
 def get_token_path() -> Path:
-    return get_hermes_home() / "google_token.json"
+    return get_xavani_home() / "google_token.json"
 
 
 def _normalize_authorized_user_payload(payload: dict) -> dict:

@@ -62,7 +62,7 @@ _MESSAGE_EVENTS = {"new-message", "message", "updated-message"}
 
 # Log redaction patterns
 _PHONE_RE = re.compile(r"\+?\d{7,15}")
-_EMAIL_RE = re.compile(r"[\w.+-]+@[\w-]+\.[\w.]+")
+_EMAIL_RE = re.compile(r"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}")
 
 
 def _redact(text: str) -> str:

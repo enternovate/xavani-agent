@@ -102,7 +102,7 @@ class FakeBot:
         self.intents = intents
         self.allowed_mentions = allowed_mentions
         self.application_id = 999
-        self.user = SimpleNamespace(id=999, name="Hermes")
+        self.user = SimpleNamespace(id=999, name="Xavani")
         self._events = {}
         self.tree = FakeTree()
         self.http = SimpleNamespace(
@@ -380,7 +380,7 @@ async def test_safe_sync_slash_commands_only_mutates_diffs():
 
     desired_same = {
         "name": "status",
-        "description": "Show Hermes session status",
+        "description": "Show Xavani session status",
         "type": 1,
         "options": [],
         "nsfw": False,
@@ -553,13 +553,13 @@ async def test_post_connect_initialization_skips_sync_when_policy_off(monkeypatc
 @pytest.mark.asyncio
 async def test_post_connect_initialization_skips_same_fingerprint_after_success(tmp_path, monkeypatch):
     adapter = DiscordAdapter(PlatformConfig(enabled=True, token="test-token"))
-    monkeypatch.setattr("hermes_constants.get_hermes_home", lambda: tmp_path)
+    monkeypatch.setattr("xavani_constants.get_xavani_home", lambda: tmp_path)
 
     class _DesiredCommand:
         def to_dict(self, tree):
             return {
                 "name": "status",
-                "description": "Show Hermes status",
+                "description": "Show Xavani status",
                 "type": 1,
                 "options": [],
             }
@@ -590,13 +590,13 @@ async def test_post_connect_initialization_skips_same_fingerprint_after_success(
 @pytest.mark.asyncio
 async def test_post_connect_initialization_respects_discord_retry_after(tmp_path, monkeypatch):
     adapter = DiscordAdapter(PlatformConfig(enabled=True, token="test-token"))
-    monkeypatch.setattr("hermes_constants.get_hermes_home", lambda: tmp_path)
+    monkeypatch.setattr("xavani_constants.get_xavani_home", lambda: tmp_path)
 
     class _DesiredCommand:
         def to_dict(self, tree):
             return {
                 "name": "status",
-                "description": "Show Hermes status",
+                "description": "Show Xavani status",
                 "type": 1,
                 "options": [],
             }
@@ -631,11 +631,11 @@ async def test_post_connect_initialization_respects_discord_retry_after(tmp_path
 async def test_post_connect_initialization_reraises_non_rate_limit_exceptions(tmp_path, monkeypatch):
     """Arbitrary failures during sync must surface, not be swallowed as rate-limits."""
     adapter = DiscordAdapter(PlatformConfig(enabled=True, token="test-token"))
-    monkeypatch.setattr("hermes_constants.get_hermes_home", lambda: tmp_path)
+    monkeypatch.setattr("xavani_constants.get_xavani_home", lambda: tmp_path)
 
     class _DesiredCommand:
         def to_dict(self, tree):
-            return {"name": "status", "description": "Show Hermes status", "type": 1, "options": []}
+            return {"name": "status", "description": "Show Xavani status", "type": 1, "options": []}
 
     adapter._client = SimpleNamespace(
         tree=SimpleNamespace(get_commands=lambda: [_DesiredCommand()]),
@@ -694,7 +694,7 @@ async def test_safe_sync_slash_commands_paces_mutation_writes(monkeypatch):
 
     desired_one = {
         "name": "status",
-        "description": "Show Hermes status",
+        "description": "Show Xavani status",
         "type": 1,
         "options": [],
     }

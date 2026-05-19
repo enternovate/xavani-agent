@@ -29,7 +29,7 @@ Design notes (parity with the Cline port):
     the monitor rather than crashing the gateway.
 
 Config: ``logging.memory_monitor`` in ``config.yaml`` — see
-``hermes_cli/config.py`` for the defaults block.
+``xavani_cli/config.py`` for the defaults block.
 """
 
 from __future__ import annotations
@@ -57,7 +57,7 @@ def _get_rss_mb() -> Optional[int]:
     """Return current process resident set size in MB, or None if unavailable.
 
     Tries ``resource.getrusage`` first (Linux/macOS, no extra deps), then
-    falls back to ``psutil`` which is an optional hermes-agent dep.
+    falls back to ``psutil`` which is an optional xavani-agent dep.
     """
     # Linux / macOS — resource is stdlib.  On Linux ru_maxrss is in KB,
     # on macOS it is in bytes (yes, really).  We use it as a cheap

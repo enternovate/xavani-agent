@@ -4,7 +4,7 @@
 
 """Invariants for what is eager vs lazy in the root ``package.json``.
 
-The root ``package.json`` is installed by ``hermes update`` on every user,
+The root ``package.json`` is installed by ``xavani update`` on every user,
 including users who never opted into a given browser backend. Anything
 listed in ``dependencies`` therefore runs its npm postinstall script for
 everyone — including binary-fetching backends, on every update.
@@ -18,9 +18,9 @@ The contract:
 
 * ``@askjo/camofox-browser`` is NOT eager. It is an explicit opt-in
   alternative browser backend, selected by the user via
-  ``hermes tools`` → Browser Automation → Camofox, and only used at
+  ``xavani tools`` → Browser Automation → Camofox, and only used at
   runtime when ``CAMOFOX_URL`` is set. Its postinstall fetches a ~300MB
-  Firefox-fork binary, which silently blocked ``hermes update`` for
+  Firefox-fork binary, which silently blocked ``xavani update`` for
   multi-minute stretches on slow / network-restricted connections
   (notably users in China running through a VPN). The package is
   installed on demand by ``tools_config.py`` ``post_setup_key ==
@@ -28,7 +28,7 @@ The contract:
 
 If a future PR re-adds Camofox (or any other binary-postinstall package)
 to root ``dependencies``, this test fails — read the lazy-install
-guidance in the ``hermes-agent-dev`` skill before changing the
+guidance in the ``xavani-agent-dev`` skill before changing the
 expectations.
 """
 
@@ -52,9 +52,9 @@ def test_camofox_is_not_in_root_dependencies() -> None:
     assert "@askjo/camofox-browser" not in deps, (
         "Camofox is a ~300MB binary-postinstall backend that must stay "
         "out of root package.json dependencies. It belongs in the "
-        "Camofox post_setup handler in hermes_cli/tools_config.py so it "
+        "Camofox post_setup handler in xavani_cli/tools_config.py so it "
         "only installs when the user explicitly selects Camofox via "
-        "`hermes tools` → Browser Automation → Camofox."
+        "`xavani tools` → Browser Automation → Camofox."
     )
 
 
@@ -65,7 +65,7 @@ def test_agent_browser_stays_eager() -> None:
         "agent-browser is the default browser-tool backend used by every "
         "session that doesn't have a cloud browser provider configured. "
         "It must stay in root package.json dependencies so it is present "
-        "after `hermes setup` / `hermes update` without an explicit "
+        "after `xavani setup` / `xavani update` without an explicit "
         "post_setup step."
     )
 

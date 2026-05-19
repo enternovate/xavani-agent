@@ -8,7 +8,7 @@ description: |
 version: 1.0.0
 platforms: [macos]
 metadata:
-  hermes:
+  xavani:
     tags: [computer-use, macos, desktop, automation, gui]
     category: desktop
     related_skills: [browser]
@@ -176,7 +176,7 @@ your conversation context.
 
 ## Failure modes
 
-- **"cua-driver not installed"** — Run `hermes tools` and enable Computer
+- **"cua-driver not installed"** — Run `xavani tools` and enable Computer
   Use; the setup will install cua-driver via its upstream script. Requires
   macOS + Accessibility + Screen Recording permissions.
 - **Element index stale** — SOM indices come from the last `capture` call.

@@ -16,7 +16,7 @@ curl -fsSL https://byterover.dev/install.sh | sh).
 Config via environment variables (profile-scoped via each profile's .env):
   BRV_API_KEY   — ByteRover API key (for cloud features, optional for local)
 
-Working directory: $HERMES_HOME/byterover/ (profile-scoped context tree)
+Working directory: $XAVANI_HOME/byterover/ (profile-scoped context tree)
 """
 
 from __future__ import annotations
@@ -119,8 +119,8 @@ def _run_brv(args: List[str], timeout: int = _QUERY_TIMEOUT,
 
 def _get_brv_cwd() -> Path:
     """Profile-scoped working directory for the brv context tree."""
-    from hermes_constants import get_hermes_home
-    return get_hermes_home() / "byterover"
+    from xavani_constants import get_xavani_home
+    return get_xavani_home() / "byterover"
 
 
 # ---------------------------------------------------------------------------

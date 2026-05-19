@@ -1,6 +1,6 @@
 # Usage
 
-This skill is triggered by natural language in Hermes — no slash command or CLI flags.
+This skill is triggered by natural language in Xavani — no slash command or CLI flags.
 
 ## Trigger Phrases
 

@@ -38,7 +38,8 @@ def subdomains(domain, include_expired=False, limit=200):
     req = urllib.request.Request(url, headers={
         "User-Agent": "domain-intel-skill/1.0", "Accept": "application/json",
     })
-    with urllib.request.urlopen(req, timeout=15) as r:
+    _ssl_ctx = ssl.create_default_context()
+    with urllib.request.urlopen(req, timeout=15, context=_ssl_ctx) as r:
         entries = json.loads(r.read().decode())
 
     seen, results = set(), []
@@ -238,7 +239,8 @@ def dns_records(domain, types=None):
             url = f"https://dns.google/resolve?name={urllib.parse.quote(domain)}&type={qtype}"
             try:
                 req = urllib.request.Request(url, headers={"User-Agent": "domain-intel-skill/1.0"})
-                with urllib.request.urlopen(req, timeout=10) as r:
+                _dns_ssl_ctx = ssl.create_default_context()
+                with urllib.request.urlopen(req, timeout=10, context=_dns_ssl_ctx) as r:
                     data = json.loads(r.read())
                 records[qtype] = [
                     a.get("data", "").strip().rstrip(".")
@@ -265,7 +267,8 @@ def check_available(domain):
     try:
         ns_url = f"https://dns.google/resolve?name={urllib.parse.quote(domain)}&type=NS"
         req = urllib.request.Request(ns_url, headers={"User-Agent": "domain-intel-skill/1.0"})
-        with urllib.request.urlopen(req, timeout=10) as r:
+        _ns_ssl_ctx = ssl.create_default_context()
+        with urllib.request.urlopen(req, timeout=10, context=_ns_ssl_ctx) as r:
             ns = [x.get("data", "") for x in json.loads(r.read()).get("Answer", [])]
     except Exception:
         ns = []

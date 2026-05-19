@@ -6,8 +6,8 @@
 
 Scans two directories for memory provider plugins:
 
-1. Bundled providers: ``plugins/memory/<name>/`` (shipped with hermes-agent)
-2. User-installed providers: ``$HERMES_HOME/plugins/<name>/``
+1. Bundled providers: ``plugins/memory/<name>/`` (shipped with xavani-agent)
+2. User-installed providers: ``$XAVANI_HOME/plugins/<name>/``
 
 Each subdirectory must contain ``__init__.py`` with a class implementing
 the MemoryProvider ABC.  On name collisions, bundled providers take
@@ -31,7 +31,7 @@ import logging
 import sys
 from pathlib import Path
 from typing import List, Optional, Tuple
-from hermes_cli.config import cfg_get
+from xavani_cli.config import cfg_get
 
 logger = logging.getLogger(__name__)
 
@@ -43,10 +43,10 @@ _MEMORY_PLUGINS_DIR = Path(__file__).parent
 # ---------------------------------------------------------------------------
 
 def _get_user_plugins_dir() -> Optional[Path]:
-    """Return ``$HERMES_HOME/plugins/`` or None if unavailable."""
+    """Return ``$XAVANI_HOME/plugins/`` or None if unavailable."""
     try:
-        from hermes_constants import get_hermes_home
-        d = get_hermes_home() / "plugins"
+        from xavani_constants import get_xavani_home
+        d = get_xavani_home() / "plugins"
         return d if d.is_dir() else None
     except Exception:
         return None
@@ -87,7 +87,7 @@ def _iter_provider_dirs() -> List[Tuple[str, Path]]:
             seen.add(child.name)
             dirs.append((child.name, child))
 
-    # 2. User-installed providers ($HERMES_HOME/plugins/<name>/)
+    # 2. User-installed providers ($XAVANI_HOME/plugins/<name>/)
     user_dir = _get_user_plugins_dir()
     if user_dir:
         for child in sorted(user_dir.iterdir()):
@@ -165,7 +165,7 @@ def load_memory_provider(name: str) -> Optional["MemoryProvider"]:
     """Load and return a MemoryProvider instance by name.
 
     Checks both bundled (``plugins/memory/<name>/``) and user-installed
-    (``$HERMES_HOME/plugins/<name>/``) directories.  Bundled takes
+    (``$XAVANI_HOME/plugins/<name>/``) directories.  Bundled takes
     precedence on name collisions.
 
     Returns None if the provider is not found or fails to load.
@@ -197,7 +197,7 @@ def _load_provider_from_dir(provider_dir: Path) -> Optional["MemoryProvider"]:
     # Use a separate namespace for user-installed plugins so they don't
     # collide with bundled providers in sys.modules.
     _is_bundled = _MEMORY_PLUGINS_DIR in provider_dir.parents or provider_dir.parent == _MEMORY_PLUGINS_DIR
-    module_name = f"plugins.memory.{name}" if _is_bundled else f"_hermes_user_memory.{name}"
+    module_name = f"plugins.memory.{name}" if _is_bundled else f"_xavani_user_memory.{name}"
     init_file = provider_dir / "__init__.py"
 
     if not init_file.exists():
@@ -317,7 +317,7 @@ def _get_active_memory_provider() -> Optional[str]:
     no plugin loading.
     """
     try:
-        from hermes_cli.config import load_config
+        from xavani_cli.config import load_config
         config = load_config()
         return cfg_get(config, "memory", "provider") or None
     except Exception:
@@ -359,7 +359,7 @@ def discover_plugin_cli_commands() -> List[dict]:
         return results
 
     _is_bundled = _MEMORY_PLUGINS_DIR in plugin_dir.parents or plugin_dir.parent == _MEMORY_PLUGINS_DIR
-    module_name = f"plugins.memory.{active_provider}.cli" if _is_bundled else f"_hermes_user_memory.{active_provider}.cli"
+    module_name = f"plugins.memory.{active_provider}.cli" if _is_bundled else f"_xavani_user_memory.{active_provider}.cli"
     try:
         # Import the CLI module (lightweight — no SDK needed)
         if module_name in sys.modules:

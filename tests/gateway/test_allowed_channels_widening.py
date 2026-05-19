@@ -39,7 +39,7 @@ def _make_telegram_adapter(*, allowed_chats=None, require_mention=None, guest_mo
     adapter = object.__new__(TelegramAdapter)
     adapter.platform = Platform.TELEGRAM
     adapter.config = PlatformConfig(enabled=True, token="***", extra=extra)
-    adapter._bot = SimpleNamespace(id=999, username="hermes_bot")
+    adapter._bot = SimpleNamespace(id=999, username="xavani_bot")
     adapter._message_handler = AsyncMock()
     adapter._mention_patterns = adapter._compile_mention_patterns()
     # PR db50af910 added a TELEGRAM_ALLOWED_USERS allowlist gate to
@@ -108,9 +108,9 @@ class TestTelegramAllowedChats:
     def test_mention_cannot_bypass_whitelist(self):
         """@mention in a non-allowed chat is still ignored."""
         adapter = _make_telegram_adapter(allowed_chats=["-100"])
-        msg = _tg_group_message(-999, text="@hermes_bot hello")
+        msg = _tg_group_message(-999, text="@xavani_bot hello")
         msg.entities = [SimpleNamespace(
-            type="mention", offset=0, length=len("@hermes_bot"),
+            type="mention", offset=0, length=len("@xavani_bot"),
         )]
         assert adapter._should_process_message(msg) is False
 
@@ -123,16 +123,16 @@ class TestTelegramAllowedChats:
         """slack-style config.yaml → env var bridge works."""
         from gateway.config import load_gateway_config
 
-        hermes_home = tmp_path / ".hermes"
-        hermes_home.mkdir()
-        (hermes_home / "config.yaml").write_text(
+        xavani_home = tmp_path / ".xavani"
+        xavani_home.mkdir()
+        (xavani_home / "config.yaml").write_text(
             "telegram:\n"
             "  allowed_chats:\n"
             "    - -100\n"
             "    - -200\n",
             encoding="utf-8",
         )
-        monkeypatch.setenv("HERMES_HOME", str(hermes_home))
+        monkeypatch.setenv("XAVANI_HOME", str(xavani_home))
         monkeypatch.setenv("TELEGRAM_ALLOWED_CHATS", "__sentinel__")
         monkeypatch.delenv("TELEGRAM_ALLOWED_CHATS")
 
@@ -144,14 +144,14 @@ class TestTelegramAllowedChats:
     def test_config_bridge_env_takes_precedence(self, monkeypatch, tmp_path):
         from gateway.config import load_gateway_config
 
-        hermes_home = tmp_path / ".hermes"
-        hermes_home.mkdir()
-        (hermes_home / "config.yaml").write_text(
+        xavani_home = tmp_path / ".xavani"
+        xavani_home.mkdir()
+        (xavani_home / "config.yaml").write_text(
             "telegram:\n"
             "  allowed_chats: -100\n",
             encoding="utf-8",
         )
-        monkeypatch.setenv("HERMES_HOME", str(hermes_home))
+        monkeypatch.setenv("XAVANI_HOME", str(xavani_home))
         monkeypatch.setenv("TELEGRAM_ALLOWED_CHATS", "-999")
 
         load_gateway_config()
@@ -216,16 +216,16 @@ class TestDingTalkAllowedChats:
     def test_config_bridge(self, monkeypatch, tmp_path):
         from gateway.config import load_gateway_config
 
-        hermes_home = tmp_path / ".hermes"
-        hermes_home.mkdir()
-        (hermes_home / "config.yaml").write_text(
+        xavani_home = tmp_path / ".xavani"
+        xavani_home.mkdir()
+        (xavani_home / "config.yaml").write_text(
             "dingtalk:\n"
             "  allowed_chats:\n"
             "    - cidABC\n"
             "    - cidDEF\n",
             encoding="utf-8",
         )
-        monkeypatch.setenv("HERMES_HOME", str(hermes_home))
+        monkeypatch.setenv("XAVANI_HOME", str(xavani_home))
         monkeypatch.setenv("DINGTALK_ALLOWED_CHATS", "__sentinel__")
         monkeypatch.delenv("DINGTALK_ALLOWED_CHATS")
 
@@ -288,16 +288,16 @@ class TestMattermostAllowedChannels:
     def test_config_bridge(self, monkeypatch, tmp_path):
         from gateway.config import load_gateway_config
 
-        hermes_home = tmp_path / ".hermes"
-        hermes_home.mkdir()
-        (hermes_home / "config.yaml").write_text(
+        xavani_home = tmp_path / ".xavani"
+        xavani_home.mkdir()
+        (xavani_home / "config.yaml").write_text(
             "mattermost:\n"
             "  allowed_channels:\n"
             "    - chanABC\n"
             "    - chanDEF\n",
             encoding="utf-8",
         )
-        monkeypatch.setenv("HERMES_HOME", str(hermes_home))
+        monkeypatch.setenv("XAVANI_HOME", str(xavani_home))
         # Pre-register the key with monkeypatch so teardown cleans it up
         # even though load_gateway_config mutates os.environ directly
         # (monkeypatch only restores keys it's touched via setenv/delenv;
@@ -353,16 +353,16 @@ class TestMatrixAllowedRooms:
     def test_config_bridge(self, monkeypatch, tmp_path):
         from gateway.config import load_gateway_config
 
-        hermes_home = tmp_path / ".hermes"
-        hermes_home.mkdir()
-        (hermes_home / "config.yaml").write_text(
+        xavani_home = tmp_path / ".xavani"
+        xavani_home.mkdir()
+        (xavani_home / "config.yaml").write_text(
             "matrix:\n"
             "  allowed_rooms:\n"
             "    - '!room1:srv'\n"
             "    - '!room2:srv'\n",
             encoding="utf-8",
         )
-        monkeypatch.setenv("HERMES_HOME", str(hermes_home))
+        monkeypatch.setenv("XAVANI_HOME", str(xavani_home))
         monkeypatch.setenv("MATRIX_ALLOWED_ROOMS", "__sentinel__")
         monkeypatch.delenv("MATRIX_ALLOWED_ROOMS")
 

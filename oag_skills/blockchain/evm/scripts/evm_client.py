@@ -5,7 +5,7 @@
 # Built by Enternovate -- Open source. Private. Local.
 
 """
-evm_client.py — EVM blockchain CLI tool for the Hermes Agent project.
+evm_client.py — EVM blockchain CLI tool for the Xavani Agent project.
 Zero external dependencies. Uses stdlib only: urllib, json, argparse, time, os, sys, typing.
 """
 

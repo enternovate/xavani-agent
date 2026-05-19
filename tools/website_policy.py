@@ -4,7 +4,7 @@
 
 """Website access policy helpers for URL-capable tools.
 
-This module loads a user-managed website blocklist from ~/.hermes/config.yaml
+This module loads a user-managed website blocklist from ~/.xavani/config.yaml
 and optional shared list files. It is intentionally lightweight so web/browser
 tools can enforce URL policy without pulling in the heavier CLI config stack.
 
@@ -22,7 +22,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 from urllib.parse import urlparse
 
-from hermes_constants import get_hermes_home
+from xavani_constants import get_xavani_home
 
 logger = logging.getLogger(__name__)
 
@@ -42,7 +42,7 @@ _cached_policy_time: float = 0.0
 
 
 def _get_default_config_path() -> Path:
-    return get_hermes_home() / "config.yaml"
+    return get_xavani_home() / "config.yaml"
 
 
 class WebsitePolicyError(Exception):
@@ -183,7 +183,7 @@ def load_website_blocklist(config_path: Optional[Path] = None) -> Dict[str, Any]
             continue
         path = Path(shared_file).expanduser()
         if not path.is_absolute():
-            path = (get_hermes_home() / path).resolve()
+            path = (get_xavani_home() / path).resolve()
         for normalized in _iter_blocklist_file_rules(path):
             key = (str(path), normalized)
             if key in seen:

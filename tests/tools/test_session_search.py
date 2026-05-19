@@ -16,7 +16,7 @@ import time
 
 import pytest
 
-from hermes_state import SessionDB
+from xavani_state import SessionDB
 from tools.session_search_tool import (
     SESSION_SEARCH_SCHEMA,
     _HIDDEN_SESSION_SOURCES,

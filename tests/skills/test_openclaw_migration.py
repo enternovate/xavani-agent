@@ -16,12 +16,12 @@ SCRIPT_PATH = (
     / "migration"
     / "openclaw-migration"
     / "scripts"
-    / "openclaw_to_hermes.py"
+    / "openclaw_to_xavani.py"
 )
 
 
 def load_module():
-    spec = importlib.util.spec_from_file_location("openclaw_to_hermes", SCRIPT_PATH)
+    spec = importlib.util.spec_from_file_location("openclaw_to_xavani", SCRIPT_PATH)
     module = importlib.util.module_from_spec(spec)
     assert spec.loader is not None
     sys.modules[spec.name] = module
@@ -52,12 +52,12 @@ def test_extract_markdown_entries_promotes_heading_context():
 
 ### Active Projects
 
-- Hermes Agent
+- Xavani Agent
 """
     entries = mod.extract_markdown_entries(text)
     assert "Tyler Williams: Founder of VANTA Research" in entries
     assert "Tyler Williams: Timezone: America/Los_Angeles" in entries
-    assert "Tyler Williams > Active Projects: Hermes Agent" in entries
+    assert "Tyler Williams > Active Projects: Xavani Agent" in entries
 
 
 def test_merge_entries_respects_limit_and_reports_overflow():
@@ -109,7 +109,7 @@ def test_resolve_selected_options_rejects_unknown_preset():
 def test_migrator_copies_skill_and_merges_allowlist(tmp_path: Path):
     mod = load_module()
     source = tmp_path / ".openclaw"
-    target = tmp_path / ".hermes"
+    target = tmp_path / ".xavani"
     target.mkdir()
 
     (source / "workspace" / "skills" / "demo-skill").mkdir(parents=True)
@@ -154,7 +154,7 @@ def test_migrator_copies_skill_and_merges_allowlist(tmp_path: Path):
 def test_migrator_optionally_imports_supported_secrets_and_messaging_settings(tmp_path: Path):
     mod = load_module()
     source = tmp_path / ".openclaw"
-    target = tmp_path / ".hermes"
+    target = tmp_path / ".xavani"
 
     (source / "credentials").mkdir(parents=True)
     (source / "openclaw.json").write_text(
@@ -193,7 +193,7 @@ def test_messaging_cwd_skipped_when_inside_source(tmp_path: Path):
     """MESSAGING_CWD pointing inside the OpenClaw source dir should be skipped."""
     mod = load_module()
     source = tmp_path / ".openclaw"
-    target = tmp_path / ".hermes"
+    target = tmp_path / ".xavani"
     target.mkdir()
 
     # Workspace path is inside the source directory
@@ -224,7 +224,7 @@ def test_messaging_cwd_skipped_when_inside_source(tmp_path: Path):
 def test_migrator_can_execute_only_selected_categories(tmp_path: Path):
     mod = load_module()
     source = tmp_path / ".openclaw"
-    target = tmp_path / ".hermes"
+    target = tmp_path / ".xavani"
     target.mkdir()
 
     (source / "workspace" / "skills" / "demo-skill").mkdir(parents=True)
@@ -261,7 +261,7 @@ def test_migrator_can_execute_only_selected_categories(tmp_path: Path):
 def test_migrator_records_preset_in_report(tmp_path: Path):
     mod = load_module()
     source = tmp_path / ".openclaw"
-    target = tmp_path / ".hermes"
+    target = tmp_path / ".xavani"
     target.mkdir()
     (target / "config.yaml").write_text("command_allowlist: []\n", encoding="utf-8")
 
@@ -289,7 +289,7 @@ def test_source_candidate_finds_files_in_custom_workspace(tmp_path: Path):
     be discovered there as a fallback."""
     mod = load_module()
     source = tmp_path / ".openclaw"
-    target = tmp_path / ".hermes"
+    target = tmp_path / ".xavani"
     custom_ws = tmp_path / "my-custom-workspace"
 
     target.mkdir()
@@ -347,7 +347,7 @@ def test_source_candidate_prefers_standard_workspace_over_custom(tmp_path: Path)
     the standard location should win (custom is a fallback only)."""
     mod = load_module()
     source = tmp_path / ".openclaw"
-    target = tmp_path / ".hermes"
+    target = tmp_path / ".xavani"
     custom_ws = tmp_path / "my-custom-workspace"
 
     target.mkdir()
@@ -383,7 +383,7 @@ def test_source_candidate_prefers_standard_workspace_over_custom(tmp_path: Path)
 def test_migrator_exports_full_overflow_entries(tmp_path: Path):
     mod = load_module()
     source = tmp_path / ".openclaw"
-    target = tmp_path / ".hermes"
+    target = tmp_path / ".xavani"
     target.mkdir()
     (target / "config.yaml").write_text("memory:\n  memory_char_limit: 10\n  user_char_limit: 10\n", encoding="utf-8")
     (source / "workspace").mkdir(parents=True)
@@ -414,7 +414,7 @@ def test_migrator_exports_full_overflow_entries(tmp_path: Path):
 def test_migrator_can_rename_conflicting_imported_skill(tmp_path: Path):
     mod = load_module()
     source = tmp_path / ".openclaw"
-    target = tmp_path / ".hermes"
+    target = tmp_path / ".xavani"
     target.mkdir()
 
     source_skill = source / "workspace" / "skills" / "demo-skill"
@@ -453,7 +453,7 @@ def test_migrator_can_rename_conflicting_imported_skill(tmp_path: Path):
 def test_migrator_can_overwrite_conflicting_imported_skill_with_backup(tmp_path: Path):
     mod = load_module()
     source = tmp_path / ".openclaw"
-    target = tmp_path / ".hermes"
+    target = tmp_path / ".xavani"
     target.mkdir()
 
     source_skill = source / "workspace" / "skills" / "demo-skill"
@@ -491,7 +491,7 @@ def test_discord_settings_migrated(tmp_path: Path):
     """Discord bot token and allowlist migrate to .env."""
     mod = load_module()
     source = tmp_path / ".openclaw"
-    target = tmp_path / ".hermes"
+    target = tmp_path / ".xavani"
     target.mkdir()
     source.mkdir()
 
@@ -522,7 +522,7 @@ def test_slack_settings_migrated(tmp_path: Path):
     """Slack bot/app tokens and allowlist migrate to .env."""
     mod = load_module()
     source = tmp_path / ".openclaw"
-    target = tmp_path / ".hermes"
+    target = tmp_path / ".xavani"
     target.mkdir()
     source.mkdir()
 
@@ -555,7 +555,7 @@ def test_signal_settings_migrated(tmp_path: Path):
     """Signal account, HTTP URL, and allowlist migrate to .env."""
     mod = load_module()
     source = tmp_path / ".openclaw"
-    target = tmp_path / ".hermes"
+    target = tmp_path / ".xavani"
     target.mkdir()
     source.mkdir()
 
@@ -588,7 +588,7 @@ def test_model_config_migrated(tmp_path: Path):
     """Default model setting migrates to config.yaml."""
     mod = load_module()
     source = tmp_path / ".openclaw"
-    target = tmp_path / ".hermes"
+    target = tmp_path / ".xavani"
     target.mkdir()
     source.mkdir()
 
@@ -615,7 +615,7 @@ def test_model_config_object_format(tmp_path: Path):
     """Model config handles {primary: ...} object format."""
     mod = load_module()
     source = tmp_path / ".openclaw"
-    target = tmp_path / ".hermes"
+    target = tmp_path / ".xavani"
     target.mkdir()
     source.mkdir()
 
@@ -641,7 +641,7 @@ def test_tts_config_migrated(tmp_path: Path):
     """TTS provider and voice settings migrate to config.yaml."""
     mod = load_module()
     source = tmp_path / ".openclaw"
-    target = tmp_path / ".hermes"
+    target = tmp_path / ".xavani"
     target.mkdir()
     source.mkdir()
 
@@ -676,7 +676,7 @@ def test_shared_skills_migrated(tmp_path: Path):
     """Shared skills from ~/.openclaw/skills/ are migrated."""
     mod = load_module()
     source = tmp_path / ".openclaw"
-    target = tmp_path / ".hermes"
+    target = tmp_path / ".xavani"
     target.mkdir()
 
     # Create a shared skill (not in workspace/skills/)
@@ -700,7 +700,7 @@ def test_daily_memory_merged(tmp_path: Path):
     """Daily memory notes from workspace/memory/*.md are merged into MEMORY.md."""
     mod = load_module()
     source = tmp_path / ".openclaw"
-    target = tmp_path / ".hermes"
+    target = tmp_path / ".xavani"
     target.mkdir()
 
     mem_dir = source / "workspace" / "memory"
@@ -731,7 +731,7 @@ def test_provider_keys_require_migrate_secrets_flag(tmp_path: Path):
     """Provider keys migration is double-gated: needs option + --migrate-secrets."""
     mod = load_module()
     source = tmp_path / ".openclaw"
-    target = tmp_path / ".hermes"
+    target = tmp_path / ".xavani"
     target.mkdir()
     source.mkdir()
 
@@ -775,7 +775,7 @@ def test_workspace_agents_records_skip_when_missing(tmp_path: Path):
     """Bug fix: workspace-agents records 'skipped' when source is missing."""
     mod = load_module()
     source = tmp_path / ".openclaw"
-    target = tmp_path / ".hermes"
+    target = tmp_path / ".xavani"
     source.mkdir()
     target.mkdir()
 
@@ -794,7 +794,7 @@ def test_cron_store_is_archived_without_config_cron_section(tmp_path: Path):
     """Bug fix: archive cron store even when openclaw.json has no top-level cron config."""
     mod = load_module()
     source = tmp_path / ".openclaw"
-    target = tmp_path / ".hermes"
+    target = tmp_path / ".xavani"
     output_dir = target / "migration-report"
     source.mkdir()
     target.mkdir()
@@ -827,7 +827,7 @@ def test_cron_store_is_archived_without_config_cron_section(tmp_path: Path):
     assert Path(archived_store["destination"]).joinpath("jobs.json").exists()
 
     notes_text = (output_dir / "MIGRATION_NOTES.md").read_text(encoding="utf-8")
-    assert "Run `hermes cron` to recreate scheduled tasks" in notes_text
+    assert "Run `xavani cron` to recreate scheduled tasks" in notes_text
     assert "archive/cron-config.json" not in notes_text
 
 
@@ -845,13 +845,13 @@ def test_skill_installs_cleanly_under_skills_guard():
     # agent_config_mod   — references AGENTS.md to migrate workspace instructions
     # python_os_environ  — reads MIGRATION_JSON_OUTPUT to enable JSON output mode
     #                      (feature flag, not an env dump)
-    # hermes_config_mod  — print statements in the post-migration summary that
-    #                      tell the user to *review* ~/.hermes/config.yaml;
+    # xavani_config_mod  — print statements in the post-migration summary that
+    #                      tell the user to *review* ~/.xavani/config.yaml;
     #                      the script never writes to that file
     #
     # Accept "caution" or "safe" — just not "dangerous" from a *real* threat.
     assert result.verdict in {"safe", "caution", "dangerous"}, f"Unexpected verdict: {result.verdict}"
-    KNOWN_FALSE_POSITIVES = {"agent_config_mod", "python_os_environ", "hermes_config_mod"}
+    KNOWN_FALSE_POSITIVES = {"agent_config_mod", "python_os_environ", "xavani_config_mod"}
     for f in result.findings:
         assert f.pattern_id in KNOWN_FALSE_POSITIVES, f"Unexpected finding: {f}"
 
@@ -861,24 +861,24 @@ def test_skill_installs_cleanly_under_skills_guard():
 
 def test_rebrand_text_replaces_openclaw_variants():
     mod = load_module()
-    # Mixed-case / capitalized matches → capital-H ``Hermes``.
-    assert mod.rebrand_text("OpenClaw prefers Python 3.11") == "Hermes prefers Python 3.11"
-    assert mod.rebrand_text("I told Open Claw to use dark mode") == "I told Hermes to use dark mode"
-    assert mod.rebrand_text("Open-Claw config is great") == "Hermes config is great"
-    assert mod.rebrand_text("OPENCLAW uses tools well") == "Hermes uses tools well"
-    # All-lowercase matches → lowercase ``hermes``; this preserves the
-    # real filesystem path ``~/.hermes`` (Hermes home) when rebranding
+    # Mixed-case / capitalized matches → capital-H ``Xavani``.
+    assert mod.rebrand_text("OpenClaw prefers Python 3.11") == "Xavani prefers Python 3.11"
+    assert mod.rebrand_text("I told Open Claw to use dark mode") == "I told Xavani to use dark mode"
+    assert mod.rebrand_text("Open-Claw config is great") == "Xavani config is great"
+    assert mod.rebrand_text("OPENCLAW uses tools well") == "Xavani uses tools well"
+    # All-lowercase matches → lowercase ``xavani``; this preserves the
+    # real filesystem path ``~/.xavani`` (Xavani home) when rebranding
     # memory entries that reference ``~/.openclaw`` or ``openclaw`` prose.
-    assert mod.rebrand_text("openclaw should always respond concisely") == "hermes should always respond concisely"
+    assert mod.rebrand_text("openclaw should always respond concisely") == "xavani should always respond concisely"
 
 
 def test_rebrand_text_replaces_legacy_bot_names():
     mod = load_module()
     # Same case-preservation rule as above.
-    assert mod.rebrand_text("ClawdBot remembers my timezone") == "Hermes remembers my timezone"
-    assert mod.rebrand_text("clawdbot prefers tabs") == "hermes prefers tabs"
-    assert mod.rebrand_text("MoltBot was configured for Spanish") == "Hermes was configured for Spanish"
-    assert mod.rebrand_text("moltbot uses Python") == "hermes uses Python"
+    assert mod.rebrand_text("ClawdBot remembers my timezone") == "Xavani remembers my timezone"
+    assert mod.rebrand_text("clawdbot prefers tabs") == "xavani prefers tabs"
+    assert mod.rebrand_text("MoltBot was configured for Spanish") == "Xavani was configured for Spanish"
+    assert mod.rebrand_text("moltbot uses Python") == "xavani uses Python"
 
 
 def test_rebrand_text_preserves_unrelated_content():
@@ -890,27 +890,27 @@ def test_rebrand_text_preserves_unrelated_content():
 def test_rebrand_text_handles_multiple_replacements():
     mod = load_module()
     text = "OpenClaw said to ask ClawdBot about MoltBot settings"
-    assert mod.rebrand_text(text) == "Hermes said to ask Hermes about Hermes settings"
+    assert mod.rebrand_text(text) == "Xavani said to ask Xavani about Xavani settings"
 
 
 def test_rebrand_text_preserves_filesystem_path_casing():
     """Lowercase matches — especially ``.openclaw`` filesystem paths — must
-    rewrite to lowercase ``.hermes`` (the real Hermes home), not the broken
-    ``.Hermes``.
+    rewrite to lowercase ``.xavani`` (the real Xavani home), not the broken
+    ``.Xavani``.
 
     Regression test for @versun's OpenClaw-residue feedback: after migration,
     memory entries that referenced ``~/.openclaw/config.yaml`` were being
-    rewritten to ``~/.Hermes/config.yaml`` — a path that doesn't exist —
+    rewritten to ``~/.Xavani/config.yaml`` — a path that doesn't exist —
     and the agent kept trying to read it.
     """
     mod = load_module()
     assert mod.rebrand_text("config is at ~/.openclaw/config.yaml") == \
-        "config is at ~/.hermes/config.yaml"
-    assert mod.rebrand_text("use .openclaw directory") == "use .hermes directory"
-    assert mod.rebrand_text("Path.home() / '.openclaw'") == "Path.home() / '.hermes'"
+        "config is at ~/.xavani/config.yaml"
+    assert mod.rebrand_text("use .openclaw directory") == "use .xavani directory"
+    assert mod.rebrand_text("Path.home() / '.openclaw'") == "Path.home() / '.xavani'"
     # Sentence with both lowercase path and capitalized prose.
     assert mod.rebrand_text("openclaw config path: ~/.openclaw/") == \
-        "hermes config path: ~/.hermes/"
+        "xavani config path: ~/.xavani/"
 
 
 def test_migrate_memory_rebrands_entries(tmp_path):
@@ -925,7 +925,7 @@ def test_migrate_memory_rebrands_entries(tmp_path):
         encoding="utf-8",
     )
 
-    target_root = tmp_path / "hermes"
+    target_root = tmp_path / "xavani"
     target_root.mkdir()
     (target_root / "memories").mkdir()
 
@@ -944,7 +944,7 @@ def test_migrate_memory_rebrands_entries(tmp_path):
     result = (target_root / "memories" / "MEMORY.md").read_text(encoding="utf-8")
     assert "OpenClaw" not in result
     assert "ClawdBot" not in result
-    assert "Hermes" in result
+    assert "Xavani" in result
 
 
 def test_migrate_soul_rebrands_content(tmp_path):
@@ -956,7 +956,7 @@ def test_migrate_soul_rebrands_content(tmp_path):
     soul_md = workspace / "SOUL.md"
     soul_md.write_text("You are OpenClaw, an AI assistant made by SparkLab.", encoding="utf-8")
 
-    target_root = tmp_path / "hermes"
+    target_root = tmp_path / "xavani"
     target_root.mkdir()
 
     migrator = mod.Migrator(
@@ -973,7 +973,7 @@ def test_migrate_soul_rebrands_content(tmp_path):
 
     result = (target_root / "SOUL.md").read_text(encoding="utf-8")
     assert "OpenClaw" not in result
-    assert "You are Hermes" in result
+    assert "You are Xavani" in result
 
 
 # ── migrate_model_config: alias resolution (issue #16745) ──────────────────
@@ -985,7 +985,7 @@ def _run_model_migration(tmp_path: Path, openclaw_json: dict) -> dict:
 
     mod = load_module()
     source = tmp_path / ".openclaw"
-    target = tmp_path / ".hermes"
+    target = tmp_path / ".xavani"
     source.mkdir(parents=True)
     target.mkdir(parents=True)
     (source / "openclaw.json").write_text(json.dumps(openclaw_json), encoding="utf-8")

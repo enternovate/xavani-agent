@@ -2,9 +2,9 @@
 # MIT License -- See LICENSE file for full terms.
 # Built by Enternovate -- Open source. Private. Local.
 
-"""Projects codex app-server events into Hermes' messages list.
+"""Projects codex app-server events into Xavani' messages list.
 
-The translator that lets Hermes' memory/skill review keep working under the
+The translator that lets Xavani' memory/skill review keep working under the
 Codex runtime: it converts Codex `item/*` notifications into the standard
 OpenAI-shaped `{role, content, tool_calls, tool_call_id}` entries that
 `agent/curator.py` already knows how to read.
@@ -20,9 +20,9 @@ Codex emits items with a discriminator field `type`:
   - plan/hookPrompt/collabAgentToolCall → recorded as opaque assistant notes
 
 Each item maps to AT MOST one assistant entry + one tool entry, preserving
-Hermes' message-alternation invariants (system → user → assistant → user/tool
+Xavani' message-alternation invariants (system → user → assistant → user/tool
 → assistant → ...). Multiple Codex tool calls within one Codex turn produce
-multiple consecutive (assistant, tool) pairs, which is the same shape Hermes
+multiple consecutive (assistant, tool) pairs, which is the same shape Xavani
 already produces for parallel tool calls.
 
 Counters tracked alongside projection:
@@ -52,7 +52,7 @@ def _deterministic_call_id(item_type: str, item_id: str) -> str:
 
 
 def _format_tool_args(d: dict) -> str:
-    """Format a dict as JSON the way Hermes' existing tool_calls path does."""
+    """Format a dict as JSON the way Xavani' existing tool_calls path does."""
     return json.dumps(d, ensure_ascii=False, sort_keys=True)
 
 
@@ -74,7 +74,7 @@ class CodexEventProjector:
     """Stateful projector consuming Codex notifications in arrival order.
 
     Owns the in-progress reasoning content (codex emits reasoning as separate
-    items but Hermes stashes it on the next assistant message)."""
+    items but Xavani stashes it on the next assistant message)."""
 
     def __init__(self) -> None:
         self._pending_reasoning: list[str] = []
@@ -87,7 +87,7 @@ class CodexEventProjector:
 
         # We only materialize messages on `item/completed`. Streaming deltas
         # (`item/<type>/outputDelta`, `item/<type>/delta`) are display-only and
-        # don't enter the messages list — same way Hermes already only writes
+        # don't enter the messages list — same way Xavani already only writes
         # the assistant message after the streaming completion event.
         if method != "item/completed":
             return ProjectionResult()
@@ -131,7 +131,7 @@ class CodexEventProjector:
     def _project_user_message(self, item: dict) -> ProjectionResult:
         # codex's userMessage content is a list of UserInput variants. For
         # projection purposes we flatten any text fragments and ignore
-        # non-text parts (images, etc.) — Hermes' messages store text only.
+        # non-text parts (images, etc.) — Xavani' messages store text only.
         text_parts: list[str] = []
         for fragment in item.get("content") or []:
             if isinstance(fragment, dict):

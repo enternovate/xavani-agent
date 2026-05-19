@@ -857,7 +857,7 @@ def _guest_test_adapter(*, guest_mode=True, require_mention=True, allowed_chats=
     )
     adapter = object.__new__(TelegramAdapter)
     adapter.config = config
-    adapter._bot = SimpleNamespace(id=999, username="hermes_bot")
+    adapter._bot = SimpleNamespace(id=999, username="xavani_bot")
     adapter._mention_patterns = adapter._compile_mention_patterns()
     # PR db50af910 added a TELEGRAM_ALLOWED_USERS allowlist gate to
     # _should_process_message. These tests aren't exercising the auth
@@ -881,14 +881,14 @@ def _guest_group_message(text, *, chat_id=-100201, entities=None, reply_to_bot=F
     )
 
 
-def _guest_mention_entity(text, mention="@hermes_bot"):
+def _guest_mention_entity(text, mention="@xavani_bot"):
     return SimpleNamespace(type="mention", offset=text.index(mention), length=len(mention))
 
 
 class TestTelegramGuestMentionGating:
     def test_guest_mode_allows_explicit_mention_outside_allowed_chats(self):
         adapter = _guest_test_adapter(guest_mode=True, allowed_chats=["-100200"])
-        text = "please help @hermes_bot"
+        text = "please help @xavani_bot"
         message = _guest_group_message(
             text,
             chat_id=-100201,
@@ -905,7 +905,7 @@ class TestTelegramGuestMentionGating:
 
     def test_guest_mode_disabled_keeps_allowed_chats_as_hard_gate_for_mentions(self):
         adapter = _guest_test_adapter(guest_mode=False, allowed_chats=["-100200"])
-        text = "please help @hermes_bot"
+        text = "please help @xavani_bot"
         message = _guest_group_message(
             text,
             chat_id=-100201,
@@ -917,7 +917,7 @@ class TestTelegramGuestMentionGating:
     def test_guest_mode_allows_bot_command_entity_outside_allowed_chats(self):
         """``/cmd@botname`` is a ``bot_command`` entity, not ``mention``."""
         adapter = _guest_test_adapter(guest_mode=True, allowed_chats=["-100200"])
-        text = "/status@hermes_bot"
+        text = "/status@xavani_bot"
         message = _guest_group_message(
             text,
             chat_id=-100201,
@@ -940,7 +940,7 @@ class TestTelegramGuestMentionGating:
     def test_guest_mode_allows_mention_in_caption_outside_allowed_chats(self):
         """Media caption @mention should bypass allowed_chats via guest_mode."""
         adapter = _guest_test_adapter(guest_mode=True, allowed_chats=["-100200"])
-        text = "look @hermes_bot"
+        text = "look @xavani_bot"
         message = _guest_group_message(
             text="",
             chat_id=-100201,

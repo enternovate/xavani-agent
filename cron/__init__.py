@@ -3,7 +3,7 @@
 # Built by Enternovate -- Open source. Private. Local.
 
 """
-Cron job scheduling system for Hermes Agent.
+Cron job scheduling system for Xavani Agent.
 
 This module provides scheduled task execution, allowing the agent to:
 - Run automated tasks on schedules (cron expressions, intervals, one-shot)
@@ -11,9 +11,9 @@ This module provides scheduled task execution, allowing the agent to:
 - Execute tasks in isolated sessions (no prior context)
 
 Cron jobs are executed automatically by the gateway daemon:
-    hermes gateway install    # Install as a user service
-    sudo hermes gateway install --system  # Linux servers: boot-time system service
-    hermes gateway            # Or run in foreground
+    xavani gateway install    # Install as a user service
+    sudo xavani gateway install --system  # Linux servers: boot-time system service
+    xavani gateway            # Or run in foreground
 
 The gateway ticks the scheduler every 60 seconds. A file lock prevents
 duplicate execution if multiple processes overlap.

@@ -13,7 +13,7 @@ finally block, so len() reflects truly-running tasks.
 import threading
 from datetime import datetime
 
-from cli import HermesCLI
+from cli import XavaniCLI
 
 
 def _stub_thread() -> threading.Thread:
@@ -22,8 +22,8 @@ def _stub_thread() -> threading.Thread:
 
 
 def _make_cli():
-    """Bare-metal HermesCLI for snapshot/build tests (no __init__ side effects)."""
-    cli_obj = HermesCLI.__new__(HermesCLI)
+    """Bare-metal XavaniCLI for snapshot/build tests (no __init__ side effects)."""
+    cli_obj = XavaniCLI.__new__(XavaniCLI)
     cli_obj.model = "anthropic/claude-opus-4.6"
     cli_obj.agent = None
     cli_obj._background_tasks = {}
@@ -46,8 +46,8 @@ def test_snapshot_counts_live_background_tasks():
 
 
 def test_snapshot_safe_when_background_tasks_attr_missing():
-    """Older HermesCLI instances (tests with __new__, etc.) may lack the attr."""
-    cli_obj = HermesCLI.__new__(HermesCLI)
+    """Older XavaniCLI instances (tests with __new__, etc.) may lack the attr."""
+    cli_obj = XavaniCLI.__new__(XavaniCLI)
     cli_obj.model = "x"
     cli_obj.agent = None
     cli_obj.session_start = datetime.now()

@@ -1,8 +1,8 @@
-# Hermes Agent v0.2.0 (v2026.3.12)
+# Xavani Agent v0.2.0 (v2026.3.12)
 
 **Release Date:** March 12, 2026
 
-> First tagged release since v0.1.0 (the initial pre-public foundation). In just over two weeks, Hermes Agent went from a small internal project to a full-featured AI agent platform — thanks to an explosion of community contributions. This release covers **216 merged pull requests** from **63 contributors**, resolving **119 issues**.
+> First tagged release since v0.1.0 (the initial pre-public foundation). In just over two weeks, Xavani Agent went from a small internal project to a full-featured AI agent platform — thanks to an explosion of community contributions. This release covers **216 merged pull requests** from **63 contributors**, resolving **119 issues**.
 
 ---
 
@@ -151,13 +151,13 @@
 - Config migration system (currently v7)
 - API keys properly routed to .env instead of config.yaml ([#469](https://github.com/NousResearch/hermes-agent/pull/469)) — @ygd58
 - Atomic write for .env to prevent API key loss on crash ([#954](https://github.com/NousResearch/hermes-agent/pull/954))
-- `hermes tools` — per-platform tool enable/disable with curses UI
-- `hermes doctor` for health checks across all configured providers
-- `hermes update` with auto-restart for gateway service
+- `xavani tools` — per-platform tool enable/disable with curses UI
+- `xavani doctor` for health checks across all configured providers
+- `xavani update` with auto-restart for gateway service
 - Show update-available notice in CLI banner
 - Multiple named custom providers
 - Shell config detection improvement for PATH setup ([#317](https://github.com/NousResearch/hermes-agent/pull/317)) — @mehmetkr-31
-- Consistent HERMES_HOME and .env path resolution ([#51](https://github.com/NousResearch/hermes-agent/pull/51), [#48](https://github.com/NousResearch/hermes-agent/pull/48)) — @deankerr
+- Consistent XAVANI_HOME and .env path resolution ([#51](https://github.com/NousResearch/hermes-agent/pull/51), [#48](https://github.com/NousResearch/hermes-agent/pull/48)) — @deankerr
 - Docker backend fix on macOS + subagent auth for Nous Portal ([#46](https://github.com/NousResearch/hermes-agent/pull/46)) — @rsavitt
 
 ---
@@ -170,7 +170,7 @@
 - Resource and prompt discovery
 - Automatic reconnection and security hardening
 - Banner integration, `/reload-mcp` command
-- `hermes tools` UI integration
+- `xavani tools` UI integration
 
 ### Browser
 - Local browser backend — zero-cost headless Chromium (no Browserbase needed)
@@ -200,7 +200,7 @@
 - Conditional skill activation based on tool availability ([#785](https://github.com/NousResearch/hermes-agent/pull/785)) — @teyrebaz33
 - Skill prerequisites — hide skills with unmet dependencies ([#659](https://github.com/NousResearch/hermes-agent/pull/659)) — @kshitijk4poor
 - Optional skills — shipped but not activated by default
-- `hermes skills browse` — paginated hub browsing
+- `xavani skills browse` — paginated hub browsing
 - Skills sub-category organization
 - Platform-conditional skill loading
 - Atomic skill file writes ([#551](https://github.com/NousResearch/hermes-agent/pull/551)) — @aydnOktay
@@ -354,7 +354,7 @@
 
 ## 👥 Contributors
 
-Thank you to the 63 contributors who made this release possible! In just over two weeks, the Hermes Agent community came together to ship an extraordinary amount of work.
+Thank you to the 63 contributors who made this release possible! In just over two weeks, the Xavani Agent community came together to ship an extraordinary amount of work.
 
 ### Core
 - **@teknium1** — 43 PRs: Project lead, core architecture, provider router, sessions, skills, CLI, documentation

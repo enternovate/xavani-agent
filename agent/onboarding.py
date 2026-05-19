@@ -100,19 +100,19 @@ def tool_progress_hint_cli() -> str:
 
 
 def openclaw_residue_hint_cli() -> str:
-    """Banner shown the first time Hermes starts and finds ``~/.openclaw/``.
+    """Banner shown the first time Xavani starts and finds ``~/.openclaw/``.
 
-    Points users at ``hermes claw migrate`` (non-destructive port of config,
-    memory, and skills) first. ``hermes claw cleanup`` is mentioned as the
+    Points users at ``xavani claw migrate`` (non-destructive port of config,
+    memory, and skills) first. ``xavani claw cleanup`` is mentioned as the
     follow-up step for users who have already migrated and want to archive
     the old directory — with a warning that archiving breaks OpenClaw.
     """
     return (
         "A legacy OpenClaw directory was detected at ~/.openclaw/.\n"
-        "To port your config, memory, and skills over to Hermes, run "
-        "`hermes claw migrate`.\n"
+        "To port your config, memory, and skills over to Xavani, run "
+        "`xavani claw migrate`.\n"
         "If you've already migrated and want to archive the old directory, "
-        "run `hermes claw cleanup` (renames it to ~/.openclaw.pre-migration — "
+        "run `xavani claw cleanup` (renames it to ~/.openclaw.pre-migration — "
         "OpenClaw will stop working after this).\n"
         "This tip only shows once."
     )

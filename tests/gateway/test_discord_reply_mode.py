@@ -406,15 +406,15 @@ class TestYamlConfigLoading:
     """Tests for reply_to_mode loaded from config.yaml discord section."""
 
     def _write_config(self, tmp_path, content: str):
-        hermes_home = tmp_path / ".hermes"
-        hermes_home.mkdir()
-        (hermes_home / "config.yaml").write_text(content, encoding="utf-8")
-        return hermes_home
+        xavani_home = tmp_path / ".xavani"
+        xavani_home.mkdir()
+        (xavani_home / "config.yaml").write_text(content, encoding="utf-8")
+        return xavani_home
 
     def test_top_level_reply_to_mode_off(self, tmp_path, monkeypatch):
         """YAML 1.1 parses bare 'off' as boolean False — must map back to 'off'."""
-        hermes_home = self._write_config(tmp_path, "discord:\n  reply_to_mode: off\n")
-        monkeypatch.setenv("HERMES_HOME", str(hermes_home))
+        xavani_home = self._write_config(tmp_path, "discord:\n  reply_to_mode: off\n")
+        monkeypatch.setenv("XAVANI_HOME", str(xavani_home))
         monkeypatch.delenv("DISCORD_REPLY_TO_MODE", raising=False)
 
         load_gateway_config()
@@ -422,8 +422,8 @@ class TestYamlConfigLoading:
         assert os.environ.get("DISCORD_REPLY_TO_MODE") == "off"
 
     def test_top_level_reply_to_mode_all(self, tmp_path, monkeypatch):
-        hermes_home = self._write_config(tmp_path, "discord:\n  reply_to_mode: all\n")
-        monkeypatch.setenv("HERMES_HOME", str(hermes_home))
+        xavani_home = self._write_config(tmp_path, "discord:\n  reply_to_mode: all\n")
+        monkeypatch.setenv("XAVANI_HOME", str(xavani_home))
         monkeypatch.delenv("DISCORD_REPLY_TO_MODE", raising=False)
 
         load_gateway_config()
@@ -432,10 +432,10 @@ class TestYamlConfigLoading:
 
     def test_extra_reply_to_mode_off(self, tmp_path, monkeypatch):
         """discord.extra.reply_to_mode is also honoured."""
-        hermes_home = self._write_config(
+        xavani_home = self._write_config(
             tmp_path, "discord:\n  extra:\n    reply_to_mode: \"off\"\n"
         )
-        monkeypatch.setenv("HERMES_HOME", str(hermes_home))
+        monkeypatch.setenv("XAVANI_HOME", str(xavani_home))
         monkeypatch.delenv("DISCORD_REPLY_TO_MODE", raising=False)
 
         load_gateway_config()
@@ -444,8 +444,8 @@ class TestYamlConfigLoading:
 
     def test_env_var_takes_precedence_over_yaml(self, tmp_path, monkeypatch):
         """Existing DISCORD_REPLY_TO_MODE env var is not overwritten by YAML."""
-        hermes_home = self._write_config(tmp_path, "discord:\n  reply_to_mode: all\n")
-        monkeypatch.setenv("HERMES_HOME", str(hermes_home))
+        xavani_home = self._write_config(tmp_path, "discord:\n  reply_to_mode: all\n")
+        monkeypatch.setenv("XAVANI_HOME", str(xavani_home))
         monkeypatch.setenv("DISCORD_REPLY_TO_MODE", "first")
 
         load_gateway_config()
@@ -454,11 +454,11 @@ class TestYamlConfigLoading:
 
     def test_top_level_takes_precedence_over_extra(self, tmp_path, monkeypatch):
         """discord.reply_to_mode wins over discord.extra.reply_to_mode."""
-        hermes_home = self._write_config(
+        xavani_home = self._write_config(
             tmp_path,
             "discord:\n  reply_to_mode: all\n  extra:\n    reply_to_mode: \"off\"\n",
         )
-        monkeypatch.setenv("HERMES_HOME", str(hermes_home))
+        monkeypatch.setenv("XAVANI_HOME", str(xavani_home))
         monkeypatch.delenv("DISCORD_REPLY_TO_MODE", raising=False)
 
         load_gateway_config()

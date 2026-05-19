@@ -34,7 +34,7 @@ def _make_restart_event(update_id: int | None = 100) -> MessageEvent:
 @pytest.mark.asyncio
 async def test_restart_handler_writes_dedup_marker_with_update_id(tmp_path, monkeypatch):
     """First /restart writes .restart_last_processed.json with the triggering update_id."""
-    monkeypatch.setattr(gateway_run, "_hermes_home", tmp_path)
+    monkeypatch.setattr(gateway_run, "_xavani_home", tmp_path)
     monkeypatch.delenv("INVOCATION_ID", raising=False)
 
     runner, _adapter = make_restart_runner()
@@ -55,7 +55,7 @@ async def test_restart_handler_writes_dedup_marker_with_update_id(tmp_path, monk
 @pytest.mark.asyncio
 async def test_redelivered_restart_with_same_update_id_is_ignored(tmp_path, monkeypatch):
     """A /restart with update_id <= recorded marker is silently ignored as a redelivery."""
-    monkeypatch.setattr(gateway_run, "_hermes_home", tmp_path)
+    monkeypatch.setattr(gateway_run, "_xavani_home", tmp_path)
     monkeypatch.delenv("INVOCATION_ID", raising=False)
 
     # Previous gateway recorded update_id=12345 a few seconds ago
@@ -79,7 +79,7 @@ async def test_redelivered_restart_with_same_update_id_is_ignored(tmp_path, monk
 @pytest.mark.asyncio
 async def test_redelivered_restart_with_older_update_id_is_ignored(tmp_path, monkeypatch):
     """update_id strictly LESS than the recorded one is also a redelivery."""
-    monkeypatch.setattr(gateway_run, "_hermes_home", tmp_path)
+    monkeypatch.setattr(gateway_run, "_xavani_home", tmp_path)
     monkeypatch.delenv("INVOCATION_ID", raising=False)
 
     marker = tmp_path / ".restart_last_processed.json"
@@ -104,7 +104,7 @@ async def test_redelivered_restart_with_older_update_id_is_ignored(tmp_path, mon
 @pytest.mark.asyncio
 async def test_fresh_restart_with_higher_update_id_is_processed(tmp_path, monkeypatch):
     """A NEW /restart from the user (higher update_id) bypasses the dedup guard."""
-    monkeypatch.setattr(gateway_run, "_hermes_home", tmp_path)
+    monkeypatch.setattr(gateway_run, "_xavani_home", tmp_path)
     monkeypatch.delenv("INVOCATION_ID", raising=False)
 
     # Previous restart recorded update_id=12345
@@ -132,7 +132,7 @@ async def test_fresh_restart_with_higher_update_id_is_processed(tmp_path, monkey
 @pytest.mark.asyncio
 async def test_stale_marker_older_than_5min_does_not_block(tmp_path, monkeypatch):
     """A marker older than the 5-minute window is ignored — fresh /restart proceeds."""
-    monkeypatch.setattr(gateway_run, "_hermes_home", tmp_path)
+    monkeypatch.setattr(gateway_run, "_xavani_home", tmp_path)
     monkeypatch.delenv("INVOCATION_ID", raising=False)
 
     marker = tmp_path / ".restart_last_processed.json"
@@ -156,7 +156,7 @@ async def test_stale_marker_older_than_5min_does_not_block(tmp_path, monkeypatch
 @pytest.mark.asyncio
 async def test_no_marker_file_allows_restart(tmp_path, monkeypatch):
     """Clean gateway start (no prior marker) processes /restart normally."""
-    monkeypatch.setattr(gateway_run, "_hermes_home", tmp_path)
+    monkeypatch.setattr(gateway_run, "_xavani_home", tmp_path)
     monkeypatch.delenv("INVOCATION_ID", raising=False)
 
     runner, _adapter = make_restart_runner()
@@ -172,7 +172,7 @@ async def test_no_marker_file_allows_restart(tmp_path, monkeypatch):
 @pytest.mark.asyncio
 async def test_corrupt_marker_file_is_treated_as_absent(tmp_path, monkeypatch):
     """Malformed JSON in the marker file doesn't crash — /restart proceeds."""
-    monkeypatch.setattr(gateway_run, "_hermes_home", tmp_path)
+    monkeypatch.setattr(gateway_run, "_xavani_home", tmp_path)
     monkeypatch.delenv("INVOCATION_ID", raising=False)
 
     marker = tmp_path / ".restart_last_processed.json"
@@ -191,7 +191,7 @@ async def test_corrupt_marker_file_is_treated_as_absent(tmp_path, monkeypatch):
 @pytest.mark.asyncio
 async def test_event_without_update_id_bypasses_dedup(tmp_path, monkeypatch):
     """Events with no platform_update_id (non-Telegram, CLI fallback) aren't gated."""
-    monkeypatch.setattr(gateway_run, "_hermes_home", tmp_path)
+    monkeypatch.setattr(gateway_run, "_xavani_home", tmp_path)
     monkeypatch.delenv("INVOCATION_ID", raising=False)
 
     marker = tmp_path / ".restart_last_processed.json"
@@ -218,7 +218,7 @@ async def test_different_platform_bypasses_dedup(tmp_path, monkeypatch):
     from gateway.config import Platform
     from gateway.session import SessionSource
 
-    monkeypatch.setattr(gateway_run, "_hermes_home", tmp_path)
+    monkeypatch.setattr(gateway_run, "_xavani_home", tmp_path)
     monkeypatch.delenv("INVOCATION_ID", raising=False)
 
     marker = tmp_path / ".restart_last_processed.json"

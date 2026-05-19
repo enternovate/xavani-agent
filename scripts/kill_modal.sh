@@ -2,7 +2,7 @@
 # Kill all running Modal apps (sandboxes, deployments, etc.)
 #
 # Usage:
-#   bash scripts/kill_modal.sh          # Stop hermes-agent sandboxes
+#   bash scripts/kill_modal.sh          # Stop xavani-agent sandboxes
 #   bash scripts/kill_modal.sh --all    # Stop ALL Modal apps
 
 set -uo pipefail
@@ -17,10 +17,10 @@ if [[ "${1:-}" == "--all" ]]; then
         modal app stop "$app_id" 2>/dev/null || true
     done
 else
-    echo "Stopping hermes-agent sandboxes..."
-    APPS=$(echo "$APP_LIST" | grep 'hermes-agent' | grep -oE 'ap-[A-Za-z0-9]+' || true)
+    echo "Stopping xavani-agent sandboxes..."
+    APPS=$(echo "$APP_LIST" | grep 'xavani-agent' | grep -oE 'ap-[A-Za-z0-9]+' || true)
     if [[ -z "$APPS" ]]; then
-        echo "  No hermes-agent apps found."
+        echo "  No xavani-agent apps found."
     else
         echo "$APPS" | while read app_id; do
             echo "  Stopping $app_id"
@@ -30,5 +30,5 @@ else
 fi
 
 echo ""
-echo "Current hermes-agent status:"
-modal app list 2>/dev/null | grep -E 'State|hermes-agent' || echo "  (none)"
+echo "Current xavani-agent status:"
+modal app list 2>/dev/null | grep -E 'State|xavani-agent' || echo "  (none)"

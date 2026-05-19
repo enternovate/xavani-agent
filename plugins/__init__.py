@@ -2,4 +2,4 @@
 # MIT License -- See LICENSE file for full terms.
 # Built by Enternovate -- Open source. Private. Local.
 
-# Hermes plugins package
+# Xavani plugins package

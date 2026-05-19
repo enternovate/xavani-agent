@@ -2,7 +2,7 @@
 # MIT License -- See LICENSE file for full terms.
 # Built by Enternovate -- Open source. Private. Local.
 
-"""Persistent slash-command worker — one HermesCLI per TUI session.
+"""Persistent slash-command worker — one XavaniCLI per TUI session.
 
 Protocol: reads JSON lines from stdin {id, command}, writes {id, ok, output|error} to stdout.
 """
@@ -15,11 +15,11 @@ import os
 import sys
 
 import cli as cli_mod
-from cli import HermesCLI
+from cli import XavaniCLI
 from rich.console import Console
 
 
-def _run(cli: HermesCLI, command: str) -> str:
+def _run(cli: XavaniCLI, command: str) -> str:
     cmd = (command or "").strip()
     if not cmd:
         return ""
@@ -53,11 +53,11 @@ def main():
     p.add_argument("--model", default="")
     args = p.parse_args()
 
-    os.environ["HERMES_SESSION_KEY"] = args.session_key
-    os.environ["HERMES_INTERACTIVE"] = "1"
+    os.environ["XAVANI_SESSION_KEY"] = args.session_key
+    os.environ["XAVANI_INTERACTIVE"] = "1"
 
     with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
-        cli = HermesCLI(model=args.model or None, compact=True, resume=args.session_key, verbose=False)
+        cli = XavaniCLI(model=args.model or None, compact=True, resume=args.session_key, verbose=False)
 
     for raw in sys.stdin:
         line = raw.strip()

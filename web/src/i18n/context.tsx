@@ -61,7 +61,7 @@ export const LOCALE_META: Record<Locale, { name: string; flagCountryCode: string
 };
 
 const SUPPORTED_LOCALES = Object.keys(TRANSLATIONS) as Locale[];
-const STORAGE_KEY = "hermes-locale";
+const STORAGE_KEY = "xavani-locale";
 
 function isLocale(value: string): value is Locale {
   return (SUPPORTED_LOCALES as string[]).includes(value);

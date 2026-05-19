@@ -2,13 +2,13 @@
 # MIT License -- See LICENSE file for full terms.
 # Built by Enternovate -- Open source. Private. Local.
 
-"""Tests for slash command prefix matching in HermesCLI.process_command."""
+"""Tests for slash command prefix matching in XavaniCLI.process_command."""
 from unittest.mock import MagicMock, patch
-from cli import HermesCLI
+from cli import XavaniCLI
 
 
 def _make_cli():
-    cli_obj = HermesCLI.__new__(HermesCLI)
+    cli_obj = XavaniCLI.__new__(XavaniCLI)
     cli_obj.config = {}
     cli_obj.console = MagicMock()
     cli_obj.agent = None
@@ -55,7 +55,7 @@ class TestSlashCommandPrefixMatching:
         cli_obj = _make_cli()
         call_count = [0]
 
-        original_pc = HermesCLI.process_command
+        original_pc = XavaniCLI.process_command
 
         def guarded(self_inner, cmd):
             call_count[0] += 1
@@ -64,7 +64,7 @@ class TestSlashCommandPrefixMatching:
             return original_pc(self_inner, cmd)
 
         # Mock show_config since the test is about recursion, not config display
-        with patch.object(HermesCLI, 'process_command', guarded), \
+        with patch.object(XavaniCLI, 'process_command', guarded), \
              patch.object(cli_obj, 'show_config'):
             try:
                 cli_obj.process_command("/config set key value")

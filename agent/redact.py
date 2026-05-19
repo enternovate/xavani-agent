@@ -60,15 +60,15 @@ _SENSITIVE_BODY_KEYS = frozenset({
 })
 
 # Snapshot at import time so runtime env mutations (e.g. LLM-generated
-# `export HERMES_REDACT_SECRETS=false`) cannot disable redaction
+# `export XAVANI_REDACT_SECRETS=false`) cannot disable redaction
 # mid-session.  ON by default — secure default per issue #17691. Users who
 # need raw credential values in tool output (e.g. working on the redactor
 # itself) can opt out via `security.redact_secrets: false` in config.yaml
-# (bridged to this env var in hermes_cli/main.py, gateway/run.py, and
-# cli.py) or `HERMES_REDACT_SECRETS=false` in ~/.hermes/.env. An opt-out
+# (bridged to this env var in xavani_cli/main.py, gateway/run.py, and
+# cli.py) or `XAVANI_REDACT_SECRETS=false` in ~/.xavani/.env. An opt-out
 # warning is logged at gateway and CLI startup so operators see the
 # downgrade — see `_log_redaction_status()` in gateway/run.py and cli.py.
-_REDACT_ENABLED = os.getenv("HERMES_REDACT_SECRETS", "true").lower() in {"1", "true", "yes", "on"}
+_REDACT_ENABLED = os.getenv("XAVANI_REDACT_SECRETS", "true").lower() in {"1", "true", "yes", "on"}
 
 # Known API key prefixes -- match the prefix + contiguous token chars
 _PREFIX_PATTERNS = [
@@ -203,8 +203,8 @@ def mask_secret(
 ) -> str:
     """Mask a secret for display, preserving ``head`` and ``tail`` characters.
 
-    Canonical helper for display-time redaction across Hermes — used by
-    ``hermes config``, ``hermes status``, ``hermes dump``, and anywhere
+    Canonical helper for display-time redaction across Xavani — used by
+    ``xavani config``, ``xavani status``, ``xavani dump``, and anywhere
     a secret needs to be shown truncated for debuggability while still
     keeping the bulk hidden.
 
@@ -406,3 +406,32 @@ class RedactingFormatter(logging.Formatter):
     def format(self, record: logging.LogRecord) -> str:
         original = super().format(record)
         return redact_sensitive_text(original)
+
+
+class RedactingLoggerAdapter(logging.LoggerAdapter):
+    """Logger adapter that redacts secrets from all log messages.
+    
+    Drop-in replacement for logging.getLogger(). Every message and
+    every argument is automatically run through redact_sensitive_text()
+    before reaching any handler — defense in depth beyond what the
+    RedactingFormatter provides at the handler level.
+    
+    Usage:
+        import logging
+        from agent.redact import RedactingLoggerAdapter
+        _log = RedactingLoggerAdapter(logging.getLogger(__name__))
+    """
+
+    def process(self, msg, kwargs):
+        if _REDACT_ENABLED:
+            msg = redact_sensitive_text(str(msg))
+            extra = kwargs.get('extra')
+            if isinstance(extra, dict):
+                kwargs['extra'] = {k: redact_sensitive_text(str(v)) if isinstance(v, str) else v for k, v in extra.items()}
+        return msg, kwargs
+
+    def log(self, level, msg, *args, **kwargs):
+        if self.isEnabledFor(level):
+            if _REDACT_ENABLED and args:
+                args = tuple(redact_sensitive_text(str(a)) if isinstance(a, str) else a for a in args)
+            super().log(level, msg, *args, **kwargs)

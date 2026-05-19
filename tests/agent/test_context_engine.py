@@ -202,7 +202,7 @@ class TestPluginContextEngineSlot:
     """Test register_context_engine on PluginContext."""
 
     def test_register_engine(self):
-        from hermes_cli.plugins import PluginManager, PluginContext, PluginManifest
+        from xavani_cli.plugins import PluginManager, PluginContext, PluginManifest
         mgr = PluginManager()
         manifest = PluginManifest(name="test-lcm")
         ctx = PluginContext(manifest, mgr)
@@ -214,7 +214,7 @@ class TestPluginContextEngineSlot:
         assert mgr._context_engine.name == "stub"
 
     def test_reject_second_engine(self):
-        from hermes_cli.plugins import PluginManager, PluginContext, PluginManifest
+        from xavani_cli.plugins import PluginManager, PluginContext, PluginManifest
         mgr = PluginManager()
         manifest = PluginManifest(name="test-lcm")
         ctx = PluginContext(manifest, mgr)
@@ -227,7 +227,7 @@ class TestPluginContextEngineSlot:
         assert mgr._context_engine is engine1
 
     def test_reject_non_engine(self):
-        from hermes_cli.plugins import PluginManager, PluginContext, PluginManifest
+        from xavani_cli.plugins import PluginManager, PluginContext, PluginManifest
         mgr = PluginManager()
         manifest = PluginManifest(name="test-bad")
         ctx = PluginContext(manifest, mgr)
@@ -236,8 +236,8 @@ class TestPluginContextEngineSlot:
         assert mgr._context_engine is None
 
     def test_get_plugin_context_engine(self):
-        from hermes_cli.plugins import PluginManager, PluginContext, PluginManifest, get_plugin_context_engine, _plugin_manager
-        import hermes_cli.plugins as plugins_mod
+        from xavani_cli.plugins import PluginManager, PluginContext, PluginManifest, get_plugin_context_engine, _plugin_manager
+        import xavani_cli.plugins as plugins_mod
 
         # Inject a test manager
         old_mgr = plugins_mod._plugin_manager

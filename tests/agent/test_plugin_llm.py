@@ -728,9 +728,9 @@ class TestConfigDrivenPolicy:
     def test_policy_loaded_from_yaml(self, tmp_path, monkeypatch):
         from agent.plugin_llm import _resolve_trust_policy
 
-        hermes_home = tmp_path / ".hermes"
-        hermes_home.mkdir()
-        (hermes_home / "config.yaml").write_text(
+        xavani_home = tmp_path / ".xavani"
+        xavani_home.mkdir()
+        (xavani_home / "config.yaml").write_text(
             """
 plugins:
   entries:
@@ -746,8 +746,8 @@ plugins:
 """,
             encoding="utf-8",
         )
-        monkeypatch.setenv("HERMES_HOME", str(hermes_home))
-        from hermes_cli import config as _config_mod
+        monkeypatch.setenv("XAVANI_HOME", str(xavani_home))
+        from xavani_cli import config as _config_mod
         _config_mod._config_cache = None  # type: ignore[attr-defined]
 
         policy = _resolve_trust_policy("my-plugin")
@@ -762,11 +762,11 @@ plugins:
     def test_missing_plugin_entry_yields_default_deny(self, tmp_path, monkeypatch):
         from agent.plugin_llm import _resolve_trust_policy
 
-        hermes_home = tmp_path / ".hermes"
-        hermes_home.mkdir()
-        (hermes_home / "config.yaml").write_text("plugins: {}\n", encoding="utf-8")
-        monkeypatch.setenv("HERMES_HOME", str(hermes_home))
-        from hermes_cli import config as _config_mod
+        xavani_home = tmp_path / ".xavani"
+        xavani_home.mkdir()
+        (xavani_home / "config.yaml").write_text("plugins: {}\n", encoding="utf-8")
+        monkeypatch.setenv("XAVANI_HOME", str(xavani_home))
+        from xavani_cli import config as _config_mod
         _config_mod._config_cache = None  # type: ignore[attr-defined]
 
         policy = _resolve_trust_policy("never-configured")
@@ -783,7 +783,7 @@ plugins:
 
 class TestPluginContextIntegration:
     def test_ctx_llm_is_lazy_singleton(self):
-        from hermes_cli.plugins import PluginContext, PluginManifest, PluginManager
+        from xavani_cli.plugins import PluginContext, PluginManifest, PluginManager
 
         manifest = PluginManifest(name="test-plugin", source="test", key="test-plugin")
         manager = PluginManager()
@@ -795,7 +795,7 @@ class TestPluginContextIntegration:
         assert first._plugin_id == "test-plugin"  # type: ignore[attr-defined]
 
     def test_ctx_llm_uses_manifest_key_for_policy(self):
-        from hermes_cli.plugins import PluginContext, PluginManifest, PluginManager
+        from xavani_cli.plugins import PluginContext, PluginManifest, PluginManager
 
         manifest = PluginManifest(
             name="bare-name", source="test", key="image_gen/openai"
@@ -913,7 +913,7 @@ class TestHookMode:
     the real ``invoke_hook`` machinery, and check the call landed."""
 
     def test_complete_works_from_post_tool_call_hook(self):
-        from hermes_cli.plugins import PluginContext, PluginManifest, PluginManager
+        from xavani_cli.plugins import PluginContext, PluginManifest, PluginManager
 
         manifest = PluginManifest(name="hook-plugin", source="test", key="hook-plugin")
         manager = PluginManager()
@@ -969,7 +969,7 @@ class TestHookMode:
     def test_complete_works_from_post_tool_call_hook_when_async_caller_set(self):
         """Hooks fired synchronously should still work with sync
         ctx.llm.complete even if other callsites use async."""
-        from hermes_cli.plugins import PluginContext, PluginManifest, PluginManager
+        from xavani_cli.plugins import PluginContext, PluginManifest, PluginManager
 
         manifest = PluginManifest(name="hook-async", source="test", key="hook-async")
         manager = PluginManager()

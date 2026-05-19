@@ -4,13 +4,13 @@ sidebar_position: 3
 
 # Profile Distributions: Share a Whole Agent
 
-A **profile distribution** packages a complete Hermes agent — personality, skills, cron jobs, MCP connections, config — as a git repository. Anyone with access to the repo can install the whole agent with one command, update it in place, and keep their own memories, sessions, and API keys untouched.
+A **profile distribution** packages a complete Xavani agent — personality, skills, cron jobs, MCP connections, config — as a git repository. Anyone with access to the repo can install the whole agent with one command, update it in place, and keep their own memories, sessions, and API keys untouched.
 
 If a [profile](./profiles.md) is a local agent, a distribution is that agent made shareable.
 
 ## What this means
 
-Before distributions, sharing a Hermes agent meant sending someone:
+Before distributions, sharing a Xavani agent meant sending someone:
 
 1. Your SOUL.md
 2. A list of skills to install
@@ -36,10 +36,10 @@ my-research-agent/
 Recipients run:
 
 ```bash
-hermes profile install github.com/you/my-research-agent --alias
+xavani profile install github.com/you/my-research-agent --alias
 ```
 
-…and they now have the whole agent. They fill in their own API keys (`.env.EXAMPLE` → `.env`), and they can run `my-research-agent chat` or address it through Telegram / Discord / Slack / any gateway platform. When you push a new version, they run `hermes profile update my-research-agent` and pull your changes — their memories and sessions stay put.
+…and they now have the whole agent. They fill in their own API keys (`.env.EXAMPLE` → `.env`), and they can run `my-research-agent chat` or address it through Telegram / Discord / Slack / any gateway platform. When you push a new version, they run `xavani profile update my-research-agent` and pull your changes — their memories and sessions stay put.
 
 ## Why git?
 
@@ -52,7 +52,7 @@ We considered tarballs, HTTP archives, a custom format. None of them beat git:
 - **Private repos work for free.** SSH keys, `git credential` helpers, GitHub CLI stored credentials — whatever auth your terminal is already set up for applies transparently.
 - **Reproducibility is a commit SHA.** The same thing pip and npm record.
 
-The tradeoff: recipients need git installed. On any machine running Hermes in 2026, that's already true.
+The tradeoff: recipients need git installed. On any machine running Xavani in 2026, that's already true.
 
 ## When should you use a distribution?
 
@@ -65,7 +65,7 @@ Good fits:
 
 Not a fit:
 
-- **You just want to back up a profile on your own machine.** Use [`hermes profile export` / `import`](../reference/profile-commands.md#hermes-profile-export) — that's what those are for.
+- **You just want to back up a profile on your own machine.** Use [`xavani profile export` / `import`](../reference/profile-commands.md#xavani-profile-export) — that's what those are for.
 - **You want to share API keys alongside the agent.** `auth.json` and `.env` are deliberately excluded from distributions. Each installer brings their own credentials.
 - **You want to share memories / sessions / conversation history.** Those are user data, not distribution content. Never shipped.
 
@@ -82,22 +82,22 @@ Below is the full end-to-end flow. Pick the side you care about.
 Build and refine the agent like any other profile:
 
 ```bash
-hermes profile create research-bot
+xavani profile create research-bot
 research-bot setup                    # configure model, API keys
-# Edit ~/.hermes/profiles/research-bot/SOUL.md
+# Edit ~/.xavani/profiles/research-bot/SOUL.md
 # Install skills, wire up MCP servers, schedule cron jobs, etc.
 research-bot chat                     # dogfood until it feels right
 ```
 
 ### Step 2 — Add a `distribution.yaml`
 
-Create `~/.hermes/profiles/research-bot/distribution.yaml`:
+Create `~/.xavani/profiles/research-bot/distribution.yaml`:
 
 ```yaml
 name: research-bot
 version: 1.0.0
 description: "Autonomous research assistant with arXiv and web tools"
-hermes_requires: ">=0.12.0"
+xavani_requires: ">=0.12.0"
 author: "Your Name"
 license: "MIT"
 
@@ -119,7 +119,7 @@ That's the whole manifest. Every field except `name` has a sensible default.
 ### Step 3 — Push to a git repo
 
 ```bash
-cd ~/.hermes/profiles/research-bot
+cd ~/.xavani/profiles/research-bot
 git init
 git add .
 git commit -m "v1.0.0"
@@ -146,7 +146,7 @@ git tag v1.1.0
 git push --tags
 ```
 
-Recipients who run `hermes profile update research-bot` will pull the latest.
+Recipients who run `xavani profile update research-bot` will pull the latest.
 
 ### What the repo looks like
 
@@ -195,7 +195,7 @@ When omitted, the defaults above apply — which is what most distributions want
 ### Install
 
 ```bash
-hermes profile install github.com/you/research-bot --alias
+xavani profile install github.com/you/research-bot --alias
 ```
 
 What happens:
@@ -204,7 +204,7 @@ What happens:
 2. Reads `distribution.yaml`, shows you the manifest (name, version, description, author, required env vars).
 3. Checks each required env var against your shell environment and the target profile's existing `.env`. Marks each as `✓ set` or `needs setting` so you know exactly what to configure.
 4. Asks for confirmation. Pass `-y` / `--yes` to skip.
-5. Copies distribution-owned files into `~/.hermes/profiles/research-bot/` (or wherever the manifest's `name` resolves).
+5. Copies distribution-owned files into `~/.xavani/profiles/research-bot/` (or wherever the manifest's `name` resolves).
 6. Writes `.env.EXAMPLE` with the required keys commented out — copy to `.env` and fill in.
 7. With `--alias`, creates a wrapper so you can run `research-bot chat` directly.
 
@@ -214,22 +214,22 @@ Any git URL works:
 
 ```bash
 # GitHub shorthand
-hermes profile install github.com/you/research-bot
+xavani profile install github.com/you/research-bot
 
 # Full HTTPS
-hermes profile install https://github.com/you/research-bot.git
+xavani profile install https://github.com/you/research-bot.git
 
 # SSH
-hermes profile install git@github.com:you/research-bot.git
+xavani profile install git@github.com:you/research-bot.git
 
 # Self-hosted, GitLab, Gitea, Forgejo — any Git host
-hermes profile install https://git.example.com/team/research-bot.git
+xavani profile install https://git.example.com/team/research-bot.git
 
 # Private repo using your configured git auth
-hermes profile install git@github.com:your-org/internal-bot.git
+xavani profile install git@github.com:your-org/internal-bot.git
 
 # Local directory during development (no git push needed)
-hermes profile install ~/my-profile-in-progress/
+xavani profile install ~/my-profile-in-progress/
 ```
 
 ### Override the profile name
@@ -238,9 +238,9 @@ Two users wanting the same distribution under different profile names:
 
 ```bash
 # Alice
-hermes profile install github.com/acme/support-bot --name support-us --alias
+xavani profile install github.com/acme/support-bot --name support-us --alias
 # Bob (same distribution, different local name)
-hermes profile install github.com/acme/support-bot --name support-eu --alias
+xavani profile install github.com/acme/support-bot --name support-eu --alias
 ```
 
 ### Fill in env vars
@@ -248,7 +248,7 @@ hermes profile install github.com/acme/support-bot --name support-eu --alias
 After install, the agent's profile contains a `.env.EXAMPLE`:
 
 ```
-# Environment variables required by this Hermes distribution.
+# Environment variables required by this Xavani distribution.
 # Copy to `.env` and fill in your own values before running.
 
 # OpenAI API key (for model access)
@@ -263,7 +263,7 @@ OPENAI_API_KEY=
 Copy it:
 
 ```bash
-cp ~/.hermes/profiles/research-bot/.env.EXAMPLE ~/.hermes/profiles/research-bot/.env
+cp ~/.xavani/profiles/research-bot/.env.EXAMPLE ~/.xavani/profiles/research-bot/.env
 # Edit .env, paste your real keys
 ```
 
@@ -272,7 +272,7 @@ Required keys that were already in your shell environment (e.g. `OPENAI_API_KEY`
 ### Check what you installed
 
 ```bash
-hermes profile info research-bot
+xavani profile info research-bot
 ```
 
 Shows:
@@ -282,7 +282,7 @@ Distribution: research-bot
 Version:      1.0.0
 Description:  Autonomous research assistant with arXiv and web tools
 Author:       Your Name
-Requires:     Hermes >=0.12.0
+Requires:     Xavani >=0.12.0
 Source:       https://github.com/you/research-bot
 Installed:    2026-05-08T17:04:32+00:00
 
@@ -291,7 +291,7 @@ Environment variables:
   SERPAPI_KEY (optional) — SerpAPI key for web search
 ```
 
-`hermes profile list` also shows a `Distribution` column so at a glance you can see which of your profiles came from repos and which you hand-built:
+`xavani profile list` also shows a `Distribution` column so at a glance you can see which of your profiles came from repos and which you hand-built:
 
 ```
  Profile          Model                        Gateway      Alias        Distribution
@@ -305,7 +305,7 @@ Environment variables:
 ### Update
 
 ```bash
-hermes profile update research-bot
+xavani profile update research-bot
 ```
 
 What happens:
@@ -320,14 +320,14 @@ No re-downloading the whole archive. No stomping your local changes to config. N
 ### Remove
 
 ```bash
-hermes profile delete research-bot
+xavani profile delete research-bot
 ```
 
 The delete prompt surfaces distribution info before asking you to confirm:
 
 ```
 Profile: research-bot
-Path:    ~/.hermes/profiles/research-bot
+Path:    ~/.xavani/profiles/research-bot
 Model:   claude-opus-4 (anthropic)
 Skills:  12
 Distribution: research-bot@1.0.0
@@ -352,17 +352,17 @@ You built a research assistant on your laptop. You want the same agent on your w
 
 ```bash
 # Laptop
-cd ~/.hermes/profiles/research-bot
+cd ~/.xavani/profiles/research-bot
 git init && git add . && git commit -m "initial"
 git remote add origin git@github.com:you/research-bot.git
 git push -u origin main
 
 # Workstation
-hermes profile install github.com/you/research-bot --alias
+xavani profile install github.com/you/research-bot --alias
 # Fill in .env. Done.
 ```
 
-Any iteration on the laptop (`git commit && push`) pulls onto the workstation with `hermes profile update research-bot`. Memories stay per-machine — the laptop remembers its own conversations, the workstation remembers its own, they don't collide.
+Any iteration on the laptop (`git commit && push`) pulls onto the workstation with `xavani profile update research-bot`. Memories stay per-machine — the laptop remembers its own conversations, the workstation remembers its own, they don't collide.
 
 ### Team: ship a reviewed internal agent
 
@@ -370,19 +370,19 @@ Your engineering team wants a shared PR-review bot with a specific SOUL, specifi
 
 ```bash
 # Engineering lead
-cd ~/.hermes/profiles/pr-reviewer
+cd ~/.xavani/profiles/pr-reviewer
 # ... build and tune ...
 git init && git add . && git commit -m "v1.0 PR reviewer"
 git tag v1.0.0
 git push -u origin main --tags    # push to your company's internal Git host
 
 # Each engineer
-hermes profile install git@github.com:your-org/pr-reviewer.git --alias
+xavani profile install git@github.com:your-org/pr-reviewer.git --alias
 # Fill in .env with their own API key (billed to them), .env.EXAMPLE points at what's required
 pr-reviewer chat
 ```
 
-When the lead ships v1.1 (better SOUL, new skill), engineers run `hermes profile update pr-reviewer` and everyone's on the new version within minutes.
+When the lead ships v1.1 (better SOUL, new skill), engineers run `xavani profile update pr-reviewer` and everyone's on the new version within minutes.
 
 ### Community: publish a public agent
 
@@ -390,30 +390,30 @@ You built something novel — maybe a "Polymarket trader" or an "academic paper 
 
 ```bash
 # You
-cd ~/.hermes/profiles/polymarket-trader
+cd ~/.xavani/profiles/polymarket-trader
 # Write a solid README.md at the repo root — GitHub shows it on the repo page
 git init && git add . && git commit -m "v1.0"
 git tag v1.0.0
 # Publish to a public GitHub repo
-git remote add origin https://github.com/you/hermes-polymarket-trader.git
+git remote add origin https://github.com/you/xavani-polymarket-trader.git
 git push -u origin main --tags
 
 # Anyone
-hermes profile install github.com/you/hermes-polymarket-trader --alias
+xavani profile install github.com/you/xavani-polymarket-trader --alias
 ```
 
 Tweet the install command. People who try it send you issues and PRs. If someone wants to customize, they fork — same git workflow everyone already knows.
 
 ### Product: ship an opinionated agent
 
-You built Hermes-on-top — maybe a compliance-monitoring harness, a customer-support stack, a domain-specific research platform. You want to distribute it as a product.
+You built Xavani-on-top — maybe a compliance-monitoring harness, a customer-support stack, a domain-specific research platform. You want to distribute it as a product.
 
 ```yaml
 # distribution.yaml
 name: telemetry-harness
 version: 2.3.1
 description: "Compliance telemetry harness — monitors and reviews regulated workflows"
-hermes_requires: ">=0.13.0"
+xavani_requires: ">=0.13.0"
 author: "Acme Compliance Inc."
 license: "Commercial"
 
@@ -442,10 +442,10 @@ You're the ops lead. You want a temporary agent that diagnoses a production inci
 git push -u origin main
 
 # Each on-call
-hermes profile install git@github.com:your-org/incident-2026-q2.git --alias
+xavani profile install git@github.com:your-org/incident-2026-q2.git --alias
 
 # Incident resolved — tear it down
-hermes profile delete incident-2026-q2
+xavani profile delete incident-2026-q2
 ```
 
 The install-delete cycle is cheap enough to be disposable.
@@ -457,14 +457,14 @@ The install-delete cycle is cheap enough to be disposable.
 ### Pin to a specific version
 
 :::note
-Git ref pinning (`#v1.2.0`) is planned but not in the initial release — install currently tracks the default branch. Track your installed version via `hermes profile info <name>` and hold off on updates until you're ready.
+Git ref pinning (`#v1.2.0`) is planned but not in the initial release — install currently tracks the default branch. Track your installed version via `xavani profile info <name>` and hold off on updates until you're ready.
 :::
 
 ### Check what version you're on vs. latest
 
 ```bash
 # Your installed version
-hermes profile info research-bot | grep Version
+xavani profile info research-bot | grep Version
 
 # Latest upstream (without installing)
 git ls-remote --tags https://github.com/you/research-bot | tail -5
@@ -475,7 +475,7 @@ git ls-remote --tags https://github.com/you/research-bot | tail -5
 The default update behavior already does this: `config.yaml` is preserved. To be safe, write your local tweaks to a file the distribution doesn't own:
 
 ```yaml
-# ~/.hermes/profiles/research-bot/local/my-overrides.yaml
+# ~/.xavani/profiles/research-bot/local/my-overrides.yaml
 # (distribution never touches local/)
 ```
 
@@ -485,11 +485,11 @@ The default update behavior already does this: `config.yaml` is preserved. To be
 
 ```bash
 # Nuke and re-install from scratch (loses memories/sessions too)
-hermes profile delete research-bot --yes
-hermes profile install github.com/you/research-bot --alias
+xavani profile delete research-bot --yes
+xavani profile install github.com/you/research-bot --alias
 
 # Update to current main but reset config.yaml to the distribution's default
-hermes profile update research-bot --force-config --yes
+xavani profile update research-bot --force-config --yes
 ```
 
 ### Fork and customize
@@ -498,9 +498,9 @@ The standard git workflow — distributions are just repos:
 
 ```bash
 # Fork the repo on GitHub, then install your fork
-hermes profile install github.com/yourname/forked-research-bot --alias
+xavani profile install github.com/yourname/forked-research-bot --alias
 
-# Iterate locally in ~/.hermes/profiles/forked-research-bot/
+# Iterate locally in ~/.xavani/profiles/forked-research-bot/
 # Edit SOUL.md, commit, push to your fork
 # Upstream changes: pull them into your fork the usual way
 ```
@@ -511,11 +511,11 @@ From the author's machine:
 
 ```bash
 # Install from a local directory (no git push needed)
-hermes profile install ~/.hermes/profiles/research-bot --name research-bot-test --alias
+xavani profile install ~/.xavani/profiles/research-bot --name research-bot-test --alias
 
 # Tweak, delete, re-install until it's right
-hermes profile delete research-bot-test --yes
-hermes profile install ~/.hermes/profiles/research-bot --name research-bot-test
+xavani profile delete research-bot-test --yes
+xavani profile install ~/.xavani/profiles/research-bot --name research-bot-test
 ```
 
 ---
@@ -545,7 +545,7 @@ Profile distributions are unsigned by default. You're trusting:
 - **The git host** (GitHub / GitLab / wherever) to serve the bytes the author pushed.
 - **The author** to not ship a malicious SOUL, skills, or cron jobs.
 
-Cron jobs from a distribution are **not auto-scheduled** — the installer prints `hermes -p <name> cron list` and you enable them explicitly. SOUL.md and skills ARE active as soon as you start chatting with the profile, so read them before your first run if you're installing from someone you don't know.
+Cron jobs from a distribution are **not auto-scheduled** — the installer prints `xavani -p <name> cron list` and you enable them explicitly. SOUL.md and skills ARE active as soon as you start chatting with the profile, so read them before your first run if you're installing from someone you don't know.
 
 Rough analogy: installing a distribution is like installing a browser extension or a VS Code extension. Low friction, high power, trust the source. For internal company distributions, use a private repo and your normal git auth — nothing new to configure.
 
@@ -557,17 +557,17 @@ For implementation details, precise CLI behavior, and all flags, see the [Profil
 
 The short version:
 
-- `install`, `update`, `info` live inside `hermes profile` — not a parallel command tree.
+- `install`, `update`, `info` live inside `xavani profile` — not a parallel command tree.
 - The manifest format is YAML with a tiny required schema (`name` only).
 - The installer uses your local `git` binary for cloning, so any auth your shell already handles (SSH keys, credential helpers) works transparently.
 - After clone, `.git/` is stripped — the installed profile isn't itself a git checkout, avoiding "oh my, I accidentally committed my `.env` to the distribution's git history" traps.
-- Reserved profile names (`hermes`, `test`, `tmp`, `root`, `sudo`) are rejected at install time to avoid collisions with common binaries.
+- Reserved profile names (`xavani`, `test`, `tmp`, `root`, `sudo`) are rejected at install time to avoid collisions with common binaries.
 
 ## See also
 
 - [Profiles: Running Multiple Agents](./profiles.md) — the base concept
 - [Profile Commands reference](../reference/profile-commands.md) — every flag, every option
-- [`hermes profile export` / `import`](../reference/profile-commands.md#hermes-profile-export) — local backup / restore (not distribution)
-- [Using SOUL with Hermes](../guides/use-soul-with-hermes.md) — authoring personalities
+- [`xavani profile export` / `import`](../reference/profile-commands.md#xavani-profile-export) — local backup / restore (not distribution)
+- [Using SOUL with Xavani](../guides/use-soul-with-xavani.md) — authoring personalities
 - [Personality & SOUL](./features/personality.md) — how SOUL fits into the agent
 - [Skills catalog](../reference/skills-catalog.md) — skills you can bundle

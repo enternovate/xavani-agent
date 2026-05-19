@@ -69,7 +69,7 @@ def _resolve_node_client(node: Optional[str]):
     if entry is None:
         raise RuntimeError(
             f"no registered meet node matches {node!r} — "
-            "run `hermes meet node approve <name> <url> <token>` first"
+            "run `xavani meet node approve <name> <url> <token>` first"
         )
     client = NodeClient(url=entry["url"], token=entry["token"])
     return client, entry.get("name")
@@ -112,7 +112,7 @@ MEET_JOIN_SCHEMA: Dict[str, Any] = {
                 "type": "string",
                 "description": (
                     "Display name to use when joining as guest. Defaults to "
-                    "'Hermes Agent'."
+                    "'Xavani Agent'."
                 ),
             },
             "duration": {
@@ -137,7 +137,7 @@ MEET_JOIN_SCHEMA: Dict[str, Any] = {
                     "but the user's Chrome with a signed-in Google profile "
                     "lives on their Mac). Pass 'auto' to use the single "
                     "registered node. Default: run locally. Nodes are "
-                    "approved via `hermes meet node approve`."
+                    "approved via `xavani meet node approve`."
                 ),
             },
         },
@@ -256,7 +256,7 @@ def handle_meet_join(args: Dict[str, Any], **_kw) -> str:
         try:
             res = client.start_bot(
                 url=url,
-                guest_name=str(args.get("guest_name") or "Hermes Agent"),
+                guest_name=str(args.get("guest_name") or "Xavani Agent"),
                 duration=str(args.get("duration")) if args.get("duration") else None,
                 headed=bool(args.get("headed", False)),
                 mode=mode,
@@ -275,7 +275,7 @@ def handle_meet_join(args: Dict[str, Any], **_kw) -> str:
     res = pm.start(
         url=url,
         headed=bool(args.get("headed", False)),
-        guest_name=str(args.get("guest_name") or "Hermes Agent"),
+        guest_name=str(args.get("guest_name") or "Xavani Agent"),
         duration=str(args.get("duration")) if args.get("duration") else None,
         mode=mode,
     )

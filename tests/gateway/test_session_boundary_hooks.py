@@ -78,7 +78,7 @@ def _make_runner():
 
 
 @pytest.mark.asyncio
-@patch("hermes_cli.plugins.invoke_hook")
+@patch("xavani_cli.plugins.invoke_hook")
 async def test_reset_fires_finalize_hook(mock_invoke_hook):
     """/new must fire on_session_finalize with the OLD session id."""
     runner = _make_runner()
@@ -91,7 +91,7 @@ async def test_reset_fires_finalize_hook(mock_invoke_hook):
 
 
 @pytest.mark.asyncio
-@patch("hermes_cli.plugins.invoke_hook")
+@patch("xavani_cli.plugins.invoke_hook")
 async def test_reset_fires_reset_hook(mock_invoke_hook):
     """/new must fire on_session_reset with the NEW session id."""
     runner = _make_runner()
@@ -104,7 +104,7 @@ async def test_reset_fires_reset_hook(mock_invoke_hook):
 
 
 @pytest.mark.asyncio
-@patch("hermes_cli.plugins.invoke_hook")
+@patch("xavani_cli.plugins.invoke_hook")
 async def test_finalize_before_reset(mock_invoke_hook):
     """on_session_finalize must fire before on_session_reset."""
     runner = _make_runner()
@@ -118,7 +118,7 @@ async def test_finalize_before_reset(mock_invoke_hook):
 
 
 @pytest.mark.asyncio
-@patch("hermes_cli.plugins.invoke_hook")
+@patch("xavani_cli.plugins.invoke_hook")
 async def test_shutdown_fires_finalize_for_active_agents(mock_invoke_hook):
     """Gateway stop() must fire on_session_finalize for each active agent."""
     from gateway.run import GatewayRunner
@@ -161,7 +161,7 @@ async def test_shutdown_fires_finalize_for_active_agents(mock_invoke_hook):
 
 
 @pytest.mark.asyncio
-@patch("hermes_cli.plugins.invoke_hook", side_effect=Exception("boom"))
+@patch("xavani_cli.plugins.invoke_hook", side_effect=Exception("boom"))
 async def test_hook_error_does_not_break_reset(mock_invoke_hook):
     """Plugin hook errors must not prevent /new from completing."""
     runner = _make_runner()
@@ -173,7 +173,7 @@ async def test_hook_error_does_not_break_reset(mock_invoke_hook):
 
 
 @pytest.mark.asyncio
-@patch("hermes_cli.plugins.invoke_hook")
+@patch("xavani_cli.plugins.invoke_hook")
 async def test_idle_expiry_fires_finalize_hook(mock_invoke_hook):
     """Regression test for #14981.
 

@@ -382,7 +382,7 @@ class TestVisionConfig:
         mock_response.choices = [mock_choice]
 
         with (
-            patch("hermes_cli.config.load_config", return_value={
+            patch("xavani_cli.config.load_config", return_value={
                 "auxiliary": {"vision": {"temperature": 1, "timeout": 77}}
             }),
             patch(
@@ -412,7 +412,7 @@ class TestVisionConfig:
         mock_response.choices = [mock_choice]
 
         with (
-            patch("hermes_cli.config.load_config", return_value={"auxiliary": {"vision": {}}}),
+            patch("xavani_cli.config.load_config", return_value={"auxiliary": {"vision": {}}}),
             patch(
                 "tools.vision_tools._image_to_base64_data_url",
                 return_value="data:image/png;base64,abc",
@@ -514,7 +514,7 @@ class TestVisionRequirements:
         assert isinstance(result, bool)
 
     def test_check_requirements_accepts_codex_auth(self, monkeypatch, tmp_path):
-        monkeypatch.setenv("HERMES_HOME", str(tmp_path))
+        monkeypatch.setenv("XAVANI_HOME", str(tmp_path))
         (tmp_path / "auth.json").write_text(
             '{"active_provider":"openai-codex","providers":{"openai-codex":{"tokens":{"access_token":"codex-access-token","refresh_token":"codex-refresh-token"}}}}'
         )

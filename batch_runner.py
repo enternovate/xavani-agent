@@ -25,13 +25,13 @@ Usage:
     python batch_runner.py --dataset_file=data.jsonl --batch_size=10 --run_name=my_run --distribution=image_gen
 """
 
-# IMPORTANT: hermes_bootstrap must be the very first import — UTF-8 stdio
-# on Windows.  No-op on POSIX.  See hermes_bootstrap.py for full rationale.
+# IMPORTANT: xavani_bootstrap must be the very first import — UTF-8 stdio
+# on Windows.  No-op on POSIX.  See xavani_bootstrap.py for full rationale.
 try:
-    import hermes_bootstrap  # noqa: F401
+    import xavani_bootstrap  # noqa: F401
 except ModuleNotFoundError:
-    # Graceful fallback when hermes_bootstrap isn't registered in the venv
-    # yet — happens during partial ``hermes update`` where git-reset landed
+    # Graceful fallback when xavani_bootstrap isn't registered in the venv
+    # yet — happens during partial ``xavani update`` where git-reset landed
     # new code but ``uv pip install -e .`` didn't finish.  Missing bootstrap
     # means UTF-8 stdio setup is skipped on Windows; POSIX is unaffected.
     pass

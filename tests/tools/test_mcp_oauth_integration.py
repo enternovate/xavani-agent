@@ -8,7 +8,7 @@ Exercises the full chain — manager, provider subclass, disk watch, 401
 dedup — with real file I/O and real imports (no transport mocks, no
 subprocesses). These are the tests that would catch Cthulhu's original
 BetterStack bug: an external process rewrites the tokens file on disk,
-and the running Hermes session picks up the new tokens on the next auth
+and the running Xavani session picks up the new tokens on the next auth
 flow without requiring a restart.
 """
 import asyncio
@@ -26,14 +26,14 @@ pytest.importorskip("mcp.client.auth.oauth2", reason="MCP SDK 1.26.0+ required")
 async def test_external_refresh_picked_up_without_restart(tmp_path, monkeypatch):
     """Simulate Cthulhu's cron workflow end-to-end.
 
-    1. A running Hermes session has OAuth tokens loaded in memory.
+    1. A running Xavani session has OAuth tokens loaded in memory.
     2. An external process (cron) writes fresh tokens to disk.
     3. On the next auth flow, the manager's disk-watch invalidates the
        in-memory state so the SDK re-reads from storage.
     4. ``provider.context.current_tokens`` now reflects the new tokens
        with no process restart required.
     """
-    monkeypatch.setenv("HERMES_HOME", str(tmp_path))
+    monkeypatch.setenv("XAVANI_HOME", str(tmp_path))
 
     from tools.mcp_oauth_manager import MCPOAuthManager, reset_manager_for_tests
     reset_manager_for_tests()
@@ -70,7 +70,7 @@ async def test_external_refresh_picked_up_without_restart(tmp_path, monkeypatch)
     assert provider.context.current_tokens.access_token == "OLD_ACCESS"
 
     # Now record the baseline mtime in the manager (this happens
-    # automatically via the HermesMCPOAuthProvider.async_auth_flow
+    # automatically via the XavaniMCPOAuthProvider.async_auth_flow
     # pre-hook on the first real request, but we exercise it directly
     # here for test determinism).
     await mgr.invalidate_if_disk_changed("srv")
@@ -106,7 +106,7 @@ async def test_handle_401_deduplicates_concurrent_callers(tmp_path, monkeypatch)
     caches and re-reading the keychain (which thrashes the storage and
     bogs down startup per CC-1096).
     """
-    monkeypatch.setenv("HERMES_HOME", str(tmp_path))
+    monkeypatch.setenv("XAVANI_HOME", str(tmp_path))
 
     from tools.mcp_oauth_manager import MCPOAuthManager, reset_manager_for_tests
     reset_manager_for_tests()
@@ -151,7 +151,7 @@ async def test_handle_401_deduplicates_concurrent_callers(tmp_path, monkeypatch)
 @pytest.mark.asyncio
 async def test_handle_401_returns_false_when_no_provider(tmp_path, monkeypatch):
     """handle_401 for an unknown server returns False cleanly."""
-    monkeypatch.setenv("HERMES_HOME", str(tmp_path))
+    monkeypatch.setenv("XAVANI_HOME", str(tmp_path))
     from tools.mcp_oauth_manager import MCPOAuthManager, reset_manager_for_tests
     reset_manager_for_tests()
 
@@ -163,7 +163,7 @@ async def test_handle_401_returns_false_when_no_provider(tmp_path, monkeypatch):
 @pytest.mark.asyncio
 async def test_invalidate_if_disk_changed_handles_missing_file(tmp_path, monkeypatch):
     """invalidate_if_disk_changed returns False when tokens file doesn't exist."""
-    monkeypatch.setenv("HERMES_HOME", str(tmp_path))
+    monkeypatch.setenv("XAVANI_HOME", str(tmp_path))
     from tools.mcp_oauth_manager import MCPOAuthManager, reset_manager_for_tests
     reset_manager_for_tests()
 
@@ -184,7 +184,7 @@ async def test_provider_is_reused_across_reconnects(tmp_path, monkeypatch):
     not create a new provider, otherwise ``last_mtime_ns`` resets and the
     first post-reconnect auth flow would spuriously "detect" a change.
     """
-    monkeypatch.setenv("HERMES_HOME", str(tmp_path))
+    monkeypatch.setenv("XAVANI_HOME", str(tmp_path))
     from tools.mcp_oauth_manager import MCPOAuthManager, reset_manager_for_tests
     reset_manager_for_tests()
 

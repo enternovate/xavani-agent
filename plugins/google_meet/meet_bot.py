@@ -6,7 +6,7 @@
 
 Runs as a standalone subprocess spawned by ``process_manager.py``. Reads config
 from env vars, writes status + transcript to files under
-``$HERMES_HOME/workspace/meetings/<meeting-id>/``. The main hermes process
+``$XAVANI_HOME/workspace/meetings/<meeting-id>/``. The main xavani process
 reads those files via the ``meet_*`` tools — no IPC beyond filesystem.
 
 The scraping strategy mirrors OpenUtter (sumansid/openutter): we don't parse
@@ -21,9 +21,9 @@ English-biased but it is:
 
 Run standalone for debugging::
 
-    HERMES_MEET_URL=https://meet.google.com/abc-defg-hij \\
-    HERMES_MEET_OUT_DIR=/tmp/meet-debug \\
-    HERMES_MEET_HEADED=1 \\
+    XAVANI_MEET_URL=https://meet.google.com/abc-defg-hij \\
+    XAVANI_MEET_OUT_DIR=/tmp/meet-debug \\
+    XAVANI_MEET_HEADED=1 \\
     python -m plugins.google_meet.meet_bot
 
 No meet.google.com URL → exits non-zero. Any URL that doesn't start with
@@ -53,7 +53,7 @@ MEET_URL_RE = re.compile(
 )
 
 
-# Filenames the bot reads/writes in ``HERMES_MEET_OUT_DIR``.
+# Filenames the bot reads/writes in ``XAVANI_MEET_OUT_DIR``.
 SAY_QUEUE_FILENAME = "say_queue.jsonl"
 SAY_PCM_FILENAME = "speaker.pcm"
 
@@ -183,13 +183,13 @@ class _BotState:
 
 # JavaScript injected into the Meet tab to observe captions. Captures
 # {speaker, text} tuples via a MutationObserver on the caption container,
-# and exposes ``window.__hermesMeetDrain()`` to pull new entries. This
+# and exposes ``window.__xavaniMeetDrain()`` to pull new entries. This
 # mirrors the OpenUtter caption scraping approach.
 _CAPTION_OBSERVER_JS = r"""
 (() => {
-  if (window.__hermesMeetInstalled) return;
-  window.__hermesMeetInstalled = true;
-  window.__hermesMeetQueue = [];
+  if (window.__xavaniMeetInstalled) return;
+  window.__xavaniMeetInstalled = true;
+  window.__xavaniMeetQueue = [];
 
   const captionSelector = '[role="region"][aria-label*="aption" i], ' +
                           'div[jsname="YSxPC"], ' +  // legacy
@@ -197,7 +197,7 @@ _CAPTION_OBSERVER_JS = r"""
 
   function pushEntry(speaker, text) {
     if (!text || !text.trim()) return;
-    window.__hermesMeetQueue.push({
+    window.__xavaniMeetQueue.push({
       ts: Date.now(),
       speaker: (speaker || '').trim(),
       text: text.trim(),
@@ -239,9 +239,9 @@ _CAPTION_OBSERVER_JS = r"""
     const iv = setInterval(() => { if (attach()) clearInterval(iv); }, 1500);
   }
 
-  window.__hermesMeetDrain = () => {
-    const out = window.__hermesMeetQueue.slice();
-    window.__hermesMeetQueue = [];
+  window.__xavaniMeetDrain = () => {
+    const out = window.__xavaniMeetQueue.slice();
+    window.__xavaniMeetQueue = [];
     return out;
   };
 })();
@@ -350,7 +350,7 @@ def _start_realtime_speaker(
     if platform_tag == "linux":
         import subprocess as _sp
 
-        sink = (bridge_info or {}).get("write_target") or "hermes_meet_sink"
+        sink = (bridge_info or {}).get("write_target") or "xavani_meet_sink"
         try:
             proc = _sp.Popen(
                 [
@@ -449,27 +449,27 @@ def _mac_audio_device_index(device_name: str) -> str:
 
 
 def run_bot() -> int:  # noqa: C901 — orchestration, explicit branches
-    url = os.environ.get("HERMES_MEET_URL", "").strip()
-    out_dir_env = os.environ.get("HERMES_MEET_OUT_DIR", "").strip()
-    headed = os.environ.get("HERMES_MEET_HEADED", "").lower() in {"1", "true", "yes"}
-    auth_state = os.environ.get("HERMES_MEET_AUTH_STATE", "").strip()
-    guest_name = os.environ.get("HERMES_MEET_GUEST_NAME", "Hermes Agent")
-    duration_s = _parse_duration(os.environ.get("HERMES_MEET_DURATION", ""))
-    # v2: optional realtime mode. Enabled when HERMES_MEET_MODE=realtime.
-    mode = os.environ.get("HERMES_MEET_MODE", "transcribe").strip().lower()
-    realtime_model = os.environ.get("HERMES_MEET_REALTIME_MODEL", "gpt-realtime")
-    realtime_voice = os.environ.get("HERMES_MEET_REALTIME_VOICE", "alloy")
-    realtime_instructions = os.environ.get("HERMES_MEET_REALTIME_INSTRUCTIONS", "")
-    realtime_api_key = os.environ.get("HERMES_MEET_REALTIME_KEY") or os.environ.get("OPENAI_API_KEY", "")
+    url = os.environ.get("XAVANI_MEET_URL", "").strip()
+    out_dir_env = os.environ.get("XAVANI_MEET_OUT_DIR", "").strip()
+    headed = os.environ.get("XAVANI_MEET_HEADED", "").lower() in {"1", "true", "yes"}
+    auth_state = os.environ.get("XAVANI_MEET_AUTH_STATE", "").strip()
+    guest_name = os.environ.get("XAVANI_MEET_GUEST_NAME", "Xavani Agent")
+    duration_s = _parse_duration(os.environ.get("XAVANI_MEET_DURATION", ""))
+    # v2: optional realtime mode. Enabled when XAVANI_MEET_MODE=realtime.
+    mode = os.environ.get("XAVANI_MEET_MODE", "transcribe").strip().lower()
+    realtime_model = os.environ.get("XAVANI_MEET_REALTIME_MODEL", "gpt-realtime")
+    realtime_voice = os.environ.get("XAVANI_MEET_REALTIME_VOICE", "alloy")
+    realtime_instructions = os.environ.get("XAVANI_MEET_REALTIME_INSTRUCTIONS", "")
+    realtime_api_key = os.environ.get("XAVANI_MEET_REALTIME_KEY") or os.environ.get("OPENAI_API_KEY", "")
 
     if not url or not _is_safe_meet_url(url):
         sys.stderr.write(
-            "google_meet bot: refusing to launch — HERMES_MEET_URL must be a "
+            "google_meet bot: refusing to launch — XAVANI_MEET_URL must be a "
             "meet.google.com URL. got: %r\n" % url
         )
         return 2
     if not out_dir_env:
-        sys.stderr.write("google_meet bot: HERMES_MEET_OUT_DIR is required\n")
+        sys.stderr.write("google_meet bot: XAVANI_MEET_OUT_DIR is required\n")
         return 2
 
     out_dir = Path(out_dir_env)
@@ -501,7 +501,7 @@ def run_bot() -> int:  # noqa: C901 — orchestration, explicit branches
     }
     if rt["enabled"]:
         if not realtime_api_key:
-            state.set(error="realtime mode requested but no API key in HERMES_MEET_REALTIME_KEY/OPENAI_API_KEY — falling back to transcribe")
+            state.set(error="realtime mode requested but no API key in XAVANI_MEET_REALTIME_KEY/OPENAI_API_KEY — falling back to transcribe")
             rt["enabled"] = False
         else:
             try:
@@ -620,7 +620,7 @@ def run_bot() -> int:  # noqa: C901 — orchestration, explicit branches
             #   * periodically flushing realtime counters into status.json
             deadline = (time.time() + duration_s) if duration_s else None
             lobby_deadline = time.time() + float(
-                os.environ.get("HERMES_MEET_LOBBY_TIMEOUT", "300")
+                os.environ.get("XAVANI_MEET_LOBBY_TIMEOUT", "300")
             )
             last_admission_check = 0.0
             while not stop_flag["stop"]:
@@ -656,7 +656,7 @@ def run_bot() -> int:  # noqa: C901 — orchestration, explicit branches
                         break
 
                 try:
-                    queued = page.evaluate("window.__hermesMeetDrain && window.__hermesMeetDrain()")
+                    queued = page.evaluate("window.__xavaniMeetDrain && window.__xavaniMeetDrain()")
                     if isinstance(queued, list):
                         for entry in queued:
                             if not isinstance(entry, dict):
@@ -760,7 +760,7 @@ def _detect_admission(page) -> bool:
     (() => {
       const leave = document.querySelector('button[aria-label*="eave call" i]');
       if (leave) return true;
-      if (window.__hermesMeetInstalled) {
+      if (window.__xavaniMeetInstalled) {
         const caps = document.querySelector(
           '[role="region"][aria-label*="aption" i], ' +
           'div[jsname="YSxPC"], div[jsname="tgaKEf"]'

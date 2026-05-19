@@ -262,67 +262,67 @@ class TestExchangeAuthCode:
         assert not setup_module.PENDING_AUTH_PATH.exists()
 
 
-class TestHermesConstantsFallback:
-    """Tests for _hermes_home.py fallback when hermes_constants is unavailable."""
+class TestXavaniConstantsFallback:
+    """Tests for _xavani_home.py fallback when xavani_constants is unavailable."""
 
     HELPER_PATH = (
         Path(__file__).resolve().parents[2]
-        / "skills/productivity/google-workspace/scripts/_hermes_home.py"
+        / "skills/productivity/google-workspace/scripts/_xavani_home.py"
     )
 
     def _load_helper(self, monkeypatch):
-        """Load _hermes_home.py with hermes_constants blocked."""
-        monkeypatch.setitem(sys.modules, "hermes_constants", None)
-        spec = importlib.util.spec_from_file_location("_hermes_home_test", self.HELPER_PATH)
+        """Load _xavani_home.py with xavani_constants blocked."""
+        monkeypatch.setitem(sys.modules, "xavani_constants", None)
+        spec = importlib.util.spec_from_file_location("_xavani_home_test", self.HELPER_PATH)
         module = importlib.util.module_from_spec(spec)
         assert spec.loader is not None
         spec.loader.exec_module(module)
         return module
 
-    def test_fallback_uses_hermes_home_env_var(self, monkeypatch, tmp_path):
-        """When hermes_constants is missing, HERMES_HOME comes from env var."""
-        monkeypatch.setenv("HERMES_HOME", str(tmp_path / "custom-hermes"))
+    def test_fallback_uses_xavani_home_env_var(self, monkeypatch, tmp_path):
+        """When xavani_constants is missing, XAVANI_HOME comes from env var."""
+        monkeypatch.setenv("XAVANI_HOME", str(tmp_path / "custom-xavani"))
         module = self._load_helper(monkeypatch)
-        assert module.get_hermes_home() == tmp_path / "custom-hermes"
+        assert module.get_xavani_home() == tmp_path / "custom-xavani"
 
-    def test_fallback_defaults_to_dot_hermes(self, monkeypatch):
-        """When hermes_constants is missing and HERMES_HOME unset, default to ~/.hermes."""
-        monkeypatch.delenv("HERMES_HOME", raising=False)
+    def test_fallback_defaults_to_dot_xavani(self, monkeypatch):
+        """When xavani_constants is missing and XAVANI_HOME unset, default to ~/.xavani."""
+        monkeypatch.delenv("XAVANI_HOME", raising=False)
         module = self._load_helper(monkeypatch)
-        assert module.get_hermes_home() == Path.home() / ".hermes"
+        assert module.get_xavani_home() == Path.home() / ".xavani"
 
-    def test_fallback_ignores_empty_hermes_home(self, monkeypatch):
-        """Empty/whitespace HERMES_HOME is treated as unset."""
-        monkeypatch.setenv("HERMES_HOME", "  ")
+    def test_fallback_ignores_empty_xavani_home(self, monkeypatch):
+        """Empty/whitespace XAVANI_HOME is treated as unset."""
+        monkeypatch.setenv("XAVANI_HOME", "  ")
         module = self._load_helper(monkeypatch)
-        assert module.get_hermes_home() == Path.home() / ".hermes"
+        assert module.get_xavani_home() == Path.home() / ".xavani"
 
-    def test_fallback_display_hermes_home_shortens_path(self, monkeypatch):
-        """Fallback display_hermes_home() uses ~/ shorthand like the real one."""
-        monkeypatch.delenv("HERMES_HOME", raising=False)
+    def test_fallback_display_xavani_home_shortens_path(self, monkeypatch):
+        """Fallback display_xavani_home() uses ~/ shorthand like the real one."""
+        monkeypatch.delenv("XAVANI_HOME", raising=False)
         module = self._load_helper(monkeypatch)
-        assert module.display_hermes_home() == "~/.hermes"
+        assert module.display_xavani_home() == "~/.xavani"
 
-    def test_fallback_display_hermes_home_profile_path(self, monkeypatch):
-        """Fallback display_hermes_home() handles profile paths under ~/."""
-        monkeypatch.setenv("HERMES_HOME", str(Path.home() / ".hermes/profiles/coder"))
+    def test_fallback_display_xavani_home_profile_path(self, monkeypatch):
+        """Fallback display_xavani_home() handles profile paths under ~/."""
+        monkeypatch.setenv("XAVANI_HOME", str(Path.home() / ".xavani/profiles/coder"))
         module = self._load_helper(monkeypatch)
-        assert module.display_hermes_home() == "~/.hermes/profiles/coder"
+        assert module.display_xavani_home() == "~/.xavani/profiles/coder"
 
-    def test_fallback_display_hermes_home_custom_path(self, monkeypatch):
-        """Fallback display_hermes_home() returns full path for non-home locations."""
-        monkeypatch.setenv("HERMES_HOME", "/opt/hermes-custom")
+    def test_fallback_display_xavani_home_custom_path(self, monkeypatch):
+        """Fallback display_xavani_home() returns full path for non-home locations."""
+        monkeypatch.setenv("XAVANI_HOME", "/opt/xavani-custom")
         module = self._load_helper(monkeypatch)
-        assert module.display_hermes_home() == "/opt/hermes-custom"
+        assert module.display_xavani_home() == "/opt/xavani-custom"
 
-    def test_delegates_to_hermes_constants_when_available(self):
-        """When hermes_constants IS importable, _hermes_home delegates to it."""
+    def test_delegates_to_xavani_constants_when_available(self):
+        """When xavani_constants IS importable, _xavani_home delegates to it."""
         spec = importlib.util.spec_from_file_location(
-            "_hermes_home_happy", self.HELPER_PATH
+            "_xavani_home_happy", self.HELPER_PATH
         )
         module = importlib.util.module_from_spec(spec)
         assert spec.loader is not None
         spec.loader.exec_module(module)
-        import hermes_constants
-        assert module.get_hermes_home is hermes_constants.get_hermes_home
-        assert module.display_hermes_home is hermes_constants.display_hermes_home
+        import xavani_constants
+        assert module.get_xavani_home is xavani_constants.get_xavani_home
+        assert module.display_xavani_home is xavani_constants.display_xavani_home

@@ -54,7 +54,7 @@ def _clear_browser_env(monkeypatch: pytest.MonkeyPatch) -> None:
 
 def _ensure_plugins_loaded() -> None:
     """Idempotently load plugins so the registry is populated."""
-    from hermes_cli.plugins import _ensure_plugins_discovered
+    from xavani_cli.plugins import _ensure_plugins_discovered
 
     _ensure_plugins_discovered()
 
@@ -356,7 +356,7 @@ class TestPickerIntegration:
 
     def test_picker_rows_match_registered_plugins(self) -> None:
         _ensure_plugins_loaded()
-        from hermes_cli.tools_config import _plugin_browser_providers
+        from xavani_cli.tools_config import _plugin_browser_providers
 
         rows = _plugin_browser_providers()
         names = sorted(r.get("browser_provider") for r in rows)
@@ -366,7 +366,7 @@ class TestPickerIntegration:
         """Every browser plugin row has post_setup='agent_browser' so
         selecting it triggers the agent-browser CLI install."""
         _ensure_plugins_loaded()
-        from hermes_cli.tools_config import _plugin_browser_providers
+        from xavani_cli.tools_config import _plugin_browser_providers
 
         for row in _plugin_browser_providers():
             assert row.get("post_setup") == "agent_browser", (
@@ -377,7 +377,7 @@ class TestPickerIntegration:
         """`browser_plugin_name` matches `browser_provider` so downstream
         code can route through the registry when it wants to."""
         _ensure_plugins_loaded()
-        from hermes_cli.tools_config import _plugin_browser_providers
+        from xavani_cli.tools_config import _plugin_browser_providers
 
         for row in _plugin_browser_providers():
             assert row.get("browser_plugin_name") == row.get("browser_provider")

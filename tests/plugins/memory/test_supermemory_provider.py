@@ -61,7 +61,7 @@ def provider(monkeypatch, tmp_path):
     monkeypatch.setenv("SUPERMEMORY_API_KEY", "test-key")
     monkeypatch.setattr("plugins.memory.supermemory._SupermemoryClient", FakeClient)
     p = SupermemoryMemoryProvider()
-    p.initialize("session-1", hermes_home=str(tmp_path), platform="cli")
+    p.initialize("session-1", xavani_home=str(tmp_path), platform="cli")
     return p
 
 
@@ -104,12 +104,12 @@ def test_clean_text_for_capture_strips_injected_context():
 def test_format_prefetch_context_deduplicates_overlap():
     result = _format_prefetch_context(
         static_facts=["Jordan prefers short answers"],
-        dynamic_facts=["Jordan prefers short answers", "Uses Hermes"],
-        search_results=[{"memory": "Uses Hermes", "similarity": 0.9}],
+        dynamic_facts=["Jordan prefers short answers", "Uses Xavani"],
+        search_results=[{"memory": "Uses Xavani", "similarity": 0.9}],
         max_results=10,
     )
     assert result.count("Jordan prefers short answers") == 1
-    assert result.count("Uses Hermes") == 1
+    assert result.count("Uses Xavani") == 1
     assert "<supermemory-context>" in result
 
 
@@ -117,7 +117,7 @@ def test_prefetch_includes_profile_on_first_turn(provider):
     provider._client.profile_response = {
         "static": ["Jordan prefers short answers"],
         "dynamic": ["Current project is Supermemory provider"],
-        "search_results": [{"memory": "Working on Hermes memory provider", "similarity": 0.88}],
+        "search_results": [{"memory": "Working on Xavani memory provider", "similarity": 0.88}],
     }
     provider.on_turn_start(1, "start")
     result = provider.prefetch("what am I working on?")
@@ -130,7 +130,7 @@ def test_prefetch_skips_profile_between_frequency(provider):
     provider._client.profile_response = {
         "static": ["Jordan prefers short answers"],
         "dynamic": ["Current project is Supermemory provider"],
-        "search_results": [{"memory": "Working on Hermes memory provider", "similarity": 0.88}],
+        "search_results": [{"memory": "Working on Xavani memory provider", "similarity": 0.88}],
     }
     provider.on_turn_start(2, "next")
     result = provider.prefetch("what am I working on?")
@@ -274,20 +274,20 @@ def test_identity_template_resolved_in_container_tag(monkeypatch, tmp_path):
     """container_tag with {identity} resolves to profile-scoped tag."""
     monkeypatch.setenv("SUPERMEMORY_API_KEY", "test-key")
     monkeypatch.setattr("plugins.memory.supermemory._SupermemoryClient", FakeClient)
-    _save_supermemory_config({"container_tag": "hermes-{identity}"}, str(tmp_path))
+    _save_supermemory_config({"container_tag": "xavani-{identity}"}, str(tmp_path))
     p = SupermemoryMemoryProvider()
-    p.initialize("s1", hermes_home=str(tmp_path), platform="cli", agent_identity="coder")
-    assert p._container_tag == "hermes_coder"
+    p.initialize("s1", xavani_home=str(tmp_path), platform="cli", agent_identity="coder")
+    assert p._container_tag == "xavani_coder"
 
 
 def test_identity_template_default_profile(monkeypatch, tmp_path):
     """Without agent_identity kwarg, {identity} resolves to 'default'."""
     monkeypatch.setenv("SUPERMEMORY_API_KEY", "test-key")
     monkeypatch.setattr("plugins.memory.supermemory._SupermemoryClient", FakeClient)
-    _save_supermemory_config({"container_tag": "hermes-{identity}"}, str(tmp_path))
+    _save_supermemory_config({"container_tag": "xavani-{identity}"}, str(tmp_path))
     p = SupermemoryMemoryProvider()
-    p.initialize("s1", hermes_home=str(tmp_path), platform="cli")
-    assert p._container_tag == "hermes_default"
+    p.initialize("s1", xavani_home=str(tmp_path), platform="cli")
+    assert p._container_tag == "xavani_default"
 
 
 def test_container_tag_env_var_override(monkeypatch, tmp_path):
@@ -296,7 +296,7 @@ def test_container_tag_env_var_override(monkeypatch, tmp_path):
     monkeypatch.setenv("SUPERMEMORY_CONTAINER_TAG", "env-override")
     monkeypatch.setattr("plugins.memory.supermemory._SupermemoryClient", FakeClient)
     p = SupermemoryMemoryProvider()
-    p.initialize("s1", hermes_home=str(tmp_path), platform="cli")
+    p.initialize("s1", xavani_home=str(tmp_path), platform="cli")
     assert p._container_tag == "env_override"
 
 
@@ -309,7 +309,7 @@ def test_search_mode_config_passed_to_client(monkeypatch, tmp_path):
     monkeypatch.setattr("plugins.memory.supermemory._SupermemoryClient", FakeClient)
     _save_supermemory_config({"search_mode": "memories"}, str(tmp_path))
     p = SupermemoryMemoryProvider()
-    p.initialize("s1", hermes_home=str(tmp_path), platform="cli")
+    p.initialize("s1", xavani_home=str(tmp_path), platform="cli")
     assert p._search_mode == "memories"
     assert p._client.search_mode == "memories"
 
@@ -320,7 +320,7 @@ def test_invalid_search_mode_falls_back_to_default(monkeypatch, tmp_path):
     monkeypatch.setattr("plugins.memory.supermemory._SupermemoryClient", FakeClient)
     _save_supermemory_config({"search_mode": "invalid_mode"}, str(tmp_path))
     p = SupermemoryMemoryProvider()
-    p.initialize("s1", hermes_home=str(tmp_path), platform="cli")
+    p.initialize("s1", xavani_home=str(tmp_path), platform="cli")
     assert p._search_mode == "hybrid"
 
 
@@ -344,9 +344,9 @@ def test_multi_container_enabled_adds_schema_param(monkeypatch, tmp_path):
         "custom_containers": ["project-alpha", "shared"],
     }, str(tmp_path))
     p = SupermemoryMemoryProvider()
-    p.initialize("s1", hermes_home=str(tmp_path), platform="cli")
+    p.initialize("s1", xavani_home=str(tmp_path), platform="cli")
     assert p._enable_custom_containers is True
-    assert p._allowed_containers == ["hermes", "project_alpha", "shared"]
+    assert p._allowed_containers == ["xavani", "project_alpha", "shared"]
     schemas = p.get_tool_schemas()
     for s in schemas:
         assert "container_tag" in s["parameters"]["properties"]
@@ -361,7 +361,7 @@ def test_multi_container_tool_store_with_custom_tag(monkeypatch, tmp_path):
         "custom_containers": ["project-alpha"],
     }, str(tmp_path))
     p = SupermemoryMemoryProvider()
-    p.initialize("s1", hermes_home=str(tmp_path), platform="cli")
+    p.initialize("s1", xavani_home=str(tmp_path), platform="cli")
     result = json.loads(p.handle_tool_call("supermemory_store", {
         "content": "test memory",
         "container_tag": "project-alpha",
@@ -380,7 +380,7 @@ def test_multi_container_rejects_unlisted_tag(monkeypatch, tmp_path):
         "custom_containers": ["allowed-tag"],
     }, str(tmp_path))
     p = SupermemoryMemoryProvider()
-    p.initialize("s1", hermes_home=str(tmp_path), platform="cli")
+    p.initialize("s1", xavani_home=str(tmp_path), platform="cli")
     result = json.loads(p.handle_tool_call("supermemory_store", {
         "content": "test",
         "container_tag": "forbidden-tag",
@@ -399,7 +399,7 @@ def test_multi_container_system_prompt_includes_instructions(monkeypatch, tmp_pa
         "custom_container_instructions": "Use docs for documentation context.",
     }, str(tmp_path))
     p = SupermemoryMemoryProvider()
-    p.initialize("s1", hermes_home=str(tmp_path), platform="cli")
+    p.initialize("s1", xavani_home=str(tmp_path), platform="cli")
     block = p.system_prompt_block()
     assert "Multi-container mode enabled" in block
     assert "docs" in block

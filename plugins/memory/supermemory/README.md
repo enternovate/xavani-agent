@@ -10,23 +10,23 @@ Semantic long-term memory with profile recall, semantic search, explicit memory 
 ## Setup
 
 ```bash
-hermes memory setup    # select "supermemory"
+xavani memory setup    # select "supermemory"
 ```
 
 Or manually:
 
 ```bash
-hermes config set memory.provider supermemory
-echo 'SUPERMEMORY_API_KEY=***' >> ~/.hermes/.env
+xavani config set memory.provider supermemory
+echo 'SUPERMEMORY_API_KEY=***' >> ~/.xavani/.env
 ```
 
 ## Config
 
-Config file: `$HERMES_HOME/supermemory.json`
+Config file: `$XAVANI_HOME/supermemory.json`
 
 | Key | Default | Description |
 |-----|---------|-------------|
-| `container_tag` | `hermes` | Container tag used for search and writes. Supports `{identity}` template for profile-scoped tags (e.g. `hermes-{identity}` → `hermes-coder`). |
+| `container_tag` | `xavani` | Container tag used for search and writes. Supports `{identity}` template for profile-scoped tags (e.g. `xavani-{identity}` → `xavani-coder`). |
 | `auto_recall` | `true` | Inject relevant memory context before turns |
 | `auto_capture` | `true` | Store cleaned user-assistant turns after each response |
 | `max_recall_results` | `10` | Max recalled items to format into context |
@@ -54,7 +54,7 @@ Config file: `$HERMES_HOME/supermemory.json`
 
 ## Behavior
 
-When enabled, Hermes can:
+When enabled, Xavani can:
 
 - prefetch relevant memory context before each turn
 - store cleaned conversation turns after each completed response
@@ -63,15 +63,15 @@ When enabled, Hermes can:
 
 ## Profile-Scoped Containers
 
-Use `{identity}` in the `container_tag` to scope memories per Hermes profile:
+Use `{identity}` in the `container_tag` to scope memories per Xavani profile:
 
 ```json
 {
-  "container_tag": "hermes-{identity}"
+  "container_tag": "xavani-{identity}"
 }
 ```
 
-For a profile named `coder`, this resolves to `hermes-coder`. The default profile resolves to `hermes-default`. Without `{identity}`, all profiles share the same container.
+For a profile named `coder`, this resolves to `xavani-coder`. The default profile resolves to `xavani-default`. Without `{identity}`, all profiles share the same container.
 
 ## Multi-Container Mode
 
@@ -79,7 +79,7 @@ For advanced setups (e.g. OpenClaw-style multi-workspace), you can enable custom
 
 ```json
 {
-  "container_tag": "hermes",
+  "container_tag": "xavani",
   "enable_custom_container_tags": true,
   "custom_containers": ["project-alpha", "project-beta", "shared-knowledge"],
   "custom_container_instructions": "Use project-alpha for coding tasks, project-beta for research, and shared-knowledge for team-wide facts."

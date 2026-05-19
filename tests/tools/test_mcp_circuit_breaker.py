@@ -68,7 +68,7 @@ def test_circuit_breaker_half_opens_after_cooldown(monkeypatch, tmp_path):
     actually execute against the session (half-open probe). When the
     probe succeeds, the breaker resets to fully closed.
     """
-    monkeypatch.setenv("HERMES_HOME", str(tmp_path))
+    monkeypatch.setenv("XAVANI_HOME", str(tmp_path))
 
     from tools import mcp_tool
     from tools.mcp_tool import _make_tool_handler
@@ -136,7 +136,7 @@ def test_circuit_breaker_reopens_on_probe_failure(monkeypatch, tmp_path):
     """If the half-open probe fails, the breaker must re-arm the
     cooldown (not let every subsequent call through).
     """
-    monkeypatch.setenv("HERMES_HOME", str(tmp_path))
+    monkeypatch.setenv("XAVANI_HOME", str(tmp_path))
 
     from tools import mcp_tool
     from tools.mcp_tool import _make_tool_handler
@@ -194,7 +194,7 @@ def test_circuit_breaker_cleared_on_reconnect(monkeypatch, tmp_path):
     reconnect+retry-failure left the counter pinned above threshold
     forever.
     """
-    monkeypatch.setenv("HERMES_HOME", str(tmp_path))
+    monkeypatch.setenv("XAVANI_HOME", str(tmp_path))
 
     from tools import mcp_tool
     from tools.mcp_oauth_manager import get_manager, reset_manager_for_tests

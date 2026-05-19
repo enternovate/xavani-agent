@@ -7,9 +7,9 @@ from unittest.mock import MagicMock, patch
 
 def test_gquota_uses_chat_console_when_tui_is_live():
     from agent.google_oauth import GoogleOAuthError
-    from cli import HermesCLI
+    from cli import XavaniCLI
 
-    cli = HermesCLI.__new__(HermesCLI)
+    cli = XavaniCLI.__new__(XavaniCLI)
     cli.console = MagicMock()
     cli._app = object()
 
