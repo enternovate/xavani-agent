@@ -17,7 +17,7 @@ import urllib.request
 
 DEFAULT_UA = (
     "xavani-osint-investigation/0.2 "
-    "(+https://github.com/NousResearch/hermes-agent; "
+    "(+https://github.com/enternovate/xavani-agent; "
     "set XAVANI_OSINT_UA env var to identify yourself per "
     "Wikimedia / SEC fair-use guidance)"
 )

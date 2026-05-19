@@ -120,7 +120,7 @@ You no longer need to wrap `xavani update` in `screen` or `tmux` to survive a te
 xavani version
 ```
 
-Compare against the latest release at the [GitHub releases page](https://github.com/NousResearch/hermes-agent/releases).
+Compare against the latest release at the [GitHub releases page](https://github.com/enternovate/xavani-agent/releases).
 
 ### Updating from Messaging Platforms
 

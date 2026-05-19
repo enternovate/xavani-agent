@@ -5,10 +5,9 @@
 # Xavani Agent ☤
 
 <p align="center">
-  <a href="https://xavani-agent.nousresearch.com/docs/"><img src="https://img.shields.io/badge/Docs-xavani--agent.nousresearch.com-FFD700?style=for-the-badge" alt="Documentation"></a>
-  <a href="https://discord.gg/NousResearch"><img src="https://img.shields.io/badge/Discord-5865F2?style=for-the-badge&logo=discord&logoColor=white" alt="Discord"></a>
-  <a href="https://github.com/NousResearch/hermes-agent/blob/main/LICENSE"><img src="https://img.shields.io/badge/License-MIT-green?style=for-the-badge" alt="License: MIT"></a>
-  <a href="https://nousresearch.com"><img src="https://img.shields.io/badge/Built%20by-Nous%20Research-blueviolet?style=for-the-badge" alt="Built by Nous Research"></a>
+  <a href="https://xavani.enternovate.com/docs/"><img src="https://img.shields.io/badge/Docs-xavani.enternovate.com-FFD700?style=for-the-badge" alt="Documentation"></a>
+  <a href="https://github.com/enternovate/xavani-agent/blob/main/LICENSE"><img src="https://img.shields.io/badge/License-MIT-green?style=for-the-badge" alt="License: MIT"></a>
+  <a href="README.md"><img src="https://img.shields.io/badge/Lang-English-lightgrey?style=for-
   <a href="README.md"><img src="https://img.shields.io/badge/Lang-English-lightgrey?style=for-the-badge" alt="English"></a>
 </p>
 
@@ -31,7 +30,7 @@
 ## 快速安装
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/NousResearch/xavani-agent/main/scripts/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/enternovate/xavani-agent/main/scripts/install.sh | bash
 ```
 
 支持 Linux、macOS、WSL2 和 Android (Termux)。安装程序会自动处理平台特定的配置。
@@ -145,7 +144,7 @@ xavani claw migrate --overwrite  # 覆盖已有冲突
 贡献者快速开始——克隆并使用 `setup-xavani.sh`：
 
 ```bash
-git clone https://github.com/NousResearch/hermes-agent.git
+git clone https://github.com/enternovate/xavani-agent.git
 cd xavani-agent
 ./setup-xavani.sh     # 安装 uv、创建 venv、安装 .[all]、创建符号链接 ~/.local/bin/xavani
 ./xavani              # 自动检测 venv，无需先 source
@@ -165,10 +164,10 @@ python -m pytest tests/ -q
 
 ## 社区
 
-- 💬 [Discord](https://discord.gg/NousResearch)
+- 💬 [Discord](https://discord.gg/enternovate)
 - 📚 [技能中心](https://agentskills.io)
-- 🐛 [问题反馈](https://github.com/NousResearch/hermes-agent/issues)
-- 💡 [讨论区](https://github.com/NousResearch/hermes-agent/discussions)
+- 🐛 [问题反馈](https://github.com/enternovate/xavani-agent/issues)
+- 💡 [讨论区](https://github.com/enternovate/xavani-agent/discussions)
 - 🔌 [XavaniClaw](https://github.com/AaronWong1999/xavaniclaw) — 社区微信桥接：在同一微信账号上运行 Xavani Agent 和 OpenClaw。
 
 ---

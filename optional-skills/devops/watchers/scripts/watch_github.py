@@ -11,7 +11,7 @@ Usage (via cron with --no-agent):
     xavani cron create xavani-issues \\
       --schedule "*/5 * * * *" --no-agent \\
       --script "$XAVANI_HOME/skills/devops/watchers/scripts/watch_github.py" \\
-      --script-args "--name xavani-issues --repo NousResearch/xavani-agent --scope issues"
+      --script-args "--name xavani-issues --repo enternovate/xavani-agent --scope issues"
 
 Set GITHUB_TOKEN (or GH_TOKEN) in ~/.xavani/.env to avoid the 60 req/hr
 anonymous rate limit.

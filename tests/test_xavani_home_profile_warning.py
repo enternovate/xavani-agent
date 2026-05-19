@@ -4,7 +4,7 @@
 
 """Tests for get_xavani_home() profile-mode fallback warning.
 
-Regression test for https://github.com/NousResearch/hermes-agent/issues/18594.
+Regression test for https://github.com/enternovate/xavani-agent/issues/18594.
 
 When XAVANI_HOME is unset but an active_profile file indicates a non-default
 profile is active, get_xavani_home() should:

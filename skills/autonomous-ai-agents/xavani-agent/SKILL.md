@@ -8,7 +8,7 @@ platforms: [linux, macos, windows]
 metadata:
   xavani:
     tags: [xavani, setup, configuration, multi-agent, spawning, cli, gateway, development]
-    homepage: https://github.com/NousResearch/hermes-agent
+    homepage: https://github.com/enternovate/xavani-agent
     related_skills: [claude-code, codex, opencode]
 ---
 
@@ -35,7 +35,7 @@ People use Xavani for software development, research, system administration, dat
 
 ```bash
 # Install
-curl -fsSL https://raw.githubusercontent.com/NousResearch/xavani-agent/main/scripts/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/enternovate/xavani-agent/main/scripts/install.sh | bash
 
 # Interactive chat (default)
 xavani

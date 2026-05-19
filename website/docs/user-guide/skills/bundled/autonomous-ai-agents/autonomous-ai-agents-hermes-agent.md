@@ -52,7 +52,7 @@ People use Xavani for software development, research, system administration, dat
 
 ```bash
 # Install
-curl -fsSL https://raw.githubusercontent.com/NousResearch/xavani-agent/main/scripts/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/enternovate/xavani-agent/main/scripts/install.sh | bash
 
 # Interactive chat (default)
 xavani

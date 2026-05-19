@@ -8,7 +8,7 @@ Verifies that subprocesses (terminal, execute_code, background processes)
 receive a per-profile HOME directory while the Python process's own HOME
 and Path.home() remain unchanged.
 
-See: https://github.com/NousResearch/hermes-agent/issues/4426
+See: https://github.com/enternovate/xavani-agent/issues/4426
 """
 
 import os

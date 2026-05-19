@@ -58,7 +58,7 @@ def get_xavani_home() -> Path:
     callers that import this at load time.  Subprocess spawners are
     expected to propagate ``XAVANI_HOME`` explicitly (see the systemd
     template in ``xavani_cli/gateway.py`` and the kanban dispatcher in
-    ``hermes_cli/kanban_db.py``).  See https://github.com/NousResearch/hermes-agent/issues/18594.
+    ``hermes_cli/kanban_db.py``).  See https://github.com/enternovate/xavani-agent/issues/18594.
     """
     override = get_xavani_home_override()
     if override:

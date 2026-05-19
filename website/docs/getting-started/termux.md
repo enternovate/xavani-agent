@@ -46,7 +46,7 @@ That does not stop Xavani from working well as a phone-native CLI agent — it j
 Xavani now ships a Termux-aware installer path:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/NousResearch/xavani-agent/main/scripts/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/enternovate/xavani-agent/main/scripts/install.sh | bash
 ```
 
 On Termux, the installer automatically:
@@ -80,7 +80,7 @@ Why these packages?
 ### 2. Clone Xavani
 
 ```bash
-git clone --recurse-submodules https://github.com/NousResearch/hermes-agent.git
+git clone --recurse-submodules https://github.com/enternovate/xavani-agent.git
 cd xavani-agent
 ```
 

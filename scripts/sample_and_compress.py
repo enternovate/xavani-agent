@@ -34,7 +34,7 @@ load_dotenv()
 # Default datasets to sample from
 DEFAULT_DATASETS = [
     "NousResearch/swe-terminus-agent-glm-kimi-minimax",
-    "NousResearch/xavani-agent-megascience-sft1",
+    "enternovate/xavani-agent-megascience-sft1",
     "NousResearch/Xavani-Agent-Thinking-GLM-4.7-SFT2",
     "NousResearch/Xavani-Agent-Thinking-GLM-4.7-SFT1",
     "NousResearch/terminal-tasks-glm-xavani-agent"

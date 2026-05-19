@@ -66,7 +66,7 @@ Watch a GitHub repo (set `GITHUB_TOKEN` in `~/.xavani/.env` to avoid the 60 req/
 
 ```bash
 python $XAVANI_HOME/skills/devops/watchers/scripts/watch_github.py \
-  --name xavani-issues --repo NousResearch/xavani-agent --scope issues
+  --name xavani-issues --repo enternovate/xavani-agent --scope issues
 ```
 
 Poll an arbitrary JSON API:

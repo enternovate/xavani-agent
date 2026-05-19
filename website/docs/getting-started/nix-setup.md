@@ -35,11 +35,11 @@ No clone needed. Nix fetches, builds, and runs everything:
 
 ```bash
 # Run directly (builds on first use, cached after)
-nix run github:NousResearch/xavani-agent -- setup
-nix run github:NousResearch/xavani-agent -- chat
+nix run github:enternovate/xavani-agent -- setup
+nix run github:enternovate/xavani-agent -- chat
 
 # Or install persistently
-nix profile install github:NousResearch/xavani-agent
+nix profile install github:enternovate/xavani-agent
 xavani setup
 xavani chat
 ```
@@ -50,7 +50,7 @@ After `nix profile install`, `xavani`, `xavani-agent`, and `xavani-acp` are on y
 <summary><strong>Building from a local clone</strong></summary>
 
 ```bash
-git clone https://github.com/NousResearch/hermes-agent.git
+git clone https://github.com/enternovate/xavani-agent.git
 cd xavani-agent
 nix build
 ./result/bin/xavani setup
@@ -75,7 +75,7 @@ This module requires NixOS. For non-NixOS systems (macOS, other Linux distros), 
 {
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
-    xavani-agent.url = "github:NousResearch/xavani-agent";
+    xavani-agent.url = "github:enternovate/xavani-agent";
   };
 
   outputs = { nixpkgs, xavani-agent, ... }: {
@@ -685,7 +685,7 @@ External flakes can override the package directly:
 
 ```nix
 {
-  inputs.xavani-agent.url = "github:NousResearch/xavani-agent";
+  inputs.xavani-agent.url = "github:enternovate/xavani-agent";
   outputs = { xavani-agent, nixpkgs, ... }: {
     nixpkgs.overlays = [ xavani-agent.overlays.default ];
     # Then:
