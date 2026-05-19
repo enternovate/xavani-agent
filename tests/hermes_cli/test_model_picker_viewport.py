@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Tests for the prompt_toolkit /model picker scroll viewport.
 
 Regression for: when a provider exposes many models (e.g. Ollama Cloud's

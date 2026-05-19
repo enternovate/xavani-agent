@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Binary file extensions to skip for text-based operations.
 
 These files can't be meaningfully compared as text and are often large.

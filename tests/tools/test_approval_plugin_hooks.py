@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Tests for pre_approval_request / post_approval_response plugin hooks.
 
 These hooks fire in tools/approval.py::check_all_command_guards whenever a

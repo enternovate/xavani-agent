@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Shared helper for loading platform-plugin ``adapter.py`` modules in tests.
 
 Every platform plugin under ``plugins/platforms/<name>/`` ships its own

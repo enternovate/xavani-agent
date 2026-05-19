@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Tests for CLI background command TUI refresh behavior.
 
 Ensures the TUI is properly refreshed before printing background task output

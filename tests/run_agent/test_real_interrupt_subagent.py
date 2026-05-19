@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Test real interrupt propagation through delegate_task with actual AIAgent.
 
 This uses a real AIAgent with mocked HTTP responses to test the complete

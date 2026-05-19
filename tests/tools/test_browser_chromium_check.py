@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Tests for Chromium-presence detection in browser_tool.
 
 Regression guard for the "browser tool advertised but Chromium missing"

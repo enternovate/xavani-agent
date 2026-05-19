@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Process-wide voice recording + TTS API for the TUI gateway.
 
 Wraps ``tools.voice_mode`` (recording/transcription) and ``tools.tts_tool``

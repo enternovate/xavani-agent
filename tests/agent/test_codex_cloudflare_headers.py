@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Regression guard: Codex Cloudflare 403 mitigation headers.
 
 The ``chatgpt.com/backend-api/codex`` endpoint sits behind a Cloudflare layer

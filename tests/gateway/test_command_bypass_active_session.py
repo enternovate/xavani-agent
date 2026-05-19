@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Regression tests: slash commands must bypass the base adapter's active-session guard.
 
 When an agent is running, the base adapter's Level 1 guard in

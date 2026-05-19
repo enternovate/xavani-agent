@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Tests for cross-loop client cache isolation fix (#2681).
 
 Verifies that _get_cached_client() returns different AsyncOpenAI clients

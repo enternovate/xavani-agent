@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """API error classification for smart failover and recovery.
 
 Provides a structured taxonomy of API errors and a priority-ordered

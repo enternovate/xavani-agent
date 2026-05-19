@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Integration tests for the generic webhook platform adapter.
 
 These tests exercise end-to-end flows through the webhook adapter:

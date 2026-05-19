@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """OpenAI Realtime API WebSocket client + file-queue speaker.
 
 This module is the "output" side of the v2 voice bridge: it takes text,

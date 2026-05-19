@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Tests for GHSA-96vc-wcxf-jjff and GHSA-qg5c-hvr5-hjgr.
 
 Two related ACP approval-flow issues:

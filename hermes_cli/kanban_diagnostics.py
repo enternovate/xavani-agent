@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Kanban diagnostics — structured, actionable distress signals for tasks.
 
 A ``Diagnostic`` is a machine-readable description of something that's wrong

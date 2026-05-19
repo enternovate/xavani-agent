@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Tests for gateway.memory_monitor — periodic process memory logging.
 
 Ported from cline/cline#10343.  The module logs a structured

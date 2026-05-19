@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Comprehensive tests for ANSI escape sequence stripping (ECMA-48).
 
 The strip_ansi function in tools/ansi_strip.py is the source-level fix for

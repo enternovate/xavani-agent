@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """OpenAI image generation backend — ChatGPT/Codex OAuth variant.
 
 Identical model catalog and tier semantics to the ``openai`` image-gen plugin

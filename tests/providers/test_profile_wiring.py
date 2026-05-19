@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Profile-path parity tests: verify profile path produces identical output to legacy flags.
 
 Each test calls build_kwargs twice — once with legacy flags, once with provider_profile —

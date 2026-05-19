@@ -1,4 +1,9 @@
 #!/usr/bin/env python3
+
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Extract text from documents using marker-pdf. High-quality OCR + layout analysis.
 
 Requires ~3-5GB disk (PyTorch + models downloaded on first use).

@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """End-to-end tests for inline image inputs on /v1/chat/completions and /v1/responses.
 
 Covers the multimodal normalization path added to the API server.  Unlike the

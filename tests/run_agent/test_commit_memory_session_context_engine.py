@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Regression tests for AIAgent.commit_memory_session.
 
 Issue #22394: commit_memory_session was calling MemoryManager.on_session_end

@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Pack a directory into a DOCX, PPTX, or XLSX file.
 
 Validates with auto-repair, condenses XML formatting, and creates the Office file.

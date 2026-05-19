@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Tests for reply-to pointer injection in _prepare_inbound_message_text.
 
 The `[Replying to: "..."]` prefix is a *disambiguation pointer*, not

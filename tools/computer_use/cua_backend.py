@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Cua-driver backend (macOS only).
 
 Speaks MCP over stdio to `cua-driver`. The Python `mcp` SDK is async, so we

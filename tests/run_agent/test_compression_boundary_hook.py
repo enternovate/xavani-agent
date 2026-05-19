@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Test: the context engine is notified of a compression-boundary rollover.
 
 When _compress_context rotates session_id (compression split), the active

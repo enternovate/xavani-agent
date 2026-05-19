@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Cross-session rate limit guard for Nous Portal.
 
 Writes rate limit state to a shared file so all sessions (CLI, gateway,

@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Tests for MiniMax model validation via static catalog (issues #12611, #12460, #12399, #12547).
 
 MiniMax and MiniMax-CN providers don't expose /v1/models, so validate_requested_model()

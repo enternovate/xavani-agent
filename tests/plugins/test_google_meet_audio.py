@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Tests for plugins.google_meet.audio_bridge (v2).
 
 Covers the platform gating and pactl / system_profiler plumbing

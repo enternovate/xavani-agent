@@ -1,4 +1,9 @@
 #!/usr/bin/env python3
+
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Bridge between Hermes OAuth token and gws CLI.
 
 Refreshes the token if expired, then executes gws with the valid access token.

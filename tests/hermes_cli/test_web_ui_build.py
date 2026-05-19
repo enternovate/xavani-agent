@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Tests for _web_ui_build_needed — staleness check for the web UI dist.
 
 Critical invariant: the Vite build outputs to hermes_cli/web_dist/

@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Tests for ``gateway.run._build_replay_entry``.
 
 The gateway rebuilds ``agent_history`` from the persisted transcript on every

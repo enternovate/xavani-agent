@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Regression: ``hermes setup`` for the ollama-cloud provider must force-refresh
 the model cache after the user supplies a key, otherwise the picker keeps
 serving a stale cache (models.dev only, no live API probe) for up to an hour.

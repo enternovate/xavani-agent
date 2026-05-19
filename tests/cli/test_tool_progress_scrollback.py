@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Tests for stacked tool progress scrollback lines in the CLI TUI.
 
 When tool_progress_mode is "all" or "new", _on_tool_progress should print

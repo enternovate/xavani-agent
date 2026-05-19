@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Regression test for #17929: AIAgent.__init__ should try fallback_model
 when primary provider credentials are exhausted."""
 import pytest

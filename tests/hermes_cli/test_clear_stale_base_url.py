@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Tests for _clear_stale_openai_base_url() cleanup after provider switch (#5161)."""
 
 from __future__ import annotations

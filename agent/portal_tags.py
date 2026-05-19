@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Centralized Nous Portal request tags.
 
 Every Hermes request that hits the Nous Portal — main agent loop, auxiliary

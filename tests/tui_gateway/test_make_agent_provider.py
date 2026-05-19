@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Regression test for #11884: _make_agent must resolve runtime provider.
 
 Without resolve_runtime_provider(), bare-slug models in config

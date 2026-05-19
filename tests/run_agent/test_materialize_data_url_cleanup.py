@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Regression test: temp file cleanup when materializing data URLs for vision.
 
 `_materialize_data_url_for_vision` creates a `NamedTemporaryFile(delete=False)`

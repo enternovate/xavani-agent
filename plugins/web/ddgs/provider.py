@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """DuckDuckGo search — plugin form (via the ``ddgs`` package).
 
 Subclasses the plugin-facing :class:`agent.web_search_provider.WebSearchProvider`.

@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """CLI commands for Honcho integration management.
 
 Handles: hermes honcho setup | status | sessions | map | peer

@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Tests for the multi-board kanban layer (``hermes kanban boards …``).
 
 Covers the pieces added when boards became a first-class concept:

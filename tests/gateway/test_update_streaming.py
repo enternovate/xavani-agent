@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Tests for /update live streaming, prompt forwarding, and gateway IPC.
 
 Tests the new --gateway mode for hermes update, including:

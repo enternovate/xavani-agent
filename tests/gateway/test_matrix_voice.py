@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Tests for Matrix voice message support (MSC3245).
 
 Updated for the mautrix-python SDK (no more matrix-nio / nio imports).

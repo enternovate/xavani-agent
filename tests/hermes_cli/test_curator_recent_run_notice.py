@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Tests for `_print_curator_recent_run_notice`.
 
 The notice prints the most recent curator run summary on `hermes update`,

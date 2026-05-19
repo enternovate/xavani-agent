@@ -1,5 +1,5 @@
 # PowerShell installer for Xavani Agent (Windows)
-# Built by Entornovate. Open source.
+# Built by Enternovate. Open source.
 param()
 
 $ErrorActionPreference = "Stop"
@@ -8,7 +8,7 @@ $Host.UI.RawUI.WindowTitle = "Installing Xavani Agent"
 Write-Host ""
 Write-Host "╔══════════════════════════════╗" -ForegroundColor Cyan
 Write-Host "║   XAVANI AGENT              ║" -ForegroundColor Cyan
-Write-Host "║   by Entornovate             ║" -ForegroundColor Cyan
+Write-Host "║   by Enternovate             ║" -ForegroundColor Cyan
 Write-Host "╚══════════════════════════════╝" -ForegroundColor Cyan
 Write-Host ""
 Write-Host "Installing Xavani Agent - the open-source AI agent gateway..." -ForegroundColor Cyan

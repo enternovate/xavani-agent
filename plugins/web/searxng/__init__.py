@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """SearXNG search plugin — bundled, auto-loaded.
 
 Backed by a user-hosted SearXNG instance (URL configured via ``SEARXNG_URL``).

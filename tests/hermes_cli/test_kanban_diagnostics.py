@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Tests for hermes_cli.kanban_diagnostics — rule-engine that produces
 structured distress signals (diagnostics) for kanban tasks.
 

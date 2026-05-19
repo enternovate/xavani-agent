@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Unit tests for _print_loopback_ssh_hint() in hermes_cli/auth.py.
 
 The helper exists to warn users that loopback OAuth flows (xAI Grok OAuth,

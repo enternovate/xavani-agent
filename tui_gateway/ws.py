@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """WebSocket transport for the tui_gateway JSON-RPC server.
 
 Reuses :func:`tui_gateway.server.dispatch` verbatim so every RPC method, every

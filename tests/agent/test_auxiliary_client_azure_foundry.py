@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Tests for auxiliary client routing of the ``azure-foundry`` provider.
 
 Covers the dedicated branch in ``agent.auxiliary_client.resolve_provider_client``

@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """OpenAI-compatible facade that talks to Google's Cloud Code Assist backend.
 
 This adapter lets Hermes use the ``google-gemini-cli`` provider as if it were

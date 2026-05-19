@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Tests for cli.HermesCLI._confirm_destructive_slash.
 
 Drives the helper directly via __get__ on a SimpleNamespace stand-in so we

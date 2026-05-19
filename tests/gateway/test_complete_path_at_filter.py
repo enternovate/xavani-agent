@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Regression tests for the TUI gateway's `complete.path` handler.
 
 Reported during the TUI v2 blitz retest:

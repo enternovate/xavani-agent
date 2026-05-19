@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Multi-process concurrency stress test for the Kanban kernel.
 
 5 worker processes race for claims on a shared DB with 100 tasks. Each

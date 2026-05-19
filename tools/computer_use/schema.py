@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Schema for the generic `computer_use` tool.
 
 Model-agnostic. Any tool-calling model can drive this. Vision-capable models

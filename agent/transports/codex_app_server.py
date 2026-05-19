@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Codex app-server JSON-RPC client.
 
 Speaks the protocol documented in codex-rs/app-server/README.md (codex 0.125+).

@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Async LSP client over stdin/stdout.
 
 One :class:`LSPClient` corresponds to one ``(language_server, workspace_root)``

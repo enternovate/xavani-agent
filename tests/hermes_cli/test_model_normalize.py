@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Tests for hermes_cli.model_normalize — provider-aware model name normalization.
 
 Covers issue #5211: opencode-go model names with dots (e.g. minimax-m2.7)

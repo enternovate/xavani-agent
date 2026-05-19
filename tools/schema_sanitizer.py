@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Sanitize tool JSON schemas for broad LLM-backend compatibility.
 
 Some local inference backends (notably llama.cpp's ``json-schema-to-grammar``

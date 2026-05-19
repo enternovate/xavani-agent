@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Regression tests for gateway shutdown cleaning up cached agent memory providers (issue #11205).
 
 When the gateway shuts down, ``stop()`` called ``_finalize_shutdown_agents()``

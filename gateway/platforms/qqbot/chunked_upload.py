@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """QQ Bot chunked upload flow.
 
 The QQ v2 API caps inline base64 uploads (``file_data`` / ``url``) at ~10 MB.

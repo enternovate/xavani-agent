@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Tests for Anthropic Sonnet long-context tier 429 handling.
 
 When Claude Max users without "extra usage" hit the 1M context tier

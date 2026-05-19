@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Regression tests: /yolo and /verbose dispatch mid-agent-run.
 
 When an agent is running, the gateway's running-agent guard rejects most

@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """The agent conversation loop — extracted from ``run_agent.AIAgent``.
 
 This is the biggest single chunk pulled out of ``run_agent.py``: the

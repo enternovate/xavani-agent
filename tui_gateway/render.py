@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Rendering bridge — routes TUI content through Python-side renderers.
 
 When agent.rich_output exists, its functions are used. When it doesn't,

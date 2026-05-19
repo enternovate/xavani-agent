@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Base class for all Hermes execution environment backends.
 
 Unified spawn-per-call model: every command spawns a fresh ``bash -c`` process.

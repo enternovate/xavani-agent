@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Guards for CLI startup performance regression.
 
 ``hermes_cli.main`` skips eager plugin discovery at argparse-setup time

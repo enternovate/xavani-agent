@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Tests for ``_get_cloud_provider()`` caching policy.
 
 Regression coverage for issue #22324: a transient ``None`` from the resolver

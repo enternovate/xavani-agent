@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """URL safety checks — blocks requests to private/internal network addresses.
 
 Prevents SSRF (Server-Side Request Forgery) where a malicious prompt or

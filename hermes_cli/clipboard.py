@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Clipboard image extraction for macOS, Windows, Linux, and WSL2.
 
 Provides a single function `save_clipboard_image(dest)` that checks the

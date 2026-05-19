@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Tests for gateway warning when an unrecognized /command is dispatched.
 
 Without this warning, unknown slash commands get forwarded to the LLM as plain

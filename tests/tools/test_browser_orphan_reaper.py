@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Tests for _reap_orphaned_browser_sessions() — kills orphaned agent-browser
 daemons whose Python parent exited without cleaning up."""
 

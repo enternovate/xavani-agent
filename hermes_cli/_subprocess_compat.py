@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Windows subprocess compatibility helpers.
 
 Hermes is developed on Linux / macOS and tested natively on Windows too.

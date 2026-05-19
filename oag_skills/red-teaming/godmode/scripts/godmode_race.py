@@ -1,4 +1,9 @@
 #!/usr/bin/env python3
+
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """
 ULTRAPLINIAN Multi-Model Racing Engine
 Ported from G0DM0D3 (elder-plinius/G0DM0D3).

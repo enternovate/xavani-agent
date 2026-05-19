@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Google OAuth PKCE flow for the Gemini (google-gemini-cli) inference provider.
 
 This module implements Authorization Code + PKCE (S256) OAuth against Google's

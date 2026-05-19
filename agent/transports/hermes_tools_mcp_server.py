@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Hermes-tools-as-MCP server for the codex_app_server runtime.
 
 When the user runs `openai/*` turns through the codex app-server, codex

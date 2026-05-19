@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Teams meeting pipeline plugin.
 
 Registers only operator-facing CLI surfaces. The agent should invoke these via

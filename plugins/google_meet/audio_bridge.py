@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Virtual audio bridge for feeding generated speech into Chrome's mic.
 
 v2 module. Provisions a platform-specific virtual audio device so the

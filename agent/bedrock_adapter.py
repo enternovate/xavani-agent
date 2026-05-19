@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """AWS Bedrock Converse API adapter for Hermes Agent.
 
 Provides native integration with Amazon Bedrock using the Converse API,

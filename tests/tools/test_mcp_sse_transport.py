@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Regression tests for SSE transport in ``MCPServerTask._run_http``.
 
 Covers fixes distilled from @amiller's PR #5981 that couldn't be cherry-picked

@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Tool-dispatch helpers — parallelism gating, multimodal envelopes, mutation tracking.
 
 Pure module-level utilities extracted from ``run_agent.py``:

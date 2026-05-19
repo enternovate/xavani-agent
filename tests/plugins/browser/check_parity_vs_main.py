@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Behavior-parity check for the browser-provider plugin migration (#25214).
 
 Spawns one subprocess per (version, scenario) cell — pinned to either

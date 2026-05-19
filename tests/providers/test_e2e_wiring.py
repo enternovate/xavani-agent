@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """E2E tests: verify _build_kwargs_from_profile produces correct output.
 
 These tests call _build_kwargs_from_profile on the transport directly,

@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Regression guard for PR #16660 (salvaged as PR #18027): ContextVar
 propagation into concurrent tool worker threads.
 

@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Oneshot (-z) mode: send a prompt, get the final content block, exit.
 
 Bypasses cli.py entirely.  No banner, no spinner, no session_id line,

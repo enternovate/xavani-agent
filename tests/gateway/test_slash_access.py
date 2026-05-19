@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Unit tests for gateway.slash_access — per-platform slash command access control.
 
 Tests the pure policy resolver (no gateway plumbing). Integration tests that

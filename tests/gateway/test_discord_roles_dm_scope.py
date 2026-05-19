@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Regression guard: DISCORD_ALLOWED_ROLES must be guild-scoped, not global.
 
 Prior to this fix, ``_is_allowed_user`` iterated ``self._client.guilds`` and

@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Tests for Unicode dash normalization in /insights command flag parsing.
 
 Telegram on iOS auto-converts -- to em/en dashes. The /insights handler

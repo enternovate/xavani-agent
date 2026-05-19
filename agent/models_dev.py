@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Models.dev registry integration — primary database for providers and models.
 
 Fetches from https://models.dev/api.json — a community-maintained database

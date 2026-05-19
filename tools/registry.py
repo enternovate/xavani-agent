@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Central registry for all hermes-agent tools.
 
 Each tool file calls ``registry.register()`` at module level to declare its

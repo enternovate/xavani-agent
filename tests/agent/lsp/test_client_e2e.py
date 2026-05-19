@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """End-to-end client tests against the in-process mock LSP server.
 
 Spins up :file:`_mock_lsp_server.py` as an actual subprocess, drives

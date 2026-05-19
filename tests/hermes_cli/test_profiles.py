@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Comprehensive tests for hermes_cli.profiles module.
 
 Tests cover: validation, directory resolution, CRUD operations, active profile

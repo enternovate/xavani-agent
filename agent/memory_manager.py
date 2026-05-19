@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """MemoryManager — orchestrates memory providers for the agent.
 
 Single integration point in run_agent.py. Replaces scattered per-backend

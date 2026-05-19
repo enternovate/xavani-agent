@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Tests for voice mode platform isolation (bug #12542).
 
 Voice mode state stored as {chat_id: mode} without a platform namespace

@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Per-platform display/verbosity configuration resolver.
 
 Provides ``resolve_display_setting()`` — the single entry-point for reading

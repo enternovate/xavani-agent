@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Regression tests for the standalone Telegram send path's proxy support.
 
 The ``send_message`` tool, when invoked from a process *other than* the

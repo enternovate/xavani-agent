@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Gateway-side clarify primitive (blocking event-based queue).
 
 The ``clarify`` tool needs to ask the user a question and block the agent

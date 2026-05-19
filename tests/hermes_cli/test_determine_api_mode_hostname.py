@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Regression tests for ``determine_api_mode`` hostname handling.
 
 Companion to tests/hermes_cli/test_detect_api_mode_for_url.py — the same

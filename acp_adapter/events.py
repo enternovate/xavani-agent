@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Callback factories for bridging AIAgent events to ACP notifications.
 
 Each factory returns a callable with the signature that AIAgent expects

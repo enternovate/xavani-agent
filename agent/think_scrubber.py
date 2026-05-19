@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Stateful scrubber for reasoning/thinking blocks in streamed assistant text.
 
 ``run_agent._strip_think_blocks`` is regex-based and correct for a complete

@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Tests for per-turn reasoning extraction in AIAgent.run_conversation.
 
 Verifies the reasoning field returned to display layers (CLI reasoning box,

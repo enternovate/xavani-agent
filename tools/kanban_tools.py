@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Kanban tools — structured tool-call surface for worker + orchestrator agents.
 
 These tools are registered into the model's schema when the agent is

@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Local JSON registry of approved remote meet nodes.
 
 Lives at ``$HERMES_HOME/workspace/meetings/nodes.json``. The gateway

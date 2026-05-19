@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Provider/model inventory context — shared substrate for the dashboard
 ``/api/model/options``, the TUI ``model.options``/``model.save_key``
 JSON-RPC handlers, and the interactive picker.

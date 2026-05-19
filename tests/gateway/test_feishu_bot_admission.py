@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Adapter-layer tests for Feishu bot-sender admission (``FeishuAdapter._admit``)."""
 
 from __future__ import annotations

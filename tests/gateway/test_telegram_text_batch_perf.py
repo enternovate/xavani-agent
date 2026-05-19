@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Regression tests for the Telegram text-batch adaptive-delay fast-path
 and _env_float_clamped helper introduced by PR #10388 (Telegram latency
 tuning).

@@ -1,4 +1,9 @@
 #!/usr/bin/env python3
+
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Diff ruff + ty diagnostic reports between two git refs.
 
 Produces a Markdown summary suitable for `$GITHUB_STEP_SUMMARY` and for PR

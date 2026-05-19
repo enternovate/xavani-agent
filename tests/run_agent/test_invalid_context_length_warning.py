@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Tests that invalid context_length values in config produce visible warnings."""
 
 from unittest.mock import patch, MagicMock, call

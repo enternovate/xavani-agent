@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Regression tests for _release_running_agent_state and SessionDB shutdown.
 
 Before this change, running-agent state lived in three dicts that drifted

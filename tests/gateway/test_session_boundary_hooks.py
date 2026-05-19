@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Tests that on_session_finalize and on_session_reset plugin hooks fire in the gateway."""
 from datetime import datetime
 from types import SimpleNamespace

@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Tests for agent.auxiliary_client._try_custom_endpoint's anthropic_messages branch.
 
 When a user configures a custom endpoint with ``api_mode: anthropic_messages``

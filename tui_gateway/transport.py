@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Transport abstraction for the tui_gateway JSON-RPC server.
 
 Historically the gateway wrote every JSON frame directly to real stdout.  This

@@ -1,4 +1,9 @@
 #!/usr/bin/env python3
+
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Search the Internet Archive Wayback Machine via the CDX server.
 
 The CDX API indexes ~900B+ archived web pages. Anonymous read access,

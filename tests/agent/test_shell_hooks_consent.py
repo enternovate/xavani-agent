@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Consent-flow tests for the shell-hook allowlist.
 
 Covers the prompt/non-prompt decision tree: TTY vs non-TTY, and the

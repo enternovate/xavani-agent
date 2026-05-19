@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Tests that the background review agent restricts tools at runtime, not at schema time.
 
 Regression coverage for issue #15204 (the background skill-review agent must

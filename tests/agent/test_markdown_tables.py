@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Tests for `agent.markdown_tables.realign_markdown_tables`.
 
 These cover the alignment guarantee on CJK / wide-character tables and

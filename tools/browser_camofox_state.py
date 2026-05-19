@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Hermes-managed Camofox state helpers.
 
 Provides profile-scoped identity and state directory paths for Camofox

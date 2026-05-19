@@ -1,4 +1,9 @@
 #!/usr/bin/env python3
+
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Fetch Senate Lobbying Disclosure (LD-1 / LD-2) filings.
 
 Anonymous: 120 req/hour. Token (SENATE_LDA_TOKEN): 1200 req/hour.

@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Tests for the /update slash command in the classic CLI and TUI launcher.
 
 Verifies that ``HermesCLI._handle_update_command`` correctly:

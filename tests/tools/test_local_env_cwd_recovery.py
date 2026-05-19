@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Tests for LocalEnvironment recovery when ``self.cwd`` is deleted.
 
 When a tool call inside the persistent terminal session ``rm -rf``'s its own

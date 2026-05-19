@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Periodic process memory usage logging for the gateway.
 
 Ported from cline/cline#10343 (src/standalone/memory-monitor.ts).

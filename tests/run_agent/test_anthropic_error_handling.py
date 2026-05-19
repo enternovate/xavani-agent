@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Tests for Anthropic error handling in the agent retry loop.
 
 Covers all error paths in run_agent.py's run_conversation() for api_mode=anthropic_messages:

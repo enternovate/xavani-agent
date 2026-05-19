@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Curator — background skill maintenance orchestrator.
 
 The curator is an auxiliary-model task that periodically reviews agent-created

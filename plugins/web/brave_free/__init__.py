@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Brave Search (free tier) plugin — bundled, auto-loaded.
 
 Mirrors the ``plugins/image_gen/openai/`` layout: ``provider.py`` holds the

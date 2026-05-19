@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Simplify tracked changes by merging adjacent w:ins or w:del elements.
 
 Merges adjacent <w:ins> elements from the same author into a single element.

@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Tests for richer stream-drop diagnostics in agent.log.
 
 When a subagent's stream drops mid-tool-call, the WARNING in agent.log must

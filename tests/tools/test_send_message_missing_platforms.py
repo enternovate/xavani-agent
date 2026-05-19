@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Tests for _send_mattermost, _send_matrix, _send_homeassistant, _send_dingtalk."""
 
 import asyncio

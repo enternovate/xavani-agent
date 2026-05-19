@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Tests for ``HermesCLI._prompt_text_input`` thread-safe input dispatch.
 
 Raw ``input()`` prompts can race with prompt_toolkit when called from the TUI.

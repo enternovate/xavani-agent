@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Tests for tui_gateway/entry.py sys.path hardening (issue #15989).
 
 When the TUI backend is spawned by Node.js, the Python interpreter may have

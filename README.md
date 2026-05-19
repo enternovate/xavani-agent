@@ -6,7 +6,8 @@
 
 <p align="center">
   <b>The open-source AI agent gateway.</b><br>
-  Fully local. Private. Cross-platform. Built by <a href="https://enternovate.com">Entornovate</a>.
+  Fully local. Private. Cross-platform. Built by <a href="https://enternovate.com">Enternovate</a>.<br>
+  <i>Pronounced: shahr-caa-nee</i>
 </p>
 
 <p align="center">
@@ -21,7 +22,9 @@
 
 Xavani is an **open-source AI agent gateway** that runs entirely on your machine. It connects you to any AI model (OpenAI, Claude, Gemini, Ollama, OpenRouter) through a single CLI, with a built-in MCP gateway, 169+ skills, and zero telemetry.
 
-Built by [Entornovate](https://enternovate.com) and provided as open source. Your data stays on your device. Always.
+Built by [Enternovate](https://enternovate.com) and provided as open source. Your data stays on your device. Always.
+
+**Pronunciation:** Xavani is pronounced **shahr-caa-nee**. The "X" takes on a soft "sh" sound, like the beginning of the word "shah."
 
 ## Features
 
@@ -83,6 +86,14 @@ xavani --install postgres
 
 # List available tools
 xavani --list-tools
+
+# Migrate from Hermes Agent
+xavani --migrate-from-hermes --dry-run    # Preview
+xavani --migrate-from-hermes --apply      # Execute
+
+# Migrate from OpenClaw Agent
+xavani --migrate-from-openclaw --dry-run   # Preview
+xavani --migrate-from-openclaw --apply     # Execute
 ```
 
 ### Slash Commands (in interactive mode)
@@ -139,6 +150,79 @@ export XAVANI_MODEL=claude-sonnet-4-6
 xavani
 ```
 
+## Migrating from Hermes Agent
+
+If you're currently using Hermes Agent (by Nous Research), you can migrate your configuration and skills to Xavani:
+
+1. **Install Xavani** (as shown above)
+
+2. **Preview the migration:**
+   ```bash
+   xavani --migrate-from-hermes --dry-run
+   ```
+
+3. **Run the migration:**
+   ```bash
+   xavani --migrate-from-hermes --apply
+   ```
+
+**What gets migrated:**
+- `~/.hermes/config.yaml` → `~/.xavani/config.yaml` (all API keys/tokens/secrets are stripped)
+- `~/.hermes/.env.example` → `~/.xavani/.env.example` (without real keys)
+- Installed skills from `~/.hermes/skills/` → `~/.xavani/skills/`
+- Gateway config from `~/.hermes/gateway.yaml` if present
+- Policy files from `~/.hermes/policies/`
+
+**What is NOT migrated:**
+- Files containing API keys, tokens, or secrets (`.env`, `credentials.json`, etc.)
+- Trading skills (these are proprietary to Enternovate and excluded from the open-source release)
+
+You can also run the migration script directly:
+```bash
+python scripts/migrate_from_hermes.py --dry-run   # Preview
+python scripts/migrate_from_hermes.py --apply      # Execute
+```
+
+## Migrating from OpenClaw Agent
+
+If you're migrating from OpenClaw Agent, Xavani provides a compatible migration path:
+
+1. **Install Xavani** (as shown above)
+
+2. **Preview the migration:**
+   ```bash
+   xavani --migrate-from-openclaw --dry-run
+   ```
+
+3. **Run the migration:**
+   ```bash
+   xavani --migrate-from-openclaw --apply
+   ```
+
+**Concept Mapping:**
+
+| OpenClaw | Xavani Equivalent |
+|----------|-------------------|
+| `~/.openclaw/config.yaml` | `~/.xavani/config.yaml` |
+| `~/.openclaw/.env` | `~/.xavani/.env` |
+| `~/.openclaw/skills/` | `~/.xavani/skills/` |
+| `~/.openclaw/SOUL.md` | Persona section in `config.yaml` |
+| `~/.openclaw/USER.md` | User profile in `config.yaml` |
+| `~/.openclaw/logs/` | `~/.xavani/logs/` |
+| ClawHub skills registry | Skills Registry (`/install`) |
+| OpenClaw Connect gateway | MCP Gateway (`localhost:8080`) |
+
+**What gets migrated:**
+- Compatible config settings (provider, model, temperature, etc.)
+- Installed skills
+- SOUL.md persona → stored in config.yaml
+- USER.md user profile → stored in config.yaml
+
+**What is NOT migrated:**
+- Files containing API keys/tokens/secrets
+- Trading skills (proprietary to Enternovate, excluded)
+- Platform-specific configs that don't have Xavani equivalents
+
 ## Architecture
 
 ```
@@ -170,7 +254,9 @@ xavani
 
 ## Skills
 
-Xavani ships with **169 built-in skills** across 27 categories:
+Xavani ships with **169 built-in skills** across 27 categories. All skills run locally with no cloud dependency.
+
+> **Note:** Trading-related skills (e.g., deriv-trading, backtesting, forex) are **proprietary to Enternovate** and are excluded from the open-source release. If you need these, please contact Enternovate for a commercial license.
 
 | Category | Skills | What You Can Do |
 |----------|--------|-----------------|
@@ -217,12 +303,13 @@ When using the MCP gateway, all traffic stays on localhost unless you configure 
 
 ## License
 
-MIT — free for any use, commercial or personal. Built by [Entornovate](https://enternovate.com).
+MIT — free for any use, commercial or personal.
 
 ---
 
 <p align="center">
-  Built by <a href="https://enternovate.com">Entornovate</a>.<br>
+  Built by <a href="https://enternovate.com">Enternovate</a> — Open Source.<br>
   Provided as open source for the community.<br>
+  Pronounced: <i>shahr-caa-nee</i><br>
   <b>Buffalo out. ⚡</b>
 </p>

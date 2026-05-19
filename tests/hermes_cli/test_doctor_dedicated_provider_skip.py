@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Regression: hermes doctor must not run a generic Bearer-auth health
 check for providers that already have a dedicated check (Anthropic,
 OpenRouter, Bedrock).

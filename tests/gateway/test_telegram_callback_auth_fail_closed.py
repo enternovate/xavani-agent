@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Tests for Telegram adapter fail-closed auth fallback (#24457).
 
 The _is_callback_user_authorized fallback must deny users by default

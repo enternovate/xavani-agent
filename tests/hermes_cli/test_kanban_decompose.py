@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Tests for the decomposer module + `hermes kanban decompose` CLI surface.
 
 The auxiliary LLM client is mocked — no network calls. Tests exercise the

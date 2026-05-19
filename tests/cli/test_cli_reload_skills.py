@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Tests for the ``/reload-skills`` CLI slash command (``HermesCLI._reload_skills``).
 
 The CLI handler prints the diff (name + description) for the user and —

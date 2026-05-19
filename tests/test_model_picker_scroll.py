@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Tests for the scrolling viewport logic in _curses_prompt_choice (issue #5755).
 
 The "More providers" submenu has 13 entries (11 extended + custom + cancel).

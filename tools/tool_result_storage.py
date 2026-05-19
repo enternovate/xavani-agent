@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Tool result persistence -- preserves large outputs instead of truncating.
 
 Defense against context-window overflow operates at three levels:

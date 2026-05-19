@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Tests for --ignore-user-config and --ignore-rules flags on `hermes chat`.
 
 Ported from openai/codex#18646 (`feat: add --ignore-user-config and --ignore-rules`).

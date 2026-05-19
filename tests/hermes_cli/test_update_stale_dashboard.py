@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Tests for the stale-dashboard handling run at the end of ``hermes update``.
 
 ``hermes update`` detects ``hermes dashboard`` processes left over from the

@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Tests for the process_loop RuntimeWarning fix -- issue #19285.
 
 In Python 3.10+, calling asyncio.get_event_loop() from a non-main thread

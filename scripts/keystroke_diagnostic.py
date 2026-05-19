@@ -1,4 +1,9 @@
 #!/usr/bin/env python3
+
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Diagnose how prompt_toolkit identifies keystrokes in the current terminal.
 
 Useful when adding a keybinding to Hermes (or any prompt_toolkit app) and you

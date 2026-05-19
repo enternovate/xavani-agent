@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Stream diagnostics — per-attempt counters, exception chains, retry logging.
 
 When a streaming chat-completions request dies mid-response, we want to

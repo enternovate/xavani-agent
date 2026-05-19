@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Tests for UnicodeEncodeError recovery with ASCII codec.
 
 Covers the fix for issue #6843 — systems with ASCII locale (LANG=C)

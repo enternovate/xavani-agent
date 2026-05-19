@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """ACP agent server — exposes Hermes Agent via the Agent Client Protocol."""
 
 from __future__ import annotations

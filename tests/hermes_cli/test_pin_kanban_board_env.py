@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Tests for `_pin_kanban_board_env` helper invoked by `cmd_chat`.
 
 Regression coverage for #20074: a chat session must export the active kanban

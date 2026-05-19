@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Tests for ``_prompt_api_key`` — the shared Keep/Replace/Clear menu used by
 ``hermes setup`` / ``hermes model`` when an API key already exists in ``.env``.
 

@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Tests for the OAuth manual-paste fallback for browser-only remotes.
 
 Regression coverage for [#26923](https://github.com/NousResearch/hermes-agent/issues/26923):

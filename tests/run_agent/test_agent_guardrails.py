@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Unit tests for AIAgent pre/post-LLM-call guardrails.
 
 Covers three static methods on AIAgent (inspired by PR #1321 — @alireza78a):

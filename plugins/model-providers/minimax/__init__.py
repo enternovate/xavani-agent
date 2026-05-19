@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """MiniMax provider profiles (international + China).
 
 Both use anthropic_messages api_mode — their inference_base_url

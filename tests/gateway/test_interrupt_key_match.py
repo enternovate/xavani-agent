@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Tests verifying interrupt key consistency between adapter and gateway.
 
 Regression test for a bug where monitor_for_interrupt() in _run_agent used

@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Tests for `_sanitize_tool_error` in model_tools.
 
 Ported from ironclaw#1639 — defense-in-depth on tool exception strings before

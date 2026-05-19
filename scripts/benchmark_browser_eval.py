@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Quick benchmark: subprocess eval vs supervisor-WS eval.
 
 Runs both paths against the same live Chrome and prints a comparison table.

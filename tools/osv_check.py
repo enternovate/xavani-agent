@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """OSV malware check for MCP extension packages.
 
 Before launching an MCP server via npx/uvx, queries the OSV (Open Source

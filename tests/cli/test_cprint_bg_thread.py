@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Tests for cli._cprint's bg-thread cooperation with prompt_toolkit.
 
 Background: when a prompt_toolkit Application is running, a bg thread that

@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Tests for Telegram inline keyboard clarify buttons.
 
 Mirrors test_telegram_approval_buttons.py for the new ``send_clarify`` and

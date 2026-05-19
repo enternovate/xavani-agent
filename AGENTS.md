@@ -1,6 +1,6 @@
 # Xavani Agent — Development Guide
 
-Built by [Entornovate](https://enternovate.com).
+Built by [Enternovate](https://enternovate.com).
 Forked from Hermes Agent by Nous Research.
 
 ## Quick Start
@@ -90,4 +90,4 @@ Python 3.11+ required. Uses psutil for cross-platform process management
 
 ## License
 
-MIT — free for any use. Built by Entornovate.
+MIT — free for any use. Built by Enternovate.

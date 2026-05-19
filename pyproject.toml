@@ -5,10 +5,10 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "xavani-agent"
 version = "0.1.0"
-description = "Xavani Agent — The open-source AI agent gateway. Fully local, private, cross-platform. Built by Entornovate."
+description = "Xavani Agent — The open-source AI agent gateway. Fully local, private, cross-platform. Built by Enternovate."
 readme = "README.md"
 requires-python = ">=3.11"
-authors = [{ name = "Entornovate" }]
+authors = [{ name = "Enternovate" }]
 license = { text = "MIT" }
 dependencies = [
   # Core — every direct dep is exact-pinned to ==X.Y.Z (no ranges).
@@ -219,7 +219,7 @@ plugins = [
 ]
 
 [tool.setuptools.packages.find]
-include = ["agent", "agent.*", "tools", "tools.*", "hermes_cli", "gateway", "gateway.*", "tui_gateway", "tui_gateway.*", "cron", "acp_adapter", "plugins", "plugins.*", "providers", "providers.*"]
+include = ["agent", "agent.*", "tools", "tools.*", "hermes_cli", "gateway", "gateway.*", "tui_gateway", "tui_gateway.*", "cron", "acp_adapter", "plugins", "plugins.*", "providers", "providers.*", "xavani_observability", "xavani_observability.*", "xavani_runtime", "xavani_runtime.*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

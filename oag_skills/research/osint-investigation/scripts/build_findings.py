@@ -1,4 +1,9 @@
 #!/usr/bin/env python3
+
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Build a structured findings.json with evidence chains (stdlib-only).
 
 Aggregates cross_links.csv (entity_resolution output) and an optional

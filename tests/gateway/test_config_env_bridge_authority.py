@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Regression tests for the config.yaml → env var bridge in gateway/run.py.
 
 Guards against the 60-vs-500 bug where a stale `.env HERMES_MAX_ITERATIONS=60`

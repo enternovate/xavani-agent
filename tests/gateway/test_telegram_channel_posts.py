@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Regression tests for Telegram channel_post updates.
 
 Telegram channel broadcasts are delivered as ``Update.channel_post`` rather than

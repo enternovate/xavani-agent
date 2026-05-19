@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Integration tests for the xAI video gen plugin's simplified surface.
 
 xAI exposes only text-to-video and image-to-video through the unified

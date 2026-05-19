@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Regression test for issue #27970 Bug 2.
 
 The auto Telegram voice reply (``GatewayRunner._send_voice_reply``) is the

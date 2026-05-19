@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Regression tests for custom_providers per-model context_length resolution.
 
 Covers the fix for #15779 — mid-session /model switch to a named custom

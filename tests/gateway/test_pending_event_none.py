@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Tests for pending follow-up extraction in recursive _run_agent calls.
 
 When pending_event is None (Path B: pending comes from interrupt_message),

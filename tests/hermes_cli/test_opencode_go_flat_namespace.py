@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Tests for opencode-go / opencode-zen flat-namespace model handling.
 
 OpenCode Go is NOT a vendor/model aggregator like OpenRouter — its

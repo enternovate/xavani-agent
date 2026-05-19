@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Tests for the approvals.mcp_reload_confirm config gate.
 
 When the user runs /reload-mcp, the MCP tool set is rebuilt which

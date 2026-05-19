@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Session recap — summarize what's happened in the current session.
 
 Inspired by Claude Code's `/recap` command (v2.1.114, April 2026), which

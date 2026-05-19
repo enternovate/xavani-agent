@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """QQBot shared utilities — User-Agent, HTTP helpers, config coercion."""
 
 from __future__ import annotations

@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Language Server Protocol (LSP) integration for Hermes Agent.
 
 Hermes runs full language servers (pyright, gopls, rust-analyzer,

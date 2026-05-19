@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Tests for the light-mode terminal detection + color remap in cli.py.
 
 Covers the env-override path and the SkinConfig.get_color() wrapper that

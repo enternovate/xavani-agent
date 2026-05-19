@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Integration tests for Discord voice channel audio flow.
 
 Uses real NaCl encryption and Opus codec (no mocks for crypto/codec).

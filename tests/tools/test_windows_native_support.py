@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Behavioral tests for Windows-specific compatibility fixes.
 
 Complements ``tests/tools/test_windows_compat.py`` (which does source-level

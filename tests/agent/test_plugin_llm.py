@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Unit tests for the plugin LLM facade (``agent.plugin_llm``).
 
 These tests exercise the trust gate, JSON parsing, schema validation,

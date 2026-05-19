@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Windows UTF-8 bootstrap for Hermes entry points.
 
 Python on Windows has two long-standing text-encoding footguns:

@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """CLI for the Hermes Kanban board — ``hermes kanban …`` subcommand.
 
 Exposes the full Kanban command surface documented in the design spec

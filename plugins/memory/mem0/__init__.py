@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Mem0 memory plugin — MemoryProvider interface.
 
 Server-side LLM fact extraction, semantic search with reranking, and

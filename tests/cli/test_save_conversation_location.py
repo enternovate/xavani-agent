@@ -1,3 +1,7 @@
+# Copyright (c) 2025-2026 Enternovate. All rights reserved.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+
 """Tests for /save — the conversation snapshot slash command.
 
 Regression: the old implementation wrote ``hermes_conversation_<ts>.json``
