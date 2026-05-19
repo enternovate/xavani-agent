@@ -11,7 +11,7 @@ path_filters:
 
 # ── clear-text-logging-sensitive-data (502 alerts) ─────────────────────────
 #
-# MITIGATION: ALL log handlers use RedactingFormatter (hermes_logging.py → xavani_logging.py)
+# MITIGATION: ALL log handlers use RedactingFormatter (xavani_logging.py)
 # which intercepts every log record before emission.  Secrets matching known patterns
 # (API keys, tokens, passwords, private keys, etc.) are replaced with [REDACTED].
 # CodeQL taint-tracks individual logger.info()/debug() call sites but cannot see that

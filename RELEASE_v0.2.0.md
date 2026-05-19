@@ -20,7 +20,7 @@
 
 - **CLI Skin/Theme Engine** — Data-driven visual customization: banners, spinners, colors, branding. 7 built-in skins + custom YAML skins.
 
-- **Git Worktree Isolation** — `hermes -w` launches isolated agent sessions in git worktrees for safe parallel work on the same repo. ([#654](https://github.com/enternovate/xavani-agent/pull/654))
+- **Git Worktree Isolation** — `xavani -w` launches isolated agent sessions in git worktrees for safe parallel work on the same repo. ([#654](https://github.com/enternovate/xavani-agent/pull/654))
 
 - **Filesystem Checkpoints & Rollback** — Automatic snapshots before destructive operations with `/rollback` to restore. ([#824](https://github.com/enternovate/xavani-agent/pull/824))
 
@@ -289,7 +289,7 @@
 - Fix SQLite session transcript accumulating duplicate messages — 3-4x token inflation ([#860](https://github.com/enternovate/xavani-agent/issues/860))
 - Fix setup wizard skipping API key prompts on first install ([#748](https://github.com/enternovate/xavani-agent/pull/748))
 - Fix setup wizard showing OpenRouter model list for Nous Portal ([#575](https://github.com/enternovate/xavani-agent/pull/575)) — @PercyDikec
-- Fix provider selection not persisting when switching via hermes model ([#881](https://github.com/enternovate/xavani-agent/pull/881))
+- Fix provider selection not persisting when switching via xavani model ([#881](https://github.com/enternovate/xavani-agent/pull/881))
 - Fix Docker backend failing when docker not in PATH on macOS ([#889](https://github.com/enternovate/xavani-agent/pull/889))
 - Fix ClawHub Skills Hub adapter for API endpoint changes ([#286](https://github.com/enternovate/xavani-agent/pull/286)) — @BP602
 - Fix Honcho auto-enable when API key is present ([#243](https://github.com/enternovate/xavani-agent/pull/243)) — @Bartok9
@@ -299,7 +299,7 @@
 - Fix false positives in recursive delete detection ([#68](https://github.com/enternovate/xavani-agent/pull/68)) — @cutepawss
 - Fix Ruff lint warnings across codebase ([#608](https://github.com/enternovate/xavani-agent/pull/608)) — @JackTheGit
 - Fix Anthropic native base URL fail-fast ([#173](https://github.com/enternovate/xavani-agent/pull/173)) — @adavyas
-- Fix install.sh creating ~/.hermes before moving Node.js directory ([#53](https://github.com/enternovate/xavani-agent/pull/53)) — @JoshuaMart
+- Fix install.sh creating ~/.xavani before moving Node.js directory ([#53](https://github.com/enternovate/xavani-agent/pull/53)) — @JoshuaMart
 - Fix SystemExit traceback during atexit cleanup on Ctrl+C ([#55](https://github.com/enternovate/xavani-agent/pull/55)) — @bierlingm
 - Restore missing MIT license file ([#620](https://github.com/enternovate/xavani-agent/pull/620)) — @stablegenius49
 

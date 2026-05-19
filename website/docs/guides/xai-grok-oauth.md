@@ -230,7 +230,7 @@ Full walkthrough (jump boxes, mosh/tmux, port conflicts): [OAuth over SSH / Remo
 
 OAuth completed in the browser, tokens are saved, but inference or token refresh returns `HTTP 403` with a message similar to *"The caller does not have permission to execute the specified operation"*.
 
-This is **not** a stale-token problem — re-running `hermes model` won't change it. xAI's backend has been seen to restrict OAuth API access to specific SuperGrok tiers despite the in-app subscription being active (issue [#26847](https://github.com/enternovate/xavani-agent/issues/26847)).
+This is **not** a stale-token problem — re-running `xavani model` won't change it. xAI's backend has been seen to restrict OAuth API access to specific SuperGrok tiers despite the in-app subscription being active (issue [#26847](https://github.com/enternovate/xavani-agent/issues/26847)).
 
 **Fix:** set `XAI_API_KEY` and switch to the API-key path:
 
