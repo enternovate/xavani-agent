@@ -517,7 +517,7 @@ class TestFormatMessageComplex:
         # All elements should be present
         assert "Header" in result
         assert "block" in result
-        assert urllib.parse.urlparse(result).hostname and urllib.parse.urlparse(result).hostname.lower() == "url.com"
+        assert "url.com" in result
 
 
 # =========================================================================

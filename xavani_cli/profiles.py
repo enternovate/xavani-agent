@@ -306,7 +306,7 @@ def get_profile_dir(name: str) -> Path:
     if canon == "default":
         return _get_default_xavani_home()
     profiles_root = _get_profiles_root()
-    validate_path(canon, profiles_root)  # blocks traversal
+    validate_path(canon, profiles_root, allow_create=True)  # blocks traversal
     return profiles_root / canon
 
 

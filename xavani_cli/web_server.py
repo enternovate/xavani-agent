@@ -757,7 +757,7 @@ async def get_action_status(name: str, lines: int = 200):
     if log_file_name is None:
         raise HTTPException(status_code=404, detail=f"Unknown action: {name}")
 
-    validate_path(log_file_name, _ACTION_LOG_DIR)  # blocks traversal
+    validate_path(log_file_name, _ACTION_LOG_DIR, allow_create=True)  # blocks traversal
     log_path = _ACTION_LOG_DIR / log_file_name
     tail = _tail_lines(log_path, min(max(lines, 1), 2000))
 
@@ -2523,7 +2523,7 @@ async def get_logs(
     if not log_name:
         raise HTTPException(status_code=400, detail=f"Unknown log file: {file}")
     logs_dir = get_xavani_home() / "logs"
-    validate_path(log_name, logs_dir)  # blocks traversal
+    validate_path(log_name, logs_dir, allow_create=True)  # blocks traversal
     log_path = logs_dir / log_name
     if not log_path.exists():
         return {"file": file, "lines": []}

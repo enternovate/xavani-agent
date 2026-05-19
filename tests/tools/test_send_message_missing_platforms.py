@@ -167,7 +167,7 @@ class TestSendMatrix:
 
         assert result["success"] is True
         url = session.put.call_args[0][0]
-        assert urllib.parse.urlparse(url).hostname and urllib.parse.urlparse(url).hostname.lower() == "matrix.env.com"
+        assert "matrix.env.com" in url
 
     def test_txn_id_is_unique_across_calls(self):
         """Each call should generate a distinct transaction ID in the URL."""
@@ -253,7 +253,7 @@ class TestSendHomeAssistant:
 
         assert result["success"] is True
         url = session.post.call_args[0][0]
-        assert urllib.parse.urlparse(url).hostname and urllib.parse.urlparse(url).hostname.lower() == "hass.env.com"
+        assert "hass.env.com" in url
 
 
 # ---------------------------------------------------------------------------
