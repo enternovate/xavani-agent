@@ -25,7 +25,7 @@ import pino from 'pino';
 import path from 'path';
 import { mkdirSync, readFileSync, writeFileSync, existsSync, readdirSync, unlinkSync } from 'fs';
 import { randomBytes } from 'crypto';
-import { execSync } from 'child_process';
+import { execFileSync } from 'child_process';
 import { tmpdir } from 'os';
 import qrcode from 'qrcode-terminal';
 import { matchesAllowedUser, parseAllowedUsers } from './allowlist.js';
@@ -452,6 +452,33 @@ async function startSocket() {
 const app = express();
 app.use(express.json());
 
+// Simple in-memory rate limiter: max 60 requests per minute per IP.
+const _rateLimiter = new Map();
+const RATE_LIMIT_WINDOW_MS = 60_000;
+const RATE_LIMIT_MAX = 60;
+
+app.use((req, res, next) => {
+  const ip = req.socket.remoteAddress || 'unknown';
+  const now = Date.now();
+  let entry = _rateLimiter.get(ip);
+  if (!entry || now - entry.start > RATE_LIMIT_WINDOW_MS) {
+    entry = { start: now, count: 1 };
+    _rateLimiter.set(ip, entry);
+  } else {
+    entry.count++;
+  }
+  if (entry.count > RATE_LIMIT_MAX) {
+    return res.status(429).json({ error: 'Rate limit exceeded' });
+  }
+  // Periodic cleanup of stale entries
+  if (_rateLimiter.size > 1000) {
+    for (const [key, val] of _rateLimiter) {
+      if (now - val.start > RATE_LIMIT_WINDOW_MS) _rateLimiter.delete(key);
+    }
+  }
+  next();
+});
+
 // Host-header validation — defends against DNS rebinding.
 // The bridge binds loopback-only (127.0.0.1) but a victim browser on
 // the same machine could be tricked into fetching from an attacker
@@ -586,13 +613,20 @@ app.post('/send-media', async (req, res) => {
     return res.status(400).json({ error: 'chatId and filePath are required' });
   }
 
+  // Only allow files from the known cache directories to prevent path traversal.
+  const allowedDirs = [IMAGE_CACHE_DIR, DOCUMENT_CACHE_DIR, AUDIO_CACHE_DIR];
+  const resolvedPath = path.resolve(filePath);
+  if (!allowedDirs.some(dir => resolvedPath.startsWith(path.resolve(dir) + path.sep) || resolvedPath === path.resolve(dir))) {
+    return res.status(403).json({ error: 'filePath must be within an allowed cache directory' });
+  }
+
   try {
-    if (!existsSync(filePath)) {
-      return res.status(404).json({ error: `File not found: ${filePath}` });
+    if (!existsSync(resolvedPath)) {
+      return res.status(404).json({ error: 'File not found' });
     }
 
-    const buffer = readFileSync(filePath);
-    const ext = filePath.toLowerCase().split('.').pop();
+    const buffer = readFileSync(resolvedPath);
+    const ext = resolvedPath.toLowerCase().split('.').pop();
     const type = mediaType || inferMediaType(ext);
     let msgPayload;
 
@@ -614,8 +648,8 @@ app.post('/send-media', async (req, res) => {
         if (needsConversion) {
           tmpPath = path.join(tmpdir(), `hermes_voice_${randomBytes(6).toString('hex')}.ogg`);
           try {
-            execSync(
-              `ffmpeg -y -i ${JSON.stringify(filePath)} -ar 48000 -ac 1 -c:a libopus ${JSON.stringify(tmpPath)}`,
+            execFileSync(
+              'ffmpeg', ['-y', '-i', resolvedPath, '-ar', '48000', '-ac', '1', '-c:a', 'libopus', tmpPath],
               { timeout: 30000, stdio: 'pipe' }
             );
             audioBuffer = readFileSync(tmpPath);
@@ -635,7 +669,7 @@ app.post('/send-media', async (req, res) => {
       default:
         msgPayload = {
           document: buffer,
-          fileName: fileName || path.basename(filePath),
+          fileName: fileName || path.basename(resolvedPath),
           caption: caption || undefined,
           mimetype: MIME_MAP[ext] || 'application/octet-stream',
         };

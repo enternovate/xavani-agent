@@ -55,6 +55,15 @@ function serveStatic(req, res) {
   const urlPath = req.url.split('?')[0];
   let filePath = path.join(DIST_DIR, urlPath === '/' ? 'index.html' : urlPath);
 
+  // Prevent path traversal: resolve and verify the path stays within DIST_DIR
+  const resolvedBase = path.resolve(DIST_DIR);
+  filePath = path.resolve(filePath);
+  if (!filePath.startsWith(resolvedBase + path.sep) && filePath !== resolvedBase) {
+    res.writeHead(403, { 'Content-Type': 'text/plain' });
+    res.end('Forbidden');
+    return;
+  }
+
   // SPA fallback: if file doesn't exist and isn't a static asset, serve index.html
   if (!fs.existsSync(filePath) && !path.extname(filePath)) {
     filePath = path.join(DIST_DIR, 'index.html');

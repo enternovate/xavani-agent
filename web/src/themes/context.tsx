@@ -160,7 +160,7 @@ function assetVars(assets: ThemeAssets | undefined): Record<string, string> {
       return trimmed;
     }
     // Bare path / http(s) URL / data: URL → wrap in url().
-    return `url("${trimmed.replace(/"/g, '\\"')}")`;
+    return `url("${trimmed.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}")`;
   };
   for (const key of NAMED_ASSET_KEYS) {
     const val = assets[key];

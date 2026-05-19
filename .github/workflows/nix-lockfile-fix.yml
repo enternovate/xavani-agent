@@ -194,6 +194,12 @@ jobs:
 
             Triggered by @${{ github.actor }} — [workflow run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}).
 
+      - name: Checkout trusted action
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
+        with:
+          path: _trusted_actions
+          sparse-checkout: .github/actions/nix-setup
+
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
         with:
           repository: ${{ steps.resolve.outputs.owner }}/${{ steps.resolve.outputs.repo }}
@@ -201,7 +207,7 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           fetch-depth: 0
 
-      - uses: ./.github/actions/nix-setup
+      - uses: ./_trusted_actions/.github/actions/nix-setup
         with:
           cachix-auth-token: ${{ secrets.CACHIX_AUTH_TOKEN }}
 
