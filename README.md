@@ -8,7 +8,7 @@
   <b>The open-source AI agent gateway.</b><br>
   Fully local. Private. Cross-platform. Zero telemetry.<br>
   Built by <a href="https://enternovate.com">Enternovate</a> — Open Source.<br>
-  <i>Pronounced: shahr-caa-nee</i>
+  <i>Pronounced: shahr-vaa-nee</i>
 </p>
 
 <p align="center">
@@ -484,6 +484,6 @@ use, commercial or personal.
 
 <p align="center">
   Built by <a href="https://enternovate.com">Enternovate</a> — Open Source.<br>
-  Pronounced: <i>shahr-caa-nee</i><br>
+  Pronounced: <i>shahr-vaa-nee</i><br>
   <b>Buffalo out. ⚡</b>
 </p>

@@ -10,7 +10,7 @@ Built by Enternovate. Provided as open source for the community.
 A fully local, private, cross-platform AI agent CLI with MCP gateway,
 skills management, and multi-provider support.
 
-Pronounced: shahr-caa-nee
+Pronounced: shahr-vaa-nee
 
 Usage:
     python xavani.py                          # Interactive mode
@@ -88,7 +88,7 @@ def show_startup_explanation(console: Console = None):
             "[#88c0d0]Open-Source AI Agent Gateway[/#88c0d0]\n"
             "[#5e81ac]Built by Enternovate[/#5e81ac]\n"
             "\n"
-            "[#81a1c1]Pronounced:[/#81a1c1] [italic]shahr-caa-nee[/italic]\n"
+            "[#81a1c1]Pronounced:[/#81a1c1] [italic]shahr-vaa-nee[/italic]\n"
             "[#81a1c1]Version:[/#81a1c1]  0.1.0\n"
             "[#81a1c1]License:[/#81a1c1]  MIT — Open source. Private. Local.\n"
         ),
@@ -259,7 +259,7 @@ def xavani_main(
     """
     if version:
         print("Xavani Agent v0.1.0")
-        print("Pronounced: shahr-caa-nee")
+        print("Pronounced: shahr-vaa-nee")
         print("Built by Enternovate — Open Source")
         print("MIT License — Free for any use.")
         return
