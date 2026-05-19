@@ -1031,10 +1031,12 @@ class TokenOptimizer:
 
     @property
     def provider(self) -> str:
+        """Return the detected provider name."""
         return self._provider.value
 
     @property
     def encoding(self) -> str:
+        """Return the tokenizer encoding name."""
         return self._encoding
 
     def count_tokens(self, text: str) -> int:
@@ -1287,10 +1289,20 @@ def main():
         parser.print_help()
         return
 
-    # Get text input
+    # Get text input (with path traversal protection)
     text = args.text or ""
     if args.file:
-        with open(args.file) as f:
+        import os
+        filepath = os.path.realpath(args.file)
+        # Prevent path traversal — only read from allowed directories
+        allowed_dirs = [os.getcwd(), os.path.expanduser("~"), "/tmp"]
+        if not any(filepath.startswith(d) for d in allowed_dirs):
+            print(f"Error: Path traversal blocked — {args.file} is outside allowed directories")
+            return
+        if not os.path.isfile(filepath):
+            print(f"Error: File not found — {args.file}")
+            return
+        with open(filepath, "r", encoding="utf-8") as f:
             text = f.read()
     if not text:
         print("Error: Provide text argument or --file")
