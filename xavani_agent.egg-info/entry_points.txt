@@ -1,0 +1,3 @@
+[console_scripts]
+xavani = xavani:xavani_main
+xavani-agent = xavani:xavani_main

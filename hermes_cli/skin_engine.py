@@ -632,19 +632,49 @@ _BUILTIN_SKINS: Dict[str, Dict[str, Any]] = {
 [#E2832B]██║     ██╔══██║██╔══██║██╔══██╗██║ ███╔╝  ██╔══██║██╔══██╗██║  ██║╚════╝██╔══██║██║   ██║██╔══╝  ██║╚██╗██║   ██║[/]
 [#C75B1D]╚██████╗██║  ██║██║  ██║██║  ██║██║███████╗██║  ██║██║  ██║██████╔╝      ██║  ██║╚██████╔╝███████╗██║ ╚████║   ██║[/]
 [#7A3511] ╚═════╝╚═╝  ╚═╝╚═╝  ╚═╝╚═╝  ╚═╝╚═╝╚══════╝╚═╝  ╚═╝╚═╝  ╚═╝╚═════╝       ╚═╝  ╚═╝ ╚═════╝ ╚══════╝╚═╝  ╚═══╝   ╚═╝[/]""",
-        "banner_hero": """[#FFD39A]⠀⠀⠀⠀⠀⠀⠀⠀⣀⣤⠶⠶⠶⣤⣀⠀⠀⠀⠀⠀⠀⠀⠀[/]
-[#F29C38]⠀⠀⠀⠀⠀⠀⣴⠟⠁⠀⠀⠀⠀⠈⠻⣦⠀⠀⠀⠀⠀⠀[/]
-[#F29C38]⠀⠀⠀⠀⠀⣼⠏⠀⠀⠀✦⠀⠀⠀⠀⠹⣧⠀⠀⠀⠀⠀[/]
-[#E2832B]⠀⠀⠀⠀⢰⡟⠀⠀⣀⣤⣤⣤⣀⠀⠀⠀⢻⡆⠀⠀⠀⠀[/]
-[#E2832B]⠀⠀⣠⡾⠛⠁⣠⣾⠟⠉⠀⠉⠻⣷⣄⠀⠈⠛⢷⣄⠀⠀[/]
-[#C75B1D]⠀⣼⠟⠀⢀⣾⠟⠁⠀⠀⠀⠀⠀⠈⠻⣷⡀⠀⠻⣧⠀[/]
-[#C75B1D]⢸⡟⠀⠀⣿⡟⠀⠀⠀🔥⠀⠀⠀⠀⢻⣿⠀⠀⢻⡇[/]
-[#7A3511]⠀⠻⣦⡀⠘⢿⣧⡀⠀⠀⠀⠀⠀⢀⣼⡿⠃⢀⣴⠟⠀[/]
-[#7A3511]⠀⠀⠈⠻⣦⣀⠙⢿⣷⣤⣤⣤⣾⡿⠋⣀⣴⠟⠁⠀⠀[/]
-[#C75B1D]⠀⠀⠀⠀⠈⠙⠛⠶⠤⠭⠭⠤⠶⠛⠋⠁⠀⠀⠀⠀[/]
-[#F29C38]⠀⠀⠀⠀⠀⠀⠀⠀⣰⡿⢿⣆⠀⠀⠀⠀⠀⠀⠀⠀⠀[/]
-[#F29C38]⠀⠀⠀⠀⠀⠀⠀⣼⡟⠀⠀⢻⣧⠀⠀⠀⠀⠀⠀⠀⠀[/]
-[dim #7A3511]⠀⠀⠀⠀⠀⠀⠀tail flame lit⠀⠀⠀⠀⠀⠀⠀⠀[/]""",
+    },
+    "xavani-darkblue": {
+        "name": "xavani-darkblue",
+        "description": "Xavani Agent — dark blue buffalo theme by Enternovate",
+        "colors": {
+            "banner_border": "#1a3a6b",
+            "banner_title": "#4a9eff",
+            "banner_accent": "#2d7fff",
+            "banner_dim": "#5a7aab",
+            "banner_text": "#c8dfff",
+            "ui_accent": "#4a9eff",
+            "ui_label": "#6a9fff",
+            "ui_ok": "#2ecc71",
+            "ui_error": "#e74c3c",
+            "ui_warn": "#f39c12",
+            "prompt": "#c8dfff",
+            "input_rule": "#1a3a6b",
+            "response_border": "#4a9eff",
+            "status_bar_bg": "#0a1628",
+            "status_bar_text": "#8aacdf",
+            "status_bar_strong": "#4a9eff",
+            "status_bar_dim": "#3a5a8b",
+            "status_bar_good": "#2ecc71",
+            "status_bar_warn": "#f39c12",
+            "status_bar_bad": "#e67e22",
+            "status_bar_critical": "#e74c3c",
+            "session_label": "#6a9fff",
+            "session_border": "#3a5a8b",
+        },
+        "spinner": {
+            "waiting_faces": ["(⟡)", "(⚡)", "(◆)"],
+            "thinking_faces": ["(◎)", "(⊡)", "(⦿)"],
+            "thinking_verbs": ["charging", "routing", "processing"],
+        },
+        "branding": {
+            "agent_name": "Xavani Agent",
+            "welcome": "Xavani Agent — built by Enternovate. Open source. Private. Local.",
+            "goodbye": "Power down. ⚡ Buffalo out.",
+            "response_label": " ⚡ Xavani ",
+            "prompt_symbol": "➤",
+            "help_header": "(⟡) Xavani Commands",
+        },
+        "tool_prefix": "│",
     },
 }
 
