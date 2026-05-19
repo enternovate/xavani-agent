@@ -6,7 +6,8 @@
 
 <p align="center">
   <b>The open-source AI agent gateway.</b><br>
-  Fully local. Private. Cross-platform. Built by <a href="https://enternovate.com">Enternovate</a>.<br>
+  Fully local. Private. Cross-platform. Zero telemetry.<br>
+  Built by <a href="https://enternovate.com">Enternovate</a> — provided as open source.<br>
   <i>Pronounced: shahr-caa-nee</i>
 </p>
 
@@ -18,27 +19,17 @@
 
 ---
 
-## What is Xavani?
+## Welcome to Xavani
 
-Xavani is an **open-source AI agent gateway** that runs entirely on your machine. It connects you to any AI model (OpenAI, Claude, Gemini, Ollama, OpenRouter) through a single CLI, with a built-in MCP gateway, 169+ skills, and zero telemetry.
+Xavani is an **open-source AI agent gateway** that runs entirely on your machine.
+It connects you to any AI model through a single CLI, with a built-in MCP proxy,
+policy engine, memory system, observability stack, and 169+ skills — all offline,
+all private, all yours.
 
-Built by [Enternovate](https://enternovate.com) and provided as open source. Your data stays on your device. Always.
+Built by [Enternovate](https://enternovate.com) — a company that believes AI
+infrastructure should be open, private, and local by default.
 
-**Pronunciation:** Xavani is pronounced **shahr-caa-nee**. The "X" takes on a soft "sh" sound, like the beginning of the word "shah."
-
-## Features
-
-| Feature | Description |
-|---------|-------------|
-| **Multi-Provider** | OpenAI, Anthropic Claude, Google Gemini, Ollama (local), OpenRouter, xAI Grok, and more |
-| **169+ Built-in Skills** | Code review, GitHub, web research, MCP servers, data analysis, creative tools |
-| **MCP Gateway** | Run `xavani --gateway` to expose an MCP proxy on `localhost:8080` |
-| **Skills Registry** | 169 skills across 27 categories — install with `/install` |
-| **/gateway Commands** | `/gateway-up` to start, `/gateway-down` to stop, `/audit` to view logs |
-| **Policy Engine** | Set rate limits, allow/deny rules, audit logging |
-| **Local-Only** | No telemetry. No cloud dependency. No data leaves your machine. |
-| **Cross-Platform** | macOS, Windows, Linux |
-| **Dark Blue Theme** | Beautiful cyberpunk-themed TUI with buffalo logo |
+---
 
 ## Quick Start
 
@@ -52,7 +43,7 @@ curl -fsSL https://raw.githubusercontent.com/enternovate/xavani-agent/main/insta
 iwr -Uri https://raw.githubusercontent.com/enternovate/xavani-agent/main/install.ps1 | iex
 ```
 
-### Or Install via pip
+### Or via pip
 
 ```bash
 git clone https://github.com/enternovate/xavani-agent.git
@@ -69,45 +60,311 @@ brew install xavani-agent
 xavani
 ```
 
-## Usage
+### Set Your API Key
 
 ```bash
-# Interactive mode (recommended)
-xavani
-
-# Single query mode
-xavani --message "Write a Python script to analyze this CSV"
-
-# Start MCP gateway (for connecting Claude Desktop, Cursor, etc.)
-xavani --gateway
-
-# Install an MCP server
-xavani --install postgres
-
-# List available tools
-xavani --list-tools
-
-# Migrate from Hermes Agent
-xavani --migrate-from-hermes --dry-run    # Preview
-xavani --migrate-from-hermes --apply      # Execute
-
-# Migrate from OpenClaw Agent
-xavani --migrate-from-openclaw --dry-run   # Preview
-xavani --migrate-from-openclaw --apply     # Execute
+# Edit ~/.xavani/.env and add your provider key:
+echo "OPENAI_API_KEY=sk-..." >> ~/.xavani/.env
+echo "ANTHROPIC_API_KEY=sk-ant-..." >> ~/.xavani/.env
+echo "GOOGLE_API_KEY=..." >> ~/.xavani/.env
 ```
 
-### Slash Commands (in interactive mode)
+Then run `xavani` and start typing.
 
-| Command | Description |
-|---------|-------------|
-| `/install <name>` | Install an MCP server from registry |
-| `/gateway-up` | Start the MCP proxy gateway |
-| `/gateway-down` | Stop the gateway |
-| `/registry-status` | Show installed servers & status |
-| `/policy-add <file>` | Add a policy rule |
-| `/audit [--since 24h]` | View audit log |
-| `/help` | Show all commands |
-| `/exit` | Quit |
+---
+
+## Getting the Most Out of Xavani
+
+Xavani is not just a CLI chat tool. It's a full-stack AI agent platform with
+six integrated systems. Here's how to use each one to its maximum potential.
+
+### Mode 1: Interactive Agent (Daily Driver)
+
+```bash
+xavani
+```
+
+This is your everyday AI assistant. 169 skills loaded, multi-provider support,
+persistent memory across sessions. Everything you type is analyzed by the
+Context Enricher (see below) to understand your intent, load relevant skills,
+and confirm understanding before executing.
+
+**Pro tip:** Xavani learns your style over time. The more you use it, the
+better it understands your preferences. After about 10 sessions, it will
+start anticipating what you need.
+
+### Mode 2: The MCP Gateway (Secure Tool Proxy)
+
+```bash
+xavani --gateway
+```
+
+Starts the Open Agent Gateway Proxy on `localhost:8080`. This sits between
+AI clients (Claude Desktop, Cursor, any MCP-compatible app) and your MCP
+servers. It enforces security policies, rate limits, authentication, and
+audit logging on EVERY tool call.
+
+**Connect Claude Desktop to Xavani:**
+
+```json
+{
+  "mcpServers": {
+    "xavani": {
+      "command": "curl",
+      "args": ["-X", "POST", "http://localhost:8080/mcp",
+               "-H", "Authorization: Bearer $(cat ~/.xavani/gateway.token)",
+               "-H", "Content-Type: application/json",
+               "-d", "@-"]
+    }
+  }
+}
+```
+
+**What you get:**
+- Every tool call is logged with full audit trail
+- Rate limits prevent runaway agents (default: 30 calls/min per user)
+- Policies can deny specific tools or resources
+- API key auth keeps unauthorized clients out
+- The audit log is queryable via `/audit --since 24h`
+
+### Mode 3: The Protocol Bridge (MCP ↔ A2A ↔ OpenAPI)
+
+The bridge translates between three protocols so you can use tools from
+any ecosystem, regardless of what protocol they speak.
+
+**Use MCP tools from A2A agents:**
+```bash
+curl -X POST http://localhost:8080/bridge/mcp-to-a2a \
+  -H "Content-Type: application/json" \
+  -d '{"mcp_tool": "postgres:query", "params": {"query": "SELECT 1"}}'
+```
+
+**Use any OpenAPI endpoint as an MCP tool:**
+```bash
+curl -X POST http://localhost:8080/bridge/openapi/convert \
+  -H "Content-Type: application/json" \
+  -d '{"spec_url": "https://api.example.com/openapi.json"}'
+```
+
+### Mode 4: The Memory Layer (Never Forget)
+
+Xavani remembers everything across sessions — not just chat history, but
+the actual context of what you were doing, what worked, what didn't, and
+what you prefer.
+
+**Two types of memory:**
+
+| Type | What It Stores | How Long |
+|------|---------------|----------|
+| **Episodic** | Full conversations, decisions, outcomes | 90 days (auto-archived) |
+| **Procedural** | Learned patterns, successful approaches | Forever (gets smarter) |
+
+**Episodic memory** captures the full context of every interaction: what you asked,
+what the agent did, what the outcome was. You can recall past sessions with
+natural language:
+
+```bash
+/in the conversation last week about the database migration, what was the
+final schema we decided on?
+```
+
+Xavani searches its FTS5-indexed episodic memory and returns the relevant context.
+
+**Procedural memory** learns from repeated patterns. If you frequently ask for
+code reviews, Xavani gets better at reviewing your code over time. It remembers
+which approaches you preferred, which feedback style you respond to, and what
+kinds of suggestions you find useful.
+
+**Cross-agent context sharing:**
+Multiple agents can share memory. Agent A's learnings are available to Agent B.
+Conflict resolution handles overlapping memories automatically.
+
+### Mode 5: The Observability Stack (See Everything)
+
+```bash
+# Start the live dashboard
+open http://localhost:8081
+
+# Or use the CLI audit viewer
+/audit --since 7d
+```
+
+The observability stack gives you complete visibility into everything Xavani does:
+
+**Live Dashboard** (localhost:8081):
+- Real-time metrics: active sessions, tool calls, latency, error rates
+- Token usage tracker per model
+- Audit log viewer with filtering
+- Trace viewer with status badges
+
+**CLI Audit Viewer:**
+```bash
+/audit                # Last 20 entries
+/audit --since 24h    # Last 24 hours  
+/audit --user me      # Filter by user
+/audit --errors       # Only failed/denied requests
+/audit --export json  # Export for analysis
+```
+
+**OpenTelemetry-native tracing:**
+Every tool call, LLM call, agent step, memory access, and gateway request
+generates a structured trace span. These are stored locally as JSONL for
+analysis or exported to any OpenTelemetry-compatible backend.
+
+### Mode 6: The Agent Runtime (Portable Agent Images)
+
+Package any agent configuration into a portable `.agent.toml` file that
+can be versioned, shared, and deployed anywhere.
+
+```bash
+# Create an agent image
+xavani --runtime create my-reviewer
+
+# Export to a portable file
+xavani --runtime export my-reviewer ./my-reviewer.agent.toml
+
+# Run from an exported image
+xavani --runtime run ./my-reviewer.agent.toml
+
+# List all running agents
+xavani --runtime list
+```
+
+**Example agent image:**
+```toml
+[agent]
+name = "code-reviewer"
+version = "1.0.0"
+description = "Automated code review agent"
+
+[model]
+provider = "anthropic"
+model = "claude-sonnet-4-6"
+
+[skills]
+enabled = ["github-code-review", "github-pr-workflow"]
+
+[toolsets]
+enabled = ["file", "terminal", "web"]
+
+[memory]
+type = "episodic"
+ttl_days = 30
+
+[policies]
+rate_limit = "30/min"
+allowed_tools = ["read_file", "search_files", "patch"]
+audit = true
+
+[environment]
+LOG_LEVEL = "info"
+
+[system_prompt]
+content = "You are a code review agent. Be thorough but constructive."
+```
+
+### Mode 7: The Package Manager (Install MCP Servers)
+
+```bash
+# Inside interactive mode
+/install postgres        # Install PostgreSQL MCP server
+/install brave-search    # Install web search
+/install filesystem      # Install filesystem access
+/registry-list           # See all available servers
+/registry-status         # See what's installed
+/security-scan postgres  # Scan installed server for vulnerabilities
+```
+
+Each server is security-scanned on install. Rate limits and policies are
+auto-applied. The audit trail tracks every tool call made through installed
+servers.
+
+---
+
+## The Deep Learning Layer
+
+Xavani has a **Context Enricher** that sits between you and the AI. It:
+
+1. **Receives** your raw message
+2. **Analyzes** it against your UserProfile (style, knowledge, preferences)
+3. **Enriches** it with implicit context the AI needs to give you the best answer
+4. **Matches skills** — detects which of the 169 skills are relevant
+5. **Reiterates** — confirms understanding before executing
+6. **Forwards** the enriched message to the LLM
+
+This means Xavani learns how you communicate. After about 10 sessions, it
+adapts to your style — your preferred level of detail, your humor, your
+expertise level in different domains, and your favorite things to build.
+
+**What the UserProfile learns:**
+- Your communication style: terse, verbose, technical, creative
+- Your humor preference: dry, witty, sarcastic, none
+- Your favorite project types: trading bots, web apps, CLI tools, etc.
+- Your knowledge domains: where you're an expert (skips basics)
+- Your pain points: what you don't like doing
+- Your working hours: when you're most productive
+- Your tone preference: formal, casual, motivational, direct
+
+**What the Skill Orchestrator does:**
+- Scans every message for keywords that match skill descriptions
+- Loads the top 5 most relevant skills for each interaction
+- Suggests skills you haven't tried but would benefit from
+- Gets smarter over time based on which skills you actually use
+
+---
+
+## Power User Workflows
+
+### Workflow 1: Code Review Pipeline
+
+```bash
+# Install the GitHub skills
+/install filesystem
+/install github
+
+# Start the MCP gateway (for external tools)
+xavani --gateway &
+
+# In another terminal, run Xavani for code review
+xavani --message "Review the last 3 commits in this repo for security issues"
+```
+
+### Workflow 2: Research + Memory
+
+```bash
+# Xavani remembers everything
+/ "Research the current state of WebAssembly in 2026"
+
+# Next session — no context needed
+/ "Continuing from where I left off on Wasm research"
+```
+
+### Workflow 3: Multi-Protocol Tool Integration
+
+```bash
+# Start the protocol bridge
+xavani --gateway &
+
+# Register A2A agents
+curl -X POST http://localhost:8080/bridge/agents/register \
+  -H "Content-Type: application/json" \
+  -d '{"name": "research-agent", "url": "http://agent-host:9000/a2a"}'
+
+# Now use that agent's skills as MCP tools
+```
+
+### Workflow 4: Dashboard Monitoring
+
+```bash
+# Start Xavani in one terminal
+xavani
+
+# Open the dashboard in another
+open http://localhost:8081
+# Shows live metrics: sessions, tool calls, latency, error rates, token usage
+```
+
+---
 
 ## Configuration
 
@@ -117,11 +374,17 @@ Xavani stores all config in `~/.xavani/`:
 ~/.xavani/
   config.yaml          # Main configuration
   .env                 # API keys (never uploaded anywhere)
-  logs/                # Session logs (local only)
+  logs/                # Session logs + traces + metrics (local only)
+    traces.jsonl       # OpenTelemetry-native trace spans
+    metrics.json       # Performance metrics
+    agents/            # Per-agent runtime logs
   skills/              # Loaded skills
-  policies/            # Policy rules
+  policies/            # Policy rules (YAML)
   installed/           # Installed MCP server configs
-  data/                # Local data store
+  data/                # Memory store (SQLite)
+    memory/            # Episodic + procedural memory databases
+    bridge/            # Protocol bridge state
+  agent-images/        # Portable agent image registry
 ```
 
 ### API Keys
@@ -136,92 +399,53 @@ OPENROUTER_API_KEY=...
 GROK_API_KEY=...
 ```
 
-Or use the `/setup` command in interactive mode.
-
 ### Choose Your Provider
 
 ```bash
 # Default: OpenRouter (works with many models without a dedicated key)
-xavani --message "Hello"
+xavani
 
-# Or pick a specific provider
+# Specific provider
 export XAVANI_PROVIDER=anthropic
 export XAVANI_MODEL=claude-sonnet-4-6
 xavani
 ```
 
+```bash
+# Or in ~/.xavani/config.yaml:
+provider: anthropic
+model: claude-sonnet-4-6
+```
+
+---
+
 ## Migrating from Hermes Agent
 
-If you're currently using Hermes Agent (by Nous Research), you can migrate your configuration and skills to Xavani:
-
-1. **Install Xavani** (as shown above)
-
-2. **Preview the migration:**
-   ```bash
-   xavani --migrate-from-hermes --dry-run
-   ```
-
-3. **Run the migration:**
-   ```bash
-   xavani --migrate-from-hermes --apply
-   ```
-
-**What gets migrated:**
-- `~/.hermes/config.yaml` → `~/.xavani/config.yaml` (all API keys/tokens/secrets are stripped)
-- `~/.hermes/.env.example` → `~/.xavani/.env.example` (without real keys)
-- Installed skills from `~/.hermes/skills/` → `~/.xavani/skills/`
-- Gateway config from `~/.hermes/gateway.yaml` if present
-- Policy files from `~/.hermes/policies/`
-
-**What is NOT migrated:**
-- Files containing API keys, tokens, or secrets (`.env`, `credentials.json`, etc.)
-- Trading skills (these are proprietary to Enternovate and excluded from the open-source release)
-
-You can also run the migration script directly:
 ```bash
-python scripts/migrate_from_hermes.py --dry-run   # Preview
-python scripts/migrate_from_hermes.py --apply      # Execute
+# Preview what will be migrated
+xavani --migrate-from-hermes --dry-run
+
+# Execute migration (strips all API keys/tokens)
+xavani --migrate-from-hermes --apply
 ```
+
+Migrates: config (without secrets), skills, gateway setup, policies.
+Excludes: trading skills (proprietary to Enternovate).
 
 ## Migrating from OpenClaw Agent
 
-If you're migrating from OpenClaw Agent, Xavani provides a compatible migration path:
+```bash
+# Preview
+xavani --migrate-from-openclaw --dry-run
 
-1. **Install Xavani** (as shown above)
+# Execute
+xavani --migrate-from-openclaw --apply
+```
 
-2. **Preview the migration:**
-   ```bash
-   xavani --migrate-from-openclaw --dry-run
-   ```
+Maps: config, skills, SOUL.md persona, USER.md profile.
+Excludes: trading skills, platform-specific configs.
 
-3. **Run the migration:**
-   ```bash
-   xavani --migrate-from-openclaw --apply
-   ```
-
-**Concept Mapping:**
-
-| OpenClaw | Xavani Equivalent |
-|----------|-------------------|
-| `~/.openclaw/config.yaml` | `~/.xavani/config.yaml` |
-| `~/.openclaw/.env` | `~/.xavani/.env` |
-| `~/.openclaw/skills/` | `~/.xavani/skills/` |
-| `~/.openclaw/SOUL.md` | Persona section in `config.yaml` |
-| `~/.openclaw/USER.md` | User profile in `config.yaml` |
-| `~/.openclaw/logs/` | `~/.xavani/logs/` |
-| ClawHub skills registry | Skills Registry (`/install`) |
-| OpenClaw Connect gateway | MCP Gateway (`localhost:8080`) |
-
-**What gets migrated:**
-- Compatible config settings (provider, model, temperature, etc.)
-- Installed skills
-- SOUL.md persona → stored in config.yaml
-- USER.md user profile → stored in config.yaml
-
-**What is NOT migrated:**
-- Files containing API keys/tokens/secrets
-- Trading skills (proprietary to Enternovate, excluded)
-- Platform-specific configs that don't have Xavani equivalents
+---
 
 ## Architecture
 
@@ -234,76 +458,136 @@ If you're migrating from OpenClaw Agent, Xavani provides a compatible migration 
 ┌───────────────────────────────┴───────────────────────────────┐
 │                    XAVANI AGENT                               │
 │                                                               │
+│  ┌────────────────────────────────────────────────────────┐  │
+│  │  CONTEXT ENRICHER (Deep Learning Layer)                  │  │
+│  │  1. RECEIVE → 2. ANALYZE → 3. ENRICH → 4. CHECK SKILLS │  │
+│  │  5. REITERATE → 6. FORWARD                              │  │
+│  └────────────────────────────────────────────────────────┘  │
+│                                                               │
 │  ┌────────────┐  ┌───────────────┐  ┌────────────────────┐   │
 │  │ REPL / CLI │  │ SKILLS ENGINE │  │ MCP GATEWAY        │   │
 │  │ (prompt    │  │ (169 skills)  │  │ (localhost:8080)   │   │
-│  │  toolkit)  │  └───────────────┘  └────────────────────┘   │
-│  └────────────┘                                              │
-│                                                               │
-│  ┌────────────────────────────────────────────────────────┐  │
-│  │  PROVIDER ABSTRACTION LAYER                              │  │
-│  │  OpenAI  ·  Claude  ·  Gemini  ·  Ollama  ·  OpenRouter │  │
+│  │  toolkit)  │  │ SkillOrch.    │  │ PolicyEngine       │   │
+│  └────────────┘  └───────────────┘  │ Auth + RateLimit   │   │
+│                                      │ Audit Trail + Logs │   │
+│  ┌───────────────────────────────────┴────────────────────┐  │
+│  │  PROTOCOL BRIDGE                                       │  │
+│  │  MCP ↔ A2A ↔ OpenAPI bidirectional translation         │  │
 │  └────────────────────────────────────────────────────────┘  │
 │                                                               │
 │  ┌────────────────────────────────────────────────────────┐  │
-│  │  LOCAL STORAGE (SQLite + FTS5 + File System)           │  │
+│  │  MEMORY LAYER                                           │  │
+│  │  Episodic (FTS5 SQLite) + Procedural (Pattern Learning) │  │
+│  │  Cross-Agent Context Sharing + Auto-Archiving           │  │
+│  └────────────────────────────────────────────────────────┘  │
+│                                                               │
+│  ┌────────────────────────────────────────────────────────┐  │
+│  │  OBSERVABILITY STACK                                    │  │
+│  │  OpenTelemetry Traces · Metrics · Dashboard (:8081)    │  │
+│  │  CLI Audit Viewer · Trace Export                        │  │
+│  └────────────────────────────────────────────────────────┘  │
+│                                                               │
+│  ┌────────────────────────────────────────────────────────┐  │
+│  │  AGENT RUNTIME                                          │  │
+│  │  Portable .agent.toml · Lifecycle Manager · Isolation   │  │
+│  └────────────────────────────────────────────────────────┘  │
+│                                                               │
+│  ┌────────────────────────────────────────────────────────┐  │
+│  │  PROVIDER ABSTRACTION LAYER                              │  │
+│  │  OpenAI · Claude · Gemini · Ollama · OpenRouter · xAI   │  │
+│  └────────────────────────────────────────────────────────┘  │
+│                                                               │
+│  ┌────────────────────────────────────────────────────────┐  │
+│  │  LOCAL STORAGE                                          │  │
+│  │  SQLite · FTS5 · File System · JSONL Traces           │  │
 │  │  ~/.xavani/ — never leaves your machine                │  │
 │  └────────────────────────────────────────────────────────┘  │
 └───────────────────────────────────────────────────────────────┘
 ```
 
+---
+
 ## Skills
 
-Xavani ships with **169 built-in skills** across 27 categories. All skills run locally with no cloud dependency.
+Xavani ships with **169 built-in skills** across 27 categories. All run locally
+with zero cloud dependency.
 
-> **Note:** Trading-related skills (e.g., deriv-trading, backtesting, forex) are **proprietary to Enternovate** and are excluded from the open-source release. If you need these, please contact Enternovate for a commercial license.
-
-| Category | Skills | What You Can Do |
-|----------|--------|-----------------|
+| Category | Skills | Use Cases |
+|----------|--------|-----------|
 | Autonomous AI Agents | 7 | Deploy Claude Code, Codex, OpenCode agents |
-| Creative | 25 | ASCII art, diagrams, video, music, design |
+| Creative | 25 | ASCII art, diagrams, video, music, design, animation |
 | Finance | 8 | DCF models, comps analysis, PPT decks |
-| GitHub | 6 | Code review, PR workflow, issue management |
-| MCP | 3 | Build & manage MCP servers |
-| ML/AI | 36 | Fine-tune models, RAG pipelines, embeddings |
-| Research | 16 | ArXiv, web search, deep research |
+| GitHub | 6 | Code review, PR workflow, issue management, repo ops |
+| MCP | 3 | Build, deploy, and manage MCP servers |
+| ML/AI | 36 | Fine-tune models, RAG pipelines, embeddings, training |
+| Research | 16 | ArXiv, deep research, web search, paper writing |
 | Security | 3 | Password management, forensics, OSINT |
-| Software Dev | 12 | TDD, debugging, code review, planning |
-| +18 more | 53 | Productivity, data science, gaming, email, IoT |
+| Software Dev | 12 | TDD, debugging, code review, planning, spikes |
+| Productivity | 16 | Notion, Airtable, Google Workspace, PDFs, OCR |
+| +17 more | 53 | Blockchain, gaming, email, IoT, data science |
 
-All skills run locally. No cloud dependency. Your data stays yours.
+> **Note:** Trading-related skills (trading bots, backtesting, forex) are
+> proprietary to Enternovate and excluded from the open-source release.
 
-## Comparison: Xavani vs Others
+---
+
+## Comparison
 
 | Feature | Xavani | Claude Code | OpenAI Agents | LangChain |
 |---------|--------|-------------|---------------|-----------|
-| Open Source | ✅ MIT | ❌ | ❌ | ✅ |
-| Local-Only | ✅ | ✅ | ❌ | ❌ |
-| MCP Gateway | ✅ | ❌ | ❌ | ❌ |
-| Multi-Provider | ✅ 6+ | ❌ (Claude only) | ❌ (OpenAI only) | ✅ |
-| Built-in Skills | 169+ | Limited | None | 500+ plugins |
-| Cross-Platform | ✅ | ✅ | ❌ | ✅ |
-| Private | ✅ (no telemetry) | Partial | ❌ | Partial |
-| Policy Engine | ✅ | ❌ | ❌ | ❌ |
+| Open Source | ✅ MIT | ❌ | ❌ | ✅ Apache |
+| Fully Local | ✅ (zero telemetry) | ✅ | ❌ (cloud API) | ❌ (partial) |
+| MCP Gateway | ✅ with policy engine | ❌ | ❌ | ❌ |
+| Multi-Provider | ✅ 6+ providers | ❌ Claude only | ❌ OpenAI only | ✅ |
+| Built-in Skills | 169+ across 27 categories | Limited | None | 500+ plugins |
+| Protocol Bridge | ✅ MCP ↔ A2A ↔ OpenAPI | ❌ | ❌ | ❌ |
+| Memory Layer | ✅ Episodic + Procedural | ❌ (chat only) | ❌ | ❌ (RAG only) |
+| Observability | ✅ OpenTelemetry-native | ❌ | Partial (proprietary) | Partial (LangSmith) |
+| Agent Runtime | ✅ Portable .agent.toml | ❌ | ❌ | ❌ |
+| Policy Engine | ✅ Rate limits + RBAC | ❌ | ❌ | ❌ |
+| Package Manager | ✅ apm install + registry | ❌ | ❌ | ❌ |
+| Cross-Platform | ✅ Mac + Windows + Linux | ✅ | ❌ | ✅ |
+
+---
 
 ## Why Xavani?
 
-Because the AI agent ecosystem needs an **open, private, local-first** alternative to vendor-locked tools. Xavani is:
+**Because the AI ecosystem needs an open, private, local-first alternative
+to vendor-locked tools.**
 
 - **Not another cloud service** — everything runs on your machine
-- **Not a data harvest** — zero telemetry, zero tracking
-- **Not locked to one model** — use any provider, or run local LLMs
-- **Not just a CLI** — it's also an MCP gateway, a skills platform, and a developer tool
+- **Not a data harvest** — zero telemetry, zero tracking, zero phone-home
+- **Not locked to one model** — use any provider or local LLMs
+- **Not just a CLI** — it's an MCP gateway, protocol bridge, memory system,
+  observability stack, package manager, and agent runtime — all in one
+- **Not just a fork** — six integrated systems that no other project has
+
+---
 
 ## Privacy
 
-Xavani collects **nothing**. No telemetry, no analytics, no phone-home, no crash reports. Your API keys stay in `~/.xavani/.env` and are never uploaded anywhere. Your conversation history stays in `~/.xavani/logs/` on your machine.
+Xavani collects **nothing**. Zero telemetry. Zero analytics. Zero phone-home.
+Zero crash reports. Your API keys stay in `~/.xavani/.env` and are never
+uploaded anywhere. Your conversation history stays on your machine. The
+environment variables `HERMES_DISABLE_TELEMETRY` and `DO_NOT_TRACK` are
+forced at startup.
 
-When using the MCP gateway, all traffic stays on localhost unless you configure remote access.
+When using the MCP gateway, all traffic stays on localhost unless you
+explicitly configure remote access. The protocol bridge communicates only
+with endpoints you register. The observability dashboard binds to localhost
+by default.
 
-## License
+---
 
-MIT — free for any use, commercial or personal.
+## About Enternovate
+
+Enternovate is a private company building open-source AI infrastructure.
+We believe AI tools should be private, local, and accessible to everyone —
+not locked behind vendor clouds or data-harvesting business models.
+
+Xavani Agent is our flagship open-source project. MIT licensed. Free for any
+use, commercial or personal. Built by Enternovate — provided as open source
+for the community.
 
 ---
 
