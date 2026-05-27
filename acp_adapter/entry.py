@@ -235,11 +235,11 @@ def main(argv: list[str] | None = None) -> None:
     _load_env()
 
     logger = logging.getLogger(__name__)
-try:
-    from xavani_cli.safe_logging import SafeLogFilter
-    SafeLogFilter.install()
-except Exception:
-    pass
+    try:
+        from xavani_cli.safe_logging import install as install_safe_logging
+        install_safe_logging()
+    except Exception:
+        pass
     logger.info("Starting xavani-agent ACP adapter")
 
     # Ensure the project root is on sys.path so ``from run_agent import AIAgent`` works

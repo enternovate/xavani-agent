@@ -467,6 +467,39 @@ def xavani_main(
     cli.run()
 
 
+# Subcommands handled by the full argparse CLI in `xavani_cli.main`. When the
+# first positional arg matches one of these, we delegate there instead of
+# routing through Fire — Fire would mis-interpret the subcommand name as the
+# `message` positional and crash. Keep this list synced with the parser in
+# `xavani_cli/_parser.py`.
+_CLI_SUBCOMMANDS = frozenset({
+    "dashboard", "chat", "gateway", "model", "fallback", "skills", "agents",
+    "config", "logs", "sessions", "update", "debug", "kanban", "cron",
+    "memory", "plan", "profile", "policies", "plugins", "sandbox", "setup",
+    "telemetry", "tools", "tui",
+})
+
+
+def _maybe_delegate_to_full_cli() -> bool:
+    """Hand off to `xavani_cli.main.main` when the user invoked a subcommand.
+
+    Returns True if delegation happened (caller should not invoke Fire).
+    """
+    if len(sys.argv) < 2:
+        return False
+    first = sys.argv[1]
+    if first.startswith("-"):
+        return False
+    if first not in _CLI_SUBCOMMANDS:
+        return False
+    try:
+        from xavani_cli.main import main as _cli_main_full
+    except ImportError:
+        return False
+    _cli_main_full()
+    return True
+
+
 def main() -> None:
     """Console script entry point — wraps :func:`xavani_main` with Fire."""
     try:
@@ -479,6 +512,8 @@ def main() -> None:
         sys.exit(1)
 
     try:
+        if _maybe_delegate_to_full_cli():
+            return
         fire.Fire(xavani_main)
     except KeyboardInterrupt:
         print("\nXavani Agent shut down. Buffalo out. ⚡")

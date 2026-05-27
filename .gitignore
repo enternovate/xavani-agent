@@ -16,7 +16,7 @@ export*
 __pycache__/model_tools.cpython-310.pyc
 __pycache__/web_tools.cpython-310.pyc
 logs/
-data/
+/data/
 .pytest_cache/
 tmp/
 temp_vision_images/
@@ -29,7 +29,10 @@ run_datagen_megascience_glm4-6.sh
 run_datagen_sonnet.sh
 source-data/*
 run_datagen_megascience_glm4-6.sh
-data/*
+/data/*
+# Keep website source data tracked even though `data/` is a common ignore name
+!website/src/data/
+!website/src/data/**
 node_modules/
 browser-use/
 agent-browser/

@@ -60,7 +60,9 @@ jobs:
             BASE_SHA=$(git merge-base "origin/${{ github.base_ref }}" HEAD)
             BASE_REF="origin/${{ github.base_ref }}"
           else
-            BASE_SHA=$(git rev-parse HEAD~1 2>/dev/null || git rev-parse HEAD)
+            # --verify suppresses the literal-arg echo when HEAD~1 doesn't
+            # exist (initial commit), so $BASE_SHA stays single-line.
+            BASE_SHA=$(git rev-parse --verify HEAD~1 2>/dev/null || git rev-parse --verify HEAD)
             BASE_REF="HEAD~1"
           fi
           echo "sha=${BASE_SHA}" >> "$GITHUB_OUTPUT"

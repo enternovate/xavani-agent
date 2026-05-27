@@ -30,3 +30,10 @@ def record_nous_rate_limit(*_args: Any, **_kwargs: Any) -> None:
 
 def get_nous_rate_limit_state() -> Mapping[str, Any]:
     return {}
+
+
+def is_genuine_nous_rate_limit(*_args: Any, **_kwargs: Any) -> bool:
+    """No-op stub — Nous Portal is no longer integrated, so genuine
+    rate-limit detection is irrelevant. Returns False so callers fall
+    through to the normal retry/backoff path."""
+    return False
