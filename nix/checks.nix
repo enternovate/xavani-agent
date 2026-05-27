@@ -62,6 +62,9 @@ json.dump(sorted(leaf_paths(DEFAULT_CONFIG)), sys.stdout, indent=2)
         # Verify binaries exist and are executable
         package-contents = pkgs.runCommand "xavani-package-contents" { } ''
           set -e
+          # xavani.py bootstrap creates ~/.xavani/ on import — point HOME at
+          # a writable tempdir so that succeeds in the sandboxed builder.
+          export HOME=$(mktemp -d)
           echo "=== Checking binaries ==="
           test -x ${xavani-agent}/bin/xavani || (echo "FAIL: xavani binary missing"; exit 1)
           test -x ${xavani-agent}/bin/xavani-agent || (echo "FAIL: xavani-agent binary missing"; exit 1)
