@@ -71,7 +71,11 @@ json.dump(sorted(leaf_paths(DEFAULT_CONFIG)), sys.stdout, indent=2)
           echo "PASS: All binaries present"
 
           echo "=== Checking version ==="
-          ${xavani-agent}/bin/xavani version 2>&1 | grep -qi "xavani" || (echo "FAIL: version check"; exit 1)
+          # Use --version (Fire flag, inline-handled by xavani.py) rather
+          # than `version` (argparse subcommand that imports the heavyweight
+          # xavani_cli.main and was crashing in the sandbox).
+          ${xavani-agent}/bin/xavani --version 2>&1 | tee /tmp/version-out | grep -qi "xavani" \
+            || (echo "FAIL: version check; output was:"; cat /tmp/version-out; exit 1)
           echo "PASS: Version check"
 
           echo "=== All checks passed ==="
