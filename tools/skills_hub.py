@@ -22,8 +22,9 @@ from pathlib import Path
 from typing import Any, Mapping, Optional
 
 
-_HOME = Path(os.environ.get("XAVANI_HOME") or Path.home() / ".xavani")
-SKILLS_DIR: Path = _HOME / "skills"
+XAVANI_HOME = Path(os.environ.get("XAVANI_HOME") or Path.home() / ".xavani")
+_HOME = XAVANI_HOME  # backward-compat alias for older internal callers
+SKILLS_DIR: Path = XAVANI_HOME / "skills"
 
 
 @dataclass
@@ -210,6 +211,11 @@ def uninstall_skill(_name: str, *_args: Any, **_kwargs: Any) -> bool:
     return False
 
 
+def install_from_quarantine(*_args: Any, **_kwargs: Any) -> bool:
+    """Stub — quarantine flow stripped along with the rest of the hub."""
+    return False
+
+
 def _write_index_cache(*_args: Any, **_kwargs: Any) -> None:
     """Internal helper kept for tests that mock it."""
     return None
@@ -235,12 +241,14 @@ __all__ = [
     "HubLockFile",
     "TapsManager",
     "SKILLS_DIR",
+    "XAVANI_HOME",
     "create_source_router",
     "unified_search",
     "append_audit_log",
     "ensure_hub_dirs",
     "check_for_skill_updates",
     "uninstall_skill",
+    "install_from_quarantine",
     "bundle_content_hash",
     "quarantine_bundle",
 ]
