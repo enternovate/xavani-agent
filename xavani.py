@@ -384,6 +384,15 @@ def xavani_main(
         migrate_from_openclaw: Migrate from OpenClaw Agent (``--apply``
             applies, anything else is dry-run).
     """
+    # Subcommand routing — handled here (not just in `main`) so the installed
+    # console-script wrapper, which sometimes calls xavani_main directly and
+    # never gives Fire a chance to parse sys.argv, still routes `xavani
+    # update / dashboard / chat / …` to the full argparse CLI in
+    # `xavani_cli.main`. Safe to call here: the delegate skips when there's
+    # no positional subcommand on the command line.
+    if _maybe_delegate_to_full_cli():
+        return
+
     if version:
         print(f"{PRODUCT_NAME} v{VERSION}")
         print(f"Pronounced: {PRONUNCIATION}")
@@ -451,19 +460,34 @@ def xavani_main(
         return
 
     if message:
-        show_xavani_banner()
-        cli = XavaniCLI(message=message, enabled_toolsets=enabled_toolsets)
-        cli.run()
+        # One-shot mode. `cli.XavaniCLI` doesn't accept a `message=` kwarg —
+        # it only knows how to drive the interactive REPL. Route the request
+        # through the full argparse CLI in `xavani_cli.main`, which has a
+        # proper `chat -q "<message>"` handler that runs a single turn and
+        # exits. Synthesizing argv keeps this fix local; the alternative
+        # (pre-seeding the REPL input queue) would need surgery in cli.py.
+        try:
+            from xavani_cli.main import main as _cli_main_full
+        except ImportError as exc:  # pragma: no cover — install-time path
+            sys.stderr.write(f"Error: cannot dispatch --message: {exc}\n")
+            sys.exit(1)
+        sys.argv = ["xavani", "chat", "-q", message]
+        if enabled_toolsets:
+            sys.argv.extend(["--toolsets", ",".join(enabled_toolsets)])
+        _cli_main_full()
         return
 
     if list_tools:
-        XavaniCLI().list_tools()
+        # cli.XavaniCLI exposes `show_tools()`, not `list_tools()`.
+        XavaniCLI(toolsets=enabled_toolsets).show_tools()
         return
 
     # Interactive mode.
     console = Console()
     show_startup_explanation(console)
-    cli = XavaniCLI(enabled_toolsets=enabled_toolsets)
+    # cli.XavaniCLI's constructor parameter is `toolsets=`; the attribute it
+    # stores on `self` is `enabled_toolsets`. We pass the right kwarg name.
+    cli = XavaniCLI(toolsets=enabled_toolsets)
     cli.run()
 
 
