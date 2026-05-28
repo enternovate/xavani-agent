@@ -161,6 +161,14 @@ jobs:
     if: github.repository == 'enternovate/xavani-agent'
     runs-on: ubuntu-24.04-arm
     timeout-minutes: 45
+    # GitHub's free arm64 runner pool has had recurring connection-reset
+    # episodes pulling base images from the Azure CDN (20.209.x.x).  When
+    # the network flakes mid-build we don't want the whole workflow to go
+    # red — the amd64 image is built and smoke-tested independently, and
+    # the multi-arch merge job already gates on `build-amd64.outputs.publish`
+    # so a missing arm64 digest just degrades publishing to amd64-only,
+    # which is the right behavior under transient infrastructure failure.
+    continue-on-error: true
     outputs:
       digest: ${{ steps.push.outputs.digest }}
     steps:
