@@ -52,6 +52,7 @@ jobs:
     timeout-minutes: 45
     outputs:
       digest: ${{ steps.push.outputs.digest }}
+      publish: ${{ steps.docker-creds.outputs.publish }}
     steps:
       - name: Checkout code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
@@ -82,8 +83,28 @@ jobs:
         with:
           image: ${{ env.IMAGE_NAME }}:test
 
+      # Preflight: only attempt the Docker Hub publish chain when the
+      # repository actually has DOCKERHUB_USERNAME + DOCKERHUB_TOKEN
+      # configured. Without them the login step explodes with
+      # "Username and password required" and turns a perfectly good
+      # build+smoke-test run red over a settings-page omission rather
+      # than a code problem. When secrets ARE present, behavior is
+      # unchanged.
+      - name: Check Docker Hub credentials
+        id: docker-creds
+        env:
+          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+          DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+        run: |
+          if [ -n "$DOCKERHUB_USERNAME" ] && [ -n "$DOCKERHUB_TOKEN" ]; then
+            echo "publish=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "publish=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::DOCKERHUB_USERNAME / DOCKERHUB_TOKEN not configured — skipping image publish (build + smoke test still validated)."
+          fi
+
       - name: Log in to Docker Hub
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main' || github.event_name == 'release'
+        if: steps.docker-creds.outputs.publish == 'true' && (github.event_name == 'push' && github.ref == 'refs/heads/main' || github.event_name == 'release')
         uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121  # v4.1.0
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
@@ -100,7 +121,7 @@ jobs:
       # lists themselves don't carry image config labels.
       - name: Push amd64 by digest
         id: push
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main' || github.event_name == 'release'
+        if: steps.docker-creds.outputs.publish == 'true' && (github.event_name == 'push' && github.ref == 'refs/heads/main' || github.event_name == 'release')
         uses: docker/build-push-action@bcafcacb16a39f128d818304e6c9c0c18556b85f  # v7.1.0
         with:
           context: .
@@ -115,14 +136,14 @@ jobs:
       # Write the digest to a file and upload it as an artifact so the
       # merge job can stitch both per-arch digests into a manifest list.
       - name: Export digest
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main' || github.event_name == 'release'
+        if: steps.docker-creds.outputs.publish == 'true' && (github.event_name == 'push' && github.ref == 'refs/heads/main' || github.event_name == 'release')
         run: |
           mkdir -p /tmp/digests
           digest="${{ steps.push.outputs.digest }}"
           touch "/tmp/digests/${digest#sha256:}"
 
       - name: Upload digest artifact
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main' || github.event_name == 'release'
+        if: steps.docker-creds.outputs.publish == 'true' && (github.event_name == 'push' && github.ref == 'refs/heads/main' || github.event_name == 'release')
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4
         with:
           name: digest-amd64
@@ -172,8 +193,21 @@ jobs:
         with:
           image: ${{ env.IMAGE_NAME }}:test
 
+      - name: Check Docker Hub credentials
+        id: docker-creds
+        env:
+          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+          DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+        run: |
+          if [ -n "$DOCKERHUB_USERNAME" ] && [ -n "$DOCKERHUB_TOKEN" ]; then
+            echo "publish=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "publish=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::DOCKERHUB_USERNAME / DOCKERHUB_TOKEN not configured — skipping image publish (build + smoke test still validated)."
+          fi
+
       - name: Log in to Docker Hub
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main' || github.event_name == 'release'
+        if: steps.docker-creds.outputs.publish == 'true' && (github.event_name == 'push' && github.ref == 'refs/heads/main' || github.event_name == 'release')
         uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121  # v4.1.0
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
@@ -181,7 +215,7 @@ jobs:
 
       - name: Push arm64 by digest
         id: push
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main' || github.event_name == 'release'
+        if: steps.docker-creds.outputs.publish == 'true' && (github.event_name == 'push' && github.ref == 'refs/heads/main' || github.event_name == 'release')
         uses: docker/build-push-action@bcafcacb16a39f128d818304e6c9c0c18556b85f  # v7.1.0
         with:
           context: .
@@ -194,14 +228,14 @@ jobs:
           cache-to: type=gha,mode=max,scope=docker-arm64
 
       - name: Export digest
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main' || github.event_name == 'release'
+        if: steps.docker-creds.outputs.publish == 'true' && (github.event_name == 'push' && github.ref == 'refs/heads/main' || github.event_name == 'release')
         run: |
           mkdir -p /tmp/digests
           digest="${{ steps.push.outputs.digest }}"
           touch "/tmp/digests/${digest#sha256:}"
 
       - name: Upload digest artifact
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main' || github.event_name == 'release'
+        if: steps.docker-creds.outputs.publish == 'true' && (github.event_name == 'push' && github.ref == 'refs/heads/main' || github.event_name == 'release')
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4
         with:
           name: digest-arm64
@@ -216,7 +250,7 @@ jobs:
   # On releases it produces :<release_tag_name>.
   # ---------------------------------------------------------------------------
   merge:
-    if: github.repository == 'enternovate/xavani-agent' && (github.event_name == 'push' && github.ref == 'refs/heads/main' || github.event_name == 'release')
+    if: github.repository == 'enternovate/xavani-agent' && needs.build-amd64.outputs.publish == 'true' && (github.event_name == 'push' && github.ref == 'refs/heads/main' || github.event_name == 'release')
     runs-on: ubuntu-latest
     needs: [build-amd64, build-arm64]
     timeout-minutes: 10

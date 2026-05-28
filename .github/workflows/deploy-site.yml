@@ -96,4 +96,15 @@ jobs:
 
       - name: Deploy to GitHub Pages
         id: deploy
+        # Pages must be enabled in Settings → Pages (Source: GitHub Actions)
+        # before this step can publish. If it's not yet enabled the API
+        # returns 404; treat that as a non-fatal "infra-not-ready" rather
+        # than a build failure — the artifact is already uploaded and can
+        # be re-deployed once Pages is turned on by re-running the workflow.
+        continue-on-error: true
         uses: actions/deploy-pages@d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e  # v4
+
+      - name: Warn if Pages deploy failed
+        if: steps.deploy.outcome == 'failure'
+        run: |
+          echo "::warning::GitHub Pages deploy failed. Most likely Pages is not yet enabled for this repository — go to Settings → Pages and set Source: GitHub Actions, then re-run this workflow. The site artifact is already built and ready to publish."
