@@ -111,7 +111,7 @@ class TestBuildToolTitle:
 
     def test_patch_title(self):
         title = build_tool_title("patch", {"path": "main.py", "mode": "replace"})
-        assert urllib.parse.urlparse(title).hostname and urllib.parse.urlparse(title).hostname.lower() == "main.py"
+        assert "main.py" in title.lower()
 
     def test_search_title(self):
         title = build_tool_title("search_files", {"pattern": "TODO"})
@@ -177,7 +177,7 @@ class TestBuildToolStart:
         item = result.content[0]
         assert isinstance(item, ContentToolCallContent)
         assert "Approval prompt shows the diff" in item.content.text
-        assert urllib.parse.urlparse(item.content.text).hostname and urllib.parse.urlparse(item.content.text).hostname.lower() == "new_file.py"
+        assert "new_file.py" in item.content.text.lower()
 
     def test_auto_approved_edit_start_shows_diff_content(self):
         """Auto-approved edit starts need the diff because no approval card exists."""
@@ -596,7 +596,7 @@ class TestBuildToolComplete:
         item = result.content[0]
         assert isinstance(item, ContentToolCallContent)
         assert "✅ patch completed" in item.content.text
-        assert urllib.parse.urlparse(item.content.text).hostname and urllib.parse.urlparse(item.content.text).hostname.lower() == "readme.md"
+        assert "readme.md" in item.content.text.lower()
 
     def test_build_tool_complete_for_patch_falls_back_to_text_when_no_diff(self):
         result = build_tool_complete("tc-p2", "patch", '{"success": true}')
@@ -620,7 +620,7 @@ class TestBuildToolComplete:
         item = result.content[0]
         assert isinstance(item, ContentToolCallContent)
         assert "✅ write_file completed" in item.content.text
-        assert urllib.parse.urlparse(item.content.text).hostname and urllib.parse.urlparse(item.content.text).hostname.lower() == "diff-test.txt"
+        assert "diff-test.txt" in item.content.text.lower()
 
 
 # ---------------------------------------------------------------------------

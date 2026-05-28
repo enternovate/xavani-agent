@@ -36,17 +36,26 @@ sys.path.insert(0, REPO_ROOT)
 # Ensure XAVANI_HOME is set (needed by tools/skills_hub.py imports)
 os.environ.setdefault("XAVANI_HOME", os.path.join(os.path.expanduser("~"), ".xavani"))
 
-from tools.skills_hub import (
-    GitHubAuth,
-    GitHubSource,
-    SkillsShSource,
-    OptionalSkillSource,
-    WellKnownSkillSource,
-    ClawHubSource,
-    ClaudeMarketplaceSource,
-    LobeHubSource,
-    SkillMeta,
-)
+# tools/skills_hub may be unavailable in stripped/forked builds. If so, emit a
+# minimal valid index so the docs site still builds and `xavani skills` falls
+# back to live API calls at runtime.
+_SKILLS_HUB_AVAILABLE = False
+_HUB_ERROR = ""
+try:
+    from tools.skills_hub import (
+        GitHubAuth,
+        GitHubSource,
+        SkillsShSource,
+        OptionalSkillSource,
+        WellKnownSkillSource,
+        ClawHubSource,
+        ClaudeMarketplaceSource,
+        LobeHubSource,
+        SkillMeta,
+    )
+    _SKILLS_HUB_AVAILABLE = True
+except ImportError as _hub_exc:  # pragma: no cover — fork-time path
+    _HUB_ERROR = str(_hub_exc)
 import httpx
 
 OUTPUT_PATH = os.path.join(REPO_ROOT, "website", "static", "api", "skills-index.json")
@@ -247,9 +256,28 @@ def batch_resolve_paths(skills: list, auth: GitHubAuth) -> list:
     return skills
 
 
+def _write_empty_index(reason: str) -> None:
+    """Write a minimal valid index so the docs site keeps building."""
+    index = {
+        "version": INDEX_VERSION,
+        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "skill_count": 0,
+        "skills": [],
+        "note": f"Index empty: {reason}. Runtime falls back to live API.",
+    }
+    os.makedirs(os.path.dirname(OUTPUT_PATH), exist_ok=True)
+    with open(OUTPUT_PATH, "w", encoding="utf-8") as f:
+        json.dump(index, f, separators=(",", ":"), ensure_ascii=False)
+    print(f"Wrote placeholder index ({reason}): {OUTPUT_PATH}", flush=True)
+
+
 def main():
     print("Building Xavani Skills Index...", flush=True)
     overall_start = time.time()
+
+    if not _SKILLS_HUB_AVAILABLE:
+        _write_empty_index(f"tools.skills_hub unavailable ({_HUB_ERROR})")
+        return
 
     auth = GitHubAuth()
     print(f"GitHub auth: {auth.auth_method()}")

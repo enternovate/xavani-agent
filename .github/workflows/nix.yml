@@ -8,6 +8,7 @@ on:
 permissions:
   contents: read
   pull-requests: write
+  id-token: write  # nix-installer-action needs OIDC for FlakeHub Cache auth
 
 concurrency:
   group: nix-${{ github.ref }}

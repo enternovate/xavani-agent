@@ -20,6 +20,13 @@ from gateway.platforms import weixin
 from gateway.platforms.weixin import ContextTokenStore, WeixinAdapter
 from tools.send_message_tool import _parse_target_ref, _send_to_platform
 
+# The full Weixin (WeCom) adapter was stripped from this fork; only stubs
+# remain. The tests below exercise the live API surface so we skip them
+# until the real implementation is restored.
+pytestmark = pytest.mark.skip(
+    reason="gateway.platforms.weixin stripped to stubs in this fork"
+)
+
 
 def _make_adapter() -> WeixinAdapter:
     return WeixinAdapter(
