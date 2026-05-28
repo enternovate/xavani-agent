@@ -22,11 +22,29 @@ concurrency:
 
 jobs:
   deploy-vercel:
-    if: github.event_name == 'release'
+    # Always runs; only triggers Vercel on release events when a webhook is
+    # configured. Otherwise records a no-op success so the check stays GREEN
+    # rather than "skipped".
     runs-on: ubuntu-latest
     steps:
+      - name: Decide whether to trigger Vercel
+        id: decide
+        env:
+          EVENT: ${{ github.event_name }}
+          HAS_HOOK: ${{ secrets.VERCEL_DEPLOY_HOOK != '' }}
+        run: |
+          if [ "${EVENT}" = "release" ] && [ "${HAS_HOOK}" = "true" ]; then
+            echo "active=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "active=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::Vercel deploy is a no-op for this event (event=${EVENT}, hook_configured=${HAS_HOOK})."
+          fi
+
       - name: Trigger Vercel Deploy
-        run: curl -X POST "${{ secrets.VERCEL_DEPLOY_HOOK }}"
+        if: steps.decide.outputs.active == 'true'
+        env:
+          DEPLOY_HOOK: ${{ secrets.VERCEL_DEPLOY_HOOK }}
+        run: curl --fail-with-body -X POST "${DEPLOY_HOOK}"
 
   deploy-docs:
     if: github.repository == 'enternovate/xavani-agent'
