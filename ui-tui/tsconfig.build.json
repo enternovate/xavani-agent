@@ -1,0 +1,9 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@xavani/ink": ["src/types/xavani-ink.d.ts"]
+    }
+  }
+}

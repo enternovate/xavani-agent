@@ -1,0 +1,200 @@
+# Xavani Agent — Built-in MCP Server Registry
+# This file defines the index of known MCP servers that can be installed via
+# the /install command or OAGRegistry.install().
+#
+# Format:
+# [server.<name>]
+# name = "<canonical-name>"
+# description = "<human-readable description>"
+# command = "<executable>"
+# args = ["<arg1>", "<arg2>", ...]
+# env = { KEY = "VALUE" }
+# cwd = "<working-directory>"  # optional, defaults to ~/.xavani/
+# version = "<semver>"
+# author = "<maintainer>"
+# license = "<SPDX-license-id>"
+# homepage = "<url>"
+# tags = ["tag1", "tag2"]
+# security_scan = { check_args = true }
+# signature = "<optional-gpg-signature>"
+
+[server.filesystem]
+name = "filesystem"
+description = "Secure filesystem access — read, write, move, search files and directories"
+command = "npx"
+args = ["-y", "@modelcontextprotocol/server-filesystem"]
+version = "0.6.2"
+author = "Model Context Protocol"
+license = "MIT"
+homepage = "https://github.com/modelcontextprotocol/servers"
+tags = ["filesystem", "core", "official"]
+security_scan = { check_args = true }
+
+[server.postgres]
+name = "postgres"
+description = "PostgreSQL database exploration, schema inspection, and query execution"
+command = "npx"
+args = ["-y", "@modelcontextprotocol/server-postgres"]
+env = { PGHOST = "localhost", PGPORT = "5432" }
+version = "0.6.2"
+author = "Model Context Protocol"
+license = "MIT"
+homepage = "https://github.com/modelcontextprotocol/servers"
+tags = ["database", "sql", "postgresql", "official"]
+
+[server.sqlite]
+name = "sqlite"
+description = "Local SQLite database management — query, create, and explore SQLite databases"
+command = "uvx"
+args = ["mcp-server-sqlite", "--db-path", "${XAVANI_HOME}/data/servers.db"]
+version = "0.6.2"
+author = "Model Context Protocol"
+license = "MIT"
+homepage = "https://github.com/modelcontextprotocol/servers"
+tags = ["database", "sql", "sqlite", "local", "official"]
+
+[server.brave-search]
+name = "brave-search"
+description = "Web search via Brave Search API — requires BRAVE_API_KEY environment variable"
+command = "npx"
+args = ["-y", "@modelcontextprotocol/server-brave-search"]
+env = { BRAVE_API_KEY = "" }
+version = "0.6.2"
+author = "Model Context Protocol"
+license = "MIT"
+homepage = "https://github.com/modelcontextprotocol/servers"
+tags = ["search", "web", "api", "official"]
+
+[server.fetch]
+name = "fetch"
+description = "HTTP content fetching and web scraping — retrieve and process web pages"
+command = "uvx"
+args = ["mcp-server-fetch"]
+version = "0.6.2"
+author = "Model Context Protocol"
+license = "MIT"
+homepage = "https://github.com/modelcontextprotocol/servers"
+tags = ["web", "http", "scraping", "official"]
+
+[server.puppeteer]
+name = "puppeteer"
+description = "Browser automation with headless Chrome — navigate, screenshot, and interact with web pages"
+command = "npx"
+args = ["-y", "@modelcontextprotocol/server-puppeteer"]
+version = "0.6.2"
+author = "Model Context Protocol"
+license = "MIT"
+homepage = "https://github.com/modelcontextprotocol/servers"
+tags = ["browser", "automation", "scraping", "official"]
+
+[server.memory]
+name = "memory"
+description = "Knowledge graph memory — persistent entity storage with semantic relationships and embeddings"
+command = "npx"
+args = ["-y", "@modelcontextprotocol/server-memory"]
+version = "0.6.2"
+author = "Model Context Protocol"
+license = "MIT"
+homepage = "https://github.com/modelcontextprotocol/servers"
+tags = ["memory", "knowledge-graph", "embeddings", "official"]
+
+[server.github]
+name = "github"
+description = "GitHub API integration — repositories, issues, pull requests, search, and file operations"
+command = "npx"
+args = ["-y", "@modelcontextprotocol/server-github"]
+env = { GITHUB_TOKEN = "" }
+version = "0.6.2"
+author = "Model Context Protocol"
+license = "MIT"
+homepage = "https://github.com/modelcontextprotocol/servers"
+tags = ["github", "git", "development", "official"]
+
+[server.slack]
+name = "slack"
+description = "Slack workspace integration — channels, messages, search, and user management"
+command = "npx"
+args = ["-y", "@modelcontextprotocol/server-slack"]
+env = { SLACK_BOT_TOKEN = "", SLACK_TEAM_ID = "" }
+version = "0.6.2"
+author = "Model Context Protocol"
+license = "MIT"
+homepage = "https://github.com/modelcontextprotocol/servers"
+tags = ["slack", "messaging", "communication"]
+
+[server.sentry]
+name = "sentry"
+description = "Sentry error tracking — issues, events, and performance monitoring"
+command = "npx"
+args = ["-y", "@modelcontextprotocol/server-sentry"]
+env = { SENTRY_TOKEN = "", SENTRY_ORG = "" }
+version = "0.6.2"
+author = "Model Context Protocol"
+license = "MIT"
+homepage = "https://github.com/modelcontextprotocol/servers"
+tags = ["monitoring", "errors", "sentry"]
+
+[server.playwright]
+name = "playwright"
+description = "Browser automation via Playwright — modern cross-browser testing and web interaction"
+command = "npx"
+args = ["-y", "@playwright/mcp"]
+version = "0.6.2"
+author = "Playwright Team"
+license = "Apache-2.0"
+homepage = "https://playwright.dev"
+tags = ["browser", "automation", "testing"]
+
+[server.sequential-thinking]
+name = "sequential-thinking"
+description = "Sequential thinking and reasoning — structured multi-step problem solving"
+command = "npx"
+args = ["-y", "@modelcontextprotocol/server-sequential-thinking"]
+version = "0.6.2"
+author = "Model Context Protocol"
+license = "MIT"
+homepage = "https://github.com/modelcontextprotocol/servers"
+tags = ["thinking", "reasoning", "official"]
+
+[server.everything]
+name = "everything"
+description = "MCP integration test server — exercise all MCP protocol features (tools, resources, prompts)"
+command = "npx"
+args = ["-y", "@modelcontextprotocol/server-everything"]
+version = "0.6.2"
+author = "Model Context Protocol"
+license = "MIT"
+homepage = "https://github.com/modelcontextprotocol/servers"
+tags = ["testing", "development", "official"]
+
+[server.webflow]
+name = "webflow"
+description = "Webflow CMS API — manage sites, collections, items, and content"
+command = "npx"
+args = ["-y", "@modelcontextprotocol/server-webflow"]
+env = { WEBFLOW_API_TOKEN = "" }
+version = "0.6.2"
+author = "Model Context Protocol"
+license = "MIT"
+homepage = "https://github.com/modelcontextprotocol/servers"
+tags = ["webflow", "cms", "content"]
+
+[server.cloudflare]
+name = "cloudflare"
+description = "Cloudflare API — workers, KV, R2, D1, DNS, and account management"
+command = "npx"
+args = ["-y", "@modelcontextprotocol/server-cloudflare"]
+env = { CLOUDFLARE_API_TOKEN = "", CLOUDFLARE_ACCOUNT_ID = "" }
+version = "0.6.2"
+author = "Model Context Protocol"
+license = "MIT"
+homepage = "https://github.com/modelcontextprotocol/servers"
+tags = ["cloudflare", "cdn", "serverless"]
+
+# ── Registry metadata ─────────────────────────────────────────────────
+
+[registry]
+version = "1.0.0"
+updated_at = "2026-05-19T00:00:00Z"
+description = "Xavani Agent built-in MCP server registry"
+disclaimer = "These servers are third-party packages. Review before installing."
