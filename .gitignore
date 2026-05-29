@@ -1,0 +1,94 @@
+.DS_Store
+/venv/
+/_pycache/
+*.pyc*
+__pycache__/
+.venv/
+.vscode/
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.env.development
+.env.test
+export*
+__pycache__/model_tools.cpython-310.pyc
+__pycache__/web_tools.cpython-310.pyc
+logs/
+/data/
+.pytest_cache/
+tmp/
+temp_vision_images/
+xavani-*/*
+examples/
+tests/quick_test_dataset.jsonl
+tests/sample_dataset.jsonl
+run_datagen_kimik2-thinking.sh
+run_datagen_megascience_glm4-6.sh
+run_datagen_sonnet.sh
+source-data/*
+run_datagen_megascience_glm4-6.sh
+/data/*
+# Keep website source data tracked even though `data/` is a common ignore name
+!website/src/data/
+!website/src/data/**
+node_modules/
+browser-use/
+agent-browser/
+# Private keys
+*.ppk
+*.pem
+privvy*
+images/
+__pycache__/
+xavani_agent.egg-info/
+wandb/
+testlogs
+
+# CLI config (may contain sensitive SSH paths)
+cli-config.yaml
+
+# Skills Hub state (lives in ~/.xavani/skills/.hub/ at runtime, but just in case)
+skills/.hub/
+ignored/
+.worktrees/
+environments/benchmarks/evals/
+
+# Web UI build output
+xavani_cli/web_dist/
+
+# Web UI assets — synced from @nous-research/ui at build time via
+# `npm run sync-assets` (see web/package.json).
+web/public/fonts/
+web/public/ds-assets/
+
+# Release script temp files
+.release_notes.md
+mini-swe-agent/
+
+# Nix
+.direnv/
+.nix-stamps/
+result
+website/static/api/skills-index.json
+models-dev-upstream/
+xavani_cli/tui_dist/*
+xavani_cli/scripts/
+docs/superpowers/*
+
+# Internal planning and session artifacts — not part of the public agent
+design/
+plans/
+.plans/
+SESSION_HANDOFF.md
+RELEASE_*.md
+
+# macOS
+**/.DS_Store
+
+# Local Claude Code settings
+.claude/settings.local.json
+
+# Direnv
+.envrc
