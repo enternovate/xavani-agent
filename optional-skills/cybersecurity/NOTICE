@@ -1,0 +1,15 @@
+NOTICE
+
+This product includes cybersecurity skills from the Anthropic Cybersecurity
+Skills project:
+
+  Copyright (c) mukul975/Anthropic-Cybersecurity-Skills
+  Licensed under the Apache License, Version 2.0
+  https://github.com/mukul975/Anthropic-Cybersecurity-Skills
+
+The original skills have been adapted for the Xavani Agent platform.
+Frontmatter has been transformed to match Xavani's skill loader contract.
+Framework mappings (NIST CSF, MITRE ATLAS, D3FEND, NIST AI RMF) are
+preserved in each skill's body under "## Standards mapping".
+
+See ATTRIBUTION.md for full license details.

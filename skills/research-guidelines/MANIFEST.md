@@ -9,10 +9,10 @@ version: 1.0
 # Research Guidelines — Mandatory Loadout
 
 These guideline packs are **always loaded** into the Xavani agent's working
-context. They encode the operating principles of eleven thinkers whose
-work has set the highest bar in their respective fields — six modern AI
-researchers, five general-purpose research methodologists from the
-broader scientific tradition.
+context. They encode the operating principles of twenty-one thinkers whose
+work has set the highest bar in their respective fields — ten modern AI
+researchers and engineering practitioners, five general-purpose research
+methodologists, and six software design and craftsmanship leaders.
 
 The pack is modelled on the format pioneered by
 [multica-ai/andrej-karpathy-skills](https://github.com/multica-ai/andrej-karpathy-skills)
@@ -35,6 +35,16 @@ heuristics, anti-patterns, and trigger conditions.
 | 90  | [sutskever-guidelines.md](sutskever-guidelines.md) | ai-research |
 | 90  | [olah-guidelines.md](olah-guidelines.md)         | ai-interpretability |
 | 90  | [hassabis-guidelines.md](hassabis-guidelines.md) | ai-research |
+| 90  | [chollet-guidelines.md](chollet-guidelines.md)   | ai-research |
+| 90  | [weng-guidelines.md](weng-guidelines.md)         | ai-engineering |
+| 90  | [huyen-guidelines.md](huyen-guidelines.md)       | ml-systems |
+| 90  | [yan-guidelines.md](yan-guidelines.md)           | ai-engineering |
+| 88  | [beck-guidelines.md](beck-guidelines.md)         | software-craft |
+| 87  | [hickey-guidelines.md](hickey-guidelines.md)     | software-design |
+| 86  | [fowler-guidelines.md](fowler-guidelines.md)     | software-craft |
+| 85  | [carmack-guidelines.md](carmack-guidelines.md)   | software-craft |
+| 85  | [kernighan-pike-guidelines.md](kernighan-pike-guidelines.md) | software-craft |
+| 84  | [dijkstra-guidelines.md](dijkstra-guidelines.md) | software-craft |
 
 Higher priority loads first; ties are broken alphabetically.
 
@@ -64,20 +74,29 @@ Higher priority loads first; ties are broken alphabetically.
 3. Run `pytest tests/xavani_cli/test_research_guidelines.py` to verify
    the file is discovered and its frontmatter parses.
 
-## Why these eleven
+## Why these twenty-one
 
-The six AI researchers (Karpathy, LeCun, Hinton, Sutskever, Olah,
+The six original AI researchers (Karpathy, LeCun, Hinton, Sutskever, Olah,
 Hassabis) cover modern frontier AI from six complementary angles:
 engineering pragmatism, architectural conviction, foundational
 intuition, scaling philosophy, interpretability, and general-purpose
 agentic systems.
 
-The five methodologists (Hamming, Knuth, Popper, Pólya, Tukey) cover
-the research traditions every AI engineer should keep alive:
-prioritisation, software craft, falsifiability, problem decomposition,
-and exploratory data analysis. They predate modern AI but make every
-modern AI practitioner sharper.
+The four new AI/ML practitioners (Chollet, Weng, Huyen, Yan) extend
+the pack into applied AI engineering: generalisation measurement,
+LLM pipeline design, production ML systems, and LLM product patterns.
 
-Together they form the **highest-form research toolkit** the Xavani
-agent uses to reason about its own work — applied in perpetuity, by
-design, not by reminder.
+The five methodologists (Hamming, Knuth, Popper, Pólya, Tukey) cover
+the research traditions every engineer should keep alive:
+prioritisation, software craft, falsifiability, problem decomposition,
+and exploratory data analysis.
+
+The six software design and craftsmanship leaders (Beck, Hickey,
+Fowler, Carmack, Kernighan & Pike, Dijkstra) bring discipline to how
+code is written: test-driven development, simplicity over ease,
+refactoring rigour, performance awareness, Unix philosophy, and
+mathematical correctness.
+
+Together they form the **highest-form research and engineering toolkit**
+the Xavani agent uses to reason about its own work — applied in
+perpetuity, by design, not by reminder.

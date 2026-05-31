@@ -445,9 +445,48 @@ Xavani stores everything in `~/.xavani/`:
 
 ---
 
+## What's New in v0.3.0 "Perpetuity"
+
+### Research Guidelines Enforcement
+- Expanded mandatory research guidelines from 11 to 21 thinkers.
+- New thinkers: Chollet, Weng, Huyen, Yan (AI/ML), Beck, Hickey, Fowler, Carmack, Kernighan & Pike, Dijkstra (software craft).
+- Karpathy guidelines strengthened with 4 operating rules.
+- **Enforcement engine:** `xavani guidelines list|show|check` — pre-ship verification gate that checks diffs for surgical changes, eval presence, scrub compliance, and more.
+
+### New Tools
+- **Eval Harness** (`eval_harness`) — define, run, and report evaluation cases. Build the eval first.
+- **Mixture-of-Agents** (`mixture_of_agents`) — route problems through multiple models collaboratively.
+- **Computer-Use** (`computer_use`) — drive screen/keyboard/mouse via MCP server.
+- **Guidelines Gate** (`guidelines_gate`) — pre-ship verification against research principles.
+- **Budget Governor** — per-session token/cost budget monitoring with threshold warnings.
+
+### 754 Cybersecurity Skills
+- Full import from [mukul975/Anthropic-Cybersecurity-Skills](https://github.com/mukul975/Anthropic-Cybersecurity-Skills) (Apache-2.0).
+- Covers: threat hunting, incident response, cloud security, red team, forensics, and more.
+- Located under `optional-skills/cybersecurity/`.
+
+### 16 Elite Build-and-Ship Skills
+- TDD, brainstorming, code review, frontend design, MCP builder, security review.
+- Ship-it preflight, RFC writer, PRD writer, release engineering.
+- Performance profiling, incident response, observability setup.
+- Database migration playbook, secure-by-default checklist, verification before completion.
+
+### Skill Auto-Improvement
+- `xavani_learner/skill_improver.py` — proposes draft SKILL.md from successful trajectories.
+- Drafts go to `~/.xavani/skill-drafts/` for human review (never auto-written to `skills/`).
+
+### Hibernation Adapters
+- `tools/environments/hibernation.py` — hibernate/resume lifecycle for long-running sandboxes.
+
+### Budget Governor
+- Per-session token/cost budget monitoring with threshold warnings.
+- Enable via env: `XAVANI_TOKEN_BUDGET=1.0` (USD cap) or config: `session_token_budget: 1.0`.
+
+---
+
 ## Skills
 
-169 built-in skills across 27 categories. All run locally. No cloud dependency.
+754+ cybersecurity skills + 169 built-in skills across 27 categories. All run locally. No cloud dependency.
 
 | Category | Skills | Use Cases |
 |----------|--------|-----------|

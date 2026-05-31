@@ -7673,6 +7673,26 @@ class XavaniCLI:
         if output:
             print(output)
 
+    def _handle_guidelines_command(self, cmd: str):
+        """Handle the /guidelines command — delegate to the shared guidelines CLI.
+
+        The string form passed here is the user's full ``/guidelines ...``
+        including the leading slash; we strip it and hand the remainder
+        to ``guidelines_cmd.run_slash`` which returns a single formatted string.
+        """
+        from xavani_cli.guidelines_cmd import run_slash
+
+        rest = cmd.strip()
+        if rest.startswith("/"):
+            rest = rest.lstrip("/")
+        if rest.startswith("guidelines"):
+            rest = rest[len("guidelines"):].lstrip()
+        try:
+            output = run_slash(rest)
+        except Exception as exc:  # pragma: no cover - defensive
+            output = f"(._.) guidelines error: {exc}"
+        if output:
+            print(output)
     def _handle_skills_command(self, cmd: str):
         """Handle /skills slash command — delegates to xavani_cli.skills_hub."""
         from xavani_cli.skills_hub import handle_skills_slash
@@ -7958,6 +7978,8 @@ class XavaniCLI:
             self._handle_curator_command(cmd_original)
         elif canonical == "kanban":
             self._handle_kanban_command(cmd_original)
+        elif canonical == "guidelines":
+            self._handle_guidelines_command(cmd_original)
         elif canonical == "skills":
             with self._busy_command(self._slow_command_status(cmd_original)):
                 self._handle_skills_command(cmd_original)

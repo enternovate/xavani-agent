@@ -1416,6 +1416,32 @@ def init_agent(
     agent.session_estimated_cost_usd = 0.0
     agent.session_cost_status = "unknown"
     agent.session_cost_source = "none"
+
+    # ── Budget governor (WS3 feature 6) ──
+    # Instantiated only when a budget is configured (env or config).
+    # When None, the conversation loop skips budget checks (default behavior).
+    agent._budget_governor = None
+    try:
+        import os
+        budget_env = os.environ.get("XAVANI_TOKEN_BUDGET", "")
+        if budget_env:
+            budget_val = float(budget_env)
+            if budget_val > 0:
+                from agent.budget_governor import SessionBudgetGovernor
+                agent._budget_governor = SessionBudgetGovernor(budget_usd=budget_val)
+        else:
+            # Check config
+            try:
+                from xavani_cli.config import load_config
+                cfg = load_config()
+                budget_cfg = cfg.get("session_token_budget", 0)
+                if budget_cfg and float(budget_cfg) > 0:
+                    from agent.budget_governor import SessionBudgetGovernor
+                    agent._budget_governor = SessionBudgetGovernor(budget_usd=float(budget_cfg))
+            except Exception:
+                pass
+    except Exception:
+        pass
     
     # ── Ollama num_ctx injection ──
     # Ollama defaults to 2048 context regardless of the model's capabilities.

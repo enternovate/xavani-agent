@@ -24,6 +24,7 @@ CATEGORY_LABELS = {
     "apple": "Apple",
     "autonomous-ai-agents": "AI Agents",
     "blockchain": "Blockchain",
+    "cybersecurity": "Cybersecurity",
     "communication": "Communication",
     "creative": "Creative",
     "data-science": "Data Science",
@@ -116,10 +117,10 @@ def _docs_page_path(rel_dir: str, source_label: str) -> str:
     if len(parts) == 2:
         category, slug = parts
         return f"{source_dir}/{category}/{category}-{slug}"
-    if len(parts) == 3:
-        category, sub, slug = parts
-        return f"{source_dir}/{category}/{category}-{sub}-{slug}"
-    return ""
+    # 3+ levels: first part is category, rest form the slug
+    category = parts[0]
+    slug = "-".join(parts[1:])
+    return f"{source_dir}/{category}/{category}-{slug}"
 
 
 def extract_local_skills():
