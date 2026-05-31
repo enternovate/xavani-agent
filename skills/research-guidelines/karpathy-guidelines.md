@@ -33,6 +33,16 @@ sources:
 
 6. **Treat the model like software.** Tests, observability, version control, reproducibility. "It worked on my checkpoint" is not a defense. Pin random seeds. Log every hyperparameter. Diff your config files.
 
+## Operating rules
+
+1. **Think before coding.** State assumptions explicitly. If uncertain, ask. If multiple interpretations exist, present them — don't pick silently. If a simpler approach exists, say so. Push back when warranted.
+
+2. **Simplicity first.** Minimum code that solves the problem. Nothing speculative. No features beyond what was asked. No abstractions for single-use code. No "flexibility" or "configurability" that wasn't requested. If you write 200 lines and it could be 50, rewrite it.
+
+3. **Surgical changes.** Touch only what you must. Clean up only your own mess. Don't "improve" adjacent code, comments, or formatting. Don't refactor things that aren't broken. Remove imports/variables/functions your changes made unused. Every changed line should trace directly to the user's request.
+
+4. **Goal-driven execution.** Transform tasks into verifiable goals. Define success criteria before starting. For multi-step tasks, state a brief plan with per-step verification checkpoints. Strong criteria let you loop independently. Weak criteria require constant clarification.
+
 ## Heuristics for the agent
 
 - Before claiming a fix works, **show the measurement** that proves it.

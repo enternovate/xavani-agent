@@ -1597,6 +1597,28 @@ def run_conversation(
                     agent.session_cost_status = cost_result.status
                     agent.session_cost_source = cost_result.source
 
+                    # Budget governor: warn/trim at thresholds (WS3 feature 6).
+                    if not hasattr(agent, "_budget_governor"):
+                        agent._budget_governor = None  # lazy init
+                    if agent._budget_governor is not None:
+                        agent._budget_governor.record_usage({
+                            "input_tokens": canonical_usage.input_tokens,
+                            "output_tokens": canonical_usage.output_tokens,
+                            "cache_read_tokens": canonical_usage.cache_read_tokens,
+                            "cost_usd": float(cost_result.amount_usd)
+                            if cost_result.amount_usd is not None else 0.0,
+                        })
+                        if agent._budget_governor.should_warn():
+                            logger.warning(
+                                "Session budget warning: %s",
+                                agent._budget_governor.format_warning(),
+                            )
+                        if agent._budget_governor.is_over_budget():
+                            logger.warning(
+                                "Session budget exceeded: %s",
+                                agent._budget_governor.format_warning(),
+                            )
+
                     # Persist token counts to session DB for /insights.
                     # Do this for every platform with a session_id so non-CLI
                     # sessions (gateway, cron, delegated runs) cannot lose

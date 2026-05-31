@@ -11,7 +11,7 @@ Two test surfaces:
   sorting, malformed-file handling, and the cache-reload semantics
   hermetically.
 * **Integration tests** assert that the *real* bundled pack
-  (``skills/research-guidelines/``) discovers all eleven mandatory
+  (``skills/research-guidelines/``) discovers all twenty-one mandatory
   thinkers and that the composed system-prompt block contains every
   one of them — so a missing file in the bundle is caught by CI rather
   than at first agent boot.
@@ -47,6 +47,16 @@ EXPECTED_THINKERS = (
     "popper-guidelines",
     "polya-guidelines",
     "tukey-guidelines",
+    "chollet-guidelines",
+    "weng-guidelines",
+    "huyen-guidelines",
+    "yan-guidelines",
+    "beck-guidelines",
+    "hickey-guidelines",
+    "fowler-guidelines",
+    "carmack-guidelines",
+    "kernighan-pike-guidelines",
+    "dijkstra-guidelines",
 )
 
 

@@ -137,6 +137,37 @@ xavani claw migrate --overwrite  # 覆盖已有冲突
 
 ---
 
+## v0.3.0 "Perpetuity" 新功能
+
+### 研究指南执行
+- 强制性研究指南从 11 位扩展到 21 位思想家。
+- 新增思想家：Chollet、Weng、Huyen、Yan（AI/ML），Beck、Hickey、Fowler、Carmack、Kernighan & Pike、Dijkstra（软件工艺）。
+- Karpathy 指南增加了 4 条操作规则。
+- **执行引擎：** `xavani guidelines list|show|check` — 发布前验证门控。
+
+### 新工具
+- **Eval Harness** (`eval_harness`) — 定义、运行和报告评估用例。
+- **Mixture-of-Agents** (`mixture_of_agents`) — 通过多个模型协作路由问题。
+- **Computer-Use** (`computer_use`) — 通过 MCP 服务器驱动屏幕/键盘/鼠标。
+- **Guidelines Gate** (`guidelines_gate`) — 发布前验证。
+- **Budget Governor** — 每会话令牌/成本预算监控。
+
+### 754 个网络安全技能
+- 从 [mukul975/Anthropic-Cybersecurity-Skills](https://github.com/mukul975/Anthropic-Cybersecurity-Skills) 完整导入（Apache-2.0）。
+- 涵盖：威胁狩猎、事件响应、云安全、红队、取证等。
+
+### 16 个精英构建和发布技能
+- TDD、头脑风暴、代码审查、前端设计、MCP 构建器、安全审查。
+- 发布前检查、RFC 编写器、PRD 编写器、发布工程。
+- 性能分析、事件响应、可观测性设置。
+- 数据库迁移手册、默认安全检查清单、完成前验证。
+
+### 预算管理器
+- 每会话令牌/成本预算监控，带阈值警告。
+- 通过环境变量启用：`XAVANI_TOKEN_BUDGET=1.0`（美元上限）或配置：`session_token_budget: 1.0`。
+
+---
+
 ## 贡献
 
 欢迎贡献！请参阅 [贡献指南](https://xavani-agent.nousresearch.com/docs/developer-guide/contributing) 了解开发设置、代码风格和 PR 流程。

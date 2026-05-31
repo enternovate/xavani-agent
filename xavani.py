@@ -105,7 +105,7 @@ logger = logging.getLogger(__name__)
 # Constants
 # ---------------------------------------------------------------------------
 
-VERSION: str = "0.2.0"
+VERSION: str = "0.3.0"
 PRONUNCIATION: str = "shahr-vaa-nee"
 PRODUCT_NAME: str = "Xavani Agent"
 VENDOR: str = "Enternovate"
