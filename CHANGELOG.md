@@ -2,6 +2,37 @@
 
 All notable changes to Xavani Agent are documented in this file.
 
+## [0.6.0] - 2026-06-02
+
+### Added
+
+#### Zero-cost cognition (deterministic, no-LLM detection)
+- `tools/tool_prefilter.py` — deterministic per-turn tool pre-filter; selects the relevant tool subset from the user's message via keyword/intent rules, shrinking the function-call schema and cutting input-token cost. Never hides a needed tool (falls back to the full set; essentials always included).
+- `agent/detectors.py` — pure-Python detector registry (scrub, stub-guard, secret-leak) with a uniform `Verdict` interface.
+- `skills/research-guidelines/DETERMINISM-RULE.md` — the R10 "deterministic-first" rule (LLM is for generation only; never for routing/detection/governance).
+- Enforcement: `tests/agent/test_deterministic_no_llm.py` fails CI if any detection/routing module imports a model client.
+
+#### New tools
+- `read_document` (`tools/document_tools.py`) — extract text from `.txt`/`.md`/`.csv`/`.json` natively and `.pdf`/`.docx`/`.xlsx`/`.pptx` via optional parsers (graceful missing-dep messages).
+- `tools/mcp_server.py` — expose the tool registry over the Model Context Protocol; schemas reused verbatim, calls dispatch through the agent's own path.
+
+#### Full-stack security
+- `tools/egress_policy.py` — network egress allowlist with optional default-deny, configured via `XAVANI_EGRESS_ALLOWLIST` / `XAVANI_EGRESS_DEFAULT_DENY`.
+- `tools/sandbox_hardening.py` — OS resource caps (address space / CPU time / open files, never raised above the hard cap) plus Linux-gated seccomp/Landlock status detection.
+- `.github/workflows/security.yml` — Bandit, Gitleaks, Semgrep, pip-audit, Trivy, and the R10 invariant.
+- `.pre-commit-config.yaml` — Ruff, Gitleaks, the R10 check, and a scrub check.
+
+#### Quality & docs
+- `tests/test_parity_matrix.py` — capability parity matrix (tools, platforms, runtimes, subsystems, registry) + cyber-skills index regression + deliberate-stub guard.
+- Unit tests for every new module (102 passing across the additions).
+- Website: a v0.4.0 capabilities doc page wired into the Features sidebar.
+
+### Changed
+- Version bumped to 0.6.0 (`pyproject.toml`, `xavani_cli.__version__`, `xavani.VERSION`).
+
+### Notes
+- Detection/routing remains model-free (R10), enforced in CI. Deliberate stubs (`skills_hub`, `weixin`) and agent identity are unchanged.
+
 ## [0.3.0] - 2025-05-30
 
 ### Added
