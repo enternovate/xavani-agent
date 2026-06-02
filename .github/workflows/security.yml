@@ -2,9 +2,12 @@
 # MIT License -- See LICENSE file for full terms.
 # Built by Enternovate -- Open source. Private. Local.
 #
-# Security CI (v0.4.0 roadmap U51): SAST + secret + dependency + container scanning.
-# Complements osv-scanner.yml and supply-chain-audit.yml. Non-blocking by default
-# (continue-on-error) so it reports without gating; flip to blocking once clean.
+# Security CI (v0.4.0 roadmap U51): SAST + secret + dependency scanning.
+# Complements osv-scanner.yml and supply-chain-audit.yml. Advisory (continue-on-error)
+# so it reports without gating; flip to blocking once consistently clean.
+#
+# Note: the R10 "deterministic-first" invariant (tests/agent/test_deterministic_no_llm.py)
+# is enforced by the main test suite (tests.yml), which installs full deps and runs it.
 
 name: security
 
@@ -64,27 +67,3 @@ jobs:
       - run: pip install pip-audit==2.7.3
       - run: pip-audit --strict --progress-spinner off || true
         continue-on-error: true
-
-  fs-trivy:
-    name: Trivy (filesystem + misconfig)
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: aquasecurity/trivy-action@0.28.0
-        with:
-          scan-type: fs
-          scanners: vuln,secret,misconfig
-          severity: HIGH,CRITICAL
-          exit-code: "0"
-        continue-on-error: true
-
-  determinism:
-    name: R10 deterministic-first invariant
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-      - run: pip install pytest pytest-xdist pyyaml
-      - run: python -m pytest tests/agent/test_deterministic_no_llm.py tests/tools/test_tool_prefilter.py -q
