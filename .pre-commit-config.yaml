@@ -1,0 +1,52 @@
+# Copyright (c) 2025-2026 Enternovate.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+#
+# Pre-commit hooks for Xavani Agent (v0.4.0 roadmap U85).
+# Install:  pip install pre-commit && pre-commit install
+# Run all:  pre-commit run --all-files
+#
+# Lint/format use Ruff (already the project's configured linter, see pyproject.toml).
+# A local hook enforces R10 (detection/routing stays LLM-free) before each commit.
+
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-toml
+      - id: check-added-large-files
+        args: ["--maxkb=1024"]
+      - id: check-merge-conflict
+      - id: detect-private-key
+
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.9.4
+    hooks:
+      - id: ruff
+        args: ["--fix"]
+      - id: ruff-format
+
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.21.2
+    hooks:
+      - id: gitleaks
+
+  - repo: local
+    hooks:
+      # R10: detection/routing modules must never import a model client.
+      - id: deterministic-no-llm
+        name: R10 deterministic-first (no LLM in detection paths)
+        entry: python3 -m pytest tests/agent/test_deterministic_no_llm.py -q
+        language: system
+        pass_filenames: false
+        files: '^(agent/|tools/|xavani_learner/).*\.py$'
+      # Scrub: no new Nous/Hermes references may be committed (only LICENSE/README attribution).
+      - id: scrub-upstream-refs
+        name: scrub upstream references (Nous/Hermes)
+        entry: bash -c 'files=$(echo "$@" | tr " " "\n" | grep -vE "^(LICENSE|README)"); [ -z "$files" ] && exit 0; ! grep -rniE "\\b(nous|hermes)\\b" $files' --
+        language: system
+        pass_filenames: true
+        exclude: '^(LICENSE|README.*|.*/ATTRIBUTION\.md|.*/NOTICE)$'
