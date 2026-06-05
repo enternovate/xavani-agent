@@ -38,6 +38,7 @@ def cmd_operator(args: Any) -> None:
         "approve": _cmd_approve,
         "reject": _cmd_reject,
         "cycle": _cmd_cycle,
+        "run": _cmd_run,
     }.get(command)
     if handler is None:
         _print_usage()
@@ -148,6 +149,35 @@ def _cmd_cycle(args: Any) -> None:
         print(f"Running one operator cycle for {cfg.product.name} (safe dry steps)…")
         run_cycle(cfg, OperatorState(), sender=print)
         print("  (safe Tier-0/1 stubs ran; pass --execute for real build+promote effectors)")
+
+
+def _cmd_run(args: Any) -> None:
+    cfg = _load_or_report(args)
+    if cfg is None:
+        return
+    from xavani_operator.continuous import run_continuous
+    from xavani_operator.loop import run_cycle
+    from xavani_operator.state import OperatorState
+    from xavani_operator.workstreams.build import register as register_build
+    from xavani_operator.workstreams.promote import register as register_promote
+
+    register_build()
+    register_promote()
+    state = OperatorState()
+    iterations = int(getattr(args, "iterations", 1) or 1)
+    interval = float(getattr(args, "interval", 60.0))
+    print(
+        f"Operator running continuously for {cfg.product.name} — "
+        f"{iterations} tick(s), {interval:g}s interval (honours quiet hours + backpressure)…"
+    )
+    outcomes = run_continuous(
+        cfg, state,
+        run_once=lambda: run_cycle(cfg, state, sender=print),
+        iterations=iterations,
+        interval=interval,
+    )
+    for i, outcome in enumerate(outcomes, 1):
+        print(f"  tick {i}: {outcome['status']}")
 
 
 def _cmd_perceive(args: Any) -> None:
@@ -270,4 +300,4 @@ def _print_usage() -> None:
     print("  approve    approve a proposal: xavani operator approve <id>")
     print("  reject     reject a proposal:  xavani operator reject <id>")
     print("  cycle      run one full Perceive→…→Learn cycle")
-    print("  (continuous `run` mode + watchers arrive in M6)")
+    print("  run        run continuously (quiet-hours + backpressure aware)")

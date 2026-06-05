@@ -11012,6 +11012,18 @@ def main():
         "--execute", action="store_true",
         help="Use real build effectors (stage briefs, run tests, commit, draft PRs)",
     )
+    op_run = operator_subparsers.add_parser(
+        "run", help="Run continuously (quiet-hours + backpressure aware)"
+    )
+    op_run.add_argument(
+        "--path", default=".", help="Directory (or path) of the product config"
+    )
+    op_run.add_argument(
+        "--iterations", type=int, default=1, help="Number of cycle ticks to run"
+    )
+    op_run.add_argument(
+        "--interval", type=float, default=60.0, help="Seconds between ticks"
+    )
     operator_parser.set_defaults(func=cmd_operator)
 
     # =========================================================================
