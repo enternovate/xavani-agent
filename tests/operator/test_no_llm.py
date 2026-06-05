@@ -57,6 +57,8 @@ DETERMINISTIC_MODULES = [
     "xavani_operator/workstreams/build_effectors.py",
     "xavani_operator/workstreams/promote.py",
     "xavani_operator/workstreams/promote_effectors.py",
+    "xavani_operator/workflow.py",
+    "xavani_operator/continuous.py",
 ]
 
 FORBIDDEN_IMPORT_ROOTS = {
