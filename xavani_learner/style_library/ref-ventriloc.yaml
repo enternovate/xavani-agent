@@ -1,0 +1,35 @@
+name: ref-ventriloc
+title: Ventriloc · Studio
+inspiration: inspired by https://ventriloc.ca/en/ (principles only)
+tags:
+- agency
+- editorial
+- motion
+- portfolio
+- crafted
+- bold
+- typography
+- data
+- experts
+- microsoft
+- team
+- power
+- ventriloc
+layout: editorial grid meets motion; strong case-study storytelling
+typography: expressive display + disciplined body; confident hierarchy
+color: refined palette with a punchy accent
+motion: smooth, crafted transitions and hovers
+whitespace: generous and intentional
+imagery: high-craft project visuals, full-bleed
+feel:
+- crafted
+- confident
+- modern
+- polished
+avoid:
+- template portfolios
+- generic card grids
+- stock photography
+notes: 'observed via live fetch: ventriloc | Trusted Experts in Power BI, Microsoft
+  Fabric &amp; Azure — Turn your data into a growth engine with advanced business
+  intelligence solutions tailored to your success.'

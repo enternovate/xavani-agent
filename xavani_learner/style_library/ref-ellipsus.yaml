@@ -1,0 +1,36 @@
+name: ref-ellipsus
+title: Ellipsus · Writing
+inspiration: inspired by https://ellipsus.com/ (principles only)
+tags:
+- editorial
+- writing
+- calm
+- literary
+- soft
+- reading
+- minimal
+- considered
+- writers
+- ellipsus
+- features
+- help
+- free
+- what
+layout: reading-first, generous columns, gentle section rhythm
+typography: refined serif/sans pairing, real typographic care
+color: soft paper neutrals with a calm accent
+motion: restrained; quiet text reveals
+whitespace: generous margins, unhurried pacing
+imagery: subtle, supportive; never loud
+feel:
+- calm
+- literary
+- considered
+- human
+avoid:
+- loud gradients
+- dense dashboards
+- gimmicky motion
+notes: 'observed via live fetch: Ellipsus | Collaborative writing software — Write,
+  edit, and collaborate on any device. Ellipsus is a principled alternative to Google
+  Docs—built for writers, by writers. Sign up for free.'

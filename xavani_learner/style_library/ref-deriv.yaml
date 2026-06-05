@@ -1,0 +1,32 @@
+name: ref-deriv
+title: Deriv · Trading App
+inspiration: inspired by https://app.deriv.com/ (principles only)
+tags:
+- fintech
+- trading
+- dashboard
+- data
+- dense
+- functional
+- app
+- charts
+- deriv
+layout: multi-panel trading workspace, persistent chart, scannable tables, clear primary
+  CTAs
+typography: compact legible UI sans, tabular figures for numbers
+color: dark/neutral base with semantic gain/loss accents
+motion: instant feedback, live tickers; flourish-free
+whitespace: economical; information density with clear grouping
+imagery: candlestick/line charts and data viz over photography
+feel:
+- functional
+- fast
+- trustworthy
+- pro
+avoid:
+- marketing fluff in-app
+- huge empty hero
+- decorative animation
+notes: 'observed via live fetch: Deriv App | Deriv — Deriv gives everyone an easy
+  way to participate in the financial markets. Trade with as little as $1 USD on major
+  currencies, stocks, indices, and commodities.'

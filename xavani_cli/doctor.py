@@ -851,6 +851,26 @@ def run_doctor(args):
     except Exception:
         pass
 
+    _section("Operator")
+    try:
+        from xavani_operator.scaffold import CONFIG_FILENAME
+        from xavani_operator.state import default_operator_dir
+
+        op_cfg = Path.cwd() / CONFIG_FILENAME
+        if op_cfg.exists():
+            check_ok(f"{CONFIG_FILENAME} present in this directory")
+        else:
+            check_info(
+                f"No {CONFIG_FILENAME} here — run `xavani operator init` to plug in a product"
+            )
+        op_dir = default_operator_dir()
+        if op_dir.exists():
+            check_ok(f"operator state dir exists ({op_dir})")
+        else:
+            check_info(f"operator state dir created on first cycle ({op_dir})")
+    except Exception as exc:  # pragma: no cover - defensive: operator must never break doctor
+        check_warn("operator package not importable", str(exc))
+
     _section("Directory Structure")
     xavani_home = XAVANI_HOME
     if xavani_home.exists():

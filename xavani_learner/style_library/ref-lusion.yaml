@@ -1,0 +1,36 @@
+name: ref-lusion
+title: Lusion · Immersive Studio
+inspiration: inspired by https://lusion.co/ (principles only)
+tags:
+- immersive
+- webgl
+- 3d
+- motion
+- cinematic
+- experimental
+- agency
+- award
+- development
+- lusion
+- experiences
+- digital
+- work
+- interactive
+layout: full-bleed 3D scenes, scroll-choreographed, unexpected composition
+typography: oversized display, dramatic scale contrast over motion
+color: rich dark canvas with vivid, luminous accents
+motion: signature WebGL/canvas physics + parallax; motion IS the brand
+whitespace: negative space framing immersive scenes
+imagery: bespoke 3D and shader work; nothing templated
+feel:
+- immersive
+- bold
+- memorable
+- crafted
+avoid:
+- static templates
+- stock sliders
+- safe centered layouts
+notes: 'observed via live fetch: Lusion - Award Winning 3D and Interactive Web Studio
+  — We design and produce 3D visual storytelling, immersive websites, and interactive
+  digital experiences that help brands stand out online.'

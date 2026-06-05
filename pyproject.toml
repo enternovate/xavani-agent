@@ -217,6 +217,7 @@ py-modules = ["run_agent", "model_tools", "toolsets", "batch_runner", "trajector
 
 [tool.setuptools.package-data]
 xavani_cli = ["web_dist/**/*", "tui_dist/**/*", "scripts/install.sh", "scripts/install.ps1"]
+xavani_learner = ["style_library/*.yaml"]
 gateway = ["assets/**/*"]
 plugins = [
   "*/dashboard/manifest.json",
@@ -225,7 +226,7 @@ plugins = [
 ]
 
 [tool.setuptools.packages.find]
-include = ["agent", "agent.*", "tools", "tools.*", "xavani_cli", "gateway", "gateway.*", "tui_gateway", "tui_gateway.*", "cron", "acp_adapter", "plugins", "plugins.*", "providers", "providers.*", "xavani_observability", "xavani_observability.*", "xavani_runtime", "xavani_runtime.*"]
+include = ["agent", "agent.*", "tools", "tools.*", "xavani_cli", "gateway", "gateway.*", "tui_gateway", "tui_gateway.*", "cron", "acp_adapter", "plugins", "plugins.*", "providers", "providers.*", "xavani_observability", "xavani_observability.*", "xavani_runtime", "xavani_runtime.*", "xavani_operator", "xavani_operator.*", "xavani_learner", "xavani_learner.*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

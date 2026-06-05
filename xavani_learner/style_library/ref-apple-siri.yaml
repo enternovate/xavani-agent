@@ -1,0 +1,38 @@
+name: ref-apple-siri
+title: Apple · Siri
+inspiration: inspired by https://www.apple.com/siri/ (principles only; no assets copied)
+tags:
+- minimal
+- clarity
+- premium
+- product
+- whitespace
+- gradient
+- scroll
+- calm
+- apple
+- siri
+- what
+- everyday
+- tasks
+- movies
+- calls
+layout: centered product hero, one idea per viewport, scroll-reveal sections
+typography: huge confident SF-style headings, tight hierarchy, sparse body
+color: light canvas with a luminous multi-stop gradient as the signature accent
+motion: fluid gradient/orb morphing, gentle scroll-tied reveals; smooth and premium
+whitespace: vast; the product floats in space
+imagery: photoreal device renders, glowing abstract gradients
+feel:
+- calm
+- premium
+- precise
+- magical
+avoid:
+- clutter
+- stock photos
+- dense text
+- generic 3-card rows
+notes: 'observed via live fetch: Siri - Apple — Siri is an easy way to make calls,
+  send texts, use apps, and get things done with just your voice. And Siri is the
+  most private intelligent assistant.'

@@ -1,0 +1,25 @@
+name: principle-micro-interaction-delight
+title: Principle · Micro-interaction Delight
+inspiration: distilled from the eleken 'best website design examples' collection
+tags:
+- micro-interaction
+- motion
+- delight
+- playful
+- feedback
+- polish
+layout: ordinary layouts elevated by considered interaction
+typography: clear, supportive
+color: brand-led with lively accents
+motion: purposeful hover/click/scroll micro-interactions that delight and inform
+whitespace: balanced
+imagery: supports interaction
+feel:
+- delightful
+- polished
+- responsive
+avoid:
+- janky motion
+- decoration-only animation
+- no feedback states
+notes: ''

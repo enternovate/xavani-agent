@@ -5774,6 +5774,20 @@ def cmd_doctor(args):
     run_doctor(args)
 
 
+def cmd_operator(args):
+    """Autonomous operator: build + promote a product, you approve (v0.7.0)."""
+    from xavani_operator.cli import cmd_operator as _run
+
+    _run(args)
+
+
+def cmd_learn(args):
+    """Teach Xavani your taste & preferences; inspect what it's learned (v0.7.0)."""
+    from xavani_learner.learn_cli import cmd_learn as _run
+
+    _run(args)
+
+
 def cmd_dump(args):
     """Dump setup summary for support/debugging."""
     from xavani_cli.dump import run_dump
@@ -10065,8 +10079,8 @@ _BUILTIN_SUBCOMMANDS = frozenset(
         "computer-use",
         "config", "cron", "curator", "dashboard", "debug", "doctor",
         "dump", "fallback", "gateway", "hooks", "import", "insights",
-        "kanban", "login", "logout", "logs", "lsp", "mcp", "memory",
-        "model", "pairing", "plugins", "postinstall", "profile", "proxy",
+        "kanban", "learn", "login", "logout", "logs", "lsp", "mcp", "memory",
+        "model", "operator", "pairing", "plugins", "postinstall", "profile", "proxy",
         "send", "sessions", "setup",
         "skills", "slack", "status", "tools", "uninstall", "update",
         "version", "webhook", "whatsapp", "chat",
@@ -10924,6 +10938,102 @@ def main():
     _add_accept_hooks_flag(cron_tick)
     _add_accept_hooks_flag(cron_parser)
     cron_parser.set_defaults(func=cmd_cron)
+
+    # =========================================================================
+    # operator command (autonomy layer — build + promote, you approve)
+    # =========================================================================
+    operator_parser = subparsers.add_parser(
+        "operator",
+        help="Autonomous operator: it builds + promotes, you approve",
+        description=(
+            "Plug Xavani into a product (a repo + xavani.product.yaml); it "
+            "proposes plans you approve, then builds and promotes."
+        ),
+    )
+    operator_subparsers = operator_parser.add_subparsers(dest="operator_command")
+    op_init = operator_subparsers.add_parser(
+        "init", help="Scaffold a starter xavani.product.yaml"
+    )
+    op_init.add_argument("--name", default=None, help="Product name")
+    op_init.add_argument(
+        "--path", default=".", help="Directory to write the config into"
+    )
+    op_init.add_argument(
+        "--force", action="store_true", help="Overwrite an existing config"
+    )
+    op_status = operator_subparsers.add_parser(
+        "status", help="Show the operator's view of this product"
+    )
+    op_status.add_argument(
+        "--path", default=".", help="Directory (or path) of the product config"
+    )
+    op_perceive = operator_subparsers.add_parser(
+        "perceive", help="Print the deterministic state snapshot"
+    )
+    op_perceive.add_argument(
+        "--path", default=".", help="Directory (or path) of the product config"
+    )
+    op_decide = operator_subparsers.add_parser(
+        "decide", help="Rank opportunities (dry-run; no action)"
+    )
+    op_decide.add_argument(
+        "--path", default=".", help="Directory (or path) of the product config"
+    )
+    op_decide.add_argument(
+        "--dry-run", action="store_true", help="Rank only; take no action (default)"
+    )
+    op_propose = operator_subparsers.add_parser(
+        "propose", help="Make a tier-tagged proposal from the top opportunity"
+    )
+    op_propose.add_argument(
+        "--path", default=".", help="Directory (or path) of the product config"
+    )
+    op_proposals = operator_subparsers.add_parser(
+        "proposals", help="List proposals (pending by default)"
+    )
+    op_proposals.add_argument(
+        "--all", action="store_true", help="Show proposals of every status"
+    )
+    op_approve = operator_subparsers.add_parser(
+        "approve", help="Approve a proposal by id"
+    )
+    op_approve.add_argument("proposal_id", help="Proposal id to approve")
+    op_reject = operator_subparsers.add_parser(
+        "reject", help="Reject a proposal by id"
+    )
+    op_reject.add_argument("proposal_id", help="Proposal id to reject")
+    op_cycle = operator_subparsers.add_parser(
+        "cycle", help="Run one full Perceive→…→Learn cycle"
+    )
+    op_cycle.add_argument(
+        "--path", default=".", help="Directory (or path) of the product config"
+    )
+    op_cycle.add_argument(
+        "--execute", action="store_true",
+        help="Use real build effectors (stage briefs, run tests, commit, draft PRs)",
+    )
+    operator_parser.set_defaults(func=cmd_operator)
+
+    # =========================================================================
+    # learn command (teach Xavani taste & preferences; the learning layer)
+    # =========================================================================
+    learn_parser = subparsers.add_parser(
+        "learn",
+        help="Teach Xavani your taste & preferences (and inspect what it learned)",
+    )
+    learn_subparsers = learn_parser.add_subparsers(dest="learn_command")
+    le_url = learn_subparsers.add_parser("url", help="Learn a design direction from a website")
+    le_url.add_argument("target", help="URL to learn from")
+    le_file = learn_subparsers.add_parser("file", help="Learn from a local reference file")
+    le_file.add_argument("target", help="File path to learn from")
+    le_pref = learn_subparsers.add_parser(
+        "pref", aliases=["preference"], help="Record a preference"
+    )
+    le_pref.add_argument("target", help='Preference text, e.g. "I prefer dark editorial layouts"')
+    learn_subparsers.add_parser("list", help="List learned profiles + preferences")
+    le_show = learn_subparsers.add_parser("show", help="Show a profile's details")
+    le_show.add_argument("target", help="Profile name (see `xavani learn list`)")
+    learn_parser.set_defaults(func=cmd_learn)
 
     # =========================================================================
     # webhook command
