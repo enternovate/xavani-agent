@@ -52,8 +52,11 @@ DETERMINISTIC_MODULES = [
     "xavani_operator/learn.py",
     "xavani_operator/loop.py",
     "xavani_operator/workstreams/build.py",
-    # Even the real effectors hardcode no model client — the code agent is injected.
+    # Even the real effectors hardcode no model client — the code/content agent and
+    # channel sender are injected.
     "xavani_operator/workstreams/build_effectors.py",
+    "xavani_operator/workstreams/promote.py",
+    "xavani_operator/workstreams/promote_effectors.py",
 ]
 
 FORBIDDEN_IMPORT_ROOTS = {
