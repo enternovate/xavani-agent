@@ -1,0 +1,33 @@
+name: ref-mona-sans
+title: Mona Sans · Type Specimen
+inspiration: inspired by https://github.com/mona-sans (principles only)
+tags:
+- typography
+- type
+- specimen
+- variable-fonts
+- monochrome
+- bold
+- minimal
+- nbsp
+- github
+- them
+- sans
+- security
+- flex
+layout: type fills the canvas; interactive weight/width specimen controls
+typography: the product IS the type — massive variable-font play
+color: monochrome; the letters carry the design
+motion: axis animation (weight/width), hover variation
+whitespace: stark; glyphs breathe alone
+imagery: none — pure type
+feel:
+- bold
+- precise
+- expressive
+avoid:
+- busy backgrounds
+- competing imagery
+- decorative chrome
+notes: 'observed via live fetch: Mona Sans &amp; Hubot Sans · GitHub — Two variable,
+  open source fonts from GitHub.'

@@ -1,0 +1,36 @@
+name: ref-mode
+title: Mode · Analytics
+inspiration: inspired by https://mode.com/ (principles only)
+tags:
+- data
+- analytics
+- saas
+- clean
+- professional
+- dashboard
+- b2b
+- clarity
+- mode
+- analysis
+- modern
+- business
+- platform
+- dashboards
+layout: clear marketing hierarchy up top, confident product/data screenshots
+typography: clean modern sans, strong hierarchy, legible at density
+color: professional palette, restrained accent, plenty of light
+motion: subtle, credible; supports comprehension
+whitespace: comfortable; structured
+imagery: real product UI + crisp data viz
+feel:
+- clear
+- professional
+- credible
+- modern
+avoid:
+- decorative fluff
+- low-contrast text
+- stock business photos
+notes: 'observed via live fetch: Modern Business Intelligence | Better data, better
+  decisions — Mode is a collaborative data platform that combines SQL, R, Python,
+  and visual analytics in one place. Connect, analyze, and share, faster.'
