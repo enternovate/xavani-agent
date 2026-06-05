@@ -128,19 +128,26 @@ def _cmd_cycle(args: Any) -> None:
     from xavani_operator.state import OperatorState
     from xavani_operator.workstreams.build import build_handlers
     from xavani_operator.workstreams.build import register as register_build
+    from xavani_operator.workstreams.promote import promote_handlers
+    from xavani_operator.workstreams.promote import register as register_promote
 
-    register_build()  # taste-integrated planning for build work
-    handlers = None
+    register_build()    # taste-integrated planning for build work
+    register_promote()  # brand-voiced planning for promote work
     if getattr(args, "execute", False):
         from xavani_operator.workstreams.build_effectors import tool_build_effectors
+        from xavani_operator.workstreams.promote_effectors import tool_promote_effectors
 
-        handlers = build_handlers(tool_build_effectors(cfg.product.repo or "."))
-        print(f"Running one operator cycle for {cfg.product.name} (real build effectors)…")
+        state = OperatorState()
+        handlers = {
+            **build_handlers(tool_build_effectors(cfg.product.repo or ".")),
+            **promote_handlers(tool_promote_effectors(cfg, state=state)),
+        }
+        print(f"Running one operator cycle for {cfg.product.name} (real build+promote effectors)…")
+        run_cycle(cfg, state, handlers=handlers, sender=print)
     else:
         print(f"Running one operator cycle for {cfg.product.name} (safe dry steps)…")
-    run_cycle(cfg, OperatorState(), handlers=handlers, sender=print)
-    if not getattr(args, "execute", False):
-        print("  (safe Tier-0/1 stubs ran; pass --execute to use real build effectors)")
+        run_cycle(cfg, OperatorState(), sender=print)
+        print("  (safe Tier-0/1 stubs ran; pass --execute for real build+promote effectors)")
 
 
 def _cmd_perceive(args: Any) -> None:
