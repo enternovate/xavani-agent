@@ -5788,6 +5788,13 @@ def cmd_learn(args):
     _run(args)
 
 
+def cmd_finance(args):
+    """Track money + audit (ZAR/VAT/SARS); the agent instructs, you pay (v0.7.0)."""
+    from xavani_operator.finance.cli import cmd_finance as _run
+
+    _run(args)
+
+
 def cmd_dump(args):
     """Dump setup summary for support/debugging."""
     from xavani_cli.dump import run_dump
@@ -10079,7 +10086,7 @@ _BUILTIN_SUBCOMMANDS = frozenset(
         "computer-use",
         "config", "cron", "curator", "dashboard", "debug", "doctor",
         "dump", "fallback", "gateway", "hooks", "import", "insights",
-        "kanban", "learn", "login", "logout", "logs", "lsp", "mcp", "memory",
+        "finance", "kanban", "learn", "login", "logout", "logs", "lsp", "mcp", "memory",
         "model", "operator", "pairing", "plugins", "postinstall", "profile", "proxy",
         "send", "sessions", "setup",
         "skills", "slack", "status", "tools", "uninstall", "update",
@@ -11046,6 +11053,35 @@ def main():
     le_show = learn_subparsers.add_parser("show", help="Show a profile's details")
     le_show.add_argument("target", help="Profile name (see `xavani learn list`)")
     learn_parser.set_defaults(func=cmd_learn)
+
+    # =========================================================================
+    # finance command (M-Biz finance/audit core — ZAR/VAT/SARS, instruct-not-execute)
+    # =========================================================================
+    finance_parser = subparsers.add_parser(
+        "finance",
+        help="Track money + audit (ZAR/VAT/SARS); the agent instructs, you pay",
+    )
+    finance_subparsers = finance_parser.add_subparsers(dest="finance_command")
+    fin_add = finance_subparsers.add_parser("add", help="Record an income/expense entry")
+    fin_add.add_argument("kind", choices=["income", "expense"])
+    fin_add.add_argument("amount", help="Amount excl VAT, e.g. 1500 or R1,500.00")
+    fin_add.add_argument("--category", default=None)
+    fin_add.add_argument("--party", default="")
+    fin_add.add_argument("--ref", default="")
+    fin_add.add_argument("--desc", default="")
+    fin_add.add_argument("--date", default=None)
+    fin_add.add_argument("--unpaid", action="store_true")
+    finance_subparsers.add_parser("ledger", help="Show ledger entries + totals + VAT due")
+    finance_subparsers.add_parser("audit", help="Reconcile: VAT due, uncategorized, unpaid, anomalies")
+    fin_pay = finance_subparsers.add_parser("pay", help="Generate a payment instruction (you execute)")
+    fin_pay.add_argument("--method", choices=["eft", "link"], default="eft")
+    fin_pay.add_argument("--to", default="")
+    fin_pay.add_argument("--account", default="")
+    fin_pay.add_argument("--branch", default="")
+    fin_pay.add_argument("--rail", default="")
+    fin_pay.add_argument("--amount", default="0")
+    fin_pay.add_argument("--ref", default="")
+    finance_parser.set_defaults(func=cmd_finance)
 
     # =========================================================================
     # webhook command
