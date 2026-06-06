@@ -59,6 +59,13 @@ DETERMINISTIC_MODULES = [
     "xavani_operator/workstreams/promote_effectors.py",
     "xavani_operator/workflow.py",
     "xavani_operator/continuous.py",
+    "xavani_operator/capability.py",
+    # Finance is exact + deterministic — money must never go near a model (R10).
+    "xavani_operator/finance/money.py",
+    "xavani_operator/finance/ledger.py",
+    "xavani_operator/finance/categories.py",
+    "xavani_operator/finance/audit.py",
+    "xavani_operator/finance/payments.py",
 ]
 
 FORBIDDEN_IMPORT_ROOTS = {
