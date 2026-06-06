@@ -27,6 +27,9 @@ LEARNER_MODULES = [
     "xavani_learner/taste.py",
     "xavani_learner/preferences.py",
     "xavani_learner/style_learn.py",
+    "xavani_learner/design_principles.py",
+    "xavani_learner/design_review.py",
+    "xavani_learner/design.py",
 ]
 
 FORBIDDEN_IMPORT_ROOTS = {"openai", "anthropic", "litellm", "cohere", "mistralai", "groq", "together"}
