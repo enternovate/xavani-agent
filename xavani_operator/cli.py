@@ -39,6 +39,10 @@ def cmd_operator(args: Any) -> None:
         "reject": _cmd_reject,
         "cycle": _cmd_cycle,
         "run": _cmd_run,
+        "quantum": _cmd_quantum,
+        "serve": _cmd_serve,
+        "pause": _cmd_pause,
+        "resume": _cmd_resume,
     }.get(command)
     if handler is None:
         _print_usage()
@@ -219,6 +223,104 @@ def _cmd_decide(args: Any) -> None:
     intent = decide(opps, cfg)
     top = intent.opportunity
     print(f"→ would act on: {top.workstream}/{top.kind}")
+
+
+def _cmd_quantum(args: Any) -> None:
+    """Show the Quantum Decision Cortex's collapse over the current opportunities."""
+    cfg = _load_or_report(args)
+    if cfg is None:
+        return
+    from xavani_operator.opportunities import detect
+    from xavani_operator.perceive import perceive
+    from xavani_operator.quantum import decide as quantum_decide
+
+    opps = detect(perceive(cfg), cfg)
+    if not opps:
+        print("No opportunities to decide between yet.")
+        return
+    decision = quantum_decide(opps)
+    print("⚛  Quantum decision — superposition → simulate → interfere → collapse")
+    print(f"   {len(opps)} candidate(s), consequence-weighted, deterministic (zero-LLM)\n")
+    print(decision.summary())
+
+
+# --- 24/7 daemon + kill-switch (M7 / v1.0.0 ③) ------------------------------
+
+def _cmd_pause(args: Any) -> None:
+    """Engage the kill-switch: the 24/7 daemon idles until resumed."""
+    from xavani_operator.killswitch import pause
+
+    reason = getattr(args, "reason", "") or ""
+    pause(reason)
+    print("⏸  Operator paused — the 24/7 daemon will idle (no actions) until you resume.")
+    if reason:
+        print(f"   reason: {reason}")
+    print("   Resume with:  xavani operator resume")
+
+
+def _cmd_resume(args: Any) -> None:
+    """Release the kill-switch."""
+    from xavani_operator.killswitch import resume
+
+    if resume():
+        print("▶  Operator resumed — it will act again on the next tick.")
+    else:
+        print("Operator was not paused — nothing to resume.")
+
+
+def _cmd_serve(args: Any) -> None:
+    """Run the operator continuously as a managed 24/7 daemon (heartbeat + kill-switch)."""
+    cfg = _load_or_report(args)
+    if cfg is None:
+        return
+    from xavani_operator import daemon, killswitch
+    from xavani_operator.loop import run_cycle
+    from xavani_operator.state import OperatorState
+
+    # Wire the Oracle's downfall detector into the shared registry for this run.
+    try:
+        from xavani_wisdom.detectors import register_downfall
+
+        register_downfall()
+    except Exception:  # pragma: no cover - never block serving on the optional wiring
+        pass
+
+    state = OperatorState()
+    dry = bool(getattr(args, "dry_run", False))
+    interval = float(getattr(args, "interval", 60.0))
+    iterations = int(getattr(args, "iterations", 0) or 0)
+    max_iters = 1 if dry else (iterations if iterations > 0 else None)
+
+    def tick() -> dict:
+        if dry:
+            from xavani_operator.opportunities import detect
+            from xavani_operator.perceive import perceive
+
+            opps = detect(perceive(cfg), cfg)
+            return {"acted": False, "note": f"dry-run: perceived {len(opps)} opportunity(ies)"}
+        report = run_cycle(cfg, state)
+        return {"acted": bool(report.executed or report.proposed), "note": report.notes}
+
+    print(f"⚙  Xavani operator serving {cfg.product.name}")
+    print(f"   heartbeat → {daemon.heartbeat_path()}")
+    if killswitch.is_paused():
+        print("   ⏸ currently PAUSED — run `xavani operator resume` to let it act.")
+    if max_iters is None:
+        print("   Running continuously. Pause: `xavani operator pause` · stop: Ctrl-C.")
+    try:
+        summary = daemon.serve(
+            tick,
+            interval=interval,
+            max_iters=max_iters,
+            paused=killswitch.is_paused,
+        )
+    except KeyboardInterrupt:
+        print("\n⏹  Stopped by user.")
+        return
+    print(
+        f"✓ {summary['iters']} tick(s): {summary['acted']} acted · "
+        f"{summary['idle']} idle · {summary['paused']} paused"
+    )
 
 
 # --- M2 commands ------------------------------------------------------------

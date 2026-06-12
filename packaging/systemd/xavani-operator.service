@@ -1,0 +1,30 @@
+# Xavani Operator — Linux systemd unit for the 24/7 autonomous daemon.
+#
+# Install (per-user):
+#   1. Edit WorkingDirectory below to your product directory (with xavani.product.yaml).
+#   2. mkdir -p ~/.config/systemd/user
+#      cp packaging/systemd/xavani-operator.service ~/.config/systemd/user/
+#   3. systemctl --user daemon-reload
+#      systemctl --user enable --now xavani-operator
+#
+# Control (no need to stop the unit):
+#   Pause:  xavani operator pause       Resume: xavani operator resume
+#   Logs:   journalctl --user -u xavani-operator -f
+#   Status: cat ~/.xavani/operator/daemon/heartbeat.json
+
+[Unit]
+Description=Xavani Operator — autonomous 24/7 build+promote daemon (kill-switch aware)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=%h/REPLACE_WITH_YOUR_PRODUCT_DIRECTORY
+ExecStart=/usr/bin/env xavani operator serve --interval 300
+Restart=on-failure
+RestartSec=15
+# The daemon idles cheaply when there's nothing to do and honours the kill-switch;
+# it never needs killing to be silenced — use `xavani operator pause`.
+
+[Install]
+WantedBy=default.target

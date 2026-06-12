@@ -67,6 +67,8 @@ import ProfilesPage from "@/pages/ProfilesPage";
 import SkillsPage from "@/pages/SkillsPage";
 import PluginsPage from "@/pages/PluginsPage";
 import ChatPage from "@/pages/ChatPage";
+import SentiencePage from "@/pages/SentiencePage";
+import DailyCounselPage from "@/pages/DailyCounselPage";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { ThemeSwitcher } from "@/components/ThemeSwitcher";
 import { useI18n } from "@/i18n";
@@ -108,6 +110,8 @@ const CHAT_NAV_ITEM: NavItem = {
 const BUILTIN_ROUTES_CORE: Record<string, ComponentType> = {
   "/": RootRedirect,
   "/sessions": SessionsPage,
+  "/sentience": SentiencePage,
+  "/counsel": DailyCounselPage,
   "/analytics": AnalyticsPage,
   "/models": ModelsPage,
   "/logs": LogsPage,
@@ -134,6 +138,16 @@ const BUILTIN_NAV_REST: NavItem[] = [
     labelKey: "sessions",
     label: "Sessions",
     icon: MessageSquare,
+  },
+  {
+    path: "/sentience",
+    label: "Sentience",
+    icon: Sparkles,
+  },
+  {
+    path: "/counsel",
+    label: "Daily Counsel",
+    icon: Heart,
   },
   {
     path: "/analytics",

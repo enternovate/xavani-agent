@@ -2,6 +2,58 @@
 
 All notable changes to Xavani Agent are documented in this file.
 
+## [0.7.0] - 2026-06-12 — "Quantum Sentience"
+
+Four major updates, each deterministic and zero-LLM at its core: the LLM only
+*generates* (plans, advice copy), never routes or decides.
+
+### Added
+
+#### ① Quantum Decision Cortex (`xavani_operator/quantum/`)
+- Decisions made by holding candidate strategies in **superposition**, simulating their
+  outcomes, letting correlated risks **interfere**, then **collapsing** (Born-rule) to the
+  best move — so the operator steers away from high-score-but-fragile options.
+- `qubo.py` + pluggable `backends/` — classical `inspired` solver always on; optional real
+  QPU (Qiskit / IBM / Braket / D-Wave) auto-selected only when credentials are present.
+- `outcome_patterns.py` records each decision + its realised result and compares them.
+- Wired into `xavani_operator/decide.py` behind `config.quantum.enabled` (default off).
+- CLI: `xavani operator quantum`.
+
+#### ② The Oracle — consequence-conscious wisdom (`xavani_wisdom/`)
+- A corpus of how the great **rose and fell** (Solomon, Bezos, Buffett; Kodak, Lehman,
+  Enron, WeWork, Icarus), a deterministic **consequence projector**, and a **downfall
+  detector** registered in `agent.detectors`.
+- `self_faults.py` turns the user's own recurring mistakes (from the 8pm log) into
+  personalised watch-patterns.
+- **Conscience soul pack** (`skills/research-guidelines/conscience-guidelines.md`) now rides
+  in every session (append-only; base identity untouched, R7).
+- CLI: `xavani wisdom verdict` / `xavani wisdom corpus`.
+
+#### ③ The Always-On Companion
+- **Intelligent model router** (`model_router.py` + `model_capabilities.yaml`): best
+  available model per task by the API keys you've set (best critical-thinker for emails,
+  cheap+fast for bulk). Zero API calls to decide. CLI: `xavani model --route <task>`.
+- **24/7 daemon** (`xavani_operator/daemon.py`): heartbeat, "active only when working,"
+  crash-safe. `xavani operator serve`; launchd + systemd units under `packaging/`.
+- **Kill-switch** (`xavani_operator/killswitch.py`): `xavani operator pause` / `resume`.
+- **Advisor rituals** (`xavani_operator/advisor/`): morning brief, the **8pm error-log**
+  ritual, tomorrow-plan capture, and **hourly task-chase** — delivered over Telegram
+  (08:00 / 09–21 / 20:00 cron specs).
+
+#### ④ Mission Control dashboard (`web/`)
+- Rebranded to the **Enternovate deep-navy** theme (electric-blue accent), default; the
+  original look preserved as the `teal` theme.
+- New **Sentience** page (quantum waveform + interactive Oracle consequence-check + model
+  router) and **Daily Counsel** page (24/7 health + the 8pm error-log timeline), with
+  read-only API endpoints under `/api/quantum`, `/api/wisdom`, `/api/router`,
+  `/api/operator`, `/api/advisor`.
+
+### Notes
+- Optional quantum + Telegram dependencies are extras, lazy-imported, credential-gated.
+- **Deferred to a follow-up (post-1.0 operator hardening):** multi-operator teams and a
+  formal red-team eval harness for autonomous actions. Current safety rests on tiered
+  approval, the kill-switch, and the downfall detector.
+
 ## [0.6.0] - 2026-06-02
 
 ### Added
