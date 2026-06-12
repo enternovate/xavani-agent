@@ -590,8 +590,9 @@ async def get_quantum_preview():
                 for b, p in decision.ranked
             ],
         }
-    except Exception as exc:  # pragma: no cover - surfaced as an error card in the UI
-        return {"error": str(exc)}
+    except Exception:  # pragma: no cover - surfaced as an error card in the UI
+        _log.exception("quantum preview endpoint failed")
+        return {"error": "Could not compute the quantum decision preview."}
 
 
 @app.get("/api/wisdom/verdict")
@@ -611,8 +612,9 @@ async def get_wisdom_verdict(text: str = ""):
             "downfall_signals": r.downfall_signals,
             "findings": r.findings,
         }
-    except Exception as exc:  # pragma: no cover
-        return {"error": str(exc)}
+    except Exception:  # pragma: no cover
+        _log.exception("wisdom verdict endpoint failed")
+        return {"error": "Could not compute the wisdom verdict."}
 
 
 @app.get("/api/router/resolved")
@@ -629,8 +631,9 @@ async def get_router_resolved():
                 {"model": choice.model, "provider": choice.provider} if choice else None
             )
         return {"available_providers": sorted(mr.available_providers()), "resolved": resolved}
-    except Exception as exc:  # pragma: no cover
-        return {"error": str(exc)}
+    except Exception:  # pragma: no cover
+        _log.exception("model router endpoint failed")
+        return {"error": "Could not resolve the model routing table."}
 
 
 @app.get("/api/operator/health")
@@ -649,8 +652,9 @@ async def get_operator_health():
             "paused": killswitch.is_paused(),
             "pause_reason": killswitch.pause_reason(),
         }
-    except Exception as exc:  # pragma: no cover
-        return {"error": str(exc)}
+    except Exception:  # pragma: no cover
+        _log.exception("operator health endpoint failed")
+        return {"error": "Could not read operator health."}
 
 
 @app.get("/api/advisor/errorlog")
@@ -665,8 +669,9 @@ async def get_advisor_errorlog(limit: int = 14):
             "questions": list(rituals.EVENING_QUESTIONS),
             "entries": [e.to_dict() for e in recent],
         }
-    except Exception as exc:  # pragma: no cover
-        return {"error": str(exc)}
+    except Exception:  # pragma: no cover
+        _log.exception("advisor errorlog endpoint failed")
+        return {"error": "Could not load the advisor error log."}
 
 
 @app.get("/api/status")
