@@ -83,18 +83,15 @@ modal = ["modal==1.3.4"]
 daytona = ["daytona==0.155.0"]
 vercel = ["vercel==0.5.7"]
 hindsight = ["hindsight-client==0.6.1"]
-# Optional real-quantum backends for the Quantum Decision Cortex (v1.0.0 ①).
-# NEVER required: the always-on classical "inspired" backend has zero extra
-# deps. Install this only to solve QUBO decisions on a real QPU / simulator;
-# `select_backend()` activates one automatically when its SDK + credentials
-# (IBM_QUANTUM_TOKEN / AWS_* / DWAVE_API_TOKEN) are present, else falls back.
-quantum = [
-  "qiskit>=1.0",
-  "qiskit-aer>=0.14",
-  "qiskit-ibm-runtime>=0.20",
-  "amazon-braket-sdk>=1.70",
-  "dwave-ocean-sdk>=7.0",
-]
+# Optional real-quantum backends for the Quantum Decision Cortex are NOT declared
+# here on purpose: the always-on classical "inspired" backend needs zero extra
+# deps, and `xavani_operator.quantum.backends.select_backend()` lazy-imports a real
+# QPU SDK only when its credentials are present (IBM_QUANTUM_TOKEN / AWS_* /
+# DWAVE_API_TOKEN), falling back to the classical solver otherwise. To use a real
+# QPU, install the SDK you want yourself, e.g.:
+#   pip install qiskit qiskit-aer qiskit-ibm-runtime   # IBM / Aer simulator
+#   pip install amazon-braket-sdk                       # AWS Braket
+#   pip install dwave-ocean-sdk                         # D-Wave
 dev = ["debugpy==1.8.20", "pytest==9.0.3", "pytest-asyncio==1.3.0", "pytest-xdist==3.8.0", "pytest-split==0.11.0", "pytest-timeout==2.4.0", "mcp==1.26.0", "ty==0.0.21", "ruff==0.15.10"]
 messaging = ["python-telegram-bot[webhooks]==22.6", "discord.py[voice] @ git+https://github.com/enternovate/discord.py.git", "aiohttp==3.14.0", "brotlicffi==1.2.0.1", "slack-bolt==1.27.0", "slack-sdk==3.40.1", "qrcode==7.4.2"]
 cron = []  # croniter is now a core dependency; this extra kept for back-compat
