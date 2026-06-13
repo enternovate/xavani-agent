@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Xavani Operator — macOS launchd service for the 24/7 autonomous daemon.
+
+  Install:
+    1. Edit WorkingDirectory below to your product directory (the one with
+       xavani.product.yaml). Optionally adjust the --interval (seconds).
+    2. cp packaging/launchd/com.enternovate.xavani-operator.plist \
+         ~/Library/LaunchAgents/
+    3. launchctl load ~/Library/LaunchAgents/com.enternovate.xavani-operator.plist
+
+  Control (no need to unload the service):
+    Pause:  xavani operator pause      Resume: xavani operator resume
+    Status: cat ~/.xavani/operator/daemon/heartbeat.json
+  Uninstall:
+    launchctl unload ~/Library/LaunchAgents/com.enternovate.xavani-operator.plist
+-->
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.enternovate.xavani-operator</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/usr/bin/env</string>
+    <string>xavani</string>
+    <string>operator</string>
+    <string>serve</string>
+    <string>--interval</string>
+    <string>300</string>
+  </array>
+  <key>WorkingDirectory</key>
+  <string>REPLACE_WITH_YOUR_PRODUCT_DIRECTORY</string>
+  <key>RunAtLoad</key>
+  <true/>
+  <key>KeepAlive</key>
+  <true/>
+  <key>ProcessType</key>
+  <string>Background</string>
+  <key>StandardOutPath</key>
+  <string>/tmp/xavani-operator.out.log</string>
+  <key>StandardErrorPath</key>
+  <string>/tmp/xavani-operator.err.log</string>
+</dict>
+</plist>

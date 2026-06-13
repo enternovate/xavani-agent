@@ -1422,7 +1422,6 @@ def init_agent(
     # When None, the conversation loop skips budget checks (default behavior).
     agent._budget_governor = None
     try:
-        import os
         budget_env = os.environ.get("XAVANI_TOKEN_BUDGET", "")
         if budget_env:
             budget_val = float(budget_env)

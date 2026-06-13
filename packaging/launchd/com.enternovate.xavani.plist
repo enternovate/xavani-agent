@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Xavani Operator — macOS launchd agent for the 24/7 autonomous daemon.
+
+  Install (per-user):
+    1. Replace REPLACE_WITH_YOUR_PRODUCT_DIRECTORY with your product directory
+       (the one containing xavani.product.yaml), and check the `xavani` path
+       (run `which xavani`) and PATH below.
+    2. cp packaging/launchd/com.enternovate.xavani.plist ~/Library/LaunchAgents/
+    3. launchctl load -w ~/Library/LaunchAgents/com.enternovate.xavani.plist
+
+  Control (no need to unload the agent):
+    Pause:  xavani operator pause        Resume: xavani operator resume
+    Logs:   tail -f /tmp/xavani-operator.out.log
+    Status: cat ~/.xavani/operator/daemon/heartbeat.json
+
+  The daemon idles cheaply when there's nothing to do and honours the kill-switch,
+  so it never needs unloading to be silenced — use `xavani operator pause`.
+-->
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.enternovate.xavani</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>/usr/bin/env</string>
+        <string>xavani</string>
+        <string>operator</string>
+        <string>serve</string>
+        <string>--interval</string>
+        <string>300</string>
+    </array>
+
+    <key>WorkingDirectory</key>
+    <string>REPLACE_WITH_YOUR_PRODUCT_DIRECTORY</string>
+
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin</string>
+    </dict>
+
+    <key>RunAtLoad</key>
+    <true/>
+    <key>KeepAlive</key>
+    <dict>
+        <key>SuccessfulExit</key>
+        <false/>
+    </dict>
+
+    <key>StandardOutPath</key>
+    <string>/tmp/xavani-operator.out.log</string>
+    <key>StandardErrorPath</key>
+    <string>/tmp/xavani-operator.err.log</string>
+
+    <key>ThrottleInterval</key>
+    <integer>15</integer>
+</dict>
+</plist>

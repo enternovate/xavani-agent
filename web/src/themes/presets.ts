@@ -40,8 +40,39 @@ const DEFAULT_LAYOUT: ThemeLayout = {
 
 export const defaultTheme: DashboardTheme = {
   name: "default",
+  label: "Enternovate",
+  description: "Enternovate deep navy — electric blue on midnight (the canonical look)",
+  palette: {
+    background: { hex: "#0a1730", alpha: 1 },
+    midground: { hex: "#4d8dff", alpha: 1 },
+    foreground: { hex: "#ffffff", alpha: 0 },
+    warmGlow: "rgba(77, 141, 255, 0.30)",
+    noiseOpacity: 0.85,
+  },
+  typography: {
+    ...DEFAULT_TYPOGRAPHY,
+    fontSans: `"Inter", ${SYSTEM_SANS}`,
+    fontMono: `"JetBrains Mono", ${SYSTEM_MONO}`,
+    fontUrl:
+      "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap",
+    letterSpacing: "-0.005em",
+  },
+  layout: {
+    ...DEFAULT_LAYOUT,
+    radius: "0.625rem",
+  },
+  colorOverrides: {
+    success: "#34d399",
+    warning: "#fbbf24",
+    destructive: "#f87171",
+  },
+};
+
+/** The original Xavani look, preserved as a selectable theme. */
+export const tealTheme: DashboardTheme = {
+  name: "teal",
   label: "Xavani Teal",
-  description: "Classic dark teal — the canonical Xavani look",
+  description: "The original dark teal — classic Xavani",
   palette: {
     background: { hex: "#041c1c", alpha: 1 },
     midground: { hex: "#ffe6cb", alpha: 1 },
@@ -190,8 +221,8 @@ export const roseTheme: DashboardTheme = {
  */
 export const defaultLargeTheme: DashboardTheme = {
   name: "default-large",
-  label: "Xavani Teal (Large)",
-  description: "Xavani Teal with bigger fonts and roomier spacing",
+  label: "Enternovate (Large)",
+  description: "Enternovate navy with bigger fonts and roomier spacing",
   palette: defaultTheme.palette,
   typography: {
     ...DEFAULT_TYPOGRAPHY,
@@ -207,6 +238,7 @@ export const defaultLargeTheme: DashboardTheme = {
 export const BUILTIN_THEMES: Record<string, DashboardTheme> = {
   default: defaultTheme,
   "default-large": defaultLargeTheme,
+  teal: tealTheme,
   midnight: midnightTheme,
   ember: emberTheme,
   mono: monoTheme,

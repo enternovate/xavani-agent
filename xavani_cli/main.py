@@ -1787,6 +1787,13 @@ def cmd_postinstall(args):
 
 def cmd_model(args):
     """Select default model — starts with provider selection, then model picker."""
+    route_task = getattr(args, "route", None)
+    if route_task:
+        # Non-interactive: resolve the best AVAILABLE model for a task class and exit.
+        from model_router import explain
+
+        print(explain(route_task))
+        return
     _require_tty("model")
     select_provider_and_model(args=args)
 
@@ -5791,6 +5798,13 @@ def cmd_learn(args):
 def cmd_finance(args):
     """Track money + audit (ZAR/VAT/SARS); the agent instructs, you pay (v0.7.0)."""
     from xavani_operator.finance.cli import cmd_finance as _run
+
+    _run(args)
+
+
+def cmd_wisdom(args):
+    """The Oracle: weigh a decision's consequences + downfall patterns (v1.0.0)."""
+    from xavani_wisdom.cli import cmd_wisdom as _run
 
     _run(args)
 
@@ -10090,7 +10104,7 @@ _BUILTIN_SUBCOMMANDS = frozenset(
         "model", "operator", "pairing", "plugins", "postinstall", "profile", "proxy",
         "send", "sessions", "setup",
         "skills", "slack", "status", "tools", "uninstall", "update",
-        "version", "webhook", "whatsapp", "chat",
+        "version", "webhook", "whatsapp", "wisdom", "chat",
         # Help-ish invocations — plugin commands not being listed in
         # top-level --help is an acceptable trade-off for skipping an
         # expensive eager import of every bundled plugin module.
@@ -10209,6 +10223,15 @@ def main():
         "model",
         help="Select default model and provider",
         description="Interactively select your inference provider and default model",
+    )
+    model_parser.add_argument(
+        "--route",
+        metavar="TASK",
+        default=None,
+        help=(
+            "Print the best AVAILABLE model for a task class and exit "
+            "(judgment | code | quick | vision | long_context | bulk)"
+        ),
     )
     model_parser.add_argument(
         "--portal-url",
@@ -11031,7 +11054,56 @@ def main():
     op_run.add_argument(
         "--interval", type=float, default=60.0, help="Seconds between ticks"
     )
+    op_quantum = operator_subparsers.add_parser(
+        "quantum",
+        help="Show the Quantum Decision Cortex collapse over current opportunities",
+    )
+    op_quantum.add_argument(
+        "--path", default=".", help="Directory (or path) of the product config"
+    )
+    op_quantum.add_argument(
+        "--explain", action="store_true", help="Print the full superposition→collapse waveform"
+    )
+    op_serve = operator_subparsers.add_parser(
+        "serve", help="Run the operator continuously as a 24/7 daemon (heartbeat + kill-switch)"
+    )
+    op_serve.add_argument(
+        "--path", default=".", help="Directory (or path) of the product config"
+    )
+    op_serve.add_argument(
+        "--interval", type=float, default=60.0, help="Seconds between cycle ticks"
+    )
+    op_serve.add_argument(
+        "--iterations", type=int, default=0, help="Number of ticks to run (0 = run forever)"
+    )
+    op_serve.add_argument(
+        "--dry-run", action="store_true", help="Perceive only; never act (one safe tick)"
+    )
+    op_pause = operator_subparsers.add_parser(
+        "pause", help="Engage the kill-switch: the daemon idles (no actions) until resumed"
+    )
+    op_pause.add_argument("--reason", default="", help="Optional note recorded with the pause")
+    operator_subparsers.add_parser(
+        "resume", help="Release the kill-switch so the operator can act again"
+    )
     operator_parser.set_defaults(func=cmd_operator)
+
+    # =========================================================================
+    # wisdom command (the Oracle: consequence-conscious counsel; v1.0.0 ②)
+    # =========================================================================
+    wisdom_parser = subparsers.add_parser(
+        "wisdom",
+        help="Weigh a decision's consequences and flag historical downfall patterns",
+    )
+    wisdom_subparsers = wisdom_parser.add_subparsers(dest="wisdom_command")
+    wi_verdict = wisdom_subparsers.add_parser(
+        "verdict", help="Project the consequences of a plan + flag downfall signals"
+    )
+    wi_verdict.add_argument(
+        "text", nargs="+", help="Describe the plan or decision to weigh"
+    )
+    wisdom_subparsers.add_parser("corpus", help="List the ascent/downfall wisdom corpus")
+    wisdom_parser.set_defaults(func=cmd_wisdom)
 
     # =========================================================================
     # learn command (teach Xavani taste & preferences; the learning layer)

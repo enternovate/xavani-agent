@@ -36,10 +36,10 @@
 }
 
 /* ------------------------------------------------------------------ */
-/* Xavani Agent — Nous DS with the LENS_0 (Xavani teal) lens applied   */
-/* statically. Mirrors nousnet-web/(xavani-agent)/layout.tsx so the    */
-/* canonical Xavani palette is the default — teal canvas + cream      */
-/* accent — without relying on leva/gsap at runtime.                  */
+/* Xavani Agent — Enternovate deep-navy palette applied statically as  */
+/* the default lens, so the canonical look is a navy canvas + electric */
+/* blue accent without relying on leva/gsap at runtime. ThemeProvider  */
+/* rewrites these as inline styles when a user switches themes.        */
 /* ------------------------------------------------------------------ */
 
 :root {
@@ -49,15 +49,15 @@
   --foreground: color-mix(in srgb, #ffffff 0%, transparent);
   --foreground-base: #ffffff;
   --foreground-alpha: 0;
-  --midground: color-mix(in srgb, #ffe6cb 100%, transparent);
-  --midground-base: #ffe6cb;
+  --midground: color-mix(in srgb, #4d8dff 100%, transparent);
+  --midground-base: #4d8dff;
   --midground-alpha: 1;
-  --background: color-mix(in srgb, #041c1c 100%, transparent);
-  --background-base: #041c1c;
+  --background: color-mix(in srgb, #0a1730 100%, transparent);
+  --background-base: #0a1730;
   --background-alpha: 1;
 
   /* Consumed by <Backdrop />; also theme-switchable. */
-  --warm-glow: rgba(255, 189, 56, 0.35);
+  --warm-glow: rgba(77, 141, 255, 0.30);
   --noise-opacity-mul: 1;
 
   /* Typography tokens — rewritten by ThemeProvider. Defaults match the

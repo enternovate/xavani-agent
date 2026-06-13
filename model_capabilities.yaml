@@ -1,0 +1,45 @@
+# Copyright (c) 2025-2026 Enternovate.
+# MIT License -- See LICENSE file for full terms.
+# Built by Enternovate -- Open source. Private. Local.
+#
+# Model capability map for the intelligent model router (v1.0.0 major ③).
+#
+# YOU MAINTAIN THIS FILE. As new models ship, add a row under `models:` (and add
+# the provider's API-key env var to model_router._PROVIDER_ENV if it's new). The
+# router never calls a model to decide — it reads this data + which provider keys
+# you've set, and picks deterministically (R10). Unknown models the router meets
+# elsewhere get sane defaults, so nothing breaks if you forget to add one here.
+#
+# reasoning_tier: 1 (basic) .. 5 (frontier critical-thinker)
+# cost_tier:      1 (cheapest) .. 5 (most expensive)
+# strengths:      free tags the task classes match against
+#                 (judgment, reasoning, writing, code, vision, long_context, fast, quick, bulk)
+
+# How each kind of task is scored. For a task class, a model's score is:
+#   reasoning * (reasoning_tier/5)  +  0.3 * (#matching strengths)  -  cost * (cost_tier/5)
+# `require` strengths exclude any model that lacks them (e.g. vision).
+task_classes:
+  judgment:      { reasoning: 1.0, cost: 0.0, strengths: [judgment, reasoning, writing] }   # emails, advice, decisions
+  code:          { reasoning: 0.7, cost: 0.1, strengths: [code, reasoning] }
+  quick:         { reasoning: 0.2, cost: 0.8, strengths: [fast, quick] }                     # classify/route/extract
+  vision:        { reasoning: 0.5, cost: 0.1, strengths: [vision], require: [vision] }
+  long_context:  { reasoning: 0.5, cost: 0.1, strengths: [long_context] }
+  bulk:          { reasoning: 0.1, cost: 1.0, strengths: [fast, bulk] }                       # high-volume, cheap
+
+# The known models. Edit freely as the landscape changes.
+models:
+  - { id: claude-opus-4-8,    provider: anthropic, reasoning_tier: 5, cost_tier: 5, context: 200000,  strengths: [judgment, reasoning, writing, code, long_context] }
+  - { id: claude-sonnet-4-6,  provider: anthropic, reasoning_tier: 4, cost_tier: 3, context: 200000,  strengths: [code, judgment, writing] }
+  - { id: claude-haiku-4-5,   provider: anthropic, reasoning_tier: 3, cost_tier: 1, context: 200000,  strengths: [fast, quick, bulk] }
+  - { id: gpt-5,              provider: openai,    reasoning_tier: 5, cost_tier: 5, context: 400000,  strengths: [judgment, reasoning, code, long_context] }
+  - { id: gpt-5-codex,        provider: openai,    reasoning_tier: 5, cost_tier: 4, context: 400000,  strengths: [code, reasoning] }
+  - { id: gpt-5-mini,         provider: openai,    reasoning_tier: 3, cost_tier: 1, context: 400000,  strengths: [fast, quick, bulk] }
+  - { id: gemini-2.5-pro,     provider: google,    reasoning_tier: 4, cost_tier: 3, context: 1000000, strengths: [judgment, vision, long_context] }
+  - { id: gemini-2.5-flash,   provider: google,    reasoning_tier: 3, cost_tier: 1, context: 1000000, strengths: [fast, quick, bulk, vision] }
+  - { id: grok-4,             provider: xai,       reasoning_tier: 4, cost_tier: 3, context: 256000,  strengths: [judgment, code] }
+  - { id: grok-4-fast,        provider: xai,       reasoning_tier: 3, cost_tier: 1, context: 2000000, strengths: [fast, quick, long_context] }
+  - { id: deepseek-reasoner,  provider: deepseek,  reasoning_tier: 4, cost_tier: 1, context: 128000,  strengths: [reasoning, judgment, code] }
+  - { id: deepseek-chat,      provider: deepseek,  reasoning_tier: 3, cost_tier: 1, context: 128000,  strengths: [bulk, fast] }
+  - { id: qwen3-coder-plus,   provider: qwen,      reasoning_tier: 4, cost_tier: 2, context: 1000000, strengths: [code, long_context] }
+  - { id: kimi-k2,            provider: kimi,      reasoning_tier: 3, cost_tier: 1, context: 256000,  strengths: [long_context, bulk] }
+  - { id: glm-4.6,            provider: glm,       reasoning_tier: 3, cost_tier: 1, context: 200000,  strengths: [code, bulk] }

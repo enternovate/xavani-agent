@@ -61,6 +61,60 @@ async function getSessionToken(): Promise<string> {
   throw new Error("Session token not available — page must be served by the Xavani dashboard server");
 }
 
+// v1.0.0 engine-surface response shapes (Quantum / Oracle / Model Router).
+export interface QuantumBranch {
+  id: string;
+  probability: number;
+  expected_value: number;
+  risk: number;
+  amplitude: number;
+  signals: string[];
+}
+export interface QuantumPreview {
+  chosen?: string;
+  branches?: QuantumBranch[];
+  error?: string;
+}
+export interface WisdomVerdict {
+  text?: string;
+  risk?: number;
+  expected_value?: number;
+  reversibility?: number;
+  tail_risk?: number;
+  base_rate_flag?: boolean;
+  downfall_signals?: string[];
+  findings?: string[];
+  error?: string;
+}
+export interface RouterResolved {
+  available_providers?: string[];
+  resolved?: Record<string, { model: string; provider: string } | null>;
+  error?: string;
+}
+export interface OperatorHealth {
+  status?: string;
+  cycle_count?: number;
+  acted?: number;
+  last_tick?: number | null;
+  note?: string;
+  paused?: boolean;
+  pause_reason?: string | null;
+  error?: string;
+}
+export interface ErrorLogEntry {
+  date?: string;
+  predictions_missed?: Array<Record<string, string>>;
+  beliefs_revised?: Array<Record<string, string>>;
+  wasted_effort?: Array<Record<string, string>>;
+  tomorrow_plan?: Array<Record<string, string>>;
+  created_at?: number;
+}
+export interface AdvisorErrorLog {
+  questions?: string[];
+  entries?: ErrorLogEntry[];
+  error?: string;
+}
+
 export const api = {
   getStatus: () => fetchJSON<StatusResponse>("/api/status"),
   getSessions: (limit = 20, offset = 0) =>
@@ -93,6 +147,14 @@ export const api = {
   getModelInfo: () => fetchJSON<ModelInfoResponse>("/api/model/info"),
   getModelOptions: () => fetchJSON<ModelOptionsResponse>("/api/model/options"),
   getAuxiliaryModels: () => fetchJSON<AuxiliaryModelsResponse>("/api/model/auxiliary"),
+  // v1.0.0 engine surfaces — read-only, deterministic (R10).
+  getQuantumPreview: () => fetchJSON<QuantumPreview>("/api/quantum/preview"),
+  getWisdomVerdict: (text: string) =>
+    fetchJSON<WisdomVerdict>(`/api/wisdom/verdict?text=${encodeURIComponent(text)}`),
+  getRouterResolved: () => fetchJSON<RouterResolved>("/api/router/resolved"),
+  getOperatorHealth: () => fetchJSON<OperatorHealth>("/api/operator/health"),
+  getAdvisorErrorLog: (limit = 14) =>
+    fetchJSON<AdvisorErrorLog>(`/api/advisor/errorlog?limit=${limit}`),
   setModelAssignment: (body: ModelAssignmentRequest) =>
     fetchJSON<ModelAssignmentResponse>("/api/model/set", {
       method: "POST",
