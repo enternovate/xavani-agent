@@ -309,7 +309,7 @@ _SCHEMA_OVERRIDES: Dict[str, Dict[str, Any]] = {
     "dashboard.theme": {
         "type": "select",
         "description": "Web dashboard visual theme",
-        "options": ["default", "midnight", "ember", "mono", "cyberpunk", "rose"],
+        "options": ["default", "teal", "midnight", "ember", "mono", "cyberpunk", "rose"],
     },
     "display.resume_display": {
         "type": "select",
@@ -544,6 +544,134 @@ def _probe_gateway_health() -> tuple[bool, dict | None]:
         except Exception:
             continue
     return False, None
+
+
+# ---------------------------------------------------------------------------
+# v1.0.0 engine surfaces — read-only, deterministic, zero-LLM (R10).
+# These feed the dashboard's Quantum / Oracle / Model-Router pages and are also
+# directly curl-able. Engines are imported lazily so the server stays light.
+# ---------------------------------------------------------------------------
+@app.get("/api/quantum/preview")
+async def get_quantum_preview():
+    """Live demo of the Quantum Decision Cortex collapse over sample opportunities."""
+    try:
+        from xavani_operator.quantum import decide as quantum_decide
+        from xavani_operator.types import Opportunity
+
+        demo = [
+            Opportunity(
+                id="ship-the-feature", kind="build", workstream="build", score=0.72,
+                rationale="customer obsession, long term, write tests, margin of safety",
+                payload={"reversible": True, "cost": 0.2, "scope": "team"},
+            ),
+            Opportunity(
+                id="blitzscale-now", kind="bet", workstream="promote", score=0.78,
+                rationale="borrow heavily, go all in, scale fast, we cannot lose, ignore the base rate",
+                payload={"reversible": False, "cost": 0.9, "scope": "public"},
+            ),
+            Opportunity(
+                id="refactor-debt", kind="ops", workstream="ops", score=0.55,
+                rationale="reduce risk, pay down debt, reversible cleanup",
+                payload={"reversible": True, "cost": 0.3, "scope": "local"},
+            ),
+        ]
+        decision = quantum_decide(demo, seed=2026)
+        return {
+            "chosen": decision.chosen.id,
+            "branches": [
+                {
+                    "id": b.id,
+                    "probability": round(p, 4),
+                    "expected_value": round(b.expected_value, 4),
+                    "risk": round(b.risk, 4),
+                    "amplitude": round(b.amplitude, 4),
+                    "signals": b.signals,
+                }
+                for b, p in decision.ranked
+            ],
+        }
+    except Exception:  # pragma: no cover - surfaced as an error card in the UI
+        _log.exception("quantum preview endpoint failed")
+        return {"error": "Could not compute the quantum decision preview."}
+
+
+@app.get("/api/wisdom/verdict")
+async def get_wisdom_verdict(text: str = ""):
+    """The Oracle's consequence projection + downfall signals for a snippet of text."""
+    try:
+        from xavani_wisdom.consequence import project
+
+        r = project({"text": text})
+        return {
+            "text": text,
+            "risk": round(r.risk, 4),
+            "expected_value": round(r.expected_value, 4),
+            "reversibility": round(r.reversibility, 4),
+            "tail_risk": round(r.tail_risk, 4),
+            "base_rate_flag": r.base_rate_flag,
+            "downfall_signals": r.downfall_signals,
+            "findings": r.findings,
+        }
+    except Exception:  # pragma: no cover
+        _log.exception("wisdom verdict endpoint failed")
+        return {"error": "Could not compute the wisdom verdict."}
+
+
+@app.get("/api/router/resolved")
+async def get_router_resolved():
+    """Which model each task class resolves to, given the provider keys set (no API call)."""
+    try:
+        import model_router as mr
+
+        classes = ["judgment", "code", "quick", "vision", "long_context", "bulk"]
+        resolved: dict = {}
+        for task_class in classes:
+            choice = mr.route_detailed(task_class)
+            resolved[task_class] = (
+                {"model": choice.model, "provider": choice.provider} if choice else None
+            )
+        return {"available_providers": sorted(mr.available_providers()), "resolved": resolved}
+    except Exception:  # pragma: no cover
+        _log.exception("model router endpoint failed")
+        return {"error": "Could not resolve the model routing table."}
+
+
+@app.get("/api/operator/health")
+async def get_operator_health():
+    """The 24/7 daemon's heartbeat + kill-switch state (read-only)."""
+    try:
+        from xavani_operator import daemon, killswitch
+
+        hb = daemon.read_status()
+        return {
+            "status": (hb.get("status") if hb else None) or "never-started",
+            "cycle_count": hb.get("cycle_count", 0),
+            "acted": hb.get("acted", 0),
+            "last_tick": hb.get("last_tick"),
+            "note": hb.get("note", ""),
+            "paused": killswitch.is_paused(),
+            "pause_reason": killswitch.pause_reason(),
+        }
+    except Exception:  # pragma: no cover
+        _log.exception("operator health endpoint failed")
+        return {"error": "Could not read operator health."}
+
+
+@app.get("/api/advisor/errorlog")
+async def get_advisor_errorlog(limit: int = 14):
+    """Recent daily error-log entries (the 8pm ritual), newest first."""
+    try:
+        from xavani_operator.advisor import rituals
+
+        entries = rituals.load_error_log()
+        recent = list(reversed(entries))[: max(1, limit)]
+        return {
+            "questions": list(rituals.EVENING_QUESTIONS),
+            "entries": [e.to_dict() for e in recent],
+        }
+    except Exception:  # pragma: no cover
+        _log.exception("advisor errorlog endpoint failed")
+        return {"error": "Could not load the advisor error log."}
 
 
 @app.get("/api/status")
