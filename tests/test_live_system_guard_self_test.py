@@ -25,8 +25,21 @@ import os
 import shutil
 import signal
 import subprocess
+import sys
 
 import pytest
+
+# The live-system guard protects a POSIX systemd ``xavani-gateway``. Its
+# primitives — os.kill signals, pty/termios, pkill/killall, foreign POSIX
+# PIDs, SIGTERM return codes — are POSIX-only, and several hard-crash the
+# xdist worker on Windows (os.kill delivers CTRL events there; ``import pty``
+# pulls in the nonexistent ``termios``). The guard FIXTURE still runs on
+# POSIX, where the live gateway it protects exists; this self-test is only
+# meaningful there.
+pytestmark = pytest.mark.skipif(
+    sys.platform == "win32",
+    reason="live-system guard self-test exercises POSIX-only kill/pty primitives",
+)
 
 requires_systemctl = pytest.mark.skipif(
     not shutil.which("systemctl"),
