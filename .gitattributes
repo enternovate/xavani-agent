@@ -1,2 +1,51 @@
-# Auto-generated files — collapse diffs and exclude from language stats
-web/package-lock.json linguist-generated=true
+# ============================================================================
+# .gitattributes — cross-platform line-ending & diff consistency
+# ============================================================================
+# This repo is authored with LF endings and runs on Linux, macOS, and Windows.
+# Normalize every text file to LF in the object store so a Windows checkout can
+# never inject CRLF that would silently break bash/nix/python tooling — while
+# checking out the handful of Windows-only script types with the endings they
+# require.
+
+# Default: auto-detect text vs binary; store LF; check out LF on all platforms.
+* text=auto eol=lf
+
+# --- Must stay LF even on Windows (run under git-bash / WSL / node / nix) ----
+*.sh    text eol=lf
+*.bash  text eol=lf
+*.nix   text eol=lf
+*.mjs   text eol=lf
+*.cjs   text eol=lf
+*.py    text eol=lf
+
+# --- Windows shells: native CRLF -------------------------------------------
+*.cmd   text eol=crlf
+*.bat   text eol=crlf
+
+# --- PowerShell: LF is fine for PS 5.1+/7; keep LF for diff stability -------
+*.ps1   text eol=lf
+
+# --- Binary assets: never normalize, never diff as text --------------------
+*.png   binary
+*.jpg   binary
+*.jpeg  binary
+*.gif   binary
+*.ico   binary
+*.webp  binary
+*.pdf   binary
+*.woff  binary
+*.woff2 binary
+*.ttf   binary
+*.otf   binary
+*.wav   binary
+*.mp3   binary
+*.mp4   binary
+*.zip   binary
+*.gz    binary
+*.whl   binary
+
+# --- Generated lockfiles: collapse diffs + exclude from language stats ------
+web/package-lock.json                          linguist-generated=true
+ui-tui/package-lock.json                       linguist-generated=true
+ui-tui/packages/xavani-ink/package-lock.json   linguist-generated=true
+scripts/whatsapp-bridge/package-lock.json      linguist-generated=true

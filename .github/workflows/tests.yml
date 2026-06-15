@@ -101,3 +101,63 @@ jobs:
           OPENROUTER_API_KEY: ""
           OPENAI_API_KEY: ""
           NOUS_API_KEY: ""
+
+  # ── Windows ──────────────────────────────────────────────────────────
+  # Runs the suite on a real Windows runner. The codebase is already
+  # Windows-hardened — platform-marked deps (pywinpty / tzdata for win32,
+  # ptyprocess gated off win32), a pty abstraction, and the static
+  # scripts/check-windows-footguns.py gate — but nothing previously
+  # *executed* the tests on Windows. This job closes that gap so Windows
+  # regressions are caught continuously.
+  #
+  # Non-blocking for now (mirrors the `test` job's continue-on-error) until
+  # the Windows run is proven consistently green; the full report is still
+  # surfaced in the run output for visibility.
+  test-windows:
+    runs-on: windows-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
+        with:
+          persist-credentials: false
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Install ripgrep
+        run: choco install ripgrep -y --no-progress
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@d4b2f3b6ecc6e67c4457f6d3e41ec42d3d0fcb86  # v5
+
+      - name: Set up Python 3.11
+        run: uv python install 3.11
+
+      - name: Install dependencies
+        shell: pwsh
+        run: |
+          uv venv .venv --python 3.11
+          .\.venv\Scripts\Activate.ps1
+          uv pip install -e ".[all,dev]"
+
+      - name: Windows footguns (static gate)
+        run: .venv\Scripts\python.exe scripts\check-windows-footguns.py --all
+
+      - name: Smoke import (no import-time POSIX failures)
+        shell: pwsh
+        run: >
+          .venv\Scripts\python.exe -c
+          "import importlib;
+          [importlib.import_module(m) for m in
+          ['xavani','xavani_cli','gateway','tools','agent','cron','xavani_operator']];
+          print('core imports OK on Windows')"
+
+      - name: Run tests (non-blocking — Windows visibility)
+        continue-on-error: true
+        shell: pwsh
+        run: >
+          .venv\Scripts\python.exe -m pytest tests/ -q
+          --ignore=tests/integration --ignore=tests/e2e --tb=short -n auto
+        env:
+          OPENROUTER_API_KEY: ""
+          OPENAI_API_KEY: ""
+          NOUS_API_KEY: ""
