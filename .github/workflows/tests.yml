@@ -154,9 +154,16 @@ jobs:
       - name: Run tests (non-blocking — Windows visibility)
         continue-on-error: true
         shell: pwsh
+        # --max-worker-restart: respawn xdist workers that crash (some stdio/
+        #   fd-manipulating tests can kill an execnet worker on Windows) so the
+        #   run completes and reports a real pass/fail summary instead of
+        #   aborting with "node down" / "cannot send".
+        # --dist=loadscope: keep a module's tests on one worker to reduce
+        #   cross-test fd interference. -p no:cacheprovider: avoid CWD cache.
         run: >
           .venv\Scripts\python.exe -m pytest tests/ -q
-          --ignore=tests/integration --ignore=tests/e2e --tb=short -n auto
+          --ignore=tests/integration --ignore=tests/e2e --tb=short
+          -n auto --dist=loadscope --max-worker-restart=12 -p no:cacheprovider
         env:
           OPENROUTER_API_KEY: ""
           OPENAI_API_KEY: ""
