@@ -1,10 +1,10 @@
-import { useGpuTier } from "@nous-research/ui/hooks/use-gpu-tier";
+import { useGpuTier } from "@xavani/ui/hooks/use-gpu-tier";
 
-import fillerBgUrl from "@nous-research/ui/assets/filler-bg0.webp";
+import fillerBgUrl from "@xavani/ui/assets/filler-bg0.webp";
 
 /**
  * Replicates the visual layer stack of `<Overlays dark />` from
- * `@nous-research/ui` without pulling in its leva / gsap / three peer deps.
+ * `@xavani/ui` without pulling in its leva / gsap / three peer deps.
  *
  * See `design-language/src/ui/components/overlays/index.tsx` for the source of
  * truth. Defaults match LENS_0 (the Xavani teal dark preset); the deep canvas

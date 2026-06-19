@@ -22,7 +22,7 @@ import { WebLinksAddon } from "@xterm/addon-web-links";
 import { WebglAddon } from "@xterm/addon-webgl";
 import { Terminal } from "@xterm/xterm";
 import "@xterm/xterm/css/xterm.css";
-import { Button } from "@nous-research/ui/ui/components/button";
+import { Button } from "@xavani/ui/ui/components/button";
 import { Typography } from "@/components/NouiTypography";
 import { XAVANI_BASE_PATH } from "@/lib/api";
 import { cn } from "@/lib/utils";

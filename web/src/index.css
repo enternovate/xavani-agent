@@ -1,9 +1,9 @@
 @import 'tailwindcss';
-@import '@nous-research/ui/styles/globals.css';
+@import '@xavani/ui/styles/globals.css';
 
 /* Scan the published design-system bundle so its utility classes survive
    Tailwind's JIT purge. */
-@source '../node_modules/@nous-research/ui/dist';
+@source '../node_modules/@xavani/ui/dist';
 
 /* ------------------------------------------------------------------ */
 /* JetBrains Mono — bundled for the embedded TUI (/chat tab).          */

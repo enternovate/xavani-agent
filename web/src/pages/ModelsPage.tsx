@@ -21,11 +21,11 @@ import type {
 } from "@/lib/api";
 import { timeAgo } from "@/lib/utils";
 import { formatTokenCount } from "@/lib/format";
-import { Button } from "@nous-research/ui/ui/components/button";
-import { Spinner } from "@nous-research/ui/ui/components/spinner";
-import { Stats } from "@nous-research/ui/ui/components/stats";
+import { Button } from "@xavani/ui/ui/components/button";
+import { Spinner } from "@xavani/ui/ui/components/spinner";
+import { Stats } from "@xavani/ui/ui/components/stats";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@nous-research/ui/ui/components/badge";
+import { Badge } from "@xavani/ui/ui/components/badge";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { useModalBehavior } from "@/hooks/useModalBehavior";
 import { usePageHeader } from "@/contexts/usePageHeader";
