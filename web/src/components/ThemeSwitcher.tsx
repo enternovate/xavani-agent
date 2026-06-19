@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Palette, Check } from "lucide-react";
-import { Button } from "@nous-research/ui/ui/components/button";
-import { ListItem } from "@nous-research/ui/ui/components/list-item";
+import { Button } from "@xavani/ui/ui/components/button";
+import { ListItem } from "@xavani/ui/ui/components/list-item";
 import { BottomPickSheet } from "@/components/BottomPickSheet";
 import { Typography } from "@/components/NouiTypography";
 import { useBelowBreakpoint } from "@/hooks/useBelowBreakpoint";

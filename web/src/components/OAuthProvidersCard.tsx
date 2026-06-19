@@ -9,9 +9,9 @@ import {
   LogIn,
 } from "lucide-react";
 import { api, type OAuthProvider } from "@/lib/api";
-import { Button } from "@nous-research/ui/ui/components/button";
-import { CopyButton } from "@nous-research/ui/ui/components/command-block";
-import { Spinner } from "@nous-research/ui/ui/components/spinner";
+import { Button } from "@xavani/ui/ui/components/button";
+import { CopyButton } from "@xavani/ui/ui/components/command-block";
+import { Spinner } from "@xavani/ui/ui/components/spinner";
 import {
   Card,
   CardContent,
@@ -19,7 +19,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Badge } from "@nous-research/ui/ui/components/badge";
+import { Badge } from "@xavani/ui/ui/components/badge";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { OAuthLoginModal } from "@/components/OAuthLoginModal";
 import { useI18n } from "@/i18n";

@@ -43,10 +43,10 @@ import {
   X,
   Zap,
 } from "lucide-react";
-import { Button } from "@nous-research/ui/ui/components/button";
-import { ListItem } from "@nous-research/ui/ui/components/list-item";
-import { SelectionSwitcher } from "@nous-research/ui/ui/components/selection-switcher";
-import { Spinner } from "@nous-research/ui/ui/components/spinner";
+import { Button } from "@xavani/ui/ui/components/button";
+import { ListItem } from "@xavani/ui/ui/components/list-item";
+import { SelectionSwitcher } from "@xavani/ui/ui/components/selection-switcher";
+import { Spinner } from "@xavani/ui/ui/components/spinner";
 import { Typography } from "@/components/NouiTypography";
 import { cn } from "@/lib/utils";
 import { Backdrop } from "@/components/Backdrop";
