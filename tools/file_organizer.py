@@ -454,11 +454,13 @@ def _read_pid() -> Optional[int]:
 def _pid_alive(pid: int) -> bool:
     if pid <= 0:
         return False
-    try:
-        os.kill(pid, 0)  # signal 0 = liveness probe
-    except OSError:
-        return False
-    return True
+    # NB: deliberately NOT a signal-0 os.kill liveness probe — on Windows that
+    # is interpreted as CTRL_C_EVENT and hard-kills the target's console group
+    # (bpo-14484). psutil.pid_exists is the cross-platform check (psutil is a
+    # core dependency); see gateway.status._pid_exists for the same rationale.
+    import psutil
+
+    return bool(psutil.pid_exists(pid))
 
 
 def watcher_running() -> Optional[int]:
