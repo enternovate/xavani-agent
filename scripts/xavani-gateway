@@ -1,30 +1,31 @@
 #!/usr/bin/env python3
 """
-Hermes Gateway - Standalone messaging platform integration.
+Xavani Gateway - Standalone messaging platform integration.
 
 This is the proper entry point for running the gateway as a service.
 NOT tied to the CLI - runs independently.
 
 Usage:
     # Run in foreground (for testing)
-    ./scripts/hermes-gateway
+    ./scripts/xavani-gateway
     
     # Install as systemd service
-    ./scripts/hermes-gateway install
+    ./scripts/xavani-gateway install
     
     # Manage the service
-    ./scripts/hermes-gateway start
-    ./scripts/hermes-gateway stop
-    ./scripts/hermes-gateway restart
-    ./scripts/hermes-gateway status
+    ./scripts/xavani-gateway start
+    ./scripts/xavani-gateway stop
+    ./scripts/xavani-gateway restart
+    ./scripts/xavani-gateway status
     
     # Uninstall
-    ./scripts/hermes-gateway uninstall
+    ./scripts/xavani-gateway uninstall
 """
 
 import argparse
 import asyncio
 import os
+import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -45,8 +46,8 @@ if env_path.exists():
 # Service Configuration
 # =============================================================================
 
-SERVICE_NAME = "hermes-gateway"
-SERVICE_DESCRIPTION = "Hermes Agent Gateway - Messaging Platform Integration"
+SERVICE_NAME = "xavani-gateway"
+SERVICE_DESCRIPTION = "Xavani Agent Gateway - Messaging Platform Integration"
 
 def get_systemd_unit_path() -> Path:
     """Get the path for the systemd user service file."""
@@ -54,7 +55,7 @@ def get_systemd_unit_path() -> Path:
 
 def get_launchd_plist_path() -> Path:
     """Get the path for the launchd plist file (macOS)."""
-    return Path.home() / "Library" / "LaunchAgents" / f"ai.hermes.gateway.plist"
+    return Path.home() / "Library" / "LaunchAgents" / f"ai.xavani.gateway.plist"
 
 def get_python_path() -> str:
     """Get the path to the Python interpreter."""
@@ -67,6 +68,66 @@ def get_python_path() -> str:
 def get_gateway_script_path() -> str:
     """Get the path to this script."""
     return str(Path(__file__).resolve())
+
+
+# =============================================================================
+# Legacy migration (upstream "hermes" -> "xavani")
+# =============================================================================
+# Earlier (upstream-derived) builds installed this service under the
+# "ai.hermes.gateway" launchd label / "hermes-gateway" systemd unit and wrote
+# data under ~/.hermes. The agent itself uses ~/.xavani. These helpers move
+# existing installs over so current users aren't stranded on (re)install.
+
+def _legacy_launchd_plist() -> Path:
+    return Path.home() / "Library" / "LaunchAgents" / "ai.hermes.gateway.plist"
+
+def _legacy_systemd_unit() -> Path:
+    return Path.home() / ".config" / "systemd" / "user" / "hermes-gateway.service"
+
+def migrate_legacy_data() -> None:
+    """Move gateway data from the old ~/.hermes dir to ~/.xavani (one-time).
+
+    Only moves the gateway's own files (gateway.json + logs/) and only when the
+    destination does not already exist, so it never clobbers current data.
+    """
+    legacy = Path.home() / ".hermes"
+    if not legacy.exists():
+        return
+    new = Path.home() / ".xavani"
+    new.mkdir(parents=True, exist_ok=True)
+    for item in ("gateway.json", "logs"):
+        src = legacy / item
+        dst = new / item
+        if src.exists() and not dst.exists():
+            try:
+                shutil.move(str(src), str(dst))
+                print(f"✓ Migrated ~/.hermes/{item} -> ~/.xavani/{item}")
+            except OSError as exc:
+                print(f"! Could not migrate ~/.hermes/{item}: {exc}")
+
+def remove_legacy_launchd() -> None:
+    """Unload + delete a stale ai.hermes.gateway launchd service, if present."""
+    legacy = _legacy_launchd_plist()
+    if legacy.exists():
+        print("Found legacy ai.hermes.gateway service -- removing it...")
+        subprocess.run(["launchctl", "unload", str(legacy)], check=False)
+        try:
+            legacy.unlink()
+        except OSError:
+            pass
+
+def remove_legacy_systemd() -> None:
+    """Stop + delete a stale hermes-gateway systemd unit, if present."""
+    legacy = _legacy_systemd_unit()
+    if legacy.exists():
+        print("Found legacy hermes-gateway.service -- removing it...")
+        subprocess.run(["systemctl", "--user", "stop", "hermes-gateway"], check=False)
+        subprocess.run(["systemctl", "--user", "disable", "hermes-gateway"], check=False)
+        try:
+            legacy.unlink()
+        except OSError:
+            pass
+        subprocess.run(["systemctl", "--user", "daemon-reload"], check=False)
 
 
 # =============================================================================
@@ -104,6 +165,8 @@ WantedBy=default.target
 
 def install_systemd():
     """Install the systemd user service."""
+    remove_legacy_systemd()
+    migrate_legacy_data()
     unit_path = get_systemd_unit_path()
     unit_path.parent.mkdir(parents=True, exist_ok=True)
     
@@ -173,14 +236,14 @@ def generate_launchd_plist() -> str:
     python_path = get_python_path()
     script_path = get_gateway_script_path()
     working_dir = str(PROJECT_DIR)
-    log_dir = Path.home() / ".hermes" / "logs"
+    log_dir = Path.home() / ".xavani" / "logs"
     
     return f"""<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
     <key>Label</key>
-    <string>ai.hermes.gateway</string>
+    <string>ai.xavani.gateway</string>
     
     <key>ProgramArguments</key>
     <array>
@@ -218,11 +281,13 @@ def generate_launchd_plist() -> str:
 
 def install_launchd():
     """Install the launchd service (macOS)."""
+    remove_legacy_launchd()
+    migrate_legacy_data()
     plist_path = get_launchd_plist_path()
     plist_path.parent.mkdir(parents=True, exist_ok=True)
     
     # Ensure log directory exists
-    log_dir = Path.home() / ".hermes" / "logs"
+    log_dir = Path.home() / ".xavani" / "logs"
     log_dir.mkdir(parents=True, exist_ok=True)
     
     print(f"Installing launchd service to: {plist_path}")
@@ -234,11 +299,11 @@ def install_launchd():
     print(f"✓ Service installed and loaded")
     print(f"")
     print(f"To view logs:")
-    print(f"  tail -f ~/.hermes/logs/gateway.log")
+    print(f"  tail -f ~/.xavani/logs/gateway.log")
     print(f"")
     print(f"To manage the service:")
-    print(f"  launchctl start ai.hermes.gateway")
-    print(f"  launchctl stop ai.hermes.gateway")
+    print(f"  launchctl start ai.xavani.gateway")
+    print(f"  launchctl stop ai.xavani.gateway")
 
 def uninstall_launchd():
     """Uninstall the launchd service (macOS)."""
@@ -256,16 +321,16 @@ def uninstall_launchd():
 
 def launchd_status():
     """Show launchd service status."""
-    subprocess.run(["launchctl", "list", "ai.hermes.gateway"])
+    subprocess.run(["launchctl", "list", "ai.xavani.gateway"])
 
 def launchd_start():
     """Start the launchd service."""
-    subprocess.run(["launchctl", "start", "ai.hermes.gateway"], check=True)
+    subprocess.run(["launchctl", "start", "ai.xavani.gateway"], check=True)
     print(f"✓ Service started")
 
 def launchd_stop():
     """Stop the launchd service."""
-    subprocess.run(["launchctl", "stop", "ai.hermes.gateway"], check=True)
+    subprocess.run(["launchctl", "stop", "ai.xavani.gateway"], check=True)
     print(f"✓ Service stopped")
 
 def launchd_restart():
@@ -295,7 +360,7 @@ def is_windows() -> bool:
 def run_gateway():
     """Run the gateway in foreground."""
     from gateway.run import start_gateway
-    print("Starting Hermes Gateway...")
+    print("Starting Xavani Gateway...")
     print("Press Ctrl+C to stop.")
     print()
     asyncio.run(start_gateway())
@@ -307,24 +372,24 @@ def run_gateway():
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Hermes Gateway - Messaging Platform Integration",
+        description="Xavani Gateway - Messaging Platform Integration",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
     # Run in foreground (for testing)
-    ./scripts/hermes-gateway run
+    ./scripts/xavani-gateway run
     
     # Install as system service
-    ./scripts/hermes-gateway install
+    ./scripts/xavani-gateway install
     
     # Manage the service
-    ./scripts/hermes-gateway start
-    ./scripts/hermes-gateway stop
-    ./scripts/hermes-gateway restart
-    ./scripts/hermes-gateway status
+    ./scripts/xavani-gateway start
+    ./scripts/xavani-gateway stop
+    ./scripts/xavani-gateway restart
+    ./scripts/xavani-gateway status
     
     # Uninstall
-    ./scripts/hermes-gateway uninstall
+    ./scripts/xavani-gateway uninstall
 
 Configuration:
     Set environment variables in .env file or system environment:
@@ -332,7 +397,7 @@ Configuration:
     - DISCORD_BOT_TOKEN
     - WHATSAPP_ENABLED
     
-    Or create ~/.hermes/gateway.json for advanced configuration.
+    Or create ~/.xavani/gateway.json for advanced configuration.
 """
     )
     
@@ -363,7 +428,7 @@ Configuration:
             install_launchd()
         else:
             print("Service installation not supported on this platform.")
-            print("Please run manually: ./scripts/hermes-gateway run")
+            print("Please run manually: ./scripts/xavani-gateway run")
             sys.exit(1)
     
     elif args.command == "uninstall":
