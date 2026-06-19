@@ -2,9 +2,9 @@ import { useCallback, useEffect, useState } from "react";
 import { Activity, ListChecks, Moon, Pause, RefreshCw } from "lucide-react";
 import { api } from "@/lib/api";
 import type { AdvisorErrorLog, ErrorLogEntry, OperatorHealth } from "@/lib/api";
-import { Button } from "@nous-research/ui/ui/components/button";
-import { Spinner } from "@nous-research/ui/ui/components/spinner";
-import { Badge } from "@nous-research/ui/ui/components/badge";
+import { Button } from "@xavani/ui/ui/components/button";
+import { Spinner } from "@xavani/ui/ui/components/spinner";
+import { Badge } from "@xavani/ui/ui/components/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { usePageHeader } from "@/contexts/usePageHeader";
 

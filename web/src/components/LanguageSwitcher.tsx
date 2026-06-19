@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { Button } from "@nous-research/ui/ui/components/button";
+import { Button } from "@xavani/ui/ui/components/button";
 import { BottomPickSheet } from "@/components/BottomPickSheet";
 import { Typography } from "@/components/NouiTypography";
 import { useBelowBreakpoint } from "@/hooks/useBelowBreakpoint";
