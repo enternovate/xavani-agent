@@ -1067,6 +1067,11 @@ def _get_platform_tools(
     """Resolve which individual toolset names are enabled for a platform."""
     from toolsets import resolve_toolset, TOOLSETS
 
+    # Safety: validate config structure before accessing keys.
+    if not isinstance(config, dict):
+        _log.warning("_get_platform_tools called with non-dict config=%s", type(config).__name__)
+        config = {}
+
     platform_toolsets = config.get("platform_toolsets") or {}
     toolset_names = platform_toolsets.get(platform)
 
