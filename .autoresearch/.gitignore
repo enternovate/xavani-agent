@@ -1,0 +1,5 @@
+# autoresearch — experiment logs are local state
+**/results.tsv
+**/run.log
+**/run.*.log
+config.yaml

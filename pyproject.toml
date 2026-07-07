@@ -241,6 +241,7 @@ include = ["agent", "agent.*", "tools", "tools.*", "xavani_cli", "gateway", "gat
 testpaths = ["tests"]
 markers = [
     "integration: marks tests requiring external services (API keys, Modal, etc.)",
+    "ssh: marks tests requiring SSH access to a remote host",
 ]
 addopts = "-m 'not integration' -n auto --timeout=60 --timeout-method=thread"
 

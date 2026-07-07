@@ -288,7 +288,7 @@ def _parse_semver(v: str) -> Tuple[int, int, int]:
     """Very small semver parser — major.minor.patch only.  Extra labels stripped."""
     s = str(v).strip().lstrip("v")
     # Strip any pre-release / build metadata (e.g. "0.12.0-rc1+abc")
-    s = re.split(r"[-+]", s, 1)[0]
+    s = re.split(r"[-+]", s, maxsplit=1)[0]
     parts = s.split(".")
     while len(parts) < 3:
         parts.append("0")
