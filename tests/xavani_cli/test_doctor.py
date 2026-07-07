@@ -174,24 +174,33 @@ class TestDoctorToolAvailabilityOverrides:
 
 
 class TestHonchoDoctorConfigDetection:
-    def test_reports_configured_when_enabled_with_api_key(self, monkeypatch):
-        fake_config = SimpleNamespace(enabled=True, api_key="***")
+    def _inject_honcho_module(self, monkeypatch, fake_config):
+        """Inject a mock honcho module into sys.modules for lazy-import patching.
 
-        monkeypatch.setattr(
-            "plugins.memory.honcho.client.HonchoClientConfig.from_global_config",
-            lambda: fake_config,
+        doctor._honcho_is_configured_for_doctor() imports honcho lazily inside the
+        function body, so monkeypatch.setattr("plugins.memory.honcho...") fails
+        because the attribute path doesn't exist at module level. We instead seed
+        sys.modules with a fake plugins.memory.honcho.client module, then let
+        the function's ``from ... import`` find it.
+        """
+        import types as _types
+
+        mock_honcho_client = _types.ModuleType("plugins.memory.honcho.client")
+        mock_honcho_client.HonchoClientConfig = SimpleNamespace(
+            from_global_config=lambda: fake_config,
+        )
+        monkeypatch.setitem(
+            sys.modules, "plugins.memory.honcho.client", mock_honcho_client
         )
 
+    def test_reports_configured_when_enabled_with_api_key(self, monkeypatch):
+        fake_config = SimpleNamespace(enabled=True, api_key="***")
+        self._inject_honcho_module(monkeypatch, fake_config)
         assert doctor._honcho_is_configured_for_doctor()
 
     def test_reports_not_configured_without_api_key(self, monkeypatch):
         fake_config = SimpleNamespace(enabled=True, api_key="")
-
-        monkeypatch.setattr(
-            "plugins.memory.honcho.client.HonchoClientConfig.from_global_config",
-            lambda: fake_config,
-        )
-
+        self._inject_honcho_module(monkeypatch, fake_config)
         assert not doctor._honcho_is_configured_for_doctor()
 
 

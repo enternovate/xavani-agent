@@ -28,8 +28,9 @@ If a skill is missing from this list but present in the repo, the catalog is reg
 |-------|-------------|------|
 | [`claude-code`](/docs/user-guide/skills/bundled/autonomous-ai-agents/autonomous-ai-agents-claude-code) | Delegate coding to Claude Code CLI (features, PRs). | `autonomous-ai-agents/claude-code` |
 | [`codex`](/docs/user-guide/skills/bundled/autonomous-ai-agents/autonomous-ai-agents-codex) | Delegate coding to OpenAI Codex CLI (features, PRs). | `autonomous-ai-agents/codex` |
-| [`xavani-agent`](/docs/user-guide/skills/bundled/autonomous-ai-agents/autonomous-ai-agents-xavani-agent) | Configure, extend, or contribute to Xavani Agent. | `autonomous-ai-agents/xavani-agent` |
+| [`kanban-codex-lane`](/docs/user-guide/skills/bundled/autonomous-ai-agents/autonomous-ai-agents-kanban-codex-lane) | Use when a Xavani Kanban worker wants to run Codex CLI as an isolated implementation lane while Xavani keeps ownership of task lifecycle, reconciliation, testing, and handoff. | `autonomous-ai-agents/kanban-codex-lane` |
 | [`opencode`](/docs/user-guide/skills/bundled/autonomous-ai-agents/autonomous-ai-agents-opencode) | Delegate coding to OpenCode CLI (features, PR review). | `autonomous-ai-agents/opencode` |
+| [`xavani-agent`](/docs/user-guide/skills/bundled/autonomous-ai-agents/autonomous-ai-agents-xavani-agent) | Configure, extend, or contribute to Xavani Agent. | `autonomous-ai-agents/xavani-agent` |
 
 ## creative
 
@@ -62,12 +63,21 @@ If a skill is missing from this list but present in the repo, the catalog is reg
 |-------|-------------|------|
 | [`jupyter-live-kernel`](/docs/user-guide/skills/bundled/data-science/data-science-jupyter-live-kernel) | Iterative Python via live Jupyter kernel (hamelnb). | `data-science/jupyter-live-kernel` |
 
+## design
+
+| Skill | Description | Path |
+|-------|-------------|------|
+| [`design`](/docs/user-guide/skills/bundled/design/design-design) | Design at a high level — layout, type, colour, hierarchy, motion, accessibility — in the user's learned taste, never generic. | `design` |
+
 ## devops
 
 | Skill | Description | Path |
 |-------|-------------|------|
+| [`incident-response`](/docs/user-guide/skills/bundled/devops/devops-incident-response) | Structured incident response — detect, triage, mitigate, resolve, and postmortem. | `devops/incident-response` |
 | [`kanban-orchestrator`](/docs/user-guide/skills/bundled/devops/devops-kanban-orchestrator) | Decomposition playbook + anti-temptation rules for an orchestrator profile routing work through Kanban. The "don't do the work yourself" rule and the basic lifecycle are auto-injected into every kanban worker's system prompt; this skill... | `devops/kanban-orchestrator` |
 | [`kanban-worker`](/docs/user-guide/skills/bundled/devops/devops-kanban-worker) | Pitfalls, examples, and edge cases for Xavani Kanban workers. The lifecycle itself is auto-injected into every worker's system prompt as KANBAN_GUIDANCE (from agent/prompt_builder.py); this skill is what you load when you want deeper det... | `devops/kanban-worker` |
+| [`observability-setup`](/docs/user-guide/skills/bundled/devops/devops-observability-setup) | Set up structured logging, metrics, and tracing for production systems. | `devops/observability-setup` |
+| [`release-engineering`](/docs/user-guide/skills/bundled/devops/devops-release-engineering) | Manage releases, changelogs, versioning, and deployment pipelines with discipline. | `devops/release-engineering` |
 | [`webhook-subscriptions`](/docs/user-guide/skills/bundled/devops/devops-webhook-subscriptions) | Webhook subscriptions: event-driven agent runs. | `devops/webhook-subscriptions` |
 
 ## dogfood
@@ -141,12 +151,14 @@ If a skill is missing from this list but present in the repo, the catalog is reg
 | Skill | Description | Path |
 |-------|-------------|------|
 | [`airtable`](/docs/user-guide/skills/bundled/productivity/productivity-airtable) | Airtable REST API via curl. Records CRUD, filters, upserts. | `productivity/airtable` |
+| [`file-organizer`](/docs/user-guide/skills/bundled/productivity/productivity-file-organizer) | Automatically sort Downloads/Desktop/Documents into category folders — safe, reversible, with a real-time watcher. | `productivity/file-organizer` |
 | [`google-workspace`](/docs/user-guide/skills/bundled/productivity/productivity-google-workspace) | Gmail, Calendar, Drive, Docs, Sheets via gws CLI or Python. | `productivity/google-workspace` |
 | [`linear`](/docs/user-guide/skills/bundled/productivity/productivity-linear) | Linear: manage issues, projects, teams via GraphQL + curl. | `productivity/linear` |
 | [`maps`](/docs/user-guide/skills/bundled/productivity/productivity-maps) | Geocode, POIs, routes, timezones via OpenStreetMap/OSRM. | `productivity/maps` |
 | [`nano-pdf`](/docs/user-guide/skills/bundled/productivity/productivity-nano-pdf) | Edit PDF text/typos/titles via nano-pdf CLI (NL prompts). | `productivity/nano-pdf` |
 | [`notion`](/docs/user-guide/skills/bundled/productivity/productivity-notion) | Notion API + ntn CLI: pages, databases, markdown, Workers. | `productivity/notion` |
 | [`ocr-and-documents`](/docs/user-guide/skills/bundled/productivity/productivity-ocr-and-documents) | Extract text from PDFs/scans (pymupdf, marker-pdf). | `productivity/ocr-and-documents` |
+| [`planner`](/docs/user-guide/skills/bundled/productivity/productivity-planner) | Triage Gmail, extract action items into tasks, draft replies, and build one unified 'plan my day'. | `productivity/planner` |
 | [`powerpoint`](/docs/user-guide/skills/bundled/productivity/productivity-powerpoint) | Create, read, edit .pptx decks, slides, notes, templates. | `productivity/powerpoint` |
 | [`teams-meeting-pipeline`](/docs/user-guide/skills/bundled/productivity/productivity-teams-meeting-pipeline) | Operate the Teams meeting summary pipeline via Xavani CLI — summarize meetings, inspect pipeline status, replay jobs, manage Microsoft Graph subscriptions. | `productivity/teams-meeting-pipeline` |
 
@@ -160,6 +172,7 @@ If a skill is missing from this list but present in the repo, the catalog is reg
 
 | Skill | Description | Path |
 |-------|-------------|------|
+| [`ai-researcher-personas`](/docs/user-guide/skills/bundled/research/research-ai-researcher-personas) | Invoke AI researcher coding philosophies (Karpathy, Chollet, LeCun, Swyx, Willison, Hightower, Vaswani, Jim Fan) to guide code quality, architecture decisions, and engineering practices. Use when the task would benefit from a specific re... | `research/ai-researcher-personas` |
 | [`arxiv`](/docs/user-guide/skills/bundled/research/research-arxiv) | Search arXiv papers by keyword, author, category, or ID. | `research/arxiv` |
 | [`blogwatcher`](/docs/user-guide/skills/bundled/research/research-blogwatcher) | Monitor blogs and RSS/Atom feeds via blogwatcher-cli tool. | `research/blogwatcher` |
 | [`llm-wiki`](/docs/user-guide/skills/bundled/research/research-llm-wiki) | Karpathy's LLM Wiki: build/query interlinked markdown KB. | `research/llm-wiki` |
@@ -182,17 +195,32 @@ If a skill is missing from this list but present in the repo, the catalog is reg
 
 | Skill | Description | Path |
 |-------|-------------|------|
+| [`api-design-review`](/docs/user-guide/skills/bundled/software-development/software-development-api-design-review) | Review API designs for consistency, usability, and correctness before implementation. | `software-development/api-design-review` |
+| [`brainstorming`](/docs/user-guide/skills/bundled/software-development/software-development-brainstorming) | Structured brainstorming — generate, evaluate, and select ideas systematically. | `software-development/brainstorming` |
+| [`code-review`](/docs/user-guide/skills/bundled/software-development/software-development-code-review) | Structured code review — check correctness, security, readability, and test coverage before merging. | `software-development/code-review` |
+| [`database-migration-playbook`](/docs/user-guide/skills/bundled/software-development/software-development-database-migration-playbook) | Safe database schema migrations — forward-only, tested, reversible. | `software-development/database-migration-playbook` |
 | [`debugging-xavani-tui-commands`](/docs/user-guide/skills/bundled/software-development/software-development-debugging-xavani-tui-commands) | Debug Xavani TUI slash commands: Python, gateway, Ink UI. | `software-development/debugging-xavani-tui-commands` |
-| [`xavani-agent-skill-authoring`](/docs/user-guide/skills/bundled/software-development/software-development-xavani-agent-skill-authoring) | Author in-repo SKILL.md: frontmatter, validator, structure. | `software-development/xavani-agent-skill-authoring` |
+| [`eval-harness`](/docs/user-guide/skills/bundled/software-development/software-development-eval-harness) | Define, run, and report evaluation cases. Build the eval first — define what success looks like before writing code. Use before and after changes to verify behaviour. | `software-development/eval-harness` |
+| [`frontend-design`](/docs/user-guide/skills/bundled/software-development/software-development-frontend-design) | Frontend design principles — responsive layouts, accessible components, consistent design systems. | `software-development/frontend-design` |
+| [`mcp-builder`](/docs/user-guide/skills/bundled/software-development/software-development-mcp-builder) | Build MCP (Model Context Protocol) servers with proper tool definitions, resource handling, and error management. | `software-development/mcp-builder` |
 | [`node-inspect-debugger`](/docs/user-guide/skills/bundled/software-development/software-development-node-inspect-debugger) | Debug Node.js via --inspect + Chrome DevTools Protocol CLI. | `software-development/node-inspect-debugger` |
+| [`perf-profiling`](/docs/user-guide/skills/bundled/software-development/software-development-perf-profiling) | Profile and optimise application performance systematically — measure first, optimise second. | `software-development/perf-profiling` |
 | [`plan`](/docs/user-guide/skills/bundled/software-development/software-development-plan) | Plan mode: write markdown plan to .xavani/plans/, no exec. | `software-development/plan` |
+| [`prd-writer`](/docs/user-guide/skills/bundled/software-development/software-development-prd-writer) | Write Product Requirements Documents that engineers can actually implement. | `software-development/prd-writer` |
 | [`python-debugpy`](/docs/user-guide/skills/bundled/software-development/software-development-python-debugpy) | Debug Python: pdb REPL + debugpy remote (DAP). | `software-development/python-debugpy` |
 | [`requesting-code-review`](/docs/user-guide/skills/bundled/software-development/software-development-requesting-code-review) | Pre-commit review: security scan, quality gates, auto-fix. | `software-development/requesting-code-review` |
+| [`rfc-writer`](/docs/user-guide/skills/bundled/software-development/software-development-rfc-writer) | Write clear, actionable RFCs (Request for Comments) for technical design decisions. | `software-development/rfc-writer` |
+| [`secure-by-default-checklist`](/docs/user-guide/skills/bundled/software-development/software-development-secure-by-default-checklist) | Security review checklist — verify every change follows secure-by-default principles. | `software-development/secure-by-default-checklist` |
+| [`security-review`](/docs/user-guide/skills/bundled/software-development/software-development-security-review) | Security review checklist for code changes — authentication, authorization, input validation, secrets, and data protection. | `software-development/security-review` |
+| [`ship-it-preflight`](/docs/user-guide/skills/bundled/software-development/software-development-ship-it-preflight) | Pre-release checklist — verify all gates pass before shipping code to production. | `software-development/ship-it-preflight` |
 | [`spike`](/docs/user-guide/skills/bundled/software-development/software-development-spike) | Throwaway experiments to validate an idea before build. | `software-development/spike` |
 | [`subagent-driven-development`](/docs/user-guide/skills/bundled/software-development/software-development-subagent-driven-development) | Execute plans via delegate_task subagents (2-stage review). | `software-development/subagent-driven-development` |
 | [`systematic-debugging`](/docs/user-guide/skills/bundled/software-development/software-development-systematic-debugging) | 4-phase root cause debugging: understand bugs before fixing. | `software-development/systematic-debugging` |
+| [`tdd`](/docs/user-guide/skills/bundled/software-development/software-development-tdd) | Test-driven development — red-green-refactor cycle. Write the test first, make it pass, then clean up. | `software-development/tdd` |
 | [`test-driven-development`](/docs/user-guide/skills/bundled/software-development/software-development-test-driven-development) | TDD: enforce RED-GREEN-REFACTOR, tests before code. | `software-development/test-driven-development` |
+| [`verification-before-completion`](/docs/user-guide/skills/bundled/software-development/software-development-verification-before-completion) | Verify work is actually done before declaring completion — run tests, check edge cases, show evidence. | `software-development/verification-before-completion` |
 | [`writing-plans`](/docs/user-guide/skills/bundled/software-development/software-development-writing-plans) | Write implementation plans: bite-sized tasks, paths, code. | `software-development/writing-plans` |
+| [`xavani-agent-skill-authoring`](/docs/user-guide/skills/bundled/software-development/software-development-xavani-agent-skill-authoring) | Author in-repo SKILL.md: frontmatter, validator, structure. | `software-development/xavani-agent-skill-authoring` |
 
 ## yuanbao
 
