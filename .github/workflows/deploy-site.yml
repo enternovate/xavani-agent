@@ -57,7 +57,7 @@ jobs:
         with:
           persist-credentials: false
 
-      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020  # v4
+      - uses: actions/setup-node@04be95cf3511ea51ebf9f224ddfb99cc7ab87cd4  #v4  # v4
         with:
           node-version: 22
           cache: npm
@@ -120,7 +120,7 @@ jobs:
         # than a build failure — the artifact is already uploaded and can
         # be re-deployed once Pages is turned on by re-running the workflow.
         continue-on-error: true
-        uses: actions/deploy-pages@d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e  # v4
+        uses: actions/deploy-pages@cd2ce8fcbc39b97be8ca5fce6e763baed58fa128  #v4  # v4
 
       - name: Warn if Pages deploy failed
         if: steps.deploy.outcome == 'failure'
