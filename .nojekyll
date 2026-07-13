@@ -1,0 +1,4 @@
+# GitHub Pages: disable Jekyll processing
+# The site is built by the Build Skills Index workflow (Docusaurus + docs pages)
+# and deployed via actions/deploy-pages. The built-in Jekyll builder conflicts
+# with our custom deployment and fails on non-Jekyll content.
