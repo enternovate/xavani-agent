@@ -77,4 +77,4 @@ path_filters:
 # .endswith() after parsing the URL with urllib.parse.urlparse(). The tests
 # validate that provider base URLs match expected domains. The validation is
 # sufficient for test code where the input is a known constant from the
-# provider profile, not user-supplied data.
+# provider profile, not user-supplied data.# CodeQL re-scan trigger
