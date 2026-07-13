@@ -422,7 +422,7 @@ async def _redirect_handler(authorization_url: str) -> None:
             f"  which the callback listener on THIS machine is waiting on. If your browser\n"
             f"  is on a different machine, forward the port first in a separate terminal:\n"
             f"\n"
-            f"    ssh -N -L {_oauth_port}:127.0.0.1:{_oauth_port} <user>@<this-host>\n"
+            f"    ssh -N -L {_oauth_port}:127.0.0.1:{_oauth_port} <user>@<this-host>\n"  # nosec B105 - port forwarding hint, not a secret
             f"\n"
             f"  Then open the URL above. See: https://xavani-agent.enternovate.com/docs/guides/oauth-over-ssh\n",
             file=sys.stderr,

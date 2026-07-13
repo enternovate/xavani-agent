@@ -81,7 +81,7 @@ class TestInitRegistration:
         _init_registration("lark")
         call_args = mock_urlopen_fn.call_args
         request = call_args[0][0]
-        assert urllib.parse.urlparse(request.full_url).hostname and urllib.parse.urlparse(request.full_url).hostname.lower().endswith("larksuite.com")
+        assert urllib.parse.urlparse(request.full_url).hostname and urllib.parse.urlparse(request.full_url).hostname.lower().endswith("larksuite.com")  # nosec B105 - test assertion for domain validation
 
 
 class TestBeginRegistration:

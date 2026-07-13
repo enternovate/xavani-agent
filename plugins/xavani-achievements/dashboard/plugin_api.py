@@ -208,7 +208,7 @@ def load_snapshot() -> Optional[Dict[str, Any]]:
 def save_snapshot(data: Dict[str, Any]) -> None:
     path = snapshot_path()
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(_json_safe(data), indent=2, sort_keys=True))  # nosec: achievement snapshot contains no credentials
+    path.write_text(json.dumps(_json_safe(data), indent=2, sort_keys=True))  # nosec B105 - achievement snapshot, no credentials
 
 
 def load_checkpoint() -> Dict[str, Any]:

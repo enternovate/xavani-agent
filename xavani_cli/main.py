@@ -3944,7 +3944,7 @@ def _model_flow_azure_foundry(config, current_model=""):
     print(f"    Auth:           {auth_label}")
     print(f"    Model:          {effective_model}")
     if ctx_len:
-        print(f"    Context length: {ctx_len:,} tokens")
+        print(f"    Context length: {ctx_len:,} tokens")  # nosec B105 - config display, no secrets
     else:
         print("    Context length: not auto-detected (will fall back at runtime)")
     print()

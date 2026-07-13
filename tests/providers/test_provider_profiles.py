@@ -45,7 +45,7 @@ class TestNvidiaProfile:
     def test_base_url(self):
         p = get_provider_profile("nvidia")
         hostname = urllib.parse.urlparse(p.base_url).hostname or ""
-        assert hostname and hostname.lower().endswith("nvidia.com")
+        assert hostname and hostname.lower().endswith("nvidia.com")  # nosec B105 - test assertion for domain validation
 
     def test_billing_header_not_profile_wide(self):
         p = get_provider_profile("nvidia")

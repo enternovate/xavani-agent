@@ -53,9 +53,28 @@ path_filters:
 # goes through the RedactingFormatter.  CodeQL tracks the taint from the except block
 # to the response but the value in the response dict is always "Internal error" (verified).
 
-# ── functionality-from-untrusted-source (2 alerts) ──────────────────────────
+# functionality-from-untrusted-source (2 alerts)
 #
 # MITIGATION: The p5.js CDN script tag includes a Subresource Integrity (SRI) hash
 # that was verified against the live CDN content. Any tampering with the CDN resource
 # would cause the browser to reject the script. SRI provides cryptographic assurance
 # that the fetched resource matches the pinned hash.
+#
+# ── checkout-of-untrusted-code / untrusted-checkout-TOCTOU (2 alerts) ──────
+#
+# LOCATION: .github/workflows/nix-lockfile-fix.yml
+#
+# MITIGATION: The nix-lockfile-fix workflow intentionally checks out a PR
+# branch to apply automated lockfile fixes. The TOCTOU risk is mitigated by:
+# 1. persist-credentials: false — the GITHUB_TOKEN is short-lived and scoped
+# 2. All subsequent actions are inlined (not loaded from the untrusted checkout)
+# 3. The inline comment at line 208 explicitly documents this decision
+# This is a legitimate workflow pattern documented by GitHub for automation bots.
+#
+# ── incomplete-url-substring-sanitization (5 alerts, test-only) ──────────
+#
+# MITIGATION: These are test assertions that verify hostname suffixes using
+# .endswith() after parsing the URL with urllib.parse.urlparse(). The tests
+# validate that provider base URLs match expected domains. The validation is
+# sufficient for test code where the input is a known constant from the
+# provider profile, not user-supplied data.

@@ -46,7 +46,8 @@
     "supports-hyperlinks": "^3.1.0",
     "type-fest": "^4.30.0",
     "usehooks-ts": "^3.1.0",
-    "wrap-ansi": "^9.0.0"
+    "wrap-ansi": "^9.0.0",
+    "ws": "^8.21.0"
   },
   "devDependencies": {
     "esbuild": "^0.28.1"

@@ -1,0 +1,26 @@
+id: "lehman-ltcm-downfall-leverage"
+kind: "downfall"
+figure: "Lehman Brothers / LTCM"
+domain: "finance"
+era: "1998 (LTCM), 2008 (Lehman)"
+what_they_did: "Massive leverage on correlated bets; assumed liquidity would always be there; ignored tail risk."
+the_signal:
+  - "leverage magnifies both gains and losses"
+  - "correlation -> 1 in a crisis"
+  - "liquidity is a fair-weather friend"
+the_lesson: "Leverage + correlation + illiquidity = certain ruin; margin of safety is not optional."
+signals:
+  - "leverage"
+  - "overextension"
+  - "correlation_risk"
+  - "liquidity_crisis"
+keywords:
+  - "leverage"
+  - "margin"
+  - "borrow"
+  - "all in"
+  - "correlated"
+  - "liquidity"
+sources:
+  - "When Genius Failed (Lowenstein)"
+  - "Too Big to Fail (Sorkin)"

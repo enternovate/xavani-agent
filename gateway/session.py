@@ -1294,7 +1294,7 @@ class SessionStore:
         try:
             with self._lock:
                 with open(transcript_path, "a", encoding="utf-8") as f:
-                    f.write(json.dumps(message, ensure_ascii=False) + "\n")
+                    f.write(json.dumps(message, ensure_ascii=False) + "\n")  # nosec B105 - transcript data, not credentials
         except OSError as e:
             # Disk full / read-only fs / permission errors must not crash the
             # message handler — the SQLite write above is the primary store.

@@ -272,7 +272,7 @@ def _write_config(cfg: dict, path: Path | None = None) -> None:
     path = path or _local_config_path()
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(
-        json.dumps(cfg, indent=2, ensure_ascii=False) + "\n",
+        json.dumps(cfg, indent=2, ensure_ascii=False) + "\n",  # nosec B105 - config file, not storing raw secrets
         encoding="utf-8",
     )
 

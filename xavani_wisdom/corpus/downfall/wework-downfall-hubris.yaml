@@ -1,0 +1,26 @@
+id: "wework-downfall-hubris"
+kind: "downfall"
+figure: "WeWork (Adam Neumann)"
+domain: "finance"
+era: "2019"
+what_they_did: "Conflated a real-estate sublease business with a 'tech platform' valuation; governance vacuum; self-dealing; 'community-adjusted EBITDA'."
+the_signal:
+  - "rebranding commodity as platform for multiple expansion"
+  - "founder control without accountability"
+  - "metrics invented to hide economics"
+the_lesson: "Governance exists for a reason; if the economics don't make sense at 1x revenue, they won't at 50x."
+signals:
+  - "hubris"
+  - "governance_vacuum"
+  - "metric_invention"
+  - "self_dealing"
+keywords:
+  - "community adjusted"
+  - "platform"
+  - "valuation"
+  - "governance"
+  - "founder"
+  - "self dealing"
+sources:
+  - "The Cult of We (Brown/Farrell)"
+  - "WeWork S-1 filing"

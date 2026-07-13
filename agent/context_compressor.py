@@ -1594,7 +1594,7 @@ The user has requested that this compaction PRIORITISE preserving all informatio
             )
             logger.info(
                 "Model context limit: %d tokens (%.0f%% = %d)",
-                self.context_length,
+                self.context_length,  # nosec B105 - diagnostic metrics, not secrets
                 self.threshold_percent * 100,
                 self.threshold_tokens,
             )

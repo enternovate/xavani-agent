@@ -756,7 +756,7 @@ def test_run_doctor_dashscope_retries_china_endpoint_after_intl_unauthorized(mon
         # Return 200 for any China-hosted DashScope endpoint (not the intl one).
         # alibaba-coding-plan also uses DASHSCOPE_API_KEY and hits subdomains like
         # coding-intl.dashscope.aliyuncs.com — that must stay 401 (intl).
-        status = 200 if "dashscope.aliyuncs.com" in hostname and "intl" not in hostname else 401
+        status = 200 if "dashscope.aliyuncs.com" in hostname and "intl" not in hostname else 401  # nosec B105 - test mock, not real credential check
         return types.SimpleNamespace(status_code=status)
 
     import httpx

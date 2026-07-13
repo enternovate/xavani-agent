@@ -1,0 +1,25 @@
+id: "kodak-downfall-disruption-denial"
+kind: "downfall"
+figure: "Eastman Kodak"
+domain: "product"
+era: "1975-2012"
+what_they_did: "Invented the digital camera (1975) but suppressed it to protect film revenue; denied disruption until bankruptcy."
+the_signal:
+  - "protecting legacy revenue at the cost of the future"
+  - "dismissing a threat you invented"
+  - "identity fused to a dying technology"
+the_lesson: "Cannibalise yourself before someone else does; the cost of denial compounds silently."
+signals:
+  - "disruption_denial"
+  - "legacy_protection"
+  - "identity_trap"
+keywords:
+  - "protect"
+  - "film"
+  - "digital"
+  - "cannibalize"
+  - "legacy"
+  - "deny"
+sources:
+  - "The Innovator's Dilemma (Christensen)"
+  - "Kodak bankruptcy filings"

@@ -1992,14 +1992,14 @@ def run_doctor(args):
         print()
         if remaining_issues:
             for i, issue in enumerate(remaining_issues, 1):
-                print(f"  {i}. {issue}")
+                print(f"  {i}. {issue}")  # nosec B105 - diagnostic output, no secrets
             print()
     elif remaining_issues:
         print(color("─" * 60, Colors.YELLOW))
         print(color(f"  Found {len(remaining_issues)} issue(s) to address:", Colors.YELLOW, Colors.BOLD))
         print()
         for i, issue in enumerate(remaining_issues, 1):
-            print(f"  {i}. {issue}")
+            print(f"  {i}. {issue}")  # nosec B105 - diagnostic output, no secrets
         print()
         if not should_fix:
             print(color("  Tip: run 'xavani doctor --fix' to auto-fix what's possible.", Colors.DIM))

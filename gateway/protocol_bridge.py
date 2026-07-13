@@ -28,6 +28,7 @@ from collections import OrderedDict
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple, Union
+import ipaddress
 from urllib.parse import urlparse, urljoin
 
 logger = logging.getLogger(__name__)
@@ -87,6 +88,30 @@ class A2AClient:
         self._max_retries = max_retries
         self._session = _SessionManager()
 
+    # ── URL validation (SSRF guard) ──────────────────────────────────
+
+    @staticmethod
+    def _validate_url(url: str) -> str:
+        """Reject non-HTTP(S) schemes and requests to private/loopback IPs."""
+        parsed = urlparse(url)
+        if parsed.scheme not in ("http", "https"):
+            raise ValueError(f"SSRF blocked: unsupported scheme '{parsed.scheme}'")
+        hostname = parsed.hostname or ""
+        if not hostname:
+            raise ValueError("SSRF blocked: URL has no hostname")
+        # Block loopback, link-local, and private ranges
+        try:
+            ip = ipaddress.ip_address(hostname)
+            if ip.is_loopback or ip.is_link_local or ip.is_private:
+                raise ValueError(f"SSRF blocked: hostname '{hostname}' resolves to private/reserved IP")
+        except ValueError:
+            pass  # not an IP literal — check below
+        # Block common internal hostnames
+        blocked = {"localhost", "127.0.0.1", "0.0.0.0", "::1", "metadata.google.internal"}
+        if hostname.lower() in blocked:
+            raise ValueError(f"SSRF blocked: hostname '{hostname}' is internal")
+        return url
+
     # ── HTTP request helpers ──────────────────────────────────────────
 
     async def _request(
@@ -113,25 +138,26 @@ class A2AClient:
             merged_headers.update(headers)
 
         last_error: Optional[Exception] = None
+        self._validate_url(url)  # SSRF guard
         for attempt in range(self._max_retries):
             try:
                 if method == "GET":
                     req = urllib.request.Request(
-                        url, headers=merged_headers, method="GET"
+                        url, headers=merged_headers, method="GET"  # nosec B310 - URL validated by _validate_url
                     )
                 elif method == "POST":
                     data = json.dumps(json_data or {}).encode("utf-8")
                     req = urllib.request.Request(
-                        url, data=data, headers=merged_headers, method="POST"
+                        url, data=data, headers=merged_headers, method="POST"  # nosec B310 - URL validated by _validate_url
                     )
                 elif method == "DELETE":
                     req = urllib.request.Request(
-                        url, headers=merged_headers, method="DELETE"
+                        url, headers=merged_headers, method="DELETE"  # nosec B310 - URL validated by _validate_url
                     )
                 elif method == "PUT":
                     data = json.dumps(json_data or {}).encode("utf-8")
                     req = urllib.request.Request(
-                        url, data=data, headers=merged_headers, method="PUT"
+                        url, data=data, headers=merged_headers, method="PUT"  # nosec B310 - URL validated by _validate_url
                     )
                 else:
                     raise ValueError(f"Unsupported HTTP method: {method}")

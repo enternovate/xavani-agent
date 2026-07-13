@@ -1354,7 +1354,7 @@ def _dump_subagent_timeout_diagnostic(
 
         from agent.redact import redact_sensitive_text
         safe_lines = redact_sensitive_text("\n".join(lines))
-        dump_path.write_text(safe_lines, encoding="utf-8")
+        dump_path.write_text(safe_lines, encoding="utf-8")  # nosec B105 - already redacted before write
         return str(dump_path)
     except Exception as exc:
         logger.warning("Subagent timeout diagnostic dump failed: %s", exc)

@@ -196,7 +196,7 @@ def save_b64_image(
     ts = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
     short = uuid.uuid4().hex[:8]
     path = _images_cache_dir() / f"{prefix}_{ts}_{short}.{extension}"
-    path.write_bytes(raw)  # nosec: binary image bytes, not sensitive text
+    path.write_bytes(raw)  # nosec B105 - binary image bytes, not sensitive text
     return path
 
 

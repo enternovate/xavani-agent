@@ -1,0 +1,25 @@
+id: "buffett-ascent-moat"
+kind: "ascent"
+figure: "Warren Buffett"
+domain: "finance"
+era: "1956-present"
+what_they_did: "Circle of competence, margin of safety, durable moats, patience, reputation."
+the_signal:
+  - "stay in your circle of competence"
+  - "demand a margin of safety"
+  - "let it compound"
+the_lesson: "Avoiding ruin and compounding patiently beats chasing every opportunity."
+signals:
+  - "margin_of_safety"
+  - "competence"
+  - "patience"
+  - "long_term"
+keywords:
+  - "moat"
+  - "margin of safety"
+  - "compound"
+  - "patient"
+  - "competence"
+  - "reputation"
+sources:
+  - "Berkshire Hathaway letters"

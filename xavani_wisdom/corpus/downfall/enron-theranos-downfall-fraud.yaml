@@ -1,0 +1,26 @@
+id: "enron-theranos-downfall-fraud"
+kind: "downfall"
+figure: "Enron / Theranos"
+domain: "ethics"
+era: "2001 (Enron), 2015-2018 (Theranos)"
+what_they_did: "Systemic fraud, mark-to-myth accounting, silencing whistleblowers; reality distortion field."
+the_signal:
+  - "results too good to be true"
+  - "attacking critics instead of answering questions"
+  - "complexity hiding simple theft"
+the_lesson: "Fraud always wins until it doesn't; transparency and independent audit are the only defense."
+signals:
+  - "fraud"
+  - "hubris"
+  - "silencing_dissent"
+  - "too_good_to_be_true"
+keywords:
+  - "guaranteed"
+  - "revolutionary"
+  - "secret"
+  - "whistleblower"
+  - "audit"
+  - "hide"
+sources:
+  - "The Smartest Guys in the Room (McLean/Elkind)"
+  - "Bad Blood (Carreyrou)"

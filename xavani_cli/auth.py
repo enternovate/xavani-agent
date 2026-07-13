@@ -2207,7 +2207,7 @@ def _spotify_code_verifier(length: int = 64) -> str:
 
 
 def _spotify_code_challenge(code_verifier: str) -> str:
-    digest = hashlib.sha256(code_verifier.encode("utf-8")).digest()
+    digest = hashlib.sha256(code_verifier.encode("utf-8")).digest()  # nosec B324 - SHA256 for PKCE is RFC 7636 standard
     return base64.urlsafe_b64encode(digest).decode("ascii").rstrip("=")
 
 

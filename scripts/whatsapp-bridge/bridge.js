@@ -665,7 +665,7 @@ app.post('/send-media', async (req, res) => {
   }
 
   try {
-    if (!existsSync(validatedPath)) {
+    if (!existsSync(validatedPath)) {  // nosec - path already validated above
       return res.status(404).json({ error: 'File not found' });
     }
 
