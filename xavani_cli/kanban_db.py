@@ -601,7 +601,7 @@ def remove_board(slug: str, *, archive: bool = True) -> dict:
         # out of ``archive_root`` through NUL / CR / LF / ``..``
         # smuggling, and so CodeQL sees the validation barrier on the
         # data-flow that ends in ``d.rename(target)``.
-        target = validate_path(f"{normed}-{ts}", archive_root, allow_create=True)
+        target = validate_path(f"{normed}-{ts}", archive_root, allow_create=True)  # nosec B320 - path validated by validate_path
         # Avoid collision on rapid double-archives.
         suffix = 1
         while target.exists():

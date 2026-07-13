@@ -1,0 +1,23 @@
+id: "bezos-ascent-day1"
+kind: "ascent"
+figure: "Jeff Bezos"
+domain: "product"
+era: "1994-present"
+what_they_did: "Customer obsession, long time horizons, 'Day 1' mindset, regret-minimization."
+the_signal:
+  - "work backwards from the customer"
+  - "optimize lifetime not quarter"
+  - "stay Day 1"
+the_lesson: "Customer-obsessed, long-horizon bets beat competitor-obsessed short-term optimization."
+signals:
+  - "customer_obsession"
+  - "long_term"
+  - "experiment"
+keywords:
+  - "customer"
+  - "long term"
+  - "invent"
+  - "patient"
+  - "regret"
+sources:
+  - "Amazon shareholder letters"

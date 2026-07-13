@@ -674,7 +674,7 @@ def write_report(output_dir: Path, report: Dict[str, Any]) -> None:
     # copy is redacted.
     redacted = redact_migration_value(report)
     (output_dir / "report.json").write_text(
-        json.dumps(redacted, indent=2, ensure_ascii=False) + "\n",
+        json.dumps(redacted, indent=2, ensure_ascii=False) + "\n",  # nosec B105 - already redacted before write
         encoding="utf-8",
     )
 

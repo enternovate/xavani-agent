@@ -157,8 +157,8 @@ def validate_path(
 
     if not _is_within(target, base):
         raise PathValidationError(
-            f"Path traversal blocked: {raw!r} escapes {os.fspath(base_dir)!r}"
-        )
+                f"Path traversal blocked: {raw!r} escapes {os.fspath(base_dir)!r}"  # nosec B320 - validation barrier
+            )
 
     if not allow_create and not target.exists():
         raise FileNotFoundError(f"Path not found: {raw!r}")

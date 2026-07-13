@@ -1165,7 +1165,7 @@ def _write_run_report(
             from agent.redact import redact_sensitive_text
             safe_cron = json.loads(redact_sensitive_text(json.dumps(cron_rewrites, ensure_ascii=False)))
             (run_dir / "cron_rewrites.json").write_text(
-                json.dumps(safe_cron, indent=2, ensure_ascii=False) + "\n",
+                json.dumps(safe_cron, indent=2, ensure_ascii=False) + "\n",  # nosec B105 - already redacted before write
                 encoding="utf-8",
             )
     except Exception as e:

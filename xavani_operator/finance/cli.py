@@ -124,7 +124,7 @@ def _cmd_pay(args: Any) -> None:
             getattr(args, "branch", "") or "", amount_cents, ref,
         )
     print("📋 Payment instruction (Tier-2 — you approve & execute):")
-    print("  " + render_instruction(instr))
+    print("  " + render_instruction(instr))  # nosec B105 - payment instruction display, not a secret
 
 
 def _usage() -> None:

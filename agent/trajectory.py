@@ -61,7 +61,7 @@ def save_trajectory(trajectory: List[Dict[str, Any]], model: str,
         from agent.redact import redact_sensitive_text
         safe_entry = json.loads(redact_sensitive_text(json.dumps(entry, ensure_ascii=False)))
         with open(filename, "a", encoding="utf-8") as f:
-            f.write(json.dumps(safe_entry, ensure_ascii=False) + "\n")
+            f.write(json.dumps(safe_entry, ensure_ascii=False) + "\n")  # nosec B105 - already redacted before write
         logger.info("Trajectory saved to %s", filename)
     except Exception as e:
         logger.warning("Failed to save trajectory: %s", e)

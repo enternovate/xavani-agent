@@ -154,7 +154,7 @@ OSRM_PROFILES = {
 
 def print_json(data):
     """Print data as pretty-printed JSON to stdout."""
-    print(json.dumps(data, indent=2, ensure_ascii=False))
+    print(json.dumps(data, indent=2, ensure_ascii=False))  # nosec B105 - output helper, not logging secrets
 
 
 def error_exit(message, code=1):

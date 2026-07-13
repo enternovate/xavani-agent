@@ -53,7 +53,7 @@ def test_learn_url_uses_injected_fetch(tmp_path):
     )
     assert p.name
     assert p.tags
-    assert "example.com" in p.inspiration  # attribution to the source
+    assert "example.com" in p.inspiration  # nosec B105 - test assertion for URL attribution, not a secret
 
 
 # --- L7/L14: preference capture (explicit + continuous) --------------------

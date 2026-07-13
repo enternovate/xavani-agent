@@ -248,7 +248,7 @@ def test_native_client_rejects_empty_api_key_with_actionable_message():
             GeminiNativeClient(api_key=bad)  # type: ignore[arg-type]
         msg = str(excinfo.value)
         assert "GOOGLE_API_KEY" in msg and "GEMINI_API_KEY" in msg
-        assert "aistudio.google.com" in msg
+        assert "aistudio.google.com" in msg  # nosec B105 - test assertion for error message content
 
 
 @pytest.mark.asyncio

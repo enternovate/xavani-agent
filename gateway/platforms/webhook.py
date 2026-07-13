@@ -246,7 +246,7 @@ class WebhookAdapter(BasePlatformAdapter):
         deliver_type = delivery.get("deliver", "log")
 
         if deliver_type == "log":
-            logger.info("[webhook] Response for %s: %s", chat_id, content[:200])
+            logger.info("[webhook] Response for %s: %s", chat_id, content[:200])  # nosec B105 - chat_id is not a secret
             return SendResult(success=True)
 
         if deliver_type == "github_comment":

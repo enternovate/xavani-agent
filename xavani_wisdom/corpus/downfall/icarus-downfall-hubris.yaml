@@ -1,0 +1,25 @@
+id: "icarus-downfall-hubris"
+kind: "downfall"
+figure: "Icarus"
+domain: "leadership"
+era: "Greek mythology"
+what_they_did: "Flew too close to the sun despite warnings; wax wings melted; fell into the sea."
+the_signal:
+  - "ignoring wise counsel at the peak"
+  - "overconfidence after early success"
+  - "no exit plan, no margin"
+the_lesson: "Hubris blinds you to the ceiling; every ascent needs a descent plan."
+signals:
+  - "hubris"
+  - "overconfidence"
+  - "ignoring_warnings"
+  - "no_margin"
+keywords:
+  - "fly higher"
+  - "ignore"
+  - "warn"
+  - "invincible"
+  - "limit"
+sources:
+  - "Ovid, Metamorphoses"
+  - "Apollodorus, Bibliotheca"
