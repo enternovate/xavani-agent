@@ -49,7 +49,20 @@ jobs:
       group: auto-fix-main
       cancel-in-progress: true
     steps:
+      - name: Check GitHub App secrets
+        id: secrets-check
+        env:
+          APP_ID: ${{ secrets.APP_ID }}
+        run: |
+          if [ -n "${APP_ID}" ]; then
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::APP_ID / APP_PRIVATE_KEY not configured — falling back to GITHUB_TOKEN (downstream workflows will not be triggered by the fix commit)."
+          fi
+
       - name: Generate GitHub App token
+        if: steps.secrets-check.outputs.configured == 'true'
         id: app-token
         uses: actions/create-github-app-token@7bfa3a4717ef143a604ee0a99d859b8886a96d00  # v1.9.3
         with:
@@ -60,7 +73,7 @@ jobs:
         with:
           persist-credentials: false
           ref: main
-          token: ${{ steps.app-token.outputs.token }}
+          token: ${{ steps.app-token.outputs.token || github.token }}
 
       - uses: ./.github/actions/nix-setup
         with:
