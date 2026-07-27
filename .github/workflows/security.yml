@@ -27,7 +27,7 @@ jobs:
     name: Bandit (Python SAST)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@v7.0.1
       - uses: actions/setup-python@v6
         with:
           python-version: "3.11"
@@ -39,7 +39,7 @@ jobs:
     name: Gitleaks (secret scan)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@v7.0.1
         with:
           fetch-depth: 0
       - uses: gitleaks/gitleaks-action@v3
@@ -51,7 +51,7 @@ jobs:
     name: Semgrep (rulesets)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@v7.0.1
       - run: pip install semgrep==1.97.0
       - run: semgrep --config p/python --config p/security-audit --error --quiet || true
         continue-on-error: true
@@ -60,7 +60,7 @@ jobs:
     name: pip-audit (dependency CVEs)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@v7.0.1
       - uses: actions/setup-python@v6
         with:
           python-version: "3.11"
