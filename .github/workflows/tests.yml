@@ -168,3 +168,47 @@ jobs:
           OPENROUTER_API_KEY: ""
           OPENAI_API_KEY: ""
           NOUS_API_KEY: ""
+
+  # ── Core gate (BLOCKING) ────────────────────────────────────────────────
+  # A small, guaranteed-stable regression gate that MUST pass. It smoke-imports
+  # every core subsystem (so import-time regressions always block) and runs the
+  # two previously-fragile unit files that are now verified stable in isolation.
+  # The full suite stays non-blocking (see the `test` job) so real-time flakes
+  # never block a merge — but a broken core always does. This is the
+  # "no test stays red >1 release" failure budget (A05).
+  core-gate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0  # v7.0.0
+        with:
+          persist-credentials: false
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39  # v8.2.0
+
+      - name: Set up Python 3.11
+        run: uv python install 3.11
+
+      - name: Install dependencies
+        run: |
+          uv venv .venv --python 3.11
+          source .venv/bin/activate
+          uv pip install -e ".[all,dev]"
+
+      - name: Smoke-import all core subsystems
+        run: |
+          source .venv/bin/activate
+          python -c "import importlib; [importlib.import_module(m) for m in ['xavani','xavani_cli','gateway','tools','agent','cron','xavani_operator']]; print('core imports OK')"
+
+      - name: Run stable core unit tests (blocking)
+        run: |
+          source .venv/bin/activate
+          python -m pytest tests/gateway/test_approve_deny_commands.py tests/tools/test_mixture_of_agents_tool.py -q --tb=short --dist=loadscope
+        env:
+          OPENROUTER_API_KEY: ""
+          OPENAI_API_KEY: ""
+          NOUS_API_KEY: ""
+
