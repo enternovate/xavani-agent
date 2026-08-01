@@ -13,6 +13,10 @@ __pycache__/
 .env.development
 .env.test
 export*
+
+# Session handoffs
+SESSION_HANDOFF.md
+.full-review/
 __pycache__/model_tools.cpython-310.pyc
 __pycache__/web_tools.cpython-310.pyc
 logs/

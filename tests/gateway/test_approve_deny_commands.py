@@ -25,7 +25,6 @@ from gateway.config import GatewayConfig, Platform, PlatformConfig
 from gateway.platforms.base import MessageEvent
 from gateway.session import SessionEntry, SessionSource, build_session_key
 
-
 def _make_source() -> SessionSource:
     return SessionSource(
         platform=Platform.TELEGRAM,
@@ -79,6 +78,10 @@ def _clear_approval_state():
     mod._session_approved.clear()
     mod._permanent_approved.clear()
     mod._pending.clear()
+    mod._session_yolo.clear()
+    # ContextVar: reset so get_current_session_key() falls through to the env
+    # var path, matching a fresh process. Mirrors the conftest autouse fixture.
+    mod._approval_session_key.set("")
 
 
 # ------------------------------------------------------------------
@@ -406,10 +409,13 @@ class TestBlockingApprovalE2E:
         t = threading.Thread(target=agent_thread)
         t.start()
 
-        for _ in range(50):
+        # Poll with a deadline-based loop (not a fixed 50-iteration cap) to
+        # tolerate pytest-xdist scheduler jitter and Python 3.14 GIL contention.
+        deadline = time.monotonic() + 10
+        while time.monotonic() < deadline:
             if notified:
                 break
-            time.sleep(0.05)
+            time.sleep(0.1)
 
         assert len(notified) == 1
         assert "rm -rf /important" in notified[0]["command"]
@@ -453,10 +459,12 @@ class TestBlockingApprovalE2E:
 
         t = threading.Thread(target=agent_thread)
         t.start()
-        for _ in range(50):
+        # Same deadline-based hardening as the approve-once path above.
+        deadline = time.monotonic() + 10
+        while time.monotonic() < deadline:
             if notified:
                 break
-            time.sleep(0.05)
+            time.sleep(0.1)
 
         resolve_gateway_approval(session_key, "deny")
         t.join(timeout=5)
@@ -543,11 +551,12 @@ class TestBlockingApprovalE2E:
         for t in threads:
             t.start()
 
-        # Wait for all 3 to block
-        for _ in range(100):
+        # Wait for all 3 to block — deadline-based like the single-threaded cases.
+        deadline = time.monotonic() + 15
+        while time.monotonic() < deadline:
             if len(notified) >= 3:
                 break
-            time.sleep(0.05)
+            time.sleep(0.1)
 
         assert len(notified) == 3
         assert len(_gateway_queues.get(session_key, [])) == 3

@@ -37,6 +37,10 @@ DEFAULT_REFERENCE_MODELS = [
     "gemini-2.5-flash",
 ]
 
+# Back-compat alias. The public name REFERENCE_MODELS predates the DEFAULT_
+# rename in v0.3.0; external callers and the test-suite contract reference it.
+REFERENCE_MODELS = DEFAULT_REFERENCE_MODELS
+
 DEFAULT_AGGREGATOR_MODEL = "gpt-4o"
 
 

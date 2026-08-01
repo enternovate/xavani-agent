@@ -25,6 +25,11 @@ from xavani_cli.config import cfg_get
 
 from utils import env_var_enabled, is_truthy_value
 
+# Hoisted to module top: lazy imports of gateway.session_context inside worker
+# threads deadlock on the global import lock when the main thread is mid-import
+# of a gateway.* submodule (Python issue #83054-class circular hang).
+from gateway.session_context import get_session_env
+
 logger = logging.getLogger(__name__)
 try:
     from xavani_cli.safe_logging import SafeLogFilter
@@ -89,15 +94,12 @@ def get_current_session_key(default: str = "default") -> str:
     session_key = _approval_session_key.get()
     if session_key:
         return session_key
-    from gateway.session_context import get_session_env
     return get_session_env("XAVANI_SESSION_KEY", default)
 
 
 def _get_session_platform() -> str:
     """Return the current gateway platform from contextvars/env fallback."""
     try:
-        from gateway.session_context import get_session_env
-
         return get_session_env("XAVANI_SESSION_PLATFORM", "") or ""
     except Exception:
         return os.getenv("XAVANI_SESSION_PLATFORM", "") or ""
