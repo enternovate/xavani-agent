@@ -40,6 +40,14 @@ import urllib.request
 
 from xavani_constants import get_xavani_home
 
+
+def _in_gateway_context() -> bool:
+    """True when the caller is inside a gateway/approval-context (blocking flow)."""
+    from gateway.session_context import get_session_env
+    return bool(os.environ.get("XAVANI_GATEWAY_SESSION")) or bool(
+        get_session_env("XAVANI_SESSION_PLATFORM")
+    )
+
 logger = logging.getLogger(__name__)
 try:
     from xavani_cli.safe_logging import SafeLogFilter
@@ -695,6 +703,7 @@ def check_command_security(command: str) -> dict:
     Returns:
         {"action": "allow"|"warn"|"block", "findings": [...], "summary": str}
     """
+    global _install_thread
     cfg = _load_security_config()
 
     if not cfg["tirith_enabled"]:
@@ -706,9 +715,45 @@ def check_command_security(command: str) -> dict:
     if not is_platform_supported():
         return {"action": "allow", "findings": [], "summary": ""}
 
+    # Gateway approval context uses the async install path: where an agent
+    # thread blocks on user approval (gateway /approve /deny), a tirith
+    # binary download must not freeze the flow while it completes.
+    _in_gateway_ctx = _in_gateway_context()
+
     tirith_path = _resolve_tirith_path(cfg["tirith_path"])
     timeout = cfg["tirith_timeout"]
     fail_open = cfg["tirith_fail_open"]
+
+    # Binary absent + gateway context + no background thread alive:
+    # start one daemon installer and fail-open immediately.
+    # Non-gateway contexts (CLI, cron) keep the synchronous path.
+    if (
+        tirith_path is None
+        and _in_gateway_ctx
+        and (_install_thread is None or not _install_thread.is_alive())
+    ):
+        _install_thread = threading.Thread(
+            target=_background_install,
+            kwargs={"log_failures": True},
+            daemon=True,
+        )
+        _install_thread.start()
+        _warn_once(
+            "tirith_path_installing",
+            "tirith binary not installed; background install started "
+            "(fail_open while it completes)",
+        )
+        if fail_open:
+            return {
+                "action": "allow",
+                "findings": [],
+                "summary": "tirith installing in background",
+            }
+        return {
+            "action": "block",
+            "findings": [],
+            "summary": "tirith installing (fail-closed)",
+        }
 
     if tirith_path is None:
         _warn_once(
