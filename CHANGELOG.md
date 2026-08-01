@@ -2,7 +2,22 @@
 
 All notable changes to Xavani Agent are documented in this file.
 
+## [0.7.2] - 2026-08-01 — "Deploy Readiness"
+
+Deploy hardening. No new user-facing features.
+
+### Added
+- New blocking `core-gate` CI job: smoke-imports all core subsystems and runs
+  the stable approval + MOA unit tests. Any failure blocks the merge. The full
+  suite stays non-blocking (visibility) to avoid blocking on known real-time
+  flakes. Implements the "no test stays red >1 release" failure budget (A05).
+- `--dist=loadscope` was evaluated for the full suite and **rejected**: measured
+  ~4x wall-clock regression (38% at 10 min) because the large `xavani_cli`
+  module pins to one worker, risking the CI 30-min timeout. Flake prevention
+  stays at the test level (deadline-based waits) to keep the fast path.
+
 ## [0.7.0] - 2026-06-12 — "Quantum Sentience"
+
 
 Four major updates, each deterministic and zero-LLM at its core: the LLM only
 *generates* (plans, advice copy), never routes or decides.
