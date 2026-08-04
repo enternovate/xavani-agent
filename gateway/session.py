@@ -249,7 +249,19 @@ def _neutralize_untrusted_inline_text(value: Any, *, max_chars: int = _MAX_PROMP
     every turn. Collapsing them to a single space keeps a normal value
     byte-identical while making a hostile one visually inert.
     """
-    text = str(value).replace("\r\n", "\n").replace("\r", "\n").replace("\n", " ")
+    raw = str(value)
+    # D14: log known injection patterns found in untrusted metadata
+    # (instruction overrides, role confusion, jailbreaks). Advisory only —
+    # the collapse below is the actual defense; the scan is the tripwire.
+    try:
+        from agent.prompt_guard import log_attempt, scan_text
+
+        _verdict = scan_text(raw)
+        if _verdict.flagged:
+            log_attempt(_verdict, source="gateway_metadata", sample=raw)
+    except Exception:
+        pass
+    text = raw.replace("\r\n", "\n").replace("\r", "\n").replace("\n", " ")
     text = "".join(ch if ch >= " " or ch == "\t" else " " for ch in text)
     if max_chars and len(text) > max_chars:
         text = text[: max_chars - 3] + "..."
