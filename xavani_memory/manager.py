@@ -215,6 +215,20 @@ class MemoryManager:
                 episode_id, self._current_session_id, self._current_agent_id,
             )
 
+            # 4. B02: extract durable facts from the user input and
+            # persist them (confidence-scored) for future sessions.
+            try:
+                from xavani_memory.summarizer import extract_facts, store_facts
+
+                facts = extract_facts([{
+                    "user_input": user_input or "",
+                    "session_id": self._current_session_id,
+                }])
+                if facts:
+                    store_facts(facts)
+            except Exception:
+                pass
+
             return episode_id
 
     def get_episode(self, episode_id: str) -> Optional[Dict[str, Any]]:
@@ -291,6 +305,17 @@ class MemoryManager:
                     session_id=self._current_session_id,
                     agent_id=self._current_agent_id,
                 )
+
+            # 3.5 Durable facts from past sessions (B02) — confidence-
+            # filtered so only well-supported facts enter the prompt.
+            try:
+                from xavani_memory.summarizer import recall_facts
+
+                context["durable_facts"] = recall_facts(
+                    session_id=self._current_session_id,
+                )
+            except Exception:
+                context["durable_facts"] = []
 
             # 4. Procedural memory insights
             if include_procedural:
