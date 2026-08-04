@@ -29,7 +29,7 @@ def test_missing_api_version_rejected():
 
 
 def test_older_version_rejected():
-    verdict = check_plugin_api_version({"api_version": "0.1.0"})
+    verdict = check_plugin_api_version({"api_version": "0.0.9"})
     assert verdict["compatible"] is False
     assert "does not match" in verdict["reason"]
 
@@ -60,7 +60,7 @@ def test_non_dict_manifest_rejected():
 
 def test_gate_raises_on_incompatible():
     with pytest.raises(ValueError, match="api_version"):
-        gate_plugin_load({"api_version": "0.1.0"})
+        gate_plugin_load({"api_version": "0.0.9"})
 
 
 def test_gate_passes_on_compatible():
@@ -91,7 +91,7 @@ def test_manifest_parse_rejects_bad_version(tmp_path):
     plugin_dir = tmp_path / "bad-plugin"
     plugin_dir.mkdir()
     (plugin_dir / "plugin.yaml").write_text(
-        "name: bad-plugin\napi_version: 0.1.0\n",
+        "name: bad-plugin\napi_version: 0.0.9\n",
         encoding="utf-8",
     )
     mgr = PluginManager()

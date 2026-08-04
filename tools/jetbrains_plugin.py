@@ -14,7 +14,7 @@ Usage::
 
     from tools.jetbrains_plugin import generate_jetbrains_plugin, validate_plugin
 
-    files = generate_jetbrains_plugin(version="0.7.2")
+    files = generate_jetbrains_plugin(version="0.1.0")
     problems = validate_plugin(files)
 """
 
