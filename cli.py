@@ -737,6 +737,15 @@ def _run_cleanup():
         pass
     try:
         if _active_agent_ref and hasattr(_active_agent_ref, 'shutdown_memory_provider'):
+            # Give queued memory-manager writes a bounded head start before
+            # shutdown_all()'s ~5s drain, so "/new then quit" doesn't drop
+            # the old session's extraction.
+            _mm = getattr(_active_agent_ref, '_memory_manager', None)
+            if _mm is not None and hasattr(_mm, 'flush_pending'):
+                try:
+                    _mm.flush_pending(timeout=10)
+                except Exception:
+                    pass
             # Forward the agent's own transcript so memory providers'
             # ``on_session_end`` hooks see the real conversation instead of
             # an empty list (#15165). ``_session_messages`` is set on
