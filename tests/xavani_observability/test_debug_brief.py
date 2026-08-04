@@ -109,7 +109,10 @@ def test_render_brief_task_id():
 def test_render_brief_log_cap():
     brief = build_debug_brief("boom", log_tail=[f"l{i}" for i in range(60)])
     text = render_brief(brief, max_log_lines=5)
-    assert text.count("l5") == 0  # only the last 5 lines rendered
+    # Only the last 5 lines of the tail are rendered.
+    assert "l55" in text
+    assert "l51" in text
+    assert "l50" not in text
 
 
 # ── serialization ──────────────────────────────────────────────────
