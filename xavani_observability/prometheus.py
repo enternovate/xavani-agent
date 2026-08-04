@@ -119,3 +119,48 @@ def get_prometheus_port() -> int:
         return int(obs.get("prometheus_port", 0))
     except Exception:
         return 0
+
+
+def render_metrics_text(summary: Dict[str, Any]) -> str:
+    """Render a MetricsCollector summary as Prometheus text format (E01).
+
+    Emits per-tool latency histograms (p50/p95/p99), call counts, and
+    error rates with proper TYPE/HELP lines. Consumes the dict returned
+    by ``MetricsCollector.get_summary()``.
+    """
+    lines = [
+        "# Xavani agent metrics",
+        "# TYPE xavani_tool_calls_total counter",
+        "# TYPE xavani_tool_latency_ms summary",
+        "# TYPE xavani_tool_errors_total counter",
+    ]
+    tools = summary.get("tools") or {}
+    for tool, stats in sorted(tools.items()):
+        label = tool.replace("\\", "\\\\").replace('"', '\\"')
+        lines.append(
+            f'xavani_tool_calls_total{{tool="{label}"}} {stats.get("call_count", 0)}'
+        )
+        for quantile, key in (("0.5", "p50_ms"), ("0.95", "p95_ms"), ("0.99", "p99_ms")):
+            val = stats.get(key, 0)
+            lines.append(
+                f'xavani_tool_latency_ms{{tool="{label}",quantile="{quantile}"}} {val}'
+            )
+    errors = summary.get("error_rates") or {}
+    for tool, rate in sorted(errors.items()):
+        label = tool.replace("\\", "\\\\").replace('"', '\\"')
+        lines.append(
+            f'xavani_tool_errors_total{{tool="{label}"}} {rate.get("count", 0) if isinstance(rate, dict) else rate}'
+        )
+    lines.append(
+        f'xavani_total_tool_calls {summary.get("total_tool_calls", 0)}'
+    )
+    lines.append(
+        f'xavani_total_llm_calls {summary.get("total_llm_calls", 0)}'
+    )
+    lines.append(
+        f'xavani_total_errors {summary.get("total_errors", 0)}'
+    )
+    lines.append(
+        f'xavani_overall_error_rate {summary.get("overall_error_rate", 0.0)}'
+    )
+    return "\n".join(lines) + "\n"
