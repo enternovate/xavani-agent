@@ -131,6 +131,15 @@ class MetricsCollector:
             self._total_llm_calls += 1
         self._persist()
 
+    def record_cost(self, cost_usd: float) -> None:
+        """Record an LLM call's cost (D04 cost-per-minute guard feed)."""
+        try:
+            from xavani_observability.cost_alerts import record_call_cost
+
+            record_call_cost(cost_usd)
+        except Exception:
+            pass
+
     def record_token_usage(
         self,
         model: str,
