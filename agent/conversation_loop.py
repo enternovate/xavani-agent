@@ -3500,6 +3500,45 @@ def run_conversation(
             else:
                 # No tool calls - this is the final response
                 final_response = assistant_message.content or ""
+
+                # ── Kanban worker terminal-tool stop guard ─────────────
+                # Workers must end with kanban_complete / kanban_block.
+                # Models sometimes narrate the next step ("Let me write the
+                # report") and stop with finish_reason=stop - a clean exit
+                # that the dispatcher records as protocol_violation. Nudge
+                # once or twice before allowing that exit.
+                try:
+                    from agent.kanban_stop import build_kanban_stop_nudge
+
+                    _kanban_nudge = build_kanban_stop_nudge(
+                        messages=messages,
+                        attempts=getattr(agent, "_kanban_stop_nudges", 0),
+                    )
+                except Exception:
+                    logger.debug("kanban stop-loop check failed", exc_info=True)
+                    _kanban_nudge = None
+
+                if _kanban_nudge:
+                    agent._kanban_stop_nudges = (
+                        getattr(agent, "_kanban_stop_nudges", 0) + 1
+                    )
+                    agent._vprint(
+                        f"{agent.log_prefix}🛑 Kanban worker ended without "
+                        "kanban_complete/kanban_block - nudging to continue.",
+                        force=True,
+                    )
+                    messages.append({
+                        "role": "user",
+                        "content": _kanban_nudge,
+                        "_kanban_stop_synthetic": True,
+                    })
+                    agent._session_messages = messages
+                    logger.info(
+                        "kanban stop-loop nudge issued (attempt %d) task=%s",
+                        agent._kanban_stop_nudges,
+                        os.environ.get("XAVANI_KANBAN_TASK", ""),
+                    )
+                    continue
                 
                 # Fix: unmute output when entering the no-tool-call branch
                 # so the user can see empty-response warnings and recovery
