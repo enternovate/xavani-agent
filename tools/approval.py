@@ -675,8 +675,49 @@ def detect_dangerous_chain(command: str, min_segments: int = 2) -> tuple:
 _lock = threading.Lock()
 _pending: dict[str, dict] = {}
 _session_approved: dict[str, set] = {}
+_session_approved_by_user: dict[str, dict] = {}  # session_key -> user_id -> set
 _session_yolo: set[str] = set()
 _permanent_approved: set = set()
+
+
+# ── D07: per-user approval scope ────────────────────────────────────
+# Shared multi-user sessions (one session_key, many users) must not let
+# user A's approval leak to user B. User-scoped approvals are keyed
+# (session_key, user_id) and consulted before the session-wide set.
+
+
+def _user_scope_key(session_key: str, user_id: str) -> str:
+    """Compound key binding approval state to one user in a session."""
+    return f"{session_key}::{user_id}" if user_id else session_key
+
+
+def approve_session_for_user(session_key: str, user_id: str, pattern_key: str) -> None:
+    """Approve a pattern for one user within a session (D07)."""
+    if not user_id:
+        approve_session(session_key, pattern_key)
+        return
+    with _lock:
+        _session_approved_by_user.setdefault(session_key, {}).setdefault(user_id, set()).add(pattern_key)
+
+
+def is_approved_for_user(session_key: str, user_id: str, pattern_key: str) -> bool:
+    """True when the pattern is approved for this user in this session.
+
+    Checks the user-scoped set first, then the session-wide set (a
+    session-wide approval legitimately covers every user). Never raises.
+    """
+    try:
+        if not user_id:
+            return is_approved(session_key, pattern_key)
+        with _lock:
+            user_set = _session_approved_by_user.get(session_key, {}).get(user_id)
+            if user_set and pattern_key in user_set:
+                return True
+            session_set = _session_approved.get(session_key)
+            return bool(session_set and pattern_key in session_set)
+    except Exception:
+        return False
+
 
 # =========================================================================
 # Blocking gateway approval (mirrors CLI's synchronous input() flow)
@@ -795,6 +836,7 @@ def clear_session(session_key: str) -> None:
         return
     with _lock:
         _session_approved.pop(session_key, None)
+        _session_approved_by_user.pop(session_key, None)  # D07
         _session_yolo.discard(session_key)
         _pending.pop(session_key, None)
         entries = _gateway_queues.pop(session_key, [])
