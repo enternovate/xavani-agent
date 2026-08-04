@@ -3574,14 +3574,25 @@ class AIAgent:
         the agent has a chance to recover.
         """
         if not _is_multimodal_tool_result(result):
+            # D01: mask API-key-shaped strings in tool results before they
+            # enter the model context (config/env-gated via agent.redact).
+            # Only string results are redacted — structured dict results
+            # pass through unchanged (they are not secret-shaped text).
+            if isinstance(result, str):
+                from agent.redact import redact_sensitive_text
+
+                try:
+                    return redact_sensitive_text(result)
+                except Exception:
+                    return result
             return result
 
         content = result.get("content") or []
         if not self._content_has_image_parts(content):
-            return content
+            return self._redact_content_parts(content)
 
         if self._model_supports_vision():
-            return content
+            return self._redact_content_parts(content)
 
         summary = _multimodal_text_summary(result)
         if tool_name == "computer_use":
@@ -3592,7 +3603,7 @@ class AIAgent:
                     "vision-capable model for desktop computer use, or use browser "
                     "tools for browser tasks."
                 ),
-                "text_summary": summary,
+                "text_summary": self._redact_content_parts(summary),
             })
 
         logger.warning(
@@ -3602,7 +3613,30 @@ class AIAgent:
             self.provider,
             self.model,
         )
-        return summary
+        return self._redact_content_parts(summary)
+
+    def _redact_content_parts(self, content: Any) -> Any:
+        """Mask secret-shaped text in content lists and strings (D01)."""
+        from agent.redact import redact_sensitive_text
+
+        try:
+            if isinstance(content, str):
+                return redact_sensitive_text(content)
+            if isinstance(content, list):
+                return [
+                    {
+                        **part,
+                        "text": redact_sensitive_text(part.get("text", ""))
+                        if isinstance(part, dict) and "text" in part
+                        else part,
+                    }
+                    if isinstance(part, dict)
+                    else redact_sensitive_text(part)
+                    for part in content
+                ]
+        except Exception:
+            pass
+        return content
 
     def _try_shrink_image_parts_in_messages(self, api_messages: list) -> bool:
         """Forwarder — see ``agent.conversation_compression.try_shrink_image_parts_in_messages``."""
