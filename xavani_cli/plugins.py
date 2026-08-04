@@ -245,6 +245,7 @@ class PluginManifest:
 
     name: str
     version: str = ""
+    api_version: str = ""  # C12: plugin API version gate
     description: str = ""
     author: str = ""
     requires_env: List[Union[str, Dict[str, Any]]] = field(default_factory=list)
@@ -1120,9 +1121,33 @@ class PluginManager:
                 "Parsed manifest: key=%s name=%s kind=%s source=%s path=%s",
                 key, name, kind, source, plugin_dir,
             )
+
+            # C12: reject plugins built for an incompatible plugin API.
+            # Bundled plugins ship with this runtime (always compatible);
+            # user/entrypoint plugins must declare the current version.
+            if source in ("user", "project", "entrypoint"):
+                try:
+                    from tools.plugin_api_gate import (
+                        check_plugin_api_version,
+                    )
+
+                    _api_verdict = check_plugin_api_version(
+                        {"api_version": str(data.get("api_version", ""))}
+                    )
+                    if not _api_verdict["compatible"]:
+                        logger.warning(
+                            "Plugin %s skipped: %s",
+                            key, _api_verdict["reason"],
+                        )
+                        return None
+                except Exception:
+                    # Never let the gate break plugin scanning itself.
+                    logger.debug("api_version gate unavailable for %s", key)
+
             return PluginManifest(
                 name=name,
                 version=str(data.get("version", "")),
+                api_version=str(data.get("api_version", "")),
                 description=data.get("description", ""),
                 author=data.get("author", ""),
                 requires_env=data.get("requires_env", []),
