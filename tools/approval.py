@@ -1621,6 +1621,22 @@ def check_all_command_guards(command: str, env_type: str,
         choice=choice,
     )
 
+    # G04: when a risky command gets approved, attach the proactive
+    # disclosure (risks + rollback) so the caller can surface it to the
+    # user before execution. Advisory only — never blocks.
+    try:
+        from xavani_cli.proactive_disclosure import disclosure_for
+
+        _disclosure = disclosure_for(command)
+        if _disclosure:
+            _log_approval_decision(
+                "allow", "disclosure", command=command,
+                description="; ".join(_disclosure["risks"]),
+                session_key=session_key,
+            )
+    except Exception:
+        _disclosure = None
+
     if choice == "deny":
         _log_approval_decision(
             "deny", "user", command=command, pattern_key=primary_key,
@@ -1650,8 +1666,16 @@ def check_all_command_guards(command: str, env_type: str,
         description=combined_desc, session_key=session_key,
         extra={"surface": "cli", "choice": choice},
     )
-    return {"approved": True, "message": None,
-            "user_approved": True, "description": combined_desc}
+    result = {"approved": True, "message": None,
+              "user_approved": True, "description": combined_desc}
+    # G04: surface the proactive disclosure on approved risky commands.
+    if _disclosure:
+        try:
+            from xavani_cli.proactive_disclosure import format_disclosure
+            result["disclosure"] = format_disclosure(_disclosure)
+        except Exception:
+            pass
+    return result
 
 
 # Load permanent allowlist from config on module import
