@@ -216,8 +216,9 @@ class MetricsCollector:
                     "avg_ms": round(sum(sorted_lats) / n, 2),
                     "min_ms": round(sorted_lats[0], 2),
                     "max_ms": round(sorted_lats[-1], 2),
+                    "p50_ms": round(self._percentile(sorted_lats, 50), 2),
                     "p95_ms": round(self._percentile(sorted_lats, 95), 2),
-                    "median_ms": round(self._percentile(sorted_lats, 50), 2),
+                    "p99_ms": round(self._percentile(sorted_lats, 99), 2),
                     "total_duration_ms": round(sum(sorted_lats), 2),
                 }
 
