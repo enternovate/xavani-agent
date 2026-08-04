@@ -145,26 +145,38 @@ def test_cid_propagates_via_copy_context():
 
 
 def test_handle_message_binds_and_clears_cid(monkeypatch):
-    """_handle_message sets a cid for the pipeline and clears it after."""
+    """_handle_message_traced sets a cid for the pipeline and clears it."""
     import asyncio
 
     from gateway.run import GatewayRunner
 
     captured = {}
 
-    async def fake_pipeline(self, event, cid):
-        captured["cid"] = cid
+    async def fake_pipeline(self, event):
         captured["active"] = get_correlation_id()
         return "ok"
 
-    monkeypatch.setattr(GatewayRunner, "_handle_message_with_cid", fake_pipeline)
+    monkeypatch.setattr(GatewayRunner, "_handle_message", fake_pipeline)
     # Avoid touching __init__: create an uninitialized instance.
     gw = object.__new__(GatewayRunner)
 
-    result = asyncio.run(GatewayRunner._handle_message(gw, None))  # type: ignore[arg-type]
+    result = asyncio.run(GatewayRunner._handle_message_traced(gw, None))  # type: ignore[arg-type]
     assert result == "ok"
-    # The pipeline saw the cid...
-    assert captured["cid"] == captured["active"]
-    assert len(captured["cid"]) == 12
+    # The pipeline saw a 12-char cid...
+    assert len(captured["active"]) == 12
     # ...and it was cleared after the message finished.
     assert get_correlation_id() == ""
+
+
+def test_adapters_route_through_traced_entry():
+    """set_message_handler must receive the cid-binding entry."""
+    import inspect
+
+    from gateway.run import GatewayRunner
+
+    assert GatewayRunner._handle_message_traced is not None
+    # The adapter registration sites (start + reconnect) reference the
+    # traced entry; the plain handler stays intact for command tests.
+    src = inspect.getsource(GatewayRunner)
+    assert src.count("adapter.set_message_handler(self._handle_message_traced)") >= 2
+    assert "_handle_message_traced" in inspect.getsource(GatewayRunner._handle_message_traced)
