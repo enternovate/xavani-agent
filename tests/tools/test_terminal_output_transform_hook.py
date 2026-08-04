@@ -9,6 +9,7 @@ from unittest.mock import MagicMock
 
 import xavani_cli.plugins as plugins_mod
 import tools.terminal_tool as terminal_tool_module
+from tools.plugin_api_gate import PLUGIN_API_VERSION
 
 
 _UNSET = object()
@@ -183,7 +184,11 @@ def test_terminal_output_transform_integration_with_real_plugin(monkeypatch, tmp
     plugins_dir = xavani_home / "plugins"
     plugin_dir = plugins_dir / "terminal_transform"
     plugin_dir.mkdir(parents=True)
-    (plugin_dir / "plugin.yaml").write_text("name: terminal_transform\n", encoding="utf-8")
+    (plugin_dir / "plugin.yaml").write_text(
+        "name: terminal_transform\n"
+        f'api_version: "{PLUGIN_API_VERSION}"\n',
+        encoding="utf-8",
+    )
     (plugin_dir / "__init__.py").write_text(
         "def register(ctx):\n"
         '    ctx.register_hook("transform_terminal_output", '
