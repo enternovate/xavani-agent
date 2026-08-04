@@ -264,6 +264,18 @@ def build_system_prompt_parts(agent: Any, system_message: Optional[str] = None) 
         except Exception:
             pass
 
+    # Episodic + procedural memory recall (xavani_memory). Built once at
+    # agent construction (prompt-cache-safe) — recall context is a snapshot
+    # of recent episodes, session summary, and procedural hints. Recording
+    # happens per-turn in the conversation loop.
+    if getattr(agent, "_xavani_memory", None) is not None:
+        try:
+            _xm_block = agent._xavani_memory.format_recall_prompt()
+            if _xm_block:
+                volatile_parts.append(_xm_block)
+        except Exception:
+            pass
+
     from xavani_time import now as _xavani_now
     now = _xavani_now()
     # Date-only (not minute-precision) so the system prompt is byte-stable
