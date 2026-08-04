@@ -11,9 +11,13 @@ from unittest.mock import patch as mock_patch
 
 import tools.approval as approval_module
 from tools.approval import (
+    RISK_TIER_BLOCK,
+    RISK_TIER_SAFE,
+    RISK_TIER_WARN,
     _get_approval_mode,
     _smart_approve,
     approve_session,
+    classify_command_risk,
     detect_dangerous_command,
     is_approved,
     load_permanent,

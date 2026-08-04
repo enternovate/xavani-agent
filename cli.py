@@ -123,6 +123,35 @@ _project_env = Path(__file__).parent / '.env'
 load_xavani_dotenv(xavani_home=_xavani_home, project_env=_project_env)
 
 
+def _full_traceback_enabled() -> bool:
+    """Return True when XAVANI_FULL_TRACEBACK requests full stack traces (E07).
+
+    Accepts 1/true/yes (case-insensitive); anything else (including unset)
+    keeps the concise one-line error format.
+    """
+    return os.environ.get("XAVANI_FULL_TRACEBACK", "").strip().lower() in (
+        "1",
+        "true",
+        "yes",
+    )
+
+
+def _format_cli_exception(exc: BaseException) -> str:
+    """Format an exception for CLI display (E07).
+
+    Default: concise ``Error: <message>``.  When ``XAVANI_FULL_TRACEBACK``
+    is set, the full traceback is included so debugging sessions can expand
+    the stack instead of guessing from a one-liner.
+    """
+    if not _full_traceback_enabled():
+        return f"Error: {exc}"
+    import traceback
+    tb_text = "".join(
+        traceback.format_exception(type(exc), exc, exc.__traceback__)
+    )
+    return f"Error:\n{tb_text}"
+
+
 _REASONING_TAGS = (
     "REASONING_SCRATCHPAD",
     "think",
@@ -2545,6 +2574,31 @@ def save_config_value(key_path: str, value: any) -> bool:
         logger.error("Failed to save config: %s", e)
         return False
 
+
+def derive_session_title_from_message(content: Any, limit: int = 60) -> str:
+    """Derive a session title from the first user message (C16).
+
+    Normalizes to a single line (whitespace runs collapsed), strips
+    leading/trailing whitespace, and truncates to ``limit`` chars.  Handles
+    multimodal content (a list of parts) by joining the text parts.  Returns
+    an empty string when nothing usable is present.
+    """
+    if isinstance(content, list):
+        parts = []
+        for part in content:
+            if isinstance(part, dict):
+                parts.append(str(part.get("text", "")))
+            else:
+                parts.append(str(part))
+        text = " ".join(parts)
+    elif content is None:
+        text = ""
+    else:
+        text = str(content)
+    line = " ".join(text.split()).strip()
+    if not line:
+        return ""
+    return line[:limit].strip()
 
 
 
@@ -7789,7 +7843,54 @@ class XavaniCLI:
             print("       DISCORD_BOT_TOKEN=your_token")
             print(f"    2. Or configure settings in {display_xavani_home()}/config.yaml")
             print()
-    
+
+    def _derive_title_fallback(self) -> Optional[str]:
+        """Derive a session title from the first user message when none is set (C16).
+
+        Looks in the in-memory conversation history first, then falls back to
+        the session DB.  Persists the derived title exactly like an explicit
+        ``/title <name>`` (sanitized; queued as pending when the session row
+        does not exist yet).  Returns the derived title, or None when there
+        is nothing to derive from.
+        """
+        first_user_content = None
+        for msg in self.conversation_history:
+            if isinstance(msg, dict) and msg.get("role") == "user":
+                first_user_content = msg.get("content")
+                break
+        if first_user_content is None and self._session_db:
+            try:
+                for row in self._session_db.get_messages(self.session_id):
+                    if row.get("role") == "user":
+                        first_user_content = row.get("content")
+                        break
+            except Exception:
+                first_user_content = None
+
+        derived = derive_session_title_from_message(first_user_content)
+        if not derived:
+            return None
+        try:
+            from xavani_state import SessionDB
+
+            cleaned = SessionDB.sanitize_title(derived)
+        except ValueError:
+            cleaned = None
+        if not cleaned:
+            return None
+
+        # Persist like an explicit /title: set directly when the session row
+        # exists, otherwise queue it to be saved with the first message.
+        try:
+            if self._session_db and self._session_db.get_session(self.session_id):
+                if not self._session_db.set_session_title(self.session_id, cleaned):
+                    return None
+            else:
+                self._pending_title = cleaned
+        except ValueError:
+            return None
+        return cleaned
+
     def process_command(self, command: str) -> bool:
         """
         Process a slash command.
@@ -7960,7 +8061,12 @@ class XavaniCLI:
                 elif self._pending_title:
                     _cprint(f"  Title (pending): {self._pending_title}")
                 else:
-                    _cprint("  No title set. Usage: /title <your session title>")
+                    # No explicit title — derive one from the first user message (C16)
+                    derived = self._derive_title_fallback()
+                    if derived:
+                        _cprint(f"  Title set (derived from first message): {derived}")
+                    else:
+                        _cprint("  No title set. Usage: /title <your session title>")
             else:
                 from xavani_state import format_session_db_unavailable
                 _cprint(f"  {format_session_db_unavailable()}")
@@ -11227,7 +11333,12 @@ class XavaniCLI:
                     )
                 except Exception as exc:
                     logging.error("run_conversation raised: %s", exc, exc_info=True)
-                    _summary = getattr(self.agent, '_summarize_api_error', lambda e: str(e)[:300])(exc)
+                    if _full_traceback_enabled():
+                        # E07: expandable stack traces — full traceback on demand.
+                        import traceback
+                        _summary = traceback.format_exc()
+                    else:
+                        _summary = getattr(self.agent, '_summarize_api_error', lambda e: str(e)[:300])(exc)
                     result = {
                         "final_response": f"Error: {_summary}",
                         "messages": [],
@@ -11554,7 +11665,7 @@ class XavaniCLI:
             return response
             
         except Exception as e:
-            print(f"Error: {e}")
+            print(_format_cli_exception(e))
             return None
         finally:
             # Ensure streaming TTS resources are cleaned up even on error.
