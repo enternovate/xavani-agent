@@ -6464,6 +6464,31 @@ class GatewayRunner:
         6. Run agent conversation
         7. Return response
         """
+        # C17: bind a correlation ID for this message's task-local context.
+        # It propagates through agent + tools and lands in every log line
+        # via the record factory — one ID traces the full request.
+        from gateway.tracing import new_correlation_id, reset_correlation_id, set_correlation_id
+
+        _cid = new_correlation_id()
+        _cid_token = set_correlation_id(_cid)
+        try:
+            return await self._handle_message_with_cid(event, _cid)
+        finally:
+            reset_correlation_id(_cid_token)
+
+    async def _handle_message_with_cid(self, event: MessageEvent, _cid: str) -> Optional[str]:
+        """
+        Handle an incoming message from any platform.
+        
+        This is the core message processing pipeline:
+        1. Check user authorization
+        2. Check for commands (/new, /reset, etc.)
+        3. Check for running agent and interrupt if needed
+        4. Get or create session
+        5. Build context for agent
+        6. Run agent conversation
+        7. Return response
+        """
         source = event.source
 
         # Internal events (e.g. background-process completion notifications)

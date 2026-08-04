@@ -45,10 +45,11 @@ _logging_initialized = False
 _session_context = threading.local()
 
 # Default log format — includes timestamp, level, optional session tag,
-# logger name, and message.  The ``%(session_tag)s`` field is guaranteed to
-# exist on every LogRecord via _install_session_record_factory() below.
-_LOG_FORMAT = "%(asctime)s %(levelname)s%(session_tag)s %(name)s: %(message)s"
-_LOG_FORMAT_VERBOSE = "%(asctime)s - %(name)s - %(levelname)s%(session_tag)s - %(message)s"
+# optional correlation-id tag (C17), logger name, and message.  The
+# ``%(session_tag)s`` and ``%(cid_tag)s`` fields are guaranteed to exist
+# on every LogRecord via the record factories below.
+_LOG_FORMAT = "%(asctime)s %(levelname)s%(session_tag)s%(cid_tag)s %(name)s: %(message)s"
+_LOG_FORMAT_VERBOSE = "%(asctime)s - %(name)s - %(levelname)s%(session_tag)s%(cid_tag)s - %(message)s"
 
 # Third-party loggers that are noisy at DEBUG/INFO level.
 _NOISY_LOGGERS = (
@@ -112,6 +113,16 @@ def _install_session_record_factory() -> None:
         record = current_factory(*args, **kwargs)
         sid = getattr(_session_context, "session_id", None)
         record.session_tag = f" [{sid}]" if sid else ""  # type: ignore[attr-defined]
+        # C17: correlation-id tag. gateway.tracing imports its own factory
+        # on import; set the attribute here too so %(cid_tag)s never
+        # KeyErrors even when tracing was never imported.
+        cid = ""
+        try:
+            from gateway.tracing import get_correlation_id
+            cid = get_correlation_id()
+        except Exception:
+            pass
+        record.cid_tag = f" [cid:{cid}]" if cid else ""  # type: ignore[attr-defined]
         return record
 
     _session_record_factory._xavani_session_injector = True  # type: ignore[attr-defined]
