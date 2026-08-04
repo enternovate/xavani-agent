@@ -14,6 +14,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 import yaml
 
+from tools.plugin_api_gate import PLUGIN_API_VERSION
 from xavani_cli.plugins import (
     ENTRY_POINTS_GROUP,
     VALID_HOOKS,
@@ -51,7 +52,12 @@ def _make_plugin_dir(base: Path, name: str, *, register_body: str = "pass",
     plugin_dir = base / name
     plugin_dir.mkdir(parents=True, exist_ok=True)
 
-    manifest = {"name": name, "version": "0.1.0", "description": f"Test plugin {name}"}
+    manifest = {
+        "name": name,
+        "version": "0.1.0",
+        "description": f"Test plugin {name}",
+        "api_version": PLUGIN_API_VERSION,
+    }
     if manifest_extra:
         manifest.update(manifest_extra)
 
@@ -202,7 +208,9 @@ class TestPluginLoading:
         plugins_dir = tmp_path / "xavani_test" / "plugins"
         plugin_dir = plugins_dir / "bad_plugin"
         plugin_dir.mkdir(parents=True)
-        (plugin_dir / "plugin.yaml").write_text(yaml.dump({"name": "bad_plugin"}))
+        (plugin_dir / "plugin.yaml").write_text(
+            yaml.dump({"name": "bad_plugin", "api_version": PLUGIN_API_VERSION})
+        )
         # Explicitly enable so the loader tries to import it and hits the
         # missing-init error.
         xavani_home = tmp_path / "xavani_test"
@@ -225,7 +233,9 @@ class TestPluginLoading:
         plugins_dir = tmp_path / "xavani_test" / "plugins"
         plugin_dir = plugins_dir / "no_reg"
         plugin_dir.mkdir(parents=True)
-        (plugin_dir / "plugin.yaml").write_text(yaml.dump({"name": "no_reg"}))
+        (plugin_dir / "plugin.yaml").write_text(
+            yaml.dump({"name": "no_reg", "api_version": PLUGIN_API_VERSION})
+        )
         (plugin_dir / "__init__.py").write_text("# no register function\n")
         # Explicitly enable it so the loader actually tries to import.
         xavani_home = tmp_path / "xavani_test"
@@ -272,7 +282,9 @@ class TestPluginLoading:
         plugin_dir = plugins_dir / "mempalace"
         plugin_dir.mkdir(parents=True)
         # No explicit `kind:` — the heuristic should kick in.
-        (plugin_dir / "plugin.yaml").write_text(yaml.dump({"name": "mempalace"}))
+        (plugin_dir / "plugin.yaml").write_text(
+            yaml.dump({"name": "mempalace", "api_version": PLUGIN_API_VERSION})
+        )
         (plugin_dir / "__init__.py").write_text(
             "class MemPalaceProvider:\n"
             "    pass\n"
@@ -309,7 +321,9 @@ class TestPluginLoading:
         plugin_dir = plugins_dir / "not_memory"
         plugin_dir.mkdir(parents=True)
         (plugin_dir / "plugin.yaml").write_text(
-            yaml.dump({"name": "not_memory", "kind": "standalone"})
+            yaml.dump(
+                {"name": "not_memory", "kind": "standalone", "api_version": PLUGIN_API_VERSION}
+            )
         )
         (plugin_dir / "__init__.py").write_text(
             "# This plugin inspects MemoryProvider docs but isn't one.\n"
@@ -642,7 +656,9 @@ class TestPluginContext:
         plugins_dir = tmp_path / "xavani_test" / "plugins"
         plugin_dir = plugins_dir / "tool_plugin"
         plugin_dir.mkdir(parents=True)
-        (plugin_dir / "plugin.yaml").write_text(yaml.dump({"name": "tool_plugin"}))
+        (plugin_dir / "plugin.yaml").write_text(
+            yaml.dump({"name": "tool_plugin", "api_version": PLUGIN_API_VERSION})
+        )
         (plugin_dir / "__init__.py").write_text(
             'def register(ctx):\n'
             '    ctx.register_tool(\n'
@@ -682,7 +698,9 @@ class TestPluginContext:
             plugins_dir = tmp_path / "xavani_test" / "plugins"
             plugin_dir = plugins_dir / "shadow_plugin"
             plugin_dir.mkdir(parents=True)
-            (plugin_dir / "plugin.yaml").write_text(yaml.dump({"name": "shadow_plugin"}))
+            (plugin_dir / "plugin.yaml").write_text(
+                yaml.dump({"name": "shadow_plugin", "api_version": PLUGIN_API_VERSION})
+            )
             (plugin_dir / "__init__.py").write_text(
                 'def register(ctx):\n'
                 '    ctx.register_tool(\n'
@@ -724,7 +742,9 @@ class TestPluginContext:
             plugins_dir = tmp_path / "xavani_test" / "plugins"
             plugin_dir = plugins_dir / "override_plugin"
             plugin_dir.mkdir(parents=True)
-            (plugin_dir / "plugin.yaml").write_text(yaml.dump({"name": "override_plugin"}))
+            (plugin_dir / "plugin.yaml").write_text(
+                yaml.dump({"name": "override_plugin", "api_version": PLUGIN_API_VERSION})
+            )
             (plugin_dir / "__init__.py").write_text(
                 'def register(ctx):\n'
                 '    ctx.register_tool(\n'
@@ -765,7 +785,9 @@ class TestPluginContext:
         plugins_dir = tmp_path / "xavani_test" / "plugins"
         plugin_dir = plugins_dir / "new_override_plugin"
         plugin_dir.mkdir(parents=True)
-        (plugin_dir / "plugin.yaml").write_text(yaml.dump({"name": "new_override_plugin"}))
+        (plugin_dir / "plugin.yaml").write_text(
+            yaml.dump({"name": "new_override_plugin", "api_version": PLUGIN_API_VERSION})
+        )
         (plugin_dir / "__init__.py").write_text(
             'def register(ctx):\n'
             '    ctx.register_tool(\n'
@@ -803,7 +825,9 @@ class TestPluginToolVisibility:
         plugins_dir = tmp_path / "xavani_test" / "plugins"
         plugin_dir = plugins_dir / "vis_plugin"
         plugin_dir.mkdir(parents=True)
-        (plugin_dir / "plugin.yaml").write_text(yaml.dump({"name": "vis_plugin"}))
+        (plugin_dir / "plugin.yaml").write_text(
+            yaml.dump({"name": "vis_plugin", "api_version": PLUGIN_API_VERSION})
+        )
         (plugin_dir / "__init__.py").write_text(
             'def register(ctx):\n'
             '    ctx.register_tool(\n'
@@ -1181,6 +1205,7 @@ class TestPluginCommands:
                 "name": "engine-plugin",
                 "version": "0.1.0",
                 "description": "Test engine plugin",
+                "api_version": PLUGIN_API_VERSION,
             })
         )
         (plugin_dir / "__init__.py").write_text(

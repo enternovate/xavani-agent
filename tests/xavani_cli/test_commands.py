@@ -7,6 +7,7 @@
 from prompt_toolkit.completion import CompleteEvent
 from prompt_toolkit.document import Document
 
+from tools.plugin_api_gate import PLUGIN_API_VERSION
 from xavani_cli.commands import (
     COMMAND_REGISTRY,
     COMMANDS,
@@ -964,6 +965,7 @@ class TestTelegramMenuCommands:
         plugin_dir.mkdir(parents=True, exist_ok=True)
         (plugin_dir / "plugin.yaml").write_text(
             "name: cmd-plugin\nversion: 0.1.0\ndescription: Test plugin\n"
+            f'api_version: "{PLUGIN_API_VERSION}"\n'
         )
         (plugin_dir / "__init__.py").write_text(
             "def register(ctx):\n"
