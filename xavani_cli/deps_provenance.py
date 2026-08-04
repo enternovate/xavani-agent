@@ -59,14 +59,16 @@ def _direct_dependencies() -> List[str]:
 def _lock_entry(name: str) -> Dict[str, Any]:
     """Find ``name`` in uv.lock; return source/version/hash info."""
     name = name.lower()
-    # uv.lock normalizes names per PEP 503 (dashes -> underscores).
-    lock_name = name.replace("-", "_")
+    # uv.lock normalizes names per PEP 503; try the raw name and the
+    # dash form (pyproject may use either "prompt_toolkit" or
+    # "prompt-toolkit").
+    candidates = {name, name.replace("_", "-")}
     lock = (_REPO_ROOT / "uv.lock").read_text(encoding="utf-8")
     # Find the package block: [[package]] name = "<name>"
     blocks = lock.split("[[package]]")
     for block in blocks[1:]:
         m = re.search(r'name = "([^"]+)"', block)
-        if not m or m.group(1).lower() != lock_name:
+        if not m or m.group(1).lower() not in candidates:
             continue
         version = ""
         vm = re.search(r'version = "([^"]+)"', block)
