@@ -276,6 +276,28 @@ def build_system_prompt_parts(agent: Any, system_message: Optional[str] = None) 
         except Exception:
             pass
 
+    # G08: pre-computed context prefetch (git state + durable facts +
+    # pattern instincts). Built once at construction — prompt-cache-safe.
+    # Skippable with XAVANI_DISABLE_PREFETCH=1.
+    try:
+        from agent.context_prefetch import (
+            build_prefetch_context,
+            format_prefetch_block,
+            prefetch_enabled,
+        )
+
+        if prefetch_enabled():
+            _pf = build_prefetch_context(
+                cwd=getattr(agent, "_prefetch_cwd", None),
+                session_id=getattr(agent, "session_id", None),
+                tool_names=None,
+            )
+            _pf_block = format_prefetch_block(_pf)
+            if _pf_block:
+                volatile_parts.append(_pf_block)
+    except Exception:
+        pass
+
     from xavani_time import now as _xavani_now
     now = _xavani_now()
     # Date-only (not minute-precision) so the system prompt is byte-stable
