@@ -4184,6 +4184,31 @@ def run_conversation(
         interrupted=interrupted,
     )
 
+    # Bounded flush of background memory work so the turn's sync has a chance
+    # to land before the loop reports completion (mirrors Hermes' flush_pending
+    # usage at turn/exit boundaries). Best-effort only — a wedged provider must
+    # never block turn completion.
+    _mm = getattr(agent, "_memory_manager", None)
+    if _mm is not None and getattr(agent, "_memory_enabled", False):
+        try:
+            _mm.flush_pending(timeout=10)
+        except Exception:
+            pass
+
+    # Episodic + procedural memory recording (xavani_memory). Records the
+    # completed turn so the next session can recall it. Best-effort — never
+    # breaks the turn.
+    if getattr(agent, "_xavani_memory", None) is not None and final_response:
+        try:
+            _user_text = original_user_message if isinstance(original_user_message, str) else ""
+            agent._xavani_memory.remember(
+                user_input=(_user_text or "")[:2000],
+                agent_response=(final_response or "")[:4000],
+                outcome="success" if completed else ("interrupted" if interrupted else "partial"),
+            )
+        except Exception:
+            pass  # Memory recording is best-effort
+
     # Background memory/skill review — runs AFTER the response is delivered
     # so it never competes with the user's task for model attention.
     if final_response and not interrupted and (_should_review_memory or _should_review_skills):

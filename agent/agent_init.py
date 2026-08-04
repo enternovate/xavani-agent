@@ -976,6 +976,20 @@ def init_agent(
     agent._memory_nudge_interval = 10
     agent._turns_since_memory = 0
     agent._iters_since_skill = 0
+    # Episodic + procedural memory (xavani_memory) — the agent's long-term
+    # learning store. Off by default unless XAVANI_EPISODIC_MEMORY=1, to keep
+    # the default footprint identical to prior releases. When on, recall
+    # context is injected into the system prompt and each turn is recorded.
+    agent._xavani_memory = None
+    if not skip_memory:
+        try:
+            if (os.environ.get("XAVANI_EPISODIC_MEMORY", "") or "").strip().lower() in {"1", "true", "yes", "on"}:
+                from xavani_memory.manager import MemoryManager as _XavaniMemoryManager
+                agent._xavani_memory = _XavaniMemoryManager()
+                agent._xavani_memory.set_session(agent.session_id or "default")
+                agent._xavani_memory.set_agent("xavani")
+        except Exception:
+            agent._xavani_memory = None  # Optional — never break agent init
     if not skip_memory:
         try:
             mem_config = _agent_cfg.get("memory", {})
