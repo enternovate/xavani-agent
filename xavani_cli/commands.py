@@ -59,6 +59,7 @@ class CommandDef:
     description: str                   # human-readable description
     category: str                      # "Session", "Configuration", etc.
     aliases: tuple[str, ...] = ()      # alternative names: ("bg",)
+    cli_aliases: tuple[str, ...] = ()  # C10: CLI-only shortcuts, never exported
     args_hint: str = ""                # argument placeholder: "<prompt>", "[name]"
     subcommands: tuple[str, ...] = ()  # tab-completable subcommands
     cli_only: bool = False             # only available in CLI
@@ -93,7 +94,7 @@ COMMAND_REGISTRY: list[CommandDef] = [
     CommandDef("branch", "Branch the current session (explore a different path)", "Session",
                aliases=("fork",), args_hint="[name]"),
     CommandDef("compress", "Manually compress conversation context", "Session",
-               args_hint="[focus topic]"),
+               cli_aliases=("cm",), args_hint="[focus topic]"),
     CommandDef("rollback", "List or restore filesystem checkpoints", "Session",
                args_hint="[number]"),
     CommandDef("snapshot", "Create or restore state snapshots of Xavani config/state", "Session",
@@ -112,19 +113,22 @@ COMMAND_REGISTRY: list[CommandDef] = [
     CommandDef("steer", "Inject a message after the next tool call without interrupting", "Session",
                args_hint="<prompt>"),
     CommandDef("goal", "Set a standing goal Xavani works on across turns until achieved", "Session",
-               args_hint="[text | pause | resume | clear | status]"),
+               cli_aliases=("g",), args_hint="[text | pause | resume | clear | status]"),
     CommandDef("subgoal", "Add or manage extra criteria on the active goal", "Session",
                args_hint="[text | remove N | clear]"),
-    CommandDef("status", "Show session info", "Session"),
+    CommandDef("status", "Show session info", "Session",
+               cli_aliases=("st",)),
     CommandDef("whoami", "Show your slash command access (admin / user)", "Info"),
-    CommandDef("profile", "Show active profile name and home directory", "Info"),
+    CommandDef("profile", "Show active profile name and home directory", "Info",
+               cli_aliases=("who",)),
     CommandDef("sethome", "Set this chat as the home channel", "Session",
                gateway_only=True, aliases=("set-home",)),
     CommandDef("resume", "Resume a previously-named session", "Session",
-               args_hint="[name]"),
+               cli_aliases=("r",), args_hint="[name]"),
 
     # Configuration
-    CommandDef("sessions", "Browse and resume previous sessions", "Session"),
+    CommandDef("sessions", "Browse and resume previous sessions", "Session",
+               cli_aliases=("ls",)),
 
     # Configuration
     CommandDef("config", "Show current configuration", "Configuration",
@@ -249,6 +253,10 @@ def _build_command_lookup() -> dict[str, CommandDef]:
         lookup[cmd.name] = cmd
         for alias in cmd.aliases:
             lookup[alias] = cmd
+        # C10: CLI-only shortcuts resolve like aliases but are never
+        # exported to platform slash surfaces (Slack 50-slot budget).
+        for cli_alias in cmd.cli_aliases:
+            lookup[cli_alias] = cmd
     return lookup
 
 
@@ -277,6 +285,9 @@ for _cmd in COMMAND_REGISTRY:
         COMMANDS[f"/{_cmd.name}"] = _build_description(_cmd)
         for _alias in _cmd.aliases:
             COMMANDS[f"/{_alias}"] = f"{_cmd.description} (alias for /{_cmd.name})"
+        # C10: CLI shortcuts appear in CLI help, never platform slashes.
+        for _cli_alias in _cmd.cli_aliases:
+            COMMANDS[f"/{_cli_alias}"] = f"{_cmd.description} (CLI shortcut for /{_cmd.name})"
 
 # Backwards-compatible categorized dict
 COMMANDS_BY_CATEGORY: dict[str, dict[str, str]] = {}
@@ -286,6 +297,8 @@ for _cmd in COMMAND_REGISTRY:
         _cat[f"/{_cmd.name}"] = COMMANDS[f"/{_cmd.name}"]
         for _alias in _cmd.aliases:
             _cat[f"/{_alias}"] = COMMANDS[f"/{_alias}"]
+        for _cli_alias in _cmd.cli_aliases:
+            _cat[f"/{_cli_alias}"] = COMMANDS[f"/{_cli_alias}"]
 
 
 # Subcommands lookup: "/cmd" -> ["sub1", "sub2", ...]
