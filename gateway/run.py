@@ -3856,7 +3856,8 @@ class GatewayRunner:
                 continue
             
             # Set up message + fatal error handlers
-            adapter.set_message_handler(self._handle_message)
+            # C17: adapters route through the cid-binding entry.
+            adapter.set_message_handler(self._handle_message_traced)
             adapter.set_fatal_error_handler(self._handle_adapter_fatal_error)
             adapter.set_session_store(self.session_store)
             adapter.set_busy_session_handler(self._handle_active_session_busy_message)
@@ -4317,7 +4318,8 @@ class GatewayRunner:
         # adapter.handle_message would spawn a background task and we'd
         # lose synchronous error visibility; calling _handle_message inline
         # keeps the success/failure path observable for the watcher.
-        response_text = await self._handle_message(synthetic_event)
+        # C17: the traced entry binds a correlation id for this message.
+        response_text = await self._handle_message_traced(synthetic_event)
         if not response_text:
             # Streaming may have already delivered the response inline.
             # Either way, agent ran without raising — count as success.
@@ -5472,7 +5474,7 @@ class GatewayRunner:
                         del self._failed_platforms[platform]
                         continue
 
-                    adapter.set_message_handler(self._handle_message)
+                    adapter.set_message_handler(self._handle_message_traced)
                     adapter.set_fatal_error_handler(self._handle_adapter_fatal_error)
                     adapter.set_session_store(self.session_store)
                     adapter.set_busy_session_handler(self._handle_active_session_busy_message)
@@ -6451,32 +6453,28 @@ class GatewayRunner:
 
         await adapter.send(source.chat_id, content, metadata=metadata)
 
-    async def _handle_message(self, event: MessageEvent) -> Optional[str]:
+    async def _handle_message_traced(self, event: MessageEvent) -> Optional[str]:
+        """C17: bind a correlation ID, then delegate to _handle_message.
+
+        Adapters and direct call sites use this entry so every message
+        carries a task-local cid through agent + tools. The cid is
+        reset when the message finishes. _handle_message itself stays
+        untouched (its source is introspected by command tests).
         """
-        Handle an incoming message from any platform.
-        
-        This is the core message processing pipeline:
-        1. Check user authorization
-        2. Check for commands (/new, /reset, etc.)
-        3. Check for running agent and interrupt if needed
-        4. Get or create session
-        5. Build context for agent
-        6. Run agent conversation
-        7. Return response
-        """
-        # C17: bind a correlation ID for this message's task-local context.
-        # It propagates through agent + tools and lands in every log line
-        # via the record factory — one ID traces the full request.
-        from gateway.tracing import new_correlation_id, reset_correlation_id, set_correlation_id
+        from gateway.tracing import (
+            new_correlation_id,
+            reset_correlation_id,
+            set_correlation_id,
+        )
 
         _cid = new_correlation_id()
         _cid_token = set_correlation_id(_cid)
         try:
-            return await self._handle_message_with_cid(event, _cid)
+            return await self._handle_message(event)
         finally:
             reset_correlation_id(_cid_token)
 
-    async def _handle_message_with_cid(self, event: MessageEvent, _cid: str) -> Optional[str]:
+    async def _handle_message(self, event: MessageEvent) -> Optional[str]:
         """
         Handle an incoming message from any platform.
         
@@ -10427,7 +10425,8 @@ class GatewayRunner:
         )
         
         # Let the normal message handler process it
-        return await self._handle_message(retry_event)
+        # C17: the traced entry binds a correlation id for this message.
+        return await self._handle_message_traced(retry_event)
 
     # ────────────────────────────────────────────────────────────────
     # /goal — persistent cross-turn goals (Ralph-style loop)
