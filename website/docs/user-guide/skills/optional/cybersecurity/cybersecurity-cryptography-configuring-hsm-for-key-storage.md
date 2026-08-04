@@ -1,0 +1,110 @@
+---
+title: "Configuring Hsm For Key Storage"
+sidebar_label: "Configuring Hsm For Key Storage"
+description: "Hardware Security Modules (HSMs) are tamper-resistant physical devices that safeguard cryptographic keys and perform cryptographic operations in a hardened e..."
+---
+
+{/* This page is auto-generated from the skill's SKILL.md by website/scripts/generate-skill-docs.py. Edit the source SKILL.md, not this page. */}
+
+# Configuring Hsm For Key Storage
+
+Hardware Security Modules (HSMs) are tamper-resistant physical devices that safeguard cryptographic keys and perform cryptographic operations in a hardened environment. Keys stored in an HSM never lea
+
+## Skill metadata
+
+| | |
+|---|---|
+| Source | Optional — install with `xavani skills install official/cybersecurity/configuring-hsm-for-key-storage` |
+| Path | `optional-skills/cybersecurity/cryptography/configuring-hsm-for-key-storage` |
+| Platforms | all |
+
+## Reference: full SKILL.md
+
+:::info
+The following is the complete skill definition that Xavani loads when this skill is triggered. This is what the agent sees as instructions when the skill is active.
+:::
+
+# Configuring HSM for Key Storage
+
+## Overview
+
+Hardware Security Modules (HSMs) are tamper-resistant physical devices that safeguard cryptographic keys and perform cryptographic operations in a hardened environment. Keys stored in an HSM never leave the device boundary, providing the highest level of key protection. This skill covers configuring HSMs using the PKCS#11 standard interface, including key generation, signing, encryption, and key management using both physical HSMs and SoftHSM2 for development.
+
+
+## When to Use
+
+- When deploying or configuring configuring hsm for key storage capabilities in your environment
+- When establishing security controls aligned to compliance requirements
+- When building or improving security architecture for this domain
+- When conducting security assessments that require this implementation
+
+## Prerequisites
+
+- Familiarity with cryptography concepts and tools
+- Access to a test or lab environment for safe execution
+- Python 3.8+ with required dependencies installed
+- Appropriate authorization for any testing activities
+
+## Objectives
+
+- Configure SoftHSM2 as a development PKCS#11 provider
+- Generate and manage keys inside the HSM via PKCS#11
+- Perform cryptographic operations (sign, verify, encrypt, decrypt) using HSM-resident keys
+- Implement HSM-backed certificate authority operations
+- Configure key access policies and user authentication
+- Interface with cloud HSM services (AWS CloudHSM, Azure)
+
+## Key Concepts
+
+### HSM Compliance Levels
+
+| FIPS Level | Protection | Use Case |
+|-----------|-----------|----------|
+| FIPS 140-2 Level 1 | Software only | Development |
+| FIPS 140-2 Level 2 | Tamper-evident, role-based auth | General production |
+| FIPS 140-2 Level 3 | Tamper-resistant, identity-based auth | Financial, government |
+| FIPS 140-2 Level 4 | Physical tamper response | Military, classified |
+
+### PKCS#11 Architecture
+
+```
+Application --> PKCS#11 API --> HSM Provider --> Hardware HSM
+                                    |
+                              (SoftHSM2 for dev)
+```
+
+### Key Objects in PKCS#11
+
+| Object Type | Description | Operations |
+|-------------|-------------|-----------|
+| CKO_SECRET_KEY | Symmetric keys (AES) | Encrypt, Decrypt, Wrap |
+| CKO_PUBLIC_KEY | Public keys (RSA, EC) | Verify, Encrypt, Wrap |
+| CKO_PRIVATE_KEY | Private keys (RSA, EC) | Sign, Decrypt, Unwrap |
+| CKO_CERTIFICATE | X.509 certificates | Storage, retrieval |
+
+## Security Considerations
+
+- Never export private keys from HSM (use CKA_EXTRACTABLE=False)
+- Use separate slots/partitions for different applications
+- Implement multi-person key ceremony for CA root keys
+- Enable audit logging for all HSM operations
+- Implement HSM backup and disaster recovery
+- Use strong PINs and enable SO (Security Officer) PIN
+
+## Validation Criteria
+
+- [ ] SoftHSM2 initializes with token and user PIN
+- [ ] AES key generates inside HSM
+- [ ] RSA key pair generates inside HSM
+- [ ] Encryption/decryption uses HSM-resident keys
+- [ ] Signing/verification uses HSM-resident keys
+- [ ] Keys cannot be exported (non-extractable)
+- [ ] Key listing shows all HSM-stored objects
+
+## Standards mapping
+
+- **atlas_techniques**: AML.T0070, AML.T0066, AML.T0082
+- **nist_ai_rmf**: MEASURE-2.7, MAP-5.1, MANAGE-2.4
+- **nist_csf**: PR.DS-01, PR.DS-02, PR.DS-10
+- **license**: Apache-2.0
+- **author**: mahipal
