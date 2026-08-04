@@ -31,6 +31,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Set, Tuple
 
+from xavani_state_integrity import integrity_enabled, verify_sqlite_db
+
 logger = logging.getLogger(__name__)
 try:
     from xavani_cli.safe_logging import SafeLogFilter
@@ -95,6 +97,13 @@ class ProceduralMemory:
     def _init_db(self) -> None:
         """Create tables and indexes if they do not exist."""
         self._db_path.parent.mkdir(parents=True, exist_ok=True)
+
+        # A12: verify DB integrity at open. Cache prevents re-scanning
+        # unchanged files. Corruption raises a loud, actionable error
+        # instead of silently continuing with a broken memory store.
+        if integrity_enabled():
+            verify_sqlite_db(self._db_path)
+
         conn = self._get_conn()
 
         # Task outcomes table

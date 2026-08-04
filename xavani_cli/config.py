@@ -37,6 +37,10 @@ try:
 except Exception:
     pass
 
+# A12: hash-based state file integrity. Stdlib-only module — safe to
+# import at module level (no circular dependency risk).
+from xavani_state_integrity import StateCorruptionError, verify_state_file, write_state_hash
+
 # Track which (config_path, mtime_ns, size) tuples we've already warned about
 # so concurrent CLI/gateway loads of a broken config.yaml don't spam stderr
 # every time. Cleared automatically when the file changes (different mtime).
@@ -82,6 +86,42 @@ def _warn_config_parse_failure(config_path: Path, exc: Exception) -> None:
 _IS_WINDOWS = platform.system() == "Windows"
 _ENV_VAR_NAME_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
 _LAST_EXPANDED_CONFIG_BY_PATH: Dict[str, Any] = {}
+
+
+def _verify_config_integrity(config_path: Path) -> bool:
+    """Verify config.yaml against its SHA-256 sidecar (A12).
+
+    config.yaml is user-editable, so a mismatch is a loud warning, not a
+    hard failure. Returns True when a mismatch was detected and the
+    sidecar needs re-arming after a successful parse. Machine-owned
+    state files use hard verification (StateCorruptionError) instead.
+    """
+    try:
+        verify_state_file(config_path, rearm_on_mismatch=False)
+    except StateCorruptionError as exc:
+        logger.warning(
+            "Config integrity alarm: %s. If you did not edit "
+            "config.yaml by hand, inspect it for corruption.",
+            exc,
+        )
+        try:
+            sys.stderr.write(f"⚠️  xavani config: {exc}\n")
+            sys.stderr.flush()
+        except Exception:
+            pass
+        return True
+    except (OSError, ValueError):
+        return False
+    return False
+
+
+def _rearm_config_sidecar(config_path: Path) -> None:
+    """Rewrite the config.yaml SHA-256 sidecar after a successful parse."""
+    try:
+        write_state_hash(config_path)
+    except Exception:
+        pass
+
 # (path, mtime_ns, size) -> cached expanded config dict.
 # load_config() returns a deepcopy of the cached value when the file
 # hasn't changed since the last load, skipping yaml.safe_load +
@@ -4374,7 +4414,10 @@ def read_raw_config() -> Dict[str, Any]:
         if cached is not None and cached[:2] == cache_key:
             return copy.deepcopy(cached[2])
 
+        rearm = False
         try:
+            # A12: verify config.yaml against its SHA-256 sidecar.
+            rearm = _verify_config_integrity(config_path)
             with open(config_path, encoding="utf-8") as f:
                 data = yaml.safe_load(f) or {}
         except Exception as e:
@@ -4383,6 +4426,10 @@ def read_raw_config() -> Dict[str, Any]:
 
         if not isinstance(data, dict):
             data = {}
+        # A12: after a successful parse, re-arm the sidecar so a
+        # legitimate hand edit does not keep alarming on every read.
+        if rearm:
+            _rearm_config_sidecar(config_path)
         _RAW_CONFIG_CACHE[path_key] = (cache_key[0], cache_key[1], copy.deepcopy(data))
         return data
 
@@ -4415,7 +4462,10 @@ def load_config() -> Dict[str, Any]:
         config = copy.deepcopy(DEFAULT_CONFIG)
 
         if cache_key is not None:
+            rearm = False
             try:
+                # A12: verify config.yaml against its SHA-256 sidecar.
+                rearm = _verify_config_integrity(config_path)
                 with open(config_path, encoding="utf-8") as f:
                     user_config = yaml.safe_load(f) or {}
 
@@ -4429,6 +4479,11 @@ def load_config() -> Dict[str, Any]:
                 config = _deep_merge(config, user_config)
             except Exception as e:
                 _warn_config_parse_failure(config_path, e)
+            else:
+                # A12: after a successful parse, re-arm the sidecar so a
+                # legitimate hand edit does not keep alarming on every read.
+                if rearm:
+                    _rearm_config_sidecar(config_path)
 
         normalized = _normalize_root_model_keys(_normalize_max_turns_config(config))
         expanded = _expand_env_vars(normalized)
@@ -4556,6 +4611,8 @@ def save_config(config: Dict[str, Any]):
             extra_content="".join(parts) if parts else None,
         )
         _secure_file(config_path)
+        # A12: refresh the SHA-256 sidecar after every config write.
+        _rearm_config_sidecar(config_path)
         _LAST_EXPANDED_CONFIG_BY_PATH[str(config_path)] = copy.deepcopy(current_normalized)
 
 
@@ -5254,6 +5311,8 @@ def set_config_value(key: str, value: str):
     ensure_xavani_home()
     from utils import atomic_yaml_write
     atomic_yaml_write(config_path, user_config, sort_keys=False)
+    # A12: refresh the SHA-256 sidecar after every config write.
+    _rearm_config_sidecar(config_path)
     
     # Keep .env in sync for keys that terminal_tool reads directly from env vars.
     # config.yaml is authoritative, but terminal_tool only reads TERMINAL_ENV etc.

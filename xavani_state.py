@@ -31,6 +31,7 @@ from pathlib import Path
 
 from agent.memory_manager import sanitize_context
 from xavani_constants import get_xavani_home
+from xavani_state_integrity import integrity_enabled, verify_sqlite_db
 from typing import Any, Callable, Dict, List, Optional, Tuple, TypeVar
 
 logger = logging.getLogger(__name__)
@@ -368,6 +369,15 @@ class SessionDB:
                 isolation_level=None,
             )
             self._conn.row_factory = sqlite3.Row
+
+            # A12: verify DB integrity at open. Cache prevents re-scanning
+            # unchanged files. Corruption raises a loud, actionable error
+            # instead of silently continuing with a broken session store.
+            # Runs BEFORE any WAL/schema setup so the corruption alarm is
+            # the first signal, not a bare sqlite3.DatabaseError.
+            if integrity_enabled():
+                verify_sqlite_db(self.db_path)
+
             apply_wal_with_fallback(self._conn, db_label="state.db")
             self._conn.execute("PRAGMA foreign_keys=ON")
 
