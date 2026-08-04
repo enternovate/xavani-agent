@@ -1716,7 +1716,7 @@ class TestDelegateHeartbeat(unittest.TestCase):
         child.get_activity_summary.return_value = {
             "current_tool": None,
             "api_call_count": 5,
-            "max_iterations": 90,
+            "max_iterations": 300,
             "last_activity_desc": "API call #5 completed",
         }
 
