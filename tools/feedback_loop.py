@@ -115,9 +115,12 @@ class FeedbackLoop:
     def struggling_tasks(self) -> List[str]:
         with self._lock:
             struggling = []
-            for task_type in self._data["by_task"]:
-                satisfaction = self.satisfaction(task_type)
-                if satisfaction is not None and satisfaction < STRUGGLE_THRESHOLD:
+            for task_type, counts in self._data["by_task"].items():
+                decisive = counts.get("up", 0) + counts.get("down", 0)
+                if decisive == 0:
+                    continue
+                satisfaction = counts.get("up", 0) / decisive
+                if satisfaction < STRUGGLE_THRESHOLD:
                     struggling.append(task_type)
             return sorted(struggling)
 
