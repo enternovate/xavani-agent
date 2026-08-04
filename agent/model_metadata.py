@@ -14,6 +14,7 @@ import os
 import re
 import time
 from pathlib import Path
+from tools.egress_enforcement import client_or_enforced
 from typing import Any, Dict, List, Optional, Tuple
 from urllib.parse import urlparse
 
@@ -488,7 +489,7 @@ def detect_local_server_type(base_url: str, api_key: str = "") -> Optional[str]:
     headers = _auth_headers(api_key)
 
     try:
-        with httpx.Client(timeout=2.0, headers=headers) as client:
+        with client_or_enforced(timeout=2.0, headers=headers) as client:
             # LM Studio exposes /api/v1/models — check first (most specific)
             try:
                 r = client.get(f"{server_url}/api/v1/models")
@@ -1010,7 +1011,7 @@ def query_ollama_num_ctx(model: str, base_url: str, api_key: str = "") -> Option
     headers = _auth_headers(api_key)
 
     try:
-        with httpx.Client(timeout=3.0, headers=headers) as client:
+        with client_or_enforced(timeout=3.0, headers=headers) as client:
             resp = client.post(f"{server_url}/api/show", json={"name": bare_model})
             if resp.status_code != 200:
                 return None
@@ -1066,7 +1067,7 @@ def _query_ollama_api_show(model: str, base_url: str, api_key: str = "") -> Opti
     headers = _auth_headers(api_key)
 
     try:
-        with httpx.Client(timeout=5.0, headers=headers) as client:
+        with client_or_enforced(timeout=5.0, headers=headers) as client:
             resp = client.post(f"{server_url}/api/show", json={"name": model})
             if resp.status_code != 200:
                 return None
@@ -1132,7 +1133,7 @@ def _query_local_context_length(model: str, base_url: str, api_key: str = "") ->
         server_type = None
 
     try:
-        with httpx.Client(timeout=3.0, headers=headers) as client:
+        with client_or_enforced(timeout=3.0, headers=headers) as client:
             # Ollama: /api/show returns model details with context info
             if server_type == "ollama":
                 resp = client.post(f"{server_url}/api/show", json={"name": model})

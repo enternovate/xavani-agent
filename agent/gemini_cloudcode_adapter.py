@@ -41,6 +41,8 @@ from typing import Any, Dict, Iterator, List, Optional
 
 import httpx
 
+from tools.egress_enforcement import client_or_enforced
+
 from agent import google_oauth
 from agent.gemini_schema import sanitize_gemini_tool_parameters
 from agent.google_code_assist import (
@@ -620,7 +622,7 @@ class GeminiCloudCodeClient:
         self._project_context_lock = False  # simple single-thread guard
         self.chat = _GeminiChatNamespace(self)
         self.is_closed = False
-        self._http = httpx.Client(timeout=httpx.Timeout(connect=15.0, read=600.0, write=30.0, pool=30.0))
+        self._http = client_or_enforced(timeout=httpx.Timeout(connect=15.0, read=600.0, write=30.0, pool=30.0))
 
     def close(self) -> None:
         self.is_closed = True
