@@ -11,7 +11,7 @@ runs match CI. These guard tests fail loudly if the flags drift.
 
 from pathlib import Path
 
-REPO_ROOT = Path(__file__).resolve().parent.parent.parent
+REPO_ROOT = Path(__file__).resolve().parent.parent
 
 
 def _read(path: Path) -> str:
