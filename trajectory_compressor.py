@@ -711,6 +711,103 @@ Write only the summary, starting with "[CONTEXT SUMMARY]:" prefix."""
                     # Fallback: create a basic summary
                     return "[CONTEXT SUMMARY]: [Summary generation failed - previous turns contained tool calls and responses that have been compressed to save context space.]"
     
+    def progressive_compress(
+        self,
+        trajectory: List[Dict[str, str]],
+        chunk_turns: int = 6,
+    ) -> Tuple[List[Dict[str, str]], TrajectoryMetrics]:
+        """C09: compress oldest-first in stages until under target.
+
+        Unlike :meth:`compress_trajectory` (one big middle-region swap),
+        this compresses the OLDEST chunk first, re-checks the budget,
+        and only continues to the next chunk when still over. Recent
+        turns stay untouched as long as possible.
+
+        Args:
+            trajectory: Conversation turns, oldest first.
+            chunk_turns: How many turns one stage collapses.
+
+        Returns:
+            (compressed_trajectory, metrics)
+        """
+        metrics = TrajectoryMetrics()
+        metrics.original_turns = len(trajectory)
+        turn_tokens = self.count_turn_tokens(trajectory)
+        total_tokens = sum(turn_tokens)
+        metrics.original_tokens = total_tokens
+
+        if total_tokens <= self.config.target_max_tokens:
+            metrics.skipped_under_target = True
+            metrics.compressed_tokens = total_tokens
+            metrics.compressed_turns = len(trajectory)
+            metrics.compression_ratio = 1.0
+            return trajectory, metrics
+
+        protected, compress_start, compress_end = self._find_protected_indices(trajectory)
+        if compress_start >= compress_end:
+            metrics.compressed_tokens = total_tokens
+            metrics.compressed_turns = len(trajectory)
+            metrics.still_over_limit = True
+            return trajectory, metrics
+
+        # Compressible region (oldest side first).
+        region = trajectory[compress_start:compress_end]
+        summaries: List[str] = []
+        stage = 0
+
+        while True:
+            remaining_region = region[stage * chunk_turns:]
+            if not remaining_region:
+                break
+            chunk = remaining_region[:chunk_turns]
+
+            # Compress this chunk: its turns are REPLACED by one summary.
+            summaries.append(self._summarize_chunk(chunk))
+            stage += 1
+
+            current_total = (
+                sum(self.count_turn_tokens(trajectory[:compress_start]))
+                + sum(self.count_turn_tokens(region[stage * chunk_turns:]))
+                + sum(self.count_turn_tokens(trajectory[compress_end:]))
+                + sum(len(s.split()) for s in summaries)
+            )
+            if current_total <= self.config.target_max_tokens:
+                break
+
+        # Reassemble: head + summary turns + uncompressed region + tail.
+        result = list(trajectory[:compress_start])
+        for summary in summaries:
+            result.append({"from": "system", "value": summary})
+        result.extend(region[stage * chunk_turns:])
+        result.extend(trajectory[compress_end:])
+
+        metrics.compressed_turns = len(result)
+        metrics.compressed_tokens = sum(self.count_turn_tokens(result))
+        metrics.still_over_limit = metrics.compressed_tokens > self.config.target_max_tokens
+        metrics.compression_ratio = (
+            metrics.compressed_tokens / metrics.original_tokens
+            if metrics.original_tokens
+            else 1.0
+        )
+        return result, metrics
+
+    def _summarize_chunk(self, chunk: List[Dict[str, str]]) -> str:
+        """C09: structured one-line summary of a chunk (no LLM)."""
+        user_msgs = [
+            str(t.get("value", "")).strip()
+            for t in chunk
+            if t.get("from") in ("human", "user") and t.get("value")
+        ]
+        assistant_msgs = [
+            str(t.get("value", "")).strip()
+            for t in chunk
+            if t.get("from") in ("gpt", "assistant", "system") and t.get("value")
+        ]
+        return (
+            f"[compressed {len(chunk)} turns: "
+            f"{len(user_msgs)} user, {len(assistant_msgs)} assistant]"
+        )
+
     def compress_trajectory(
         self,
         trajectory: List[Dict[str, str]]
