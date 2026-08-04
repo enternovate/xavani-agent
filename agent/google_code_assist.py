@@ -169,7 +169,8 @@ def _post_json(
     except urllib.error.HTTPError as exc:
         detail = ""
         try:
-            detail = exc.read().decode("utf-8", errors="replace")
+            from agent.bounded_response import read_urllib_error_body
+            detail = read_urllib_error_body(exc)
         except Exception:
             pass
         # Special case: VPC-SC violation should be distinguishable
