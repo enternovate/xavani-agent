@@ -102,10 +102,19 @@ class InstinctRegistry:
                 self._trim()
         self._save()
 
+    @staticmethod
+    def _rank_key(kv) -> tuple:
+        """Rank key: count, recency, then chain length (longer = more specific).
+
+        last_seen ties are common when record_episode runs inside one clock
+        tick; Python's stable sort keeps equal keys in insertion order, which
+        would rank short subchains above the longer chains they came from.
+        """
+        entry = kv[1]
+        return (entry["count"], entry["last_seen"], len(entry.get("chain", [])))
+
     def _trim(self) -> None:
-        ordered = sorted(
-            self._patterns.items(), key=lambda kv: (kv[1]["count"], kv[1]["last_seen"])
-        )
+        ordered = sorted(self._patterns.items(), key=self._rank_key)
         for key, _ in ordered[: len(ordered) - MAX_PATTERNS]:
             self._patterns.pop(key, None)
 
@@ -157,7 +166,7 @@ class InstinctRegistry:
         with self._lock:
             ordered = sorted(
                 self._patterns.items(),
-                key=lambda kv: (kv[1]["count"], kv[1]["last_seen"]),
+                key=self._rank_key,
                 reverse=True,
             )
         return [

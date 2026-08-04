@@ -37,6 +37,20 @@ def test_record_repeated_chain_increments(registry):
     assert "read_file->patch->run_tests" == strongest[0]["pattern"]
 
 
+def test_clock_tie_prefers_longer_chain(registry, monkeypatch):
+    """When last_seen ties (same clock tick), the longer chain must rank first.
+
+    Regression: under load, consecutive time.time() calls collapse to one
+    tick; Python's stable sort then kept insertion order, ranking the
+    short subchain 'patch->run_tests' above the full chain it came from.
+    """
+    monkeypatch.setattr("xavani_memory.instincts.time.time", lambda: 1000.0)
+    for sid in ("s1", "s2", "s3"):
+        registry.record_episode(sid, ["read_file", "patch", "run_tests"])
+    strongest = registry.strongest()
+    assert strongest[0]["pattern"] == "read_file->patch->run_tests"
+
+
 def test_record_short_chain_ignored(registry):
     registry.record_episode("s1", ["read_file"])
     assert registry.pattern_count() == 0
