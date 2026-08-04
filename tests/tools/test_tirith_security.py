@@ -23,10 +23,19 @@ def _reset_resolved_path():
     Tests that specifically test ensure_installed / resolve behavior
     reset this to None themselves.
     """
+    # D06: the install-pipeline tests exercise the post-consent flow;
+    # the explicit env opt-in bypasses the consent gate (recorded
+    # consent is the CLI flow's job, tested separately).
+    _saved_env = os.environ.get("XAVANI_ALLOW_AUTO_INSTALL")
+    os.environ["XAVANI_ALLOW_AUTO_INSTALL"] = "1"
     _tirith_mod._resolved_path = "tirith"
     _tirith_mod._install_thread = None
     _tirith_mod._install_failure_reason = ""
     yield
+    if _saved_env is None:
+        os.environ.pop("XAVANI_ALLOW_AUTO_INSTALL", None)
+    else:
+        os.environ["XAVANI_ALLOW_AUTO_INSTALL"] = _saved_env
     _tirith_mod._resolved_path = None
     _tirith_mod._install_thread = None
     _tirith_mod._install_failure_reason = ""
