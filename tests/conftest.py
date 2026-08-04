@@ -24,12 +24,17 @@ test runner at ``scripts/run_tests.sh``.
 """
 
 import asyncio
+import json
 import logging
 import os
+import random
 import re
 import signal
 import sys
 import tempfile
+import threading
+import time
+import traceback
 from pathlib import Path
 from unittest.mock import patch
 
@@ -592,10 +597,74 @@ def mock_config():
 # ── Global test timeout ─────────────────────────────────────────────────────
 # Kill any individual test that takes longer than 30 seconds.
 # Prevents hanging tests (subprocess spawns, blocking I/O) from stalling the
-# entire test suite.
+# entire test suite.  Implemented on top of the reusable ``signal_timeout``
+# guard (D15) so tests can apply their own tighter bounds with the same
+# machinery.
 
-def _timeout_handler(signum, frame):
-    raise TimeoutError("Test exceeded 30 second timeout")
+class _SignalTimeout:
+    """SIGALRM-based timeout guard (D15).
+
+    Raises ``TimeoutError`` (with the operation description) when the
+    deadline expires.  Composes with an outer guard: any pending SIGALRM
+    timer is saved on entry and restored on exit, so nesting works and the
+    autouse 30 s test timeout keeps protecting the rest of the test body.
+    """
+
+    def __init__(self, seconds, description="operation"):
+        self.seconds = float(seconds)
+        self.description = description
+
+    def __enter__(self):
+        self._old_handler = signal.getsignal(signal.SIGALRM)
+        # alarm() and setitimer(ITIMER_REAL) share the same kernel timer, so
+        # capture the pending outer alarm (e.g. the autouse 30 s timeout)
+        # before installing our own.
+        self._old_timer = signal.getitimer(signal.ITIMER_REAL)  # (delay, interval)
+        if self._old_timer[0] > 0:
+            signal.setitimer(signal.ITIMER_REAL, 0)
+
+        def _handler(signum, frame):
+            raise TimeoutError(
+                f"{self.description} timed out after {self.seconds:g}s "
+                "(signal-based timeout)"
+            )
+
+        signal.signal(signal.SIGALRM, _handler)
+        signal.setitimer(signal.ITIMER_REAL, self.seconds)
+        return self
+
+    def __exit__(self, exc_type, exc, tb):
+        signal.setitimer(signal.ITIMER_REAL, 0)
+        signal.signal(signal.SIGALRM, self._old_handler)
+        if self._old_timer[0] > 0:
+            signal.setitimer(signal.ITIMER_REAL, self._old_timer[0], self._old_timer[1])
+        return False
+
+
+class _NullTimeout:
+    """No-op stand-in for platforms without SIGALRM (Windows)."""
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc, tb):
+        return False
+
+
+def _signal_timeout_factory(seconds, description="operation"):
+    """Return a SIGALRM timeout guard usable as ``with signal_timeout(2.0, "poll"):``.
+
+    On expiry raises ``TimeoutError`` naming the operation.  SIGALRM is
+    Unix-only; on Windows this returns a no-op guard so callers stay
+    cross-platform.
+    """
+    if sys.platform == "win32":
+        return _NullTimeout()
+    return _SignalTimeout(seconds, description)
+
+
+# Module-level API (D15): ``from tests.conftest import signal_timeout``.
+signal_timeout = _signal_timeout_factory
 
 @pytest.fixture(autouse=True)
 def _ensure_current_event_loop(request):
@@ -644,15 +713,12 @@ def _ensure_current_event_loop(request):
 @pytest.fixture(autouse=True)
 def _enforce_test_timeout():
     """Kill any individual test that takes longer than 30 seconds.
-    SIGALRM is Unix-only; skip on Windows."""
-    if sys.platform == "win32":
+
+    Built on the reusable ``signal_timeout`` guard (D15).  SIGALRM is
+    Unix-only; skipped on Windows (the guard is a no-op there).
+    """
+    with signal_timeout(30.0, "test"):
         yield
-        return
-    old = signal.signal(signal.SIGALRM, _timeout_handler)
-    signal.alarm(30)
-    yield
-    signal.alarm(0)
-    signal.signal(signal.SIGALRM, old)
 
 
 @pytest.fixture(autouse=True)
@@ -1133,4 +1199,129 @@ def wait_for_state():
         return predicate()
 
     return _wait
+
+
+# ── Failure root-cause labeling (A19) + nondeterministic seed capture (A14) ─
+#
+# A19: every test failure is categorised (assertion_error, timeout,
+#      attribute_error, import_error, race, other) and appended to
+#      tests/flakiness.json so a dashboard can show "3 root causes affecting
+#      11 tests" instead of 11 tracebacks to read by hand.
+#
+# A14: each failure record also captures the nondeterminism sources that
+#      make a failure hard to reproduce — the Python random state, the
+#      hash seed, env vars and the working directory — so the failure can
+#      be replayed from the blob.
+#
+# Both are pure observation: they never change test behaviour, and a
+# diagnostics error is swallowed rather than allowed to break the run.
+
+_FLAKINESS_JSON = PROJECT_ROOT / "tests" / "flakiness.json"
+_failure_write_lock = threading.Lock()
+
+FAILURE_CATEGORIES = (
+    "assertion_error",
+    "timeout",
+    "attribute_error",
+    "import_error",
+    "race",
+    "other",
+)
+
+
+def categorize_failure(exc: BaseException) -> str:
+    """Map an exception to a root-cause label (A19).
+
+    Exact-type matches win; otherwise the exception message is consulted
+    for known flake signatures ("timeout", "race").
+    """
+    if isinstance(exc, AssertionError):
+        return "assertion_error"
+    if isinstance(exc, TimeoutError):
+        return "timeout"
+    if isinstance(exc, AttributeError):
+        return "attribute_error"
+    if isinstance(exc, (ImportError, ModuleNotFoundError)):
+        return "import_error"
+    message = str(exc).lower()
+    if "timeout" in message:
+        return "timeout"
+    if "race" in message or isinstance(exc, (ConnectionResetError, BrokenPipeError)):
+        return "race"
+    return "other"
+
+
+def build_failure_record(item, exc: BaseException, category: str, tb_text: str) -> dict:
+    """Build the serializable failure record (A14: seed + env + cwd capture)."""
+    return {
+        "test_id": item.nodeid,
+        "category": category,
+        "label": f"root_cause={category}",
+        "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+        "exception_type": type(exc).__name__,
+        "exception_message": str(exc)[:500],
+        "traceback": tb_text[-2000:],
+        "seed_capture": {
+            "random_state": repr(random.getstate())[:1000],
+            "hash_seed": os.environ.get("PYTHONHASHSEED"),
+            "cwd": os.getcwd(),
+            # Filtered to behavioural vars so secrets can never leak into
+            # the failure record.
+            "env": {
+                key: value
+                for key, value in sorted(os.environ.items())
+                if key.startswith("XAVANI_")
+                or key in ("PYTHONHASHSEED", "TZ", "LANG", "LC_ALL")
+            },
+        },
+    }
+
+
+def append_flakiness_record(record: dict, path: Path | None = None) -> None:
+    """Append a failure record to tests/flakiness.json (A19).
+
+    The file is created on the first failure and is a JSON list of records.
+    ``path`` overrides the target for tests.
+    """
+    target = Path(path) if path is not None else _FLAKINESS_JSON
+    target.parent.mkdir(parents=True, exist_ok=True)
+    with _failure_write_lock:
+        existing: list = []
+        if target.exists():
+            try:
+                existing = json.loads(target.read_text(encoding="utf-8"))
+                if not isinstance(existing, list):
+                    existing = []
+            except (json.JSONDecodeError, OSError):
+                existing = []
+        existing.append(record)
+        tmp = target.with_name(target.name + ".tmp")
+        tmp.write_text(json.dumps(existing, indent=2) + "\n", encoding="utf-8")
+        tmp.replace(target)
+
+
+@pytest.hookimpl(hookwrapper=True)
+def pytest_runtest_makereport(item, call):
+    """A19/A14: on failure, label the root cause and append the record.
+
+    Pure observation — a diagnostics error is swallowed so the run is
+    never affected by the bookkeeping itself.
+    """
+    outcome = yield
+    report = outcome.get_result()
+    if not report.failed:
+        return
+    try:
+        exc = call.excinfo.value
+        if exc is None:
+            return
+        category = categorize_failure(exc)
+        tb_text = "".join(
+            traceback.format_exception(type(exc), exc, exc.__traceback__)
+        )
+        record = build_failure_record(item, exc, category, tb_text)
+        append_flakiness_record(record)
+    except Exception:
+        # Diagnostics must never break the test run.
+        pass
 

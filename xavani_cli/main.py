@@ -12255,6 +12255,12 @@ Examples:
     )
     sessions_export.add_argument("--source", help="Filter by source")
     sessions_export.add_argument("--session-id", help="Export a specific session")
+    sessions_export.add_argument(
+        "--format",
+        choices=["jsonl", "html", "md"],
+        default="jsonl",
+        help="Output format: jsonl (default), html (readable transcript), or md (markdown)",
+    )
 
     sessions_delete = sessions_subparsers.add_parser(
         "delete", help="Delete a specific session"
@@ -12349,6 +12355,7 @@ Examples:
                     print(f"{preview:<50} {last_active:<13} {s['source']:<6} {sid}")
 
         elif action == "export":
+            export_format = getattr(args, "format", "jsonl") or "jsonl"
             if args.session_id:
                 resolved_session_id = db.resolve_session_id(args.session_id)
                 if not resolved_session_id:
@@ -12358,25 +12365,34 @@ Examples:
                 if not data:
                     print(f"Session '{args.session_id}' not found.")
                     return
-                line = _json.dumps(data, ensure_ascii=False) + "\n"
-                if args.output == "-":
-
-                    sys.stdout.write(line)
-                else:
-                    with open(args.output, "w", encoding="utf-8") as f:
-                        f.write(line)
-                    print(f"Exported 1 session to {args.output}")
+                items = [data]
             else:
-                sessions = db.export_all(source=args.source)
-                if args.output == "-":
+                items = db.export_all(source=args.source)
 
-                    for s in sessions:
+            if export_format == "jsonl":
+                if args.output == "-":
+                    for s in items:
                         sys.stdout.write(_json.dumps(s, ensure_ascii=False) + "\n")
                 else:
                     with open(args.output, "w", encoding="utf-8") as f:
-                        for s in sessions:
+                        for s in items:
                             f.write(_json.dumps(s, ensure_ascii=False) + "\n")
-                    print(f"Exported {len(sessions)} sessions to {args.output}")
+                    print(f"Exported {len(items)} session(s) to {args.output}")
+            else:
+                if export_format == "html":
+                    from xavani_cli.session_export_html import sessions_to_html
+
+                    document = sessions_to_html(items)
+                else:
+                    from xavani_cli.session_export_md import sessions_to_markdown
+
+                    document = sessions_to_markdown(items)
+                if args.output == "-":
+                    sys.stdout.write(document)
+                else:
+                    with open(args.output, "w", encoding="utf-8") as f:
+                        f.write(document)
+                    print(f"Exported {len(items)} session(s) to {args.output}")
 
         elif action == "delete":
             resolved_session_id = db.resolve_session_id(args.session_id)

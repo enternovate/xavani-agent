@@ -244,6 +244,7 @@ testpaths = ["tests"]
 markers = [
     "integration: marks tests requiring external services (API keys, Modal, etc.)",
     "ssh: marks tests requiring SSH access to a remote host",
+    "flaky: quarantined tests in tests/flaky/ — inherently timing-sensitive (network, real processes); they run but never block CI (A17)",
 ]
 addopts = "-m 'not integration' -n auto --timeout=60 --timeout-method=thread"
 

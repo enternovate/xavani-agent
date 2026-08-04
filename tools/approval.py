@@ -5,11 +5,25 @@
 """Dangerous command approval -- detection, prompting, and per-session state.
 
 This module is the single source of truth for the dangerous command system:
+- Risk tiers (RISK_TIER_SAFE / RISK_TIER_WARN / RISK_TIER_BLOCK,
+  classify_command_risk) — the approval model is a three-tier ladder:
+    * ``block``  — HARDLINE_PATTERNS: catastrophic commands with no recovery
+      path (rm -rf /, mkfs, dd to raw block device, shutdown/reboot, fork
+      bomb, kill -1). Unconditionally denied even under --yolo / mode=off.
+    * ``warn``   — DANGEROUS_PATTERNS: costly-but-recoverable commands
+      (recursive deletes, git force push, curl|sh, sudo -S, ...). Requires
+      interactive/gateway approval unless approved or yolo.
+    * ``safe``   — matches neither list; runs without approval.
 - Pattern detection (DANGEROUS_PATTERNS, detect_dangerous_command)
+- Dangerous command CHAIN detection (detect_dangerous_chain) — 2+ dangerous
+  commands joined by shell separators (&&, ;, |, ||) flagged as a chain.
 - Per-session approval state (thread-safe, keyed by session_key)
 - Approval prompting (CLI interactive + gateway async)
 - Smart approval via auxiliary LLM (auto-approve low-risk commands)
 - Permanent allowlist persistence (config.yaml)
+
+Note: containerized backends (docker, singularity, modal, daytona) bypass
+the approval layer entirely — nothing they run can touch the host.
 """
 
 import contextvars
@@ -493,6 +507,137 @@ def detect_dangerous_command(command: str) -> tuple:
 
 
 # =========================================================================
+# Risk tiers (D01) — safe / warn / block
+# =========================================================================
+# The approval model is a three-tier ladder:
+#   block — HARDLINE_PATTERNS: catastrophic, no recovery path. Unconditionally
+#           denied, even under --yolo / approvals.mode=off (see the hardline
+#           floor in check_dangerous_command / check_all_command_guards).
+#   warn  — DANGEROUS_PATTERNS: recoverable-but-costly; requires approval
+#           unless pre-approved or yolo is active.
+#   safe  — matches neither list; runs without approval.
+RISK_TIER_SAFE = "safe"
+RISK_TIER_WARN = "warn"
+RISK_TIER_BLOCK = "block"
+RISK_TIER_ORDER = (RISK_TIER_SAFE, RISK_TIER_WARN, RISK_TIER_BLOCK)
+RISK_TIER_INFO = {
+    RISK_TIER_SAFE: "no dangerous patterns; runs without approval",
+    RISK_TIER_WARN: "matches DANGEROUS_PATTERNS; requires approval",
+    RISK_TIER_BLOCK: "matches HARDLINE_PATTERNS; unconditionally blocked",
+}
+
+
+def classify_command_risk(command: str) -> str:
+    """Classify a command into a risk tier: ``safe``, ``warn``, or ``block``.
+
+    ``block`` wins over ``warn``: hardline patterns describe catastrophic
+    commands that the approval layer denies unconditionally. Containerized
+    backends bypass the approval layer entirely, but this classifier is
+    pattern-based and does not know about the execution environment — callers
+    that skip containers should skip this check too.
+
+    Returns:
+        One of RISK_TIER_SAFE / RISK_TIER_WARN / RISK_TIER_BLOCK.
+    """
+    normalized = _normalize_command_for_detection(command).lower()
+    for pattern_re, _description in HARDLINE_PATTERNS_COMPILED:
+        if pattern_re.search(normalized):
+            return RISK_TIER_BLOCK
+    for pattern_re, _description in DANGEROUS_PATTERNS_COMPILED:
+        if pattern_re.search(normalized):
+            return RISK_TIER_WARN
+    return RISK_TIER_SAFE
+
+
+# =========================================================================
+# Dangerous command CHAINS (D05)
+# =========================================================================
+# A chain is 2+ dangerous commands joined by shell separators (&&, ;, |, ||,
+# newline). Each command individually matches DANGEROUS_PATTERNS, so the
+# existing single-command detection already flags them — the chain detector
+# makes the *combination* explicit so approvals show the full chain instead
+# of only the first matching pattern.
+
+_SEPARATOR_CHARS = ("&&", "||", ";", "|", "\n")
+
+
+def split_command_segments(command: str) -> list:
+    """Best-effort split of a command into segments at shell separators.
+
+    Separators inside single/double quotes are not treated as separators
+    (a quoted ``;`` or ``&&`` is data, not a command boundary). This is a
+    heuristic, not a full shell tokenizer — it intentionally stays simple.
+
+    Returns:
+        List of non-empty stripped segments.
+    """
+    segments = []
+    current = []
+    quote = None
+    i = 0
+    n = len(command)
+    while i < n:
+        ch = command[i]
+        if quote:
+            current.append(ch)
+            if ch == quote:
+                quote = None
+            i += 1
+            continue
+        if ch in ("'", '"'):
+            quote = ch
+            current.append(ch)
+            i += 1
+            continue
+        two = command[i:i + 2]
+        if two in ("&&", "||"):
+            segments.append("".join(current))
+            current = []
+            i += 2
+            continue
+        if ch in ";|\n":
+            segments.append("".join(current))
+            current = []
+            i += 1
+            continue
+        current.append(ch)
+        i += 1
+    segments.append("".join(current))
+    return [s.strip() for s in segments if s.strip()]
+
+
+def detect_dangerous_chain(command: str, min_segments: int = 2) -> tuple:
+    """Detect dangerous command CHAINS: ``min_segments`` (default 2) or more
+    dangerous commands joined by shell separators (``&&``, ``;``, ``|``,
+    ``||``, newline).
+
+    Each segment is run through ``detect_dangerous_command`` independently,
+    so ``rm -rf A && rm -rf B`` and ``git reset --hard HEAD && git push
+    --force origin main`` are flagged while ``echo hi && rm -rf /tmp/x`` is
+    not (only one dangerous segment).
+
+    Returns:
+        (is_chain, hits, description) where ``hits`` is a list of
+        ``(segment, description)`` pairs for each dangerous segment, or
+        (False, [], None) when fewer than ``min_segments`` segments match.
+    """
+    normalized = _normalize_command_for_detection(command).lower()
+    hits = []
+    for segment in split_command_segments(normalized):
+        is_dangerous, _key, description = detect_dangerous_command(segment)
+        if is_dangerous:
+            hits.append((segment, description))
+    if len(hits) >= min_segments:
+        descriptions = [desc for _seg, desc in hits]
+        return (
+            True,
+            hits,
+            "dangerous command chain: " + "; ".join(descriptions),
+        )
+    return (False, [], None)
+
+
+# =========================================================================
 # Per-session approval state (thread-safe)
 # =========================================================================
 
@@ -958,6 +1103,14 @@ def check_dangerous_command(command: str, env_type: str,
     if not is_dangerous:
         return {"approved": True, "message": None}
 
+    # D05 — dangerous command CHAIN (2+ dangerous commands joined by
+    # &&, ;, |, ||). The command is already flagged by the single-command
+    # detection above; surface the full chain in the approval description
+    # so the user sees every dangerous stage, not just the first match.
+    is_chain, _chain_hits, chain_description = detect_dangerous_chain(command)
+    if is_chain:
+        description = chain_description
+
     session_key = get_current_session_key()
     if is_approved(session_key, pattern_key):
         return {"approved": True, "message": None}
@@ -1128,6 +1281,13 @@ def check_all_command_guards(command: str, env_type: str,
 
     # Dangerous command check (detection only, no approval)
     is_dangerous, pattern_key, description = detect_dangerous_command(command)
+
+    # D05 — dangerous command CHAIN: 2+ dangerous commands joined by
+    # &&, ;, |, ||. Surface the full chain in the combined description so
+    # the user sees every dangerous stage of the command.
+    is_chain, _chain_hits, chain_description = detect_dangerous_chain(command)
+    if is_chain:
+        description = chain_description
 
     # --- Phase 2: Decide ---
 
