@@ -1189,6 +1189,14 @@ def check_dangerous_command(command: str, env_type: str,
         description = chain_description
 
     session_key = get_current_session_key()
+    # D08: after N privileged (sudo) approvals, require re-verification —
+    # a session must not run forever with unlimited privilege.
+    try:
+        from tools.privilege_recheck import check_privilege_recheck
+
+        _recheck_due = bool(re.search(r"\bsudo\b", command)) and check_privilege_recheck(session_key)
+    except Exception:
+        _recheck_due = False
     # D03: a session risk budget bounds how many dangerous commands may
     # auto-pass via allowlist/session approval. Exhausted budget means
     # even approved patterns must ask again.
@@ -1200,11 +1208,20 @@ def check_dangerous_command(command: str, env_type: str,
     except Exception:
         _budget = None
         _budget_exhausted = False
-    if is_approved(session_key, pattern_key) and not _budget_exhausted:
+    if is_approved(session_key, pattern_key) and not _budget_exhausted and not _recheck_due:
         _log_approval_decision(
             "allow", "allowlist", command=command, pattern_key=pattern_key,
             description=description, session_key=session_key,
         )
+        # D08: an allowlist-approved sudo still accumulates toward the
+        # privilege re-check (no explicit user verification happened).
+        try:
+            if re.search(r"\bsudo\b", command):
+                from tools.privilege_recheck import mark_privileged_action
+
+                mark_privileged_action(session_key)
+        except Exception:
+            pass
         return {"approved": True, "message": None}
 
     is_cli = env_var_enabled("XAVANI_INTERACTIVE")
@@ -1278,6 +1295,19 @@ def check_dangerous_command(command: str, env_type: str,
             _budget.spend(TIER_COSTS.get("high", 40.0))
         except Exception:
             pass
+
+    # D08: a sudo command approval counts toward the privilege re-check.
+    try:
+        if re.search(r"\bsudo\b", command):
+            from tools.privilege_recheck import (
+                confirm_privilege_recheck,
+                mark_privileged_action,
+            )
+
+            mark_privileged_action(session_key)
+            confirm_privilege_recheck(session_key)  # user just verified
+    except Exception:
+        pass
 
     _log_approval_decision(
         "allow", "user", command=command, pattern_key=pattern_key,
