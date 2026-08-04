@@ -712,12 +712,18 @@ def _ensure_current_event_loop(request):
 
 
 @pytest.fixture(autouse=True)
-def _enforce_test_timeout():
+def _enforce_test_timeout(request):
     """Kill any individual test that takes longer than 30 seconds.
 
     Built on the reusable ``signal_timeout`` guard (D15).  SIGALRM is
     Unix-only; skipped on Windows (the guard is a no-op there).
+
+    Tests that legitimately run longer (bounded subprocess runners with
+    their own internal timeouts) opt out with the ``long_running`` marker.
     """
+    if request.node.get_closest_marker("long_running"):
+        yield
+        return
     with signal_timeout(30.0, "test"):
         yield
 

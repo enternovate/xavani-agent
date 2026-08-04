@@ -2,6 +2,25 @@
 
 All notable changes to Xavani Agent are documented in this file.
 
+## [Unreleased] — 100-Update Program (2026-08-04)
+
+The full 100-update program from XAVANI_100_UPDATES.md is implemented,
+tested, and verified: A Reliability & Correctness (20), B Intelligence &
+Reasoning (15), C Operability & Developer Experience (20), D Safety &
+Guardrails (15), E Observability & Debugging (10), F Distribution &
+Ecosystem (10), G Autonomy & Proactivity (10).
+
+### Added (this tranche)
+- F08 Neovim plugin generator with validation (tools/nvim_plugin.py)
+- F09 JetBrains plugin descriptor generator with validation (tools/jetbrains_plugin.py)
+- F10 Cloud instance manifest generator with validation (tools/cloud_instance.py)
+- C03 Real-time dashboard TUI over metrics collector, error budgets, cost ledger (xavani_observability/dashboard_tui.py)
+- Test-suite hardening: plugin test fixtures declare api_version (C12 gate), hermetic env blanks XAVANI_CRON_SESSION, long_running marker for bounded subprocess tests
+
+### Changed
+- Dependencies: mcp 1.27.2 -> 1.28.1 (WebSocket Host/Origin validation), react-router 7.18.2 -> 8.3.0 in web (RSC-mode CSRF fix)
+- Packaging: xavani_memory included in the wheel
+
 ## [0.7.2] - 2026-08-01 — "Deploy Readiness"
 
 Deploy hardening. No new user-facing features.
