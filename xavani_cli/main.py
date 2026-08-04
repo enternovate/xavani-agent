@@ -23,6 +23,7 @@ Usage:
     xavani cron list           # List cron jobs
     xavani cron status         # Check if cron scheduler is running
     xavani doctor              # Check configuration and dependencies
+    xavani validate            # Pre-flight health check (config, .env, keys, model)
     xavani honcho setup                    # Configure Honcho AI memory integration
     xavani honcho status                   # Show Honcho config and connection status
     xavani honcho sessions                 # List directory → session name mappings
@@ -5781,6 +5782,13 @@ def cmd_doctor(args):
     run_doctor(args)
 
 
+def cmd_validate(args):
+    """Pre-flight configuration health check."""
+    from xavani_cli.validate import run_validate
+
+    sys.exit(run_validate(args))
+
+
 def cmd_operator(args):
     """Autonomous operator: build + promote a product, you approve (v0.7.0)."""
     from xavani_operator.cli import cmd_operator as _run
@@ -10048,6 +10056,13 @@ def cmd_completion(args, parser=None):
         print(generate_bash(parser))
 
 
+def _cmd_journey_dispatch(args):
+    """Dispatch xavani journey subcommands."""
+    from xavani_cli.journey import cmd_journey
+
+    return cmd_journey(args)
+
+
 def cmd_logs(args):
     """View and filter Xavani log files."""
     from xavani_cli.logs import tail_log, list_logs
@@ -10100,11 +10115,11 @@ _BUILTIN_SUBCOMMANDS = frozenset(
         "computer-use",
         "config", "cron", "curator", "dashboard", "debug", "doctor",
         "dump", "fallback", "gateway", "hooks", "import", "insights",
-        "finance", "kanban", "learn", "login", "logout", "logs", "lsp", "mcp", "memory",
+        "finance", "journey", "kanban", "learn", "login", "logout", "logs", "lsp", "mcp", "memory",
         "model", "operator", "pairing", "plugins", "postinstall", "profile", "proxy",
         "send", "sessions", "setup",
         "skills", "slack", "status", "tools", "uninstall", "update",
-        "version", "webhook", "whatsapp", "wisdom", "chat",
+        "validate", "version", "webhook", "whatsapp", "wisdom", "chat",
         # Help-ish invocations — plugin commands not being listed in
         # top-level --help is an acceptable trade-off for skipping an
         # expensive eager import of every bundled plugin module.
@@ -11316,6 +11331,19 @@ def main():
         ),
     )
     doctor_parser.set_defaults(func=cmd_doctor)
+
+    # =========================================================================
+    # validate command
+    # =========================================================================
+    validate_parser = subparsers.add_parser(
+        "validate",
+        help="Pre-flight configuration health check",
+        description=(
+            "Validate config.yaml (parse + JSON schema), .env, provider API "
+            "keys, XAVANI_HOME writability, and model registry before go-live"
+        ),
+    )
+    validate_parser.set_defaults(func=cmd_validate)
 
     # =========================================================================
     # dump command
@@ -13015,6 +13043,18 @@ Examples:
         help="Filter by component: gateway, agent, tools, cli, cron",
     )
     logs_parser.set_defaults(func=cmd_logs)
+
+    # =========================================================================
+    # journey command — what the agent has learned, on a timeline
+    # =========================================================================
+    journey_parser = subparsers.add_parser(
+        "journey",
+        help="Show learned skills and memories over time",
+        description="Render the learning graph: learned skills, memory cards, and connections",
+    )
+    from xavani_cli.journey import build_journey_parser
+    build_journey_parser(journey_parser)
+    journey_parser.set_defaults(func=lambda args: _cmd_journey_dispatch(args))
 
     # =========================================================================
     # Parse and execute
