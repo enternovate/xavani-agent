@@ -3768,7 +3768,7 @@ wheels = [
 
 [[package]]
 name = "xavani-agent"
-version = "0.7.2"
+version = "0.1.0"
 source = { editable = "." }
 dependencies = [
     { name = "croniter" },

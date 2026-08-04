@@ -31,7 +31,7 @@ from __future__ import annotations
 import re
 from typing import Any, Dict
 
-PLUGIN_API_VERSION = "0.7.2"
+PLUGIN_API_VERSION = "0.1.0"
 
 # Manifest keys that may carry the version (common plugin conventions).
 _MANIFEST_KEYS = ("api_version", "apiVersion", "xavani_api_version")

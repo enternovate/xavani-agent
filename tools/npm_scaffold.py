@@ -13,7 +13,7 @@ Usage::
 
     from tools.npm_scaffold import generate_npm_scaffold, validate_scaffold
 
-    files = generate_npm_scaffold(version="0.7.2")
+    files = generate_npm_scaffold(version="0.1.0")
     problems = validate_scaffold(files)
 """
 

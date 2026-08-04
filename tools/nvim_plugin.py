@@ -11,7 +11,7 @@ Usage::
 
     from tools.nvim_plugin import generate_nvim_plugin, validate_plugin
 
-    files = generate_nvim_plugin(version="0.7.2")
+    files = generate_nvim_plugin(version="0.1.0")
     problems = validate_plugin(files)
 """
 

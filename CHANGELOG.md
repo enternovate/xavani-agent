@@ -2,15 +2,11 @@
 
 All notable changes to Xavani Agent are documented in this file.
 
-## [Unreleased] — 100-Update Program (2026-08-04)
+## [0.1.0] - 2026-08-04 — "First Official Release"
 
-The full 100-update program from XAVANI_100_UPDATES.md is implemented,
-tested, and verified: A Reliability & Correctness (20), B Intelligence &
-Reasoning (15), C Operability & Developer Experience (20), D Safety &
-Guardrails (15), E Observability & Debugging (10), F Distribution &
-Ecosystem (10), G Autonomy & Proactivity (10).
+First official release. The full 100-update program from XAVANI_100_UPDATES.md is implemented, tested, and verified: A Reliability & Correctness (20), B Intelligence & Reasoning (15), C Operability & Developer Experience (20), D Safety & Guardrails (15), E Observability & Debugging (10), F Distribution & Ecosystem (10), G Autonomy & Proactivity (10).
 
-### Added (this tranche)
+### Added (final tranche)
 - F08 Neovim plugin generator with validation (tools/nvim_plugin.py)
 - F09 JetBrains plugin descriptor generator with validation (tools/jetbrains_plugin.py)
 - F10 Cloud instance manifest generator with validation (tools/cloud_instance.py)

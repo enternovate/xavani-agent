@@ -14,7 +14,7 @@ Usage::
 
     from tools.cloud_instance import generate_cloud_manifest, validate_manifest
 
-    files = generate_cloud_manifest(version="0.7.2")
+    files = generate_cloud_manifest(version="0.1.0")
     problems = validate_manifest(files)
 """
 

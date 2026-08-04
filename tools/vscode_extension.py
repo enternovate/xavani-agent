@@ -12,7 +12,7 @@ Usage::
 
     from tools.vscode_extension import generate_vscode_extension, validate_extension
 
-    files = generate_vscode_extension(version="0.7.2")
+    files = generate_vscode_extension(version="0.1.0")
     problems = validate_extension(files)
 """
 
