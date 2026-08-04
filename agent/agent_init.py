@@ -402,6 +402,20 @@ def init_agent(
     # Model response configuration
     agent.max_tokens = max_tokens  # None = use model default
     agent.reasoning_config = reasoning_config  # None = use default (medium for OpenRouter)
+    # B06: inject the configured reasoning-token cap (agent.reasoning_budget_tokens)
+    # into reasoning_config so adapters can clamp thinking budgets. 0 = unlimited.
+    try:
+        from xavani_cli.config import load_config as _load_rc_cfg
+        _rc_cap = int(
+            (_load_rc_cfg().get("agent", {}) or {}).get("reasoning_budget_tokens", 0) or 0
+        )
+        if _rc_cap > 0:
+            if agent.reasoning_config is None:
+                agent.reasoning_config = {"effort": "medium"}
+            if isinstance(agent.reasoning_config, dict):
+                agent.reasoning_config["budget_cap"] = _rc_cap
+    except (TypeError, ValueError):
+        pass
     agent.service_tier = service_tier
     agent.request_overrides = dict(request_overrides or {})
     agent.prefill_messages = prefill_messages or []  # Prefilled conversation turns
