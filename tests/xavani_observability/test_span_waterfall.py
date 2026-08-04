@@ -81,9 +81,17 @@ def test_tree_renders_durations():
 
 
 def test_bar_width_scales_with_duration():
-    short = render_waterfall([_span("s1", "fast", 0, 1)], bar_width=40)
-    long = render_waterfall([_span("s1", "slow", 0, 1000)], bar_width=40)
-    assert short.count("#") < long.count("#")
+    # Both spans in one waterfall: the bar is relative to the longest.
+    out = render_waterfall(
+        [
+            _span("s1", "fast", 0, 1),
+            _span("s2", "slow", 0, 1000),
+        ],
+        bar_width=40,
+    )
+    fast_line = [l for l in out.splitlines() if "fast" in l][0]
+    slow_line = [l for l in out.splitlines() if "slow" in l][0]
+    assert fast_line.count("#") < slow_line.count("#")
 
 
 def test_unknown_span_id_handled():
