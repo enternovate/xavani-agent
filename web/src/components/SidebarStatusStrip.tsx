@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 import type { StatusResponse } from "@/lib/api";
 import { useSidebarStatus } from "@/hooks/useSidebarStatus";
 import { cn } from "@/lib/utils";

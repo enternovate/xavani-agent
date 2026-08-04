@@ -1,5 +1,5 @@
 import { createRoot } from "react-dom/client";
-import { BrowserRouter } from "react-router-dom";
+import { BrowserRouter } from "react-router";
 import "flag-icons/css/flag-icons.min.css";
 import "./index.css";
 import App from "./App";

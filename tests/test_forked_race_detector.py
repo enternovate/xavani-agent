@@ -13,6 +13,8 @@ import subprocess
 import sys
 from pathlib import Path
 
+import pytest
+
 REPO_ROOT = Path(__file__).resolve().parent.parent
 
 
@@ -40,8 +42,12 @@ def test_forked_plugin_available():
     import pytest_forked  # noqa: F401
 
 
+@pytest.mark.long_running
 def test_script_is_executable_contract():
     """The script must run and return 0 on a clean module."""
+    # Runs a forked pytest subprocess over a whole module; under full-suite
+    # load it legitimately exceeds the 30s global test timeout, so it opts
+    # out via the long_running marker (its internal timeout is 180s).
     result = subprocess.run(
         [sys.executable, "scripts/run_forked_race_tests.py",
          "tests/xavani_state/test_state_integrity.py"],

@@ -29,7 +29,7 @@ import { cn } from "@/lib/utils";
 import { Copy, PanelRight, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams } from "react-router";
 
 import { ChatSidebar } from "@/components/ChatSidebar";
 import { usePageHeader } from "@/contexts/usePageHeader";
