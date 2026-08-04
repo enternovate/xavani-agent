@@ -1,0 +1,40 @@
+name: Performance Regression Check
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  benchmark:
+    name: Benchmark critical paths (E10)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install project
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[all,dev]" --quiet
+
+      - name: Run benchmark vs committed baseline
+        run: |
+          python scripts/benchmark.py --json
+
+      - name: Fail on regression
+        if: failure()
+        run: |
+          echo "::error::Performance regression detected. If the change intentionally"
+          echo "slows startup, update the baseline with:"
+          echo "  python scripts/benchmark.py --update-baseline"
+          exit 1
