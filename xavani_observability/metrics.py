@@ -111,6 +111,12 @@ class MetricsCollector:
             self._tool_latencies[tool_name].append(duration_ms)
             self._tool_call_counts[tool_name] += 1
             self._total_tool_calls += 1
+        # E06: feed the tools subsystem error budget with a success.
+        try:
+            from xavani_observability.error_budget import record_tool_outcome
+            record_tool_outcome(True)
+        except Exception:
+            pass
         self._persist()
 
     def record_llm_latency(self, model: str, duration_ms: float) -> None:
@@ -154,6 +160,12 @@ class MetricsCollector:
         with self._lock:
             self._tool_errors[tool_name][error_type] += 1
             self._total_errors += 1
+        # E06: feed the tools subsystem error budget.
+        try:
+            from xavani_observability.error_budget import record_tool_outcome
+            record_tool_outcome(False)
+        except Exception:
+            pass
         self._persist()
 
     def record_session_start(self) -> None:
