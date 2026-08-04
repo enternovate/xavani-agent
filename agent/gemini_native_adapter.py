@@ -931,7 +931,10 @@ class GeminiNativeClient:
             try:
                 with self._http.stream("POST", url, json=request, headers=stream_headers, timeout=timeout) as response:
                     if response.status_code != 200:
-                        response.read()
+                        # Bounded read: never allocate unbounded memory or
+                        # hang on a stalled streaming error body.
+                        from agent.bounded_response import read_streaming_error_body
+                        read_streaming_error_body(response)
                         raise gemini_http_error(response)
                     tool_call_indices: Dict[str, Dict[str, Any]] = {}
                     for event in _iter_sse_events(response):

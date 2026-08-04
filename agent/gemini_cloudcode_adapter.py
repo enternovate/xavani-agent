@@ -752,8 +752,10 @@ class GeminiCloudCodeClient:
             try:
                 with self._http.stream("POST", url, json=wrapped, headers=stream_headers) as response:
                     if response.status_code != 200:
-                        # Materialize error body for better diagnostics
-                        response.read()
+                        # Bounded read: never allocate unbounded memory or
+                        # hang on a stalled streaming error body.
+                        from agent.bounded_response import read_streaming_error_body
+                        read_streaming_error_body(response)
                         raise _gemini_http_error(response)
                     tool_call_counter: List[int] = [0]
                     for event in _iter_sse_events(response):
