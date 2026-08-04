@@ -568,6 +568,11 @@ DEFAULT_CONFIG = {
     "toolsets": ["xavani-cli"],
     "agent": {
         "max_turns": 300,
+        # Hard cap on reasoning/thinking output tokens per response (B06).
+        # 0 = unlimited (provider default). When set, the adapter never asks
+        # for a thinking budget above this value, bounding cost on
+        # reasoning-heavy models.
+        "reasoning_budget_tokens": 0,
         # Inactivity timeout for gateway agent execution (seconds).
         # The agent can run indefinitely as long as it's actively calling
         # tools or receiving API responses.  Only fires when the agent has

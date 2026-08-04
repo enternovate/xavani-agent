@@ -2176,6 +2176,14 @@ def build_anthropic_kwargs(
         if reasoning_config.get("enabled") is not False and "haiku" not in model.lower():
             effort = str(reasoning_config.get("effort", "medium")).lower()
             budget = THINKING_BUDGET.get(effort, 8000)
+            # B06: clamp the thinking budget to the configured cap
+            # (agent.reasoning_budget_tokens in config.yaml). 0 = unlimited.
+            try:
+                _cap = int(reasoning_config.get("budget_cap", 0) or 0)
+                if _cap > 0:
+                    budget = min(budget, _cap)
+            except (TypeError, ValueError):
+                pass
             if _supports_adaptive_thinking(model):
                 kwargs["thinking"] = {
                     "type": "adaptive",
