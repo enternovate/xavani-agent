@@ -526,6 +526,17 @@ def _maybe_delegate_to_full_cli() -> bool:
 
 def main() -> None:
     """Console script entry point — wraps :func:`xavani_main` with Fire."""
+    # A18: validate the home filesystem before any heavy work. Loud
+    # startup warning when the home is unwritable, on a network
+    # filesystem, or too full — silent corruption is the failure mode
+    # this prevents. Skippable with XAVANI_SKIP_HOME_CHECK=1.
+    try:
+        from xavani_home_check import report_home_problems
+
+        report_home_problems(_XAVANI_HOME)
+    except Exception:  # pragma: no cover — never block startup on the check
+        pass
+
     try:
         import fire
     except ImportError as exc:  # pragma: no cover — install-time path
