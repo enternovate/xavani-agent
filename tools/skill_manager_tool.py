@@ -789,6 +789,73 @@ def apply_skill_pending(payload: Dict[str, Any]) -> str:
         _skill_gate_bypass.reset(token)
 
 
+def _capture_skill_audit_before(action, name, file_path=None, category=None):
+    """Resolve the mutation target + its before-hash (D11).
+
+    Must run BEFORE the mutation executes — delete/remove_file erase
+    the skill, making post-dispatch resolution impossible.
+    Returns (target_path, before_sha256); either may be None.
+    """
+    try:
+        from xavani_state_integrity import sha256_file
+
+        target = None
+        existing = _find_skill(name)
+        if action == "create":
+            target = _resolve_skill_dir(name, category or "") / "SKILL.md"
+        elif existing:
+            if action in ("edit", "delete"):
+                target = existing["path"] / "SKILL.md"
+            elif action in ("patch", "write_file", "remove_file"):
+                if file_path:
+                    target, _err = _resolve_skill_target(existing["path"], file_path)
+                else:
+                    target = existing["path"] / "SKILL.md"
+        before_hash = None
+        if target is not None and target.exists():
+            try:
+                before_hash = sha256_file(target)
+            except OSError:
+                before_hash = None
+        return target, before_hash
+    except Exception:
+        return None, None
+
+
+def _record_skill_audit(action, name, target, before_hash, result, file_path=None):
+    """Append the D11 audit record for a completed mutation. Never raises."""
+    try:
+        from xavani_skill_audit import record_skill_change
+        from xavani_state_integrity import sha256_file
+
+        after_hash = None
+        if target is not None and result.get("success") and target.exists():
+            try:
+                after_hash = sha256_file(target)
+            except OSError:
+                after_hash = None
+
+        actor = ""
+        try:
+            from tools.skill_provenance import get_current_write_origin
+            actor = get_current_write_origin()
+        except Exception:
+            pass
+
+        record_skill_change(
+            action=action,
+            name=name,
+            file_path=str(target) if target is not None else (file_path or None),
+            before_sha256=before_hash,
+            after_sha256=after_hash,
+            success=bool(result.get("success")),
+            message=result.get("message") or result.get("error") or "",
+            extra={"actor": actor} if actor else None,
+        )
+    except Exception:
+        pass  # audit must never block the write
+
+
 def skill_manage(
     action: str,
     name: str,
@@ -818,6 +885,13 @@ def skill_manage(
     )
     if gate_result is not None:
         return gate_result
+
+    # D11: capture the before-state BEFORE the mutation executes —
+    # delete/remove_file erase the skill, making post-dispatch
+    # resolution impossible.
+    audit_target, audit_before_hash = _capture_skill_audit_before(
+        action, name, file_path=file_path, category=category
+    )
 
     if action == "create":
         if not content:
@@ -853,6 +927,13 @@ def skill_manage(
 
     else:
         result = {"success": False, "error": f"Unknown action '{action}'. Use: create, edit, patch, delete, write_file, remove_file"}
+
+    # D11: append the audit record with before/after hashes. Best-effort;
+    # a failing audit must never break the skill write.
+    _record_skill_audit(
+        action, name, audit_target, audit_before_hash, result,
+        file_path=file_path,
+    )
 
     if result.get("success"):
         try:
