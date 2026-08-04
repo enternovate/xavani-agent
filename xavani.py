@@ -555,11 +555,21 @@ def main() -> None:
         sys.exit(0)
     except SystemExit:
         raise
-    except Exception:  # noqa: BLE001 — top-level fatal handler
+    except Exception as exc:  # noqa: BLE001 — top-level fatal handler
         logger.exception("Xavani Agent crashed")
         sys.stderr.write(
             "\nXavani Agent crashed. See logs in ~/.xavani/logs/ for details.\n"
         )
+        # C20: surface an actionable recovery when the error matches a
+        # known category (config, credentials, network, sandbox, ...).
+        try:
+            from xavani_cli.error_recovery import format_recovery
+
+            recovery = format_recovery(f"{type(exc).__name__}: {exc}")
+            if recovery:
+                sys.stderr.write(recovery)
+        except Exception:
+            pass
         sys.exit(1)
 
 
