@@ -4159,9 +4159,14 @@ def run_conversation(
         result["pending_steer"] = _leftover_steer
     agent._response_was_previewed = False
     
-    # Include interrupt message if one triggered the interrupt
-    if interrupted and agent._interrupt_message:
-        result["interrupt_message"] = agent._interrupt_message
+    # Include interrupt message if one triggered the interrupt. An accepted
+    # in-turn correction (redirect) supersedes a plain interrupt message —
+    # drain it first so the caller retries with the correction.
+    if interrupted:
+        _redirect_text = agent._drain_pending_redirect()
+        _interrupt_text = _redirect_text or agent._interrupt_message
+        if _interrupt_text:
+            result["interrupt_message"] = _interrupt_text
     
     # Clear interrupt state after handling
     agent.clear_interrupt()
