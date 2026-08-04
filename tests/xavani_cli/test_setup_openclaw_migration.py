@@ -56,7 +56,7 @@ class TestOfferOpenclawMigration:
         xavani_home = tmp_path / ".xavani"
         xavani_home.mkdir()
         config_path = xavani_home / "config.yaml"
-        config_path.write_text("agent:\n  max_turns: 90\n")
+        config_path.write_text("agent:\n  max_turns: 300\n")
 
         # Build a fake migration module
         fake_mod = ModuleType("openclaw_to_xavani")
@@ -125,7 +125,7 @@ class TestOfferOpenclawMigration:
         xavani_home = tmp_path / ".xavani"
         xavani_home.mkdir()
         config_path = xavani_home / "config.yaml"
-        config_path.write_text("agent:\n  max_turns: 90\n")
+        config_path.write_text("agent:\n  max_turns: 300\n")
 
         fake_mod = ModuleType("openclaw_to_xavani")
         fake_mod.resolve_selected_options = MagicMock(return_value={"soul", "memory"})

@@ -278,7 +278,7 @@ class TestCmdMigrate:
         openclaw_dir = tmp_path / ".openclaw"
         openclaw_dir.mkdir()
         config_path = tmp_path / "config.yaml"
-        config_path.write_text("agent:\n  max_turns: 90\n")
+        config_path.write_text("agent:\n  max_turns: 300\n")
 
         fake_mod = ModuleType("openclaw_to_xavani")
         fake_mod.resolve_selected_options = MagicMock(return_value={"soul"})
