@@ -21,6 +21,7 @@ Key design decisions:
 
 import json
 import logging
+import os
 import random
 import re
 import sqlite3
@@ -337,6 +338,18 @@ class SessionDB:
     def __init__(self, db_path: Path = None):
         self.db_path = db_path or DEFAULT_DB_PATH
         self.db_path.parent.mkdir(parents=True, exist_ok=True)
+        # Privacy hardening: the session DB contains full transcripts. Lock
+        # the DB file to the owning user (0o600) and the directory to
+        # owner-only (0o700) so other local users cannot read transcripts.
+        try:
+            os.chmod(self.db_path.parent, 0o700)
+        except OSError:
+            pass
+        try:
+            if self.db_path.exists():
+                os.chmod(self.db_path, 0o600)
+        except OSError:
+            pass
 
         self._lock = threading.Lock()
         self._write_count = 0
