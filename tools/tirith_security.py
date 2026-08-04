@@ -353,6 +353,23 @@ def _install_tirith(*, log_failures: bool = True) -> tuple[str | None, str]:
     """
     log = logger.warning if log_failures else logger.debug
 
+    # D06: auto-install requires explicit user consent. The user consents
+    # once via the CLI flow (which calls record_consent); the gate here
+    # refuses unconsented auto-installs. XAVANI_ALLOW_AUTO_INSTALL=1 is
+    # the explicit headless/CI opt-in (operator's choice, logged).
+    try:
+        from tools.install_consent import require_consent
+
+        _explicit = os.environ.get("XAVANI_ALLOW_AUTO_INSTALL") == "1"
+        if require_consent("tirith", scope="cli") and not _explicit:
+            logger.info(
+                "tirith auto-install skipped: no explicit consent recorded. "
+                "Run the install flow or set XAVANI_ALLOW_AUTO_INSTALL=1."
+            )
+            return None, "consent_required"
+    except Exception:
+        pass
+
     target = _detect_target()
     if not target:
         logger.info("tirith auto-install: unsupported platform %s/%s",
