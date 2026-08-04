@@ -237,6 +237,25 @@ def _discord_tools_loaded() -> bool:
         return False
 
 
+_MAX_PROMPT_METADATA_CHARS = 240
+
+
+def _neutralize_untrusted_inline_text(value: Any, *, max_chars: int = _MAX_PROMPT_METADATA_CHARS) -> str:
+    """Collapse untrusted text to a single inert line, unquoted.
+
+    Embedded newlines are the injection vector this helper guards against:
+    they let an untrusted display name masquerade as a new markdown section
+    (a fake heading, an "## Override" block) inside content the model reads
+    every turn. Collapsing them to a single space keeps a normal value
+    byte-identical while making a hostile one visually inert.
+    """
+    text = str(value).replace("\r\n", "\n").replace("\r", "\n").replace("\n", " ")
+    text = "".join(ch if ch >= " " or ch == "\t" else " " for ch in text)
+    if max_chars and len(text) > max_chars:
+        text = text[: max_chars - 3] + "..."
+    return text
+
+
 def build_session_context_prompt(
     context: SessionContext,
     *,
@@ -295,12 +314,12 @@ def build_session_context_prompt(
             else:
                 desc = _cname
         else:
-            desc = src.description
+            desc = _neutralize_untrusted_inline_text(src.description)
         lines.append(f"**Source:** {platform_name} ({desc})")
 
     # Channel topic (if available - provides context about the channel's purpose)
     if context.source.chat_topic:
-        lines.append(f"**Channel Topic:** {context.source.chat_topic}")
+        lines.append(f"**Channel Topic:** {_neutralize_untrusted_inline_text(context.source.chat_topic)}")
 
     # User identity.
     # In shared multi-user sessions (shared threads OR shared non-thread groups
@@ -316,7 +335,7 @@ def build_session_context_prompt(
             "with [sender name]. Multiple users may participate."
         )
     elif context.source.user_name:
-        lines.append(f"**User:** {context.source.user_name}")
+        lines.append(f"**User:** {_neutralize_untrusted_inline_text(context.source.user_name)}")
     elif context.source.user_id:
         uid = context.source.user_id
         if redact_pii:

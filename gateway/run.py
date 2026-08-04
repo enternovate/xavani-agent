@@ -7606,7 +7606,10 @@ class GatewayRunner:
             thread_sessions_per_user=_thread_sessions_per_user,
         )
         if _is_shared_multi_user and source.user_name:
-            message_text = f"[{source.user_name}] {message_text}"
+            # Neutralize newlines/control chars in the sender name so a hostile
+            # display name cannot inject instructions into the message text.
+            from gateway.session import _neutralize_untrusted_inline_text
+            message_text = f"[{_neutralize_untrusted_inline_text(source.user_name)}] {message_text}"
 
         # Prepend channel context from history backfill (if any).  This
         # happens after sender-prefix so the prefix only applies to the
