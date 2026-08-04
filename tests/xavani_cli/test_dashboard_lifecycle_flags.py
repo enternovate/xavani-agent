@@ -22,6 +22,30 @@ import pytest
 from xavani_cli.main import cmd_dashboard, _report_dashboard_status
 
 
+@pytest.fixture(autouse=True)
+def _refresh_bindings_against_live_module():
+    """Rebind module-level names to the *current* ``xavani_cli.main``.
+
+    ``test_env_loader.py`` / ``test_skills_subparser.py`` reload or delete
+    ``xavani_cli.main`` from ``sys.modules``.  When that happens on the
+    same xdist worker before this file runs, ``patch(\"xavani_cli.main.X\")``
+    patches the new module while ``cmd_dashboard`` still resolves its
+    globals from the old module object — every patch becomes a no-op and
+    the real process scan runs (fails under the full suite, passes alone).
+    Mirrors the defense in ``test_update_stale_dashboard.py``.
+    """
+    global cmd_dashboard
+    global _report_dashboard_status
+    live = sys.modules.get("xavani_cli.main")
+    if live is None:
+        import importlib
+
+        live = importlib.import_module("xavani_cli.main")
+    cmd_dashboard = live.cmd_dashboard
+    _report_dashboard_status = live._report_dashboard_status
+    yield
+
+
 def _ns(**kw):
     """Build an argparse.Namespace with dashboard defaults plus overrides."""
     defaults = dict(
