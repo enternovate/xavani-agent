@@ -32,6 +32,7 @@ from typing import Any, Dict, Iterator, List, Optional
 import httpx
 
 from agent.gemini_schema import sanitize_gemini_tool_parameters
+from tools.egress_enforcement import client_or_enforced
 
 logger = logging.getLogger(__name__)
 try:
@@ -85,7 +86,7 @@ def probe_gemini_tier(
     }
 
     try:
-        with httpx.Client(timeout=timeout) as client:
+        with client_or_enforced(timeout=timeout) as client:
             resp = client.post(
                 url,
                 params={"key": key},
@@ -839,7 +840,7 @@ class GeminiNativeClient:
         self._default_headers = dict(default_headers or {})
         self.chat = _GeminiChatNamespace(self)
         self.is_closed = False
-        self._http = http_client or httpx.Client(
+        self._http = http_client or client_or_enforced(
             timeout=timeout or httpx.Timeout(connect=15.0, read=600.0, write=30.0, pool=30.0)
         )
 

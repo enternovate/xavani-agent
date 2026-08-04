@@ -42,6 +42,7 @@ from __future__ import annotations
 import asyncio
 import logging
 import threading
+from tools.egress_enforcement import async_client_or_enforced
 from dataclasses import dataclass, field
 from typing import Any, Optional
 
@@ -218,7 +219,7 @@ def _make_xavani_provider_class() -> Optional[type]:
             )
 
             server_url = self.context.server_url
-            async with httpx.AsyncClient(timeout=10.0) as client:
+            async with async_client_or_enforced(timeout=10.0) as client:
                 # Step 1: PRM discovery to learn the authorization_server URL.
                 for url in build_protected_resource_metadata_discovery_urls(
                     None, server_url

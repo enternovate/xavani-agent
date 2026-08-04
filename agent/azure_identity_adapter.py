@@ -42,6 +42,8 @@ import threading
 from dataclasses import dataclass
 from typing import Any, Callable, Dict, Optional
 
+from tools.egress_enforcement import client_or_enforced
+
 logger = logging.getLogger(__name__)
 
 try:
@@ -544,7 +546,7 @@ def build_bearer_http_client(token_provider: Callable[[], str], **httpx_kwargs: 
             request.headers.pop(header_name, None)
         request.headers["Authorization"] = f"Bearer {token}"
 
-    return httpx.Client(
+    return client_or_enforced(
         event_hooks={"request": [_inject_bearer]},
         **httpx_kwargs,
     )

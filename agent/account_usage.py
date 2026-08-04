@@ -10,6 +10,8 @@ from typing import Any, Optional
 
 import httpx
 
+from tools.egress_enforcement import client_or_enforced
+
 from agent.anthropic_adapter import _is_oauth_token, resolve_anthropic_token
 from xavani_cli.auth import _read_codex_tokens, resolve_codex_runtime_credentials
 from xavani_cli.runtime_provider import resolve_runtime_provider
@@ -140,7 +142,7 @@ def _fetch_codex_account_usage() -> Optional[AccountUsageSnapshot]:
     }
     if account_id:
         headers["ChatGPT-Account-Id"] = account_id
-    with httpx.Client(timeout=15.0) as client:
+    with client_or_enforced(timeout=15.0) as client:
         response = client.get(_resolve_codex_usage_url(creds.get("base_url", "")), headers=headers)
         response.raise_for_status()
     payload = response.json() or {}
@@ -194,7 +196,7 @@ def _fetch_anthropic_account_usage() -> Optional[AccountUsageSnapshot]:
         "anthropic-beta": "oauth-2025-04-20",
         "User-Agent": "claude-code/2.1.0",
     }
-    with httpx.Client(timeout=15.0) as client:
+    with client_or_enforced(timeout=15.0) as client:
         response = client.get("https://api.anthropic.com/api/oauth/usage", headers=headers)
         response.raise_for_status()
     payload = response.json() or {}
@@ -253,7 +255,7 @@ def _fetch_openrouter_account_usage(base_url: Optional[str], api_key: Optional[s
         "Authorization": f"Bearer {token}",
         "Accept": "application/json",
     }
-    with httpx.Client(timeout=10.0) as client:
+    with client_or_enforced(timeout=10.0) as client:
         credits_resp = client.get(credits_url, headers=headers)
         credits_resp.raise_for_status()
         credits = (credits_resp.json() or {}).get("data") or {}
