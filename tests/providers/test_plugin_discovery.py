@@ -18,6 +18,8 @@ from pathlib import Path
 
 import pytest
 
+from tools.plugin_api_gate import PLUGIN_API_VERSION
+
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 
@@ -96,6 +98,7 @@ def test_user_plugin_overrides_bundled(tmp_path, monkeypatch):
         "name: gmi-user-override\n"
         "kind: model-provider\n"
         "version: 0.0.1\n"
+        f'api_version: "{PLUGIN_API_VERSION}"\n'
         "description: Test user override\n"
     )
 
@@ -129,6 +132,7 @@ def test_general_plugin_manager_skips_model_provider_kind(tmp_path, monkeypatch)
         "name: test-model-provider\n"
         "kind: model-provider\n"
         "version: 0.0.1\n"
+        f'api_version: "{PLUGIN_API_VERSION}"\n'
     )
     (user_plugin / "__init__.py").write_text(
         # Intentionally broken import — if the general loader tries to

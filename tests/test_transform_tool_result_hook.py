@@ -16,6 +16,7 @@ from unittest.mock import MagicMock
 
 import xavani_cli.plugins as plugins_mod
 import model_tools
+from tools.plugin_api_gate import PLUGIN_API_VERSION
 
 
 _UNSET = object()
@@ -171,7 +172,11 @@ def test_transform_tool_result_integration_with_real_plugin(monkeypatch, tmp_pat
     plugins_dir = xavani_home / "plugins"
     plugin_dir = plugins_dir / "transform_result_canon"
     plugin_dir.mkdir(parents=True)
-    (plugin_dir / "plugin.yaml").write_text("name: transform_result_canon\n", encoding="utf-8")
+    (plugin_dir / "plugin.yaml").write_text(
+        "name: transform_result_canon\n"
+        f'api_version: "{PLUGIN_API_VERSION}"\n',
+        encoding="utf-8",
+    )
     (plugin_dir / "__init__.py").write_text(
         "def register(ctx):\n"
         '    ctx.register_hook("transform_tool_result", '

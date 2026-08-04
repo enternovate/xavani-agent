@@ -19,6 +19,7 @@ import pytest
 import yaml
 
 from xavani_cli.plugins import PluginManager, PluginManifest
+from tools.plugin_api_gate import PLUGIN_API_VERSION
 
 
 # ── Helpers ────────────────────────────────────────────────────────────────
@@ -45,6 +46,7 @@ def _write_plugin(
         "name": segments[-1],
         "version": "0.1.0",
         "description": f"Test plugin {'/'.join(segments)}",
+        "api_version": PLUGIN_API_VERSION,
     }
     if manifest_extra:
         manifest.update(manifest_extra)

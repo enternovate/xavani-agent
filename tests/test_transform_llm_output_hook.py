@@ -24,6 +24,7 @@ from pathlib import Path
 import yaml
 
 import xavani_cli.plugins as plugins_mod
+from tools.plugin_api_gate import PLUGIN_API_VERSION
 from xavani_cli.plugins import PluginManager, VALID_HOOKS
 
 
@@ -32,7 +33,10 @@ def _make_enabled_plugin(xavani_home: Path, name: str, register_body: str) -> Pa
     plugin_dir = xavani_home / "plugins" / name
     plugin_dir.mkdir(parents=True)
     (plugin_dir / "plugin.yaml").write_text(
-        yaml.safe_dump({"name": name, "version": "0.1.0"}), encoding="utf-8",
+        yaml.safe_dump(
+            {"name": name, "version": "0.1.0", "api_version": PLUGIN_API_VERSION}
+        ),
+        encoding="utf-8",
     )
     (plugin_dir / "__init__.py").write_text(
         "def register(ctx):\n"
