@@ -1605,7 +1605,7 @@ class AIAgent:
             if self.verbose_logging:
                 logging.warning(f"Failed to save session log: {e}")
 
-    def interrupt(self, message: str = None) -> None:
+    def interrupt(self, message: Optional[str] = None, *, hard_cancel: bool = False) -> None:
         """
         Request the agent to interrupt its current tool-calling loop.
         
@@ -1618,6 +1618,9 @@ class AIAgent:
         Args:
             message: Optional new message that triggered the interrupt.
                      If provided, the agent will include this in its response context.
+            hard_cancel: Mark this as an explicit stop rather than a redirect or
+                         incoming-message interrupt. A hard stop clears any
+                         accepted redirect so it can never be replayed as a retry.
         
         Example (CLI):
             # In a separate input thread:
@@ -1629,8 +1632,23 @@ class AIAgent:
             if session_has_running_agent:
                 running_agent.interrupt(new_message.text)
         """
-        self._interrupt_requested = True
-        self._interrupt_message = message
+        # A hard stop and an accepted correction (redirect) share one lock so
+        # /stop cannot race with the correction and turn itself into a retry.
+        _hard_event = getattr(self, "_hard_interrupt_requested", threading.Event())
+        _redirect_lock = getattr(self, "_pending_redirect_lock", None)
+        if _redirect_lock is not None:
+            with _redirect_lock:
+                self._interrupt_requested = True
+                self._interrupt_message = message
+                if hard_cancel:
+                    _hard_event.set()
+                self._pending_redirect = None
+        else:
+            self._interrupt_requested = True
+            self._interrupt_message = message
+            if hard_cancel:
+                _hard_event.set()
+            self._pending_redirect = None
         # Signal all tools to abort any in-flight operations immediately.
         # Scope the interrupt to this agent's execution thread so other
         # agents running in the same process (gateway) are not affected.
@@ -1673,10 +1691,31 @@ class AIAgent:
         if not self.quiet_mode:
             print("\n⚡ Interrupt requested" + (f": '{message[:40]}...'" if message and len(message) > 40 else f": '{message}'" if message else ""))
 
-    def clear_interrupt(self) -> None:
-        """Clear any pending interrupt request and the per-thread tool interrupt signal."""
-        self._interrupt_requested = False
-        self._interrupt_message = None
+    def clear_interrupt(self, *, preserve_redirect: bool = False) -> bool:
+        """Clear any pending interrupt request and the per-thread tool interrupt signal.
+
+        ``preserve_redirect`` is used only by the conversation loop after it
+        intentionally cancels a model request to rebuild that same logical
+        turn. Public hard-stop paths keep the default and clear everything.
+        """
+        _redirect_lock = getattr(self, "_pending_redirect_lock", None)
+        if _redirect_lock is not None:
+            with _redirect_lock:
+                if preserve_redirect and not self._pending_redirect:
+                    return False
+                self._interrupt_requested = False
+                self._interrupt_message = None
+                getattr(self, "_hard_interrupt_requested", threading.Event()).clear()
+                if not preserve_redirect:
+                    self._pending_redirect = None
+        else:
+            if preserve_redirect and not getattr(self, "_pending_redirect", None):
+                return False
+            self._interrupt_requested = False
+            self._interrupt_message = None
+            getattr(self, "_hard_interrupt_requested", threading.Event()).clear()
+            if not preserve_redirect:
+                self._pending_redirect = None
         self._interrupt_thread_signal_pending = False
         if self._execution_thread_id is not None:
             _set_interrupt(False, self._execution_thread_id)
@@ -1705,6 +1744,91 @@ class AIAgent:
         if _steer_lock is not None:
             with _steer_lock:
                 self._pending_steer = None
+        return True
+
+    def hard_interrupt(self, message: Optional[str] = None) -> None:
+        """Request an explicit stop while preserving the ``interrupt()`` ABI.
+
+        Frontends can feature-detect this method and fall back to the legacy
+        ``interrupt()`` signature for synthetic or third-party agents.
+        """
+        # Deliberately bypass dynamic dispatch: subclasses written against
+        # the legacy interrupt(message=None) ABI may override interrupt
+        # without the newer keyword-only hard_cancel argument.
+        AIAgent.interrupt(self, message, hard_cancel=True)
+
+    def redirect(self, text: str) -> bool:
+        """Redirect the active turn without converting it into a new task.
+
+        A redirect is an accepted in-turn correction: the current model
+        request is interrupted and the correction text is delivered as the
+        retry input. Unlike a plain interrupt, it shares the pending-redirect
+        lock with ``interrupt()`` so a hard stop (/stop) that lands either
+        before (rejected: returns False) or after (clears the redirect)
+        cannot be replayed as a retry.
+
+        Returns False when the turn already ended or a hard stop claimed it,
+        so the caller can queue a fresh turn instead of losing the text.
+        """
+        if not text or not text.strip():
+            return False
+        cleaned = text.strip()
+        _redirect_lock = getattr(self, "_pending_redirect_lock", None)
+        if _redirect_lock is None:
+            if self._interrupt_requested and not getattr(
+                self, "_pending_redirect", None
+            ):
+                return False
+            existing = getattr(self, "_pending_redirect", None)
+            self._pending_redirect = (
+                f"{existing}\n\n[Additional user correction]\n{cleaned}"
+                if existing
+                else cleaned
+            )
+            self._interrupt_requested = True
+            self._interrupt_message = None
+        else:
+            with _redirect_lock:
+                if self._interrupt_requested and not self._pending_redirect:
+                    return False
+                if self._pending_redirect:
+                    self._pending_redirect = (
+                        f"{self._pending_redirect}\n\n"
+                        f"[Additional user correction]\n{cleaned}"
+                    )
+                else:
+                    self._pending_redirect = cleaned
+                self._interrupt_requested = True
+                self._interrupt_message = None
+        # Interrupt only the model request path. Do not fan out to tool
+        # workers or child agents as interrupt() does.
+        _execution_thread_id = getattr(self, "_execution_thread_id", None)
+        if _execution_thread_id is not None:
+            _set_interrupt(True, _execution_thread_id)
+            self._interrupt_thread_signal_pending = False
+        else:
+            self._interrupt_thread_signal_pending = True
+        return True
+
+    def _has_pending_redirect(self) -> bool:
+        """Return whether an accepted in-turn correction is waiting."""
+        _redirect_lock = getattr(self, "_pending_redirect_lock", None)
+        if _redirect_lock is None:
+            return bool(getattr(self, "_pending_redirect", None))
+        with _redirect_lock:
+            return bool(self._pending_redirect)
+
+    def _drain_pending_redirect(self) -> Optional[str]:
+        """Return and clear the pending in-turn correction text."""
+        _redirect_lock = getattr(self, "_pending_redirect_lock", None)
+        if _redirect_lock is None:
+            value = getattr(self, "_pending_redirect", None)
+            self._pending_redirect = None
+            return value
+        with _redirect_lock:
+            value = self._pending_redirect
+            self._pending_redirect = None
+            return value
 
     def steer(self, text: str) -> bool:
         """

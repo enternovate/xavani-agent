@@ -361,6 +361,15 @@ def init_agent(
     agent._interrupt_thread_signal_pending = False
     agent._client_lock = threading.RLock()
 
+    # A01: pending-redirect lock — a hard stop (/stop) and an accepted
+    # correction (redirect) share one lock so the stop cannot race the
+    # correction into a retry. interrupt() clears _pending_redirect under
+    # the lock; redirect() refuses to admit a correction once a hard stop
+    # claimed the turn (or appends to an existing accepted correction).
+    agent._pending_redirect_lock = threading.Lock()
+    agent._pending_redirect = None
+    agent._hard_interrupt_requested = threading.Event()
+
     # /steer mechanism — inject a user note into the next tool result
     # without interrupting the agent. Unlike interrupt(), steer() does
     # NOT set _interrupt_requested; it waits for the current tool batch
