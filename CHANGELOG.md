@@ -15,6 +15,10 @@ Deploy hardening. No new user-facing features.
   ~4x wall-clock regression (38% at 10 min) because the large `xavani_cli`
   module pins to one worker, risking the CI 30-min timeout. Flake prevention
   stays at the test level (deadline-based waits) to keep the fast path.
+- New shared `wait_for_state(predicate, timeout, interval)` pytest fixture
+  (tests/conftest.py) — the canonical deadline-based poller that replaces
+  fixed-sleep / fixed-iteration-cap waits (A01). Applied to the 4 timing-fragile
+  gateway approval poll loops; covered by its own unit test.
 
 ## [0.7.0] - 2026-06-12 — "Quantum Sentience"
 

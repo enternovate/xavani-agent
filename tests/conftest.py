@@ -1108,3 +1108,29 @@ def _bypass_lazy_ensure_for_mocked_packages(monkeypatch):
         return _orig_ensure(feature, prompt=prompt)
 
     monkeypatch.setattr(_lazy_deps, "ensure", _patched_ensure)
+
+@pytest.fixture
+def wait_for_state():
+    """Return a deadline-based poller for timing-fragile tests.
+
+    ``wait_for_state(predicate, timeout, interval=0.05)`` polls ``predicate``
+    until it returns True or the deadline passes. It returns True when the
+    predicate becomes true, and False on timeout.
+
+    Use it instead of a fixed sleep or a fixed iteration cap. This tolerates
+    pytest-xdist scheduler jitter, Python 3.14 GIL contention, and slow CI
+    runners. Enforces the anti-flake rule (A01): no unbounded or fixed-count
+    waits in the test suite.
+    """
+    import time as _time
+
+    def _wait(predicate, timeout, interval=0.05):
+        deadline = _time.monotonic() + timeout
+        while _time.monotonic() < deadline:
+            if predicate():
+                return True
+            _time.sleep(interval)
+        return predicate()
+
+    return _wait
+

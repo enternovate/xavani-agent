@@ -375,7 +375,7 @@ class TestBlockingApprovalE2E:
         os.environ.pop("XAVANI_EXEC_ASK", None)
         os.environ.pop("XAVANI_SESSION_KEY", None)
 
-    def test_blocking_approval_approve_once(self):
+    def test_blocking_approval_approve_once(self, wait_for_state):
         """check_all_command_guards blocks until resolve_gateway_approval is called."""
         from tools.approval import (
             register_gateway_notify, unregister_gateway_notify,
@@ -409,13 +409,9 @@ class TestBlockingApprovalE2E:
         t = threading.Thread(target=agent_thread)
         t.start()
 
-        # Poll with a deadline-based loop (not a fixed 50-iteration cap) to
+        # Poll with a deadline-based helper (not a fixed iteration cap) to
         # tolerate pytest-xdist scheduler jitter and Python 3.14 GIL contention.
-        deadline = time.monotonic() + 10
-        while time.monotonic() < deadline:
-            if notified:
-                break
-            time.sleep(0.1)
+        assert wait_for_state(lambda: bool(notified), timeout=10, interval=0.1)
 
         assert len(notified) == 1
         assert "rm -rf /important" in notified[0]["command"]
@@ -427,7 +423,7 @@ class TestBlockingApprovalE2E:
         assert result_holder[0]["approved"] is True
         unregister_gateway_notify(session_key)
 
-    def test_blocking_approval_deny(self):
+    def test_blocking_approval_deny(self, wait_for_state):
         """check_all_command_guards returns BLOCKED when denied."""
         from tools.approval import (
             register_gateway_notify, unregister_gateway_notify,
@@ -460,11 +456,7 @@ class TestBlockingApprovalE2E:
         t = threading.Thread(target=agent_thread)
         t.start()
         # Same deadline-based hardening as the approve-once path above.
-        deadline = time.monotonic() + 10
-        while time.monotonic() < deadline:
-            if notified:
-                break
-            time.sleep(0.1)
+        assert wait_for_state(lambda: bool(notified), timeout=10, interval=0.1)
 
         resolve_gateway_approval(session_key, "deny")
         t.join(timeout=5)
@@ -512,7 +504,7 @@ class TestBlockingApprovalE2E:
         assert "timed out" in result_holder[0]["message"]
         unregister_gateway_notify(session_key)
 
-    def test_parallel_subagent_approvals(self):
+    def test_parallel_subagent_approvals(self, wait_for_state):
         """Multiple threads can block concurrently and be resolved independently."""
         from tools.approval import (
             register_gateway_notify, unregister_gateway_notify,
@@ -552,11 +544,7 @@ class TestBlockingApprovalE2E:
             t.start()
 
         # Wait for all 3 to block — deadline-based like the single-threaded cases.
-        deadline = time.monotonic() + 15
-        while time.monotonic() < deadline:
-            if len(notified) >= 3:
-                break
-            time.sleep(0.1)
+        assert wait_for_state(lambda: len(notified) >= 3, timeout=15, interval=0.1)
 
         assert len(notified) == 3
         assert len(_gateway_queues.get(session_key, [])) == 3
@@ -572,7 +560,7 @@ class TestBlockingApprovalE2E:
         assert all(r["approved"] is True for r in results)
         unregister_gateway_notify(session_key)
 
-    def test_parallel_mixed_approve_deny(self):
+    def test_parallel_mixed_approve_deny(self, wait_for_state):
         """Approve some, deny others in a parallel batch."""
         from tools.approval import (
             register_gateway_notify, unregister_gateway_notify,
@@ -612,11 +600,11 @@ class TestBlockingApprovalE2E:
         # relying on a fixed sleep.  The approval module stores entries in
         # _gateway_queues[session_key] — poll until we see 2 entries.
         from tools.approval import _gateway_queues
-        deadline = time.monotonic() + 5
-        while time.monotonic() < deadline:
-            if len(_gateway_queues.get(session_key, [])) >= 2:
-                break
-            time.sleep(0.05)
+        assert wait_for_state(
+            lambda: len(_gateway_queues.get(session_key, [])) >= 2,
+            timeout=5,
+            interval=0.05,
+        )
 
         # Approve first, deny second
         resolve_gateway_approval(session_key, "once")   # oldest
