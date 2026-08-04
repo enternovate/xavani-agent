@@ -3144,8 +3144,86 @@ class AIAgent:
         except Exception:
             logger.debug("interim_assistant_callback error", exc_info=True)
 
+    def _ensure_stream_writer_state(self) -> None:
+        """Create the single-writer fence state on first use."""
+        if getattr(self, "_stream_writer_lock", None) is None:
+            self._stream_writer_lock = threading.Lock()
+        if not hasattr(self, "_stream_writer_token"):
+            self._stream_writer_token = 0
+        if getattr(self, "_stream_writer_tls", None) is None:
+            self._stream_writer_tls = threading.local()
+        if not hasattr(self, "_stream_writer_dropped"):
+            self._stream_writer_dropped = 0
+
+    def _claim_stream_writer(self) -> int:
+        """Claim exclusive ownership of the streaming delta sink (A02).
+
+        Every streaming attempt calls this right before it begins consuming
+        its stream. Claiming bumps the shared token, so any earlier attempt
+        still alive on another thread is immediately superseded: its cached
+        token no longer matches and the sink fences its late chunks out.
+        """
+        self._ensure_stream_writer_state()
+        with self._stream_writer_lock:
+            self._stream_writer_token += 1
+            token = self._stream_writer_token
+        self._stream_writer_tls.token = token
+        return token
+
+    def _stream_writer_is_current(self, token: int) -> bool:
+        """True when ``token`` is still the active stream writer."""
+        return token == getattr(self, "_stream_writer_token", token)
+
+    def _stream_writer_superseded(self) -> bool:
+        """True when the calling thread claimed the sink but a newer stream
+        attempt has since claimed it — its chunks must be dropped.
+
+        A thread that never claimed (``token`` unset) is not a writer and is
+        never reported as superseded.
+        """
+        tls = getattr(self, "_stream_writer_tls", None)
+        token = getattr(tls, "token", None) if tls is not None else None
+        if token is None:
+            return False
+        return token != getattr(self, "_stream_writer_token", token)
+
+    def _note_dropped_stream_writer(self, where: str) -> None:
+        """Record + log that a superseded stream's delta was discarded."""
+        try:
+            self._stream_writer_dropped = (
+                int(getattr(self, "_stream_writer_dropped", 0)) + 1
+            )
+        except Exception:
+            self._stream_writer_dropped = 1
+        # Log sparsely (first drop, then powers of two) so a chatty superseded
+        # stream cannot flood the log, but a real provider problem stays
+        # visible. A silent discard would hide genuine failures.
+        _n = self._stream_writer_dropped
+        if _n == 1 or (_n & (_n - 1)) == 0:
+            logger.warning(
+                "Streaming delta dropped: superseded writer at %s (%d total)",
+                where,
+                _n,
+            )
+
     def _fire_stream_delta(self, text: str) -> None:
-        """Fire all registered stream delta callbacks (display + TTS)."""
+        """Fire a streamed text delta to registered callbacks (fenced).
+
+        The single-writer fence claims the delta sink on this thread's first
+        delta; every later delta is dropped when a newer stream attempt has
+        since claimed the sink, so superseded streams cannot emit interleaved
+        ghost text to the TUI/gateway after an interrupt or retry.
+        """
+        # Single-writer fence (A02): lazy claim + supersession check.
+        tls = getattr(self, "_stream_writer_tls", None)
+        if tls is None:
+            self._ensure_stream_writer_state()
+            tls = self._stream_writer_tls
+        if getattr(tls, "token", None) is None:
+            self._claim_stream_writer()
+        elif self._stream_writer_superseded():
+            self._note_dropped_stream_writer("delta")
+            return
         # If a tool iteration set the break flag, prepend a single paragraph
         # break before the first real text delta.  This prevents the original
         # problem (text concatenation across tool boundaries) without stacking
