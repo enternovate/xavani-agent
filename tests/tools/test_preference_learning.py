@@ -111,7 +111,7 @@ def test_most_confirmed_first(_isolated):
     learn_from_message("user-1", "Always use ruff.")
     learn_from_message("user-1", "Always use ruff.")  # confirm twice
     ordered = preferences_for("user-1")
-    assert ordered[0] == "Always use ruff."
+    assert ordered[0] == "Always use ruff"  # stored punctuation-stripped
 
 
 def test_plain_message_learns_nothing(_isolated):
