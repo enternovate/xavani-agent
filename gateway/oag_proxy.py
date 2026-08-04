@@ -139,7 +139,18 @@ class OAGAuditLogger:
         request_id: Optional[str] = None,
         input_size_bytes: Optional[int] = None,
     ) -> None:
-        """Record a single audit entry."""
+        """Record a single audit entry.
+
+        A10 verbosity gate: successful requests are verbose records
+        (level 2); denials are security decisions (level 1). At
+        XAVANI_AUDIT_LOG=0 no request is written.
+        """
+        from xavani_operator.audit import audit_enabled
+
+        if allowed and not audit_enabled(2):
+            return
+        if not allowed and not audit_enabled(1):
+            return
         conn = self._get_conn()
         conn.execute(
             """

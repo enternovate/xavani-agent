@@ -18,10 +18,36 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 import time
 from typing import Any
 
 _GENESIS = "GENESIS"
+
+# Audit write verbosity (A10). One key controls audit write volume:
+#   0 = off (no audit writes)
+#   1 = only approval/deny decisions
+#   2 = every tool call / request (default — preserves full audit)
+# Operators of high-throughput gateways can set XAVANI_AUDIT_LOG=1 to
+# cut disk fill while keeping every security decision on record.
+_AUDIT_VERBOSITY_DEFAULT = 2
+_AUDIT_VERBOSITY_MIN = 0
+_AUDIT_VERBOSITY_MAX = 2
+
+
+def audit_verbosity() -> int:
+    """Resolve the configured audit verbosity from XAVANI_AUDIT_LOG."""
+    raw = os.environ.get("XAVANI_AUDIT_LOG", str(_AUDIT_VERBOSITY_DEFAULT))
+    try:
+        level = int(raw)
+    except (TypeError, ValueError):
+        return _AUDIT_VERBOSITY_DEFAULT
+    return max(_AUDIT_VERBOSITY_MIN, min(_AUDIT_VERBOSITY_MAX, level))
+
+
+def audit_enabled(min_level: int) -> bool:
+    """True when the configured verbosity permits a write at min_level."""
+    return audit_verbosity() >= min_level
 
 
 def _hash(payload: dict[str, Any]) -> str:
@@ -38,8 +64,16 @@ class AuditLog:
         self.state = state
         self.collection = collection
 
-    def append(self, event: dict[str, Any]) -> dict[str, Any]:
-        """Append ``event``; return the full record (with its chain hash)."""
+    def append(self, event: dict[str, Any], min_level: int = 1) -> dict[str, Any] | None:
+        """Append ``event``; return the full record (with its chain hash).
+
+        ``min_level`` is the verbosity required for this event class:
+        decisions default to 1, verbose per-call records pass 2. When the
+        configured XAVANI_AUDIT_LOG is below ``min_level`` the event is
+        dropped and None is returned.
+        """
+        if not audit_enabled(min_level):
+            return None
         entries = self.state.list(self.collection)
         seq = len(entries)
         prev = entries[-1]["hash"] if entries else _GENESIS
