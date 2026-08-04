@@ -167,7 +167,10 @@ class GoalState:
     # include them so the agent works toward them and the judge factors
     # them into the verdict. Backwards-compatible: defaults to empty so
     # old state_meta rows load unchanged.
-    subgoals: List[str] = field(default_factory=list)
+    # B10: entries may be dicts {"text": str, "status": "pending"|"in_progress"|"done"}
+    # (status-tracked, from auto-decomposition) OR legacy plain strings.
+    # All consumers (judge prompt, render, progress) handle both forms.
+    subgoals: List[Any] = field(default_factory=list)
 
     def to_json(self) -> str:
         return json.dumps(asdict(self), ensure_ascii=False)
@@ -176,9 +179,19 @@ class GoalState:
     def from_json(cls, raw: str) -> "GoalState":
         data = json.loads(raw)
         raw_subgoals = data.get("subgoals") or []
-        subgoals: List[str] = []
+        subgoals: List[Any] = []
         if isinstance(raw_subgoals, list):
-            subgoals = [str(s).strip() for s in raw_subgoals if str(s).strip()]
+            for s in raw_subgoals:
+                if isinstance(s, dict) and s.get("text"):
+                    # B10 status-tracked entry.
+                    subgoals.append({
+                        "text": str(s["text"]).strip(),
+                        "status": str(s.get("status", "pending") or "pending"),
+                    })
+                elif isinstance(s, str) and s.strip():
+                    # Legacy plain-string subgoal — preserve the form so
+                    # existing callers see exactly what they stored.
+                    subgoals.append(s.strip())
         return cls(
             goal=data.get("goal", ""),
             status=data.get("status", "active"),
@@ -197,10 +210,20 @@ class GoalState:
 
     def render_subgoals_block(self) -> str:
         """Render the subgoals as a numbered ``- N. text`` block. Empty
-        when no subgoals exist."""
+        when no subgoals exist. Completed subgoals get a ✓ marker."""
         if not self.subgoals:
             return ""
-        return "\n".join(f"- {i}. {text}" for i, text in enumerate(self.subgoals, start=1))
+        lines = []
+        for i, sub in enumerate(self.subgoals, start=1):
+            if isinstance(sub, dict):
+                text = str(sub.get("text", ""))
+                status = str(sub.get("status", "pending"))
+            else:
+                text = str(sub)
+                status = "pending"
+            marker = " ✓" if status == "done" else ""
+            lines.append(f"- {i}. {text}{marker}")
+        return "\n".join(lines)
 
 
 # ──────────────────────────────────────────────────────────────────────
@@ -299,6 +322,51 @@ def _truncate(text: str, limit: int) -> str:
     if len(text) <= limit:
         return text
     return text[:limit] + "… [truncated]"
+
+
+# ── B10: deterministic goal decomposition ───────────────────────────
+
+_DECOMPOSE_SPLITTERS = (
+    re.compile(r"\n\s*(?:\d+[.)]|[-*•])\s+"),  # numbered/bulleted lines
+    re.compile(r";\s+"),                       # semicolon-delimited clauses
+)
+
+
+def decompose_goal(goal: str, max_subgoals: int = 6) -> List[str]:
+    """Deterministically split a goal into subgoals (B10).
+
+    No LLM: splits on numbered/bulleted lists and semicolon-delimited
+    clauses. Returns [] when the goal is a single atomic statement.
+    Each subgoal is stripped; empty fragments are dropped.
+    """
+    text = (goal or "").strip()
+    if not text:
+        return []
+    fragments: List[str] = []
+    drop_preamble = False
+    for i, splitter in enumerate(_DECOMPOSE_SPLITTERS):
+        parts = splitter.split(text)
+        if len(parts) >= 2:
+            fragments = [p.strip() for p in parts if p.strip()]
+            # Only the line-marker splitter (index 0) can have a preamble
+            # fragment before the first marker ("Plan:"). Semicolon
+            # clauses are all subgoals — the first clause is one too.
+            drop_preamble = i == 0
+            break
+    if len(fragments) < 2:
+        return []
+    if drop_preamble:
+        first_marker_pos = None
+        for m in _DECOMPOSE_SPLITTERS[0].finditer(text):
+            first_marker_pos = m.start()
+            break
+        if first_marker_pos is not None:
+            preamble = text[:first_marker_pos].strip()
+            if preamble:
+                fragments = fragments[1:]
+    if len(fragments) < 2:
+        return []
+    return fragments[:max_subgoals]
 
 
 _JSON_OBJECT_RE = re.compile(r"\{.*?\}", re.DOTALL)
@@ -426,7 +494,16 @@ def judge_goal(
         return "continue", "no auxiliary client configured", False
 
     # Build the prompt — pick the with-subgoals variant when applicable.
-    clean_subgoals = [s.strip() for s in (subgoals or []) if s and s.strip()]
+    # Subgoals may be plain strings (legacy /user /subgoal) or dicts
+    # (B10 status-tracked entries); normalize both to text.
+    clean_subgoals: List[str] = []
+    for s in (subgoals or []):
+        if isinstance(s, dict):
+            text = str(s.get("text") or "").strip()
+        else:
+            text = str(s).strip()
+        if text:
+            clean_subgoals.append(text)
     current_time = datetime.now(tz=timezone.utc).astimezone().strftime("%Y-%m-%d %H:%M:%S %Z")
     if clean_subgoals:
         subgoals_block = "\n".join(
@@ -528,7 +605,8 @@ class GoalManager:
 
     # --- mutation -----------------------------------------------------
 
-    def set(self, goal: str, *, max_turns: Optional[int] = None) -> GoalState:
+    def set(self, goal: str, *, max_turns: Optional[int] = None,
+            auto_decompose: bool = True) -> GoalState:
         goal = (goal or "").strip()
         if not goal:
             raise ValueError("goal text is empty")
@@ -540,6 +618,17 @@ class GoalManager:
             created_at=time.time(),
             last_turn_at=0.0,
         )
+        # B10: auto-decompose complex goals into status-tracked subgoals
+        # when the text is list-like or multi-clause.
+        if auto_decompose:
+            try:
+                parts = decompose_goal(goal)
+                if parts:
+                    state.subgoals = [
+                        {"text": p, "status": "pending"} for p in parts
+                    ]
+            except Exception:
+                pass
         self._state = state
         save_goal(self.session_id, state)
         return state
@@ -590,6 +679,8 @@ class GoalManager:
         text = (text or "").strip()
         if not text:
             raise ValueError("subgoal text is empty")
+        # Legacy contract: user-added subgoals stay plain strings.
+        # Auto-decomposed subgoals (B10) use status-tracked dicts.
         self._state.subgoals.append(text)
         save_goal(self.session_id, self._state)
         return text
@@ -605,7 +696,9 @@ class GoalManager:
             )
         removed = self._state.subgoals.pop(idx)
         save_goal(self.session_id, self._state)
-        return removed
+        if isinstance(removed, dict):
+            return str(removed.get("text", ""))
+        return str(removed)
 
     def clear_subgoals(self) -> int:
         """Wipe all subgoals. Returns the previous count."""
@@ -615,6 +708,41 @@ class GoalManager:
         self._state.subgoals = []
         save_goal(self.session_id, self._state)
         return prev
+
+    def mark_subgoal(self, index_1based: int, status: str = "done") -> str:
+        """Update a subgoal's status (B10). Returns the subgoal text."""
+        if self._state is None or not self.has_goal():
+            raise RuntimeError("no active goal")
+        idx = int(index_1based) - 1
+        if idx < 0 or idx >= len(self._state.subgoals):
+            raise IndexError(
+                f"index out of range (1..{len(self._state.subgoals)})"
+            )
+        sub = self._state.subgoals[idx]
+        if isinstance(sub, dict):
+            sub["status"] = status
+        else:
+            self._state.subgoals[idx] = {"text": str(sub), "status": status}
+        save_goal(self.session_id, self._state)
+        return str(sub.get("text") if isinstance(sub, dict) else sub)
+
+    def subgoal_progress(self) -> Dict[str, Any]:
+        """Return per-subgoal progress (B10): done/total + statuses."""
+        subs = self._state.subgoals if self._state else []
+        total = len(subs)
+        done = sum(
+            1 for s in subs
+            if (s.get("status") if isinstance(s, dict) else "pending") == "done"
+        )
+        return {
+            "total": total,
+            "done": done,
+            "remaining": total - done,
+            "statuses": [
+                (s.get("status") if isinstance(s, dict) else "pending")
+                for s in subs
+            ],
+        }
 
     def render_subgoals(self) -> str:
         """Public helper for the /subgoal slash command."""
