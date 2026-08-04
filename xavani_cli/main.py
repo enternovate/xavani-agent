@@ -13081,6 +13081,21 @@ Examples:
     journey_parser.set_defaults(func=lambda args: _cmd_journey_dispatch(args))
 
     # =========================================================================
+    # deps-provenance — supply-chain transparency (D08)
+    # =========================================================================
+    deps_parser = subparsers.add_parser(
+        "deps-provenance",
+        help="List every direct dependency with its source, version, hash, and audit date",
+        description="Supply-chain provenance for direct dependencies (PyPI/git source, lockfile hash)",
+    )
+    deps_parser.add_argument(
+        "--json", action="store_true", help="Emit the report as JSON"
+    )
+    from xavani_cli.deps_provenance import cmd_deps_provenance
+
+    deps_parser.set_defaults(func=cmd_deps_provenance)
+
+    # =========================================================================
     # Parse and execute
     # =========================================================================
     # Pre-process argv so unquoted multi-word session names after -c / -r
