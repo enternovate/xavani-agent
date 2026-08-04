@@ -1147,7 +1147,18 @@ def check_dangerous_command(command: str, env_type: str,
         description = chain_description
 
     session_key = get_current_session_key()
-    if is_approved(session_key, pattern_key):
+    # D03: a session risk budget bounds how many dangerous commands may
+    # auto-pass via allowlist/session approval. Exhausted budget means
+    # even approved patterns must ask again.
+    try:
+        from tools.risk_budget import risk_budget_for
+
+        _budget = risk_budget_for(session_key)
+        _budget_exhausted = _budget.exhausted()
+    except Exception:
+        _budget = None
+        _budget_exhausted = False
+    if is_approved(session_key, pattern_key) and not _budget_exhausted:
         _log_approval_decision(
             "allow", "allowlist", command=command, pattern_key=pattern_key,
             description=description, session_key=session_key,
@@ -1216,6 +1227,15 @@ def check_dangerous_command(command: str, env_type: str,
         approve_session(session_key, pattern_key)
         approve_permanent(pattern_key)
         save_permanent_allowlist(_permanent_approved)
+
+    # D03: an approved dangerous command costs the session risk budget.
+    if _budget is not None:
+        try:
+            from tools.risk_budget import TIER_COSTS
+
+            _budget.spend(TIER_COSTS.get("high", 40.0))
+        except Exception:
+            pass
 
     _log_approval_decision(
         "allow", "user", command=command, pattern_key=pattern_key,
