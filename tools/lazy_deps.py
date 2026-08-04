@@ -87,9 +87,9 @@ LAZY_DEPS: dict[str, tuple[str, ...]] = {
     # ─── Inference providers ───────────────────────────────────────────────
     # Native Anthropic SDK — needed when provider=anthropic (not via
     # OpenRouter / aggregators which use the openai SDK).
-    "provider.anthropic": ("anthropic==0.87.0",),  # CVE-2026-34450, CVE-2026-34452
+    "provider.anthropic": ("anthropic==0.120.2",),  # latest; CVE-2026-34450/34452 fixed upstream
     # AWS Bedrock provider
-    "provider.bedrock": ("boto3==1.42.89",),
+    "provider.bedrock": ("boto3==1.43.63",),
     # Microsoft Foundry — Entra ID auth (managed identity, workload identity,
     # service principal, az login, VS Code, azd, PowerShell). Only loaded
     # when model.auth_mode=entra_id is selected; key-based azure-foundry
@@ -98,7 +98,7 @@ LAZY_DEPS: dict[str, tuple[str, ...]] = {
 
     # ─── Web search backends ───────────────────────────────────────────────
     "search.exa": ("exa-py==2.10.2",),
-    "search.firecrawl": ("firecrawl-py==4.17.0",),
+    "search.firecrawl": ("firecrawl-py==4.34.0",),
     "search.parallel": ("parallel-web==0.4.2",),
 
     # ─── TTS providers ─────────────────────────────────────────────────────
@@ -111,8 +111,8 @@ LAZY_DEPS: dict[str, tuple[str, ...]] = {
     # Shai-Hulud worm). Re-add when PyPI restores a clean release; see
     # comment in pyproject.toml above the (removed) `mistral` extra for
     # the full restoration checklist.
-    "tts.edge": ("edge-tts==7.2.7",),
-    "tts.elevenlabs": ("elevenlabs==1.59.0",),
+    "tts.edge": ("edge-tts==7.2.8",),
+    "tts.elevenlabs": ("elevenlabs==2.60.0",),
 
     # ─── Speech-to-text providers ──────────────────────────────────────────
     "stt.faster_whisper": (
@@ -173,10 +173,10 @@ LAZY_DEPS: dict[str, tuple[str, ...]] = {
 
     # ─── Tools ─────────────────────────────────────────────────────────────
     # ACP adapter (VS Code / Zed / JetBrains integration)
-    "tool.acp": ("agent-client-protocol==0.9.0",),
+    "tool.acp": ("agent-client-protocol==0.12.0",),
     # Dashboard (`xavani dashboard`)
     "tool.dashboard": (
-        "fastapi==0.133.1",
+        "fastapi==0.141.1",
         "uvicorn[standard]==0.41.0",
     ),
 }
