@@ -1073,6 +1073,16 @@ def execute_code(
     if not code or not code.strip():
         return tool_error("No code provided.")
 
+    # D13: unwrap markdown-fenced code before it reaches any execution
+    # path. A model that wraps its argument in ```python ... ``` would
+    # otherwise run the fence lines as syntax errors — or worse, run
+    # trailing prose after the closing fence.
+    from tools.command_sanitizer import sanitize_execution_input
+
+    code = sanitize_execution_input(code)
+    if not code or not code.strip():
+        return tool_error("No code provided.")
+
     # Dispatch: remote backends use file-based RPC, local uses UDS
     from tools.terminal_tool import _get_env_config
     env_type = _get_env_config()["env_type"]
