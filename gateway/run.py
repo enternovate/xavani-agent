@@ -4121,9 +4121,31 @@ class GatewayRunner:
         # turn so the agent kicks off the new chat.
         asyncio.create_task(self._handoff_watcher())
 
+        # Start background code-skew watcher (A08) — warns once when the
+        # checkout on disk drifts from the revision this process booted with.
+        asyncio.create_task(self._code_skew_watcher())
+
         logger.info("Press Ctrl+C to stop")
         
         return True
+
+    async def _code_skew_watcher(self, interval: float = 600.0) -> None:
+        """Warn when the git checkout moved since this process booted (A08)."""
+        await asyncio.sleep(interval)
+        while self._running:
+            try:
+                from gateway.code_skew import warn_if_code_skew
+
+                if warn_if_code_skew():
+                    logger.warning(
+                        "Code skew detected: the gateway runs code from an "
+                        "older checkout. Restart it to pick up the new code."
+                    )
+            except asyncio.CancelledError:
+                raise
+            except Exception:
+                pass  # Best-effort monitor; never take down the gateway.
+            await asyncio.sleep(interval)
 
     async def _handoff_watcher(self, interval: float = 2.0) -> None:
         """Background task that processes pending CLI→gateway session handoffs.
@@ -17817,6 +17839,38 @@ async def start_gateway(config: Optional[GatewayConfig] = None, replace: bool = 
         remove_pid_file,
         terminate_pid,
     )
+
+    # ── Restart-loop breaker (A09) ────────────────────────────────────
+    # Record this boot in the rolling window; if the window is already
+    # full the gateway is crash-looping — stop and surface the error
+    # instead of respawning forever.
+    try:
+        from gateway.restart_loop_guard import (
+            record_boot,
+            restart_loop_report,
+            restart_loop_tripped,
+        )
+
+        if restart_loop_tripped():
+            logger.critical(
+                "RESTART LOOP DETECTED: %s. Refusing to start so the "
+                "crash-loop stops; check the gateway logs for the underlying "
+                "error, then restart manually.",
+                restart_loop_report(),
+            )
+            return False
+        record_boot()
+    except Exception:
+        pass  # Best-effort: a broken breaker must never wedge the gateway.
+
+    # ── Code-skew snapshot (A08) ──────────────────────────────────────
+    try:
+        from gateway.code_skew import record_boot_fingerprint
+
+        record_boot_fingerprint()
+    except Exception:
+        pass  # Non-git install or IO error — skew detection no-ops.
+
     existing_pid = get_running_pid()
     if existing_pid is not None and existing_pid != os.getpid():
         if replace:
