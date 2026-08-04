@@ -1,0 +1,32 @@
+# Xavani Gateway — Linux systemd unit for the 24/7 messaging gateway.
+#
+# Install (per-user):
+#   1. mkdir -p ~/.config/systemd/user
+#      cp packaging/systemd/xavani-gateway.service ~/.config/systemd/user/
+#   2. systemctl --user daemon-reload
+#      systemctl --user enable --now xavani-gateway
+#
+# Control:
+#   Logs:   journalctl --user -u xavani-gateway -f
+#   Status: systemctl --user status xavani-gateway
+#   Restart after config change: systemctl --user restart xavani-gateway
+#
+# Type=notify: the gateway signals READY=1 once its platforms are connected.
+# If the process does not notify within 60s, systemd treats it as failed.
+
+[Unit]
+Description=Xavani Gateway — messaging platform bridge (Telegram, Discord, Slack, ...)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=notify
+ExecStart=/usr/bin/env xavani gateway run --replace
+Restart=on-failure
+RestartSec=10
+TimeoutStartSec=60
+# The gateway is the always-on surface: give it room, but bound it.
+LimitNOFILE=65536
+
+[Install]
+WantedBy=default.target
