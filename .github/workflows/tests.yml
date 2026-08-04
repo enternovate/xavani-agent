@@ -61,7 +61,9 @@ jobs:
         continue-on-error: true
         run: |
           source .venv/bin/activate
-          python -m pytest tests/ -q --ignore=tests/integration --ignore=tests/e2e --tb=short -n auto
+          # A04: --dist=loadscope keeps module tests on one worker,
+          # matching the Windows job and the local canonical runner.
+          python -m pytest tests/ -q --ignore=tests/integration --ignore=tests/e2e --tb=short -n auto --dist=loadscope
         env:
           # Ensure tests don't accidentally call real APIs
           OPENROUTER_API_KEY: ""

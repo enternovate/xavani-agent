@@ -120,9 +120,13 @@ echo "▶ running pytest with $WORKERS workers, hermetic env, in $REPO_ROOT"
 echo "  (TZ=UTC LANG=C.UTF-8 PYTHONHASHSEED=0; all credential env vars unset)"
 
 # -o "addopts=" clears pyproject.toml's `-n auto` so our -n wins.
+# --dist=loadscope (A04): keep a module's tests on one worker to reduce
+# cross-worker subsystem state poisoning (approval, tirith, cron share
+# module-level state). Matches the Windows CI job's ordering.
 exec "$PYTHON" -m pytest \
   -o "addopts=" \
   -n "$WORKERS" \
+  --dist=loadscope \
   --ignore=tests/integration \
   --ignore=tests/e2e \
   -m "not integration" \
