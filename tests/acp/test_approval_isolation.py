@@ -212,16 +212,11 @@ class TestAcpExecAskGate:
     def test_interactive_env_var_routes_to_callback(self, monkeypatch):
         """When XAVANI_INTERACTIVE is set and an approval callback is
         registered, a dangerous command must route through the callback."""
-        # Clean env — including session contextvars bound by earlier tests
-        # in the same worker (gateway run paths bind XAVANI_SESSION_PLATFORM
-        # via contextvars; os.environ cleanup alone cannot see them).
+        # Clean env
         monkeypatch.delenv("XAVANI_INTERACTIVE", raising=False)
         monkeypatch.delenv("XAVANI_GATEWAY_SESSION", raising=False)
         monkeypatch.delenv("XAVANI_EXEC_ASK", raising=False)
         monkeypatch.delenv("XAVANI_YOLO_MODE", raising=False)
-        from gateway.session_context import clear_session_vars
-
-        clear_session_vars([])
 
         from tools.approval import check_all_command_guards
 
