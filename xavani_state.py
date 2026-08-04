@@ -225,6 +225,8 @@ CREATE TABLE IF NOT EXISTS sessions (
     handoff_state TEXT,
     handoff_platform TEXT,
     handoff_error TEXT,
+    last_active_at REAL,
+    permanent INTEGER DEFAULT 0,
     FOREIGN KEY (parent_session_id) REFERENCES sessions(id)
 );
 
@@ -721,10 +723,11 @@ class SessionDB:
     ) -> None:
         """Shared INSERT OR IGNORE for session rows."""
         def _do(conn):
+            now = time.time()
             conn.execute(
                 """INSERT OR IGNORE INTO sessions (id, source, user_id, model, model_config,
-                   system_prompt, parent_session_id, started_at)
-                   VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
+                   system_prompt, parent_session_id, started_at, last_active_at)
+                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
                 (
                     session_id,
                     source,
@@ -733,7 +736,8 @@ class SessionDB:
                     json.dumps(model_config) if model_config else None,
                     system_prompt,
                     parent_session_id,
-                    time.time(),
+                    now,
+                    now,
                 ),
             )
         self._execute_write(_do)
@@ -764,8 +768,9 @@ class SessionDB:
         """Clear ended_at/end_reason so a session can be resumed."""
         def _do(conn):
             conn.execute(
-                "UPDATE sessions SET ended_at = NULL, end_reason = NULL WHERE id = ?",
-                (session_id,),
+                "UPDATE sessions SET ended_at = NULL, end_reason = NULL, "
+                "last_active_at = ? WHERE id = ?",
+                (time.time(), session_id),
             )
         self._execute_write(_do)
 
@@ -1533,13 +1538,13 @@ class SessionDB:
             if num_tool_calls > 0:
                 conn.execute(
                     """UPDATE sessions SET message_count = message_count + 1,
-                       tool_call_count = tool_call_count + ? WHERE id = ?""",
-                    (num_tool_calls, session_id),
+                       tool_call_count = tool_call_count + ?, last_active_at = ? WHERE id = ?""",
+                    (num_tool_calls, time.time(), session_id),
                 )
             else:
                 conn.execute(
-                    "UPDATE sessions SET message_count = message_count + 1 WHERE id = ?",
-                    (session_id,),
+                    "UPDATE sessions SET message_count = message_count + 1, last_active_at = ? WHERE id = ?",
+                    (time.time(), session_id),
                 )
             return msg_id
 
@@ -2623,6 +2628,81 @@ class SessionDB:
             self._remove_session_files(sessions_dir, sid)
         return count
 
+    # ── D10: session data lifecycle (inactivity-based expiry) ─────────
+
+    def expire_inactive_sessions(
+        self,
+        inactive_days: int = 90,
+        sessions_dir: Optional[Path] = None,
+    ) -> int:
+        """Delete sessions inactive for N days. Returns deleted count.
+
+        Unlike prune_sessions (creation-age, ended-only), this targets
+        ANY session — ended or still open — whose last_active_at is
+        older than the window. Permanent sessions (permanent=1) are
+        exempt. Use set_session_permanent() to opt a session in.
+
+        Deletes messages for each pruned session and orphans child
+        sessions, mirroring prune_sessions' cascade semantics.
+        """
+        cutoff = time.time() - (inactive_days * 86400)
+        removed_ids: list[str] = []
+
+        def _do(conn):
+            cursor = conn.execute(
+                """SELECT id FROM sessions
+                   WHERE permanent = 0
+                     AND (last_active_at IS NULL OR last_active_at < ?)""",
+                (cutoff,),
+            )
+            session_ids = {row["id"] for row in cursor.fetchall()}
+            if not session_ids:
+                return 0
+
+            placeholders = ",".join("?" * len(session_ids))
+            conn.execute(
+                f"UPDATE sessions SET parent_session_id = NULL "
+                f"WHERE parent_session_id IN ({placeholders})",
+                list(session_ids),
+            )
+            for sid in session_ids:
+                conn.execute("DELETE FROM messages WHERE session_id = ?", (sid,))
+                conn.execute("DELETE FROM sessions WHERE id = ?", (sid,))
+                removed_ids.append(sid)
+            return len(session_ids)
+
+        count = self._execute_write(_do)
+        for sid in removed_ids:
+            self._remove_session_files(sessions_dir, sid)
+        return count
+
+    def set_session_permanent(self, session_id: str, permanent: bool = True) -> bool:
+        """Mark a session as permanent (exempt from inactivity expiry).
+
+        Returns False when the session does not exist.
+        """
+        def _do(conn):
+            cur = conn.execute(
+                "UPDATE sessions SET permanent = ? WHERE id = ?",
+                (1 if permanent else 0, session_id),
+            )
+            return cur.rowcount > 0
+
+        return bool(self._execute_write(_do))
+
+    def get_last_active(self, session_id: str) -> Optional[float]:
+        """Return the last activity timestamp for a session, or None."""
+        with self._lock:
+            conn = self._conn
+            if conn is None:
+                return None
+            row = conn.execute(
+                "SELECT last_active_at FROM sessions WHERE id = ?", (session_id,)
+            ).fetchone()
+        if row is None:
+            return None
+        return row["last_active_at"] if isinstance(row, sqlite3.Row) else row[0]
+
     # ── Meta key/value (for scheduler bookkeeping) ──
 
     def get_meta(self, key: str) -> Optional[str]:
@@ -3103,6 +3183,7 @@ class SessionDB:
         min_interval_hours: int = 24,
         vacuum: bool = True,
         sessions_dir: Optional[Path] = None,
+        expire_inactive_days: Optional[int] = None,
     ) -> Dict[str, Any]:
         """Idempotent auto-maintenance: prune old sessions + optional VACUUM.
 
@@ -3114,16 +3195,22 @@ class SessionDB:
         (``.json`` / ``.jsonl`` / ``request_dump_*``) for pruned sessions
         are removed as part of the same sweep (issue #3015).
 
+        D10: when *expire_inactive_days* is not None, sessions inactive
+        for that many days are also deleted (any session, ended or open,
+        except permanent=1). Defaults to ``XAVANI_SESSION_EXPIRE_DAYS``
+        when set, else 90. Pass 0 to disable.
+
         Never raises. On any failure, logs a warning and returns a dict
         with ``"error"`` set.
 
         Returns a dict with keys:
           - ``"skipped"`` (bool) — true if within min_interval_hours of last run
           - ``"pruned"`` (int)   — number of sessions deleted
+          - ``"expired"`` (int)  — number of inactive sessions deleted (D10)
           - ``"vacuumed"`` (bool) — true if VACUUM ran
           - ``"error"`` (str, optional) — present only on failure
         """
-        result: Dict[str, Any] = {"skipped": False, "pruned": 0, "vacuumed": False}
+        result: Dict[str, Any] = {"skipped": False, "pruned": 0, "expired": 0, "vacuumed": False}
         try:
             # Skip if another process/call did maintenance recently.
             last_raw = self.get_meta("last_auto_prune")
@@ -3143,9 +3230,23 @@ class SessionDB:
             )
             result["pruned"] = pruned
 
+            # D10: inactivity-based expiry. Env default when not explicit.
+            if expire_inactive_days is None:
+                try:
+                    expire_inactive_days = int(os.environ.get("XAVANI_SESSION_EXPIRE_DAYS", "90"))
+                except (TypeError, ValueError):
+                    expire_inactive_days = 90
+            expired = 0
+            if expire_inactive_days > 0:
+                expired = self.expire_inactive_sessions(
+                    inactive_days=expire_inactive_days,
+                    sessions_dir=sessions_dir,
+                )
+            result["expired"] = expired
+
             # Only VACUUM if we actually freed rows — VACUUM on a tight DB
             # is wasted I/O. Threshold keeps small DBs from paying the cost.
-            if vacuum and pruned > 0:
+            if vacuum and (pruned > 0 or expired > 0):
                 try:
                     self.vacuum()
                     result["vacuumed"] = True
@@ -3156,11 +3257,13 @@ class SessionDB:
             # every startup within the min_interval_hours window.
             self.set_meta("last_auto_prune", str(now))
 
-            if pruned > 0:
+            if pruned > 0 or expired > 0:
                 logger.info(
-                    "state.db auto-maintenance: pruned %d session(s) older than %d days%s",
+                    "state.db auto-maintenance: pruned %d session(s) older than %d days, "
+                    "expired %d inactive session(s)%s",
                     pruned,
                     retention_days,
+                    expired,
                     " + VACUUM" if result["vacuumed"] else "",
                 )
         except Exception as exc:
