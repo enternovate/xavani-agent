@@ -24,6 +24,7 @@ import os
 import shutil
 import socket
 import subprocess
+import sys
 import tempfile
 from pathlib import Path
 from typing import Any, Dict, List, Optional
@@ -104,8 +105,10 @@ def run_plugin_in_sandbox(
 
     tmp_work = workdir or Path(tempfile.mkdtemp(prefix="xavani-sandbox-"))
     try:
+        # Run through the current interpreter — the file need not be
+        # executable, and the subprocess inherits the scrubbed env.
         result = subprocess.run(
-            [str(entry), *(args or [])],
+            [sys.executable, str(entry), *(args or [])],
             cwd=tmp_work,
             env=sandbox_env,
             capture_output=True,
