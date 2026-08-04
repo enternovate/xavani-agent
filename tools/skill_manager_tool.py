@@ -935,6 +935,20 @@ def skill_manage(
         file_path=file_path,
     )
 
+    # D06: append-only mutation audit with origin (fail-open, no secrets).
+    try:
+        from tools.mutation_audit import log_mutation
+
+        log_mutation(
+            "skill",
+            action,
+            name,
+            content=content if action in ("create", "edit") else None,
+            extra={"success": bool(result.get("success"))},
+        )
+    except Exception:
+        pass
+
     if result.get("success"):
         try:
             from agent.prompt_builder import clear_skills_system_prompt_cache

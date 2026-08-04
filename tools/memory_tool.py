@@ -583,6 +583,23 @@ def memory_tool(
     else:
         return tool_error(f"Unknown action '{action}'. Use: add, replace, remove", success=False)
 
+    # D06: append-only audit of the mutation (fail-open, no secrets).
+    try:
+        from tools.mutation_audit import log_mutation
+
+        _ok = bool(
+            isinstance(result, dict) and result.get("success", True) is not False
+        )
+        log_mutation(
+            "memory",
+            action,
+            target,
+            content=content if action in ("add", "replace") else None,
+            extra={"success": _ok},
+        )
+    except Exception:
+        pass
+
     return json.dumps(result, ensure_ascii=False)
 
 
