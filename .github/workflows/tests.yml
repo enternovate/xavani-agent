@@ -212,3 +212,26 @@ jobs:
           OPENAI_API_KEY: ""
           NOUS_API_KEY: ""
 
+      - name: Verify ACP version sync (pyproject / agent.json / uvx pin)
+        run: |
+          PYPROJ=$(sed -n 's/^version = "\(.*\)"/\1/p' pyproject.toml)
+          AGENT_JSON=$(python3 -c "import json; print(json.load(open('acp_registry/agent.json'))['version'])")
+          UVX_PIN=$(python3 -c "import json; print(json.load(open('acp_registry/agent.json')).get('distribution',{}).get('uvx',{}).get('package',''))")
+          echo "pyproject=$PYPROJ agent.json=$AGENT_JSON uvx_pin=$UVX_PIN"
+          if [ "$PYPROJ" != "$AGENT_JSON" ]; then
+            echo "::error::Version drift: pyproject.toml ($PYPROJ) != acp_registry/agent.json ($AGENT_JSON)"
+            exit 1
+          fi
+          if [ -n "$UVX_PIN" ]; then
+            UVX_VER=$(echo "$UVX_PIN" | sed -n 's/.*==\([^,]*\).*/\1/p')
+            if [ -n "$UVX_VER" ] && [ "$UVX_VER" != "$PYPROJ" ]; then
+              echo "::error::Version drift: pyproject.toml ($PYPROJ) != uvx pin ($UVX_VER)"
+              exit 1
+            fi
+          fi
+          if ! grep -q "^## \[$PYPROJ\]" CHANGELOG.md; then
+            echo "::error::CHANGELOG.md missing entry for [$PYPROJ]"
+            exit 1
+          fi
+          echo "version sync OK ($PYPROJ)"
+
