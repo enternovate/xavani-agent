@@ -50,6 +50,7 @@ def _direct_dependencies() -> List[str]:
         stripped = line.strip()
         if not stripped or stripped.startswith("#"):
             continue
+        stripped = stripped.split("  #", 1)[0].split(" #", 1)[0].strip()
         stripped = stripped.strip('",')
         if stripped:
             names.append(stripped)
@@ -59,10 +60,15 @@ def _direct_dependencies() -> List[str]:
 def _lock_entry(name: str) -> Dict[str, Any]:
     """Find ``name`` in uv.lock; return source/version/hash info."""
     name = name.lower()
-    # uv.lock normalizes names per PEP 503; try the raw name and the
-    # dash form (pyproject may use either "prompt_toolkit" or
-    # "prompt-toolkit").
-    candidates = {name, name.replace("_", "-")}
+    # uv.lock normalizes names per PEP 503 ('.' and '-' -> '_'); try all
+    # forms since pyproject may use any of them.
+    candidates = {
+        name,
+        name.replace("-", "_"),
+        name.replace(".", "_"),
+        name.replace("_", "-"),
+        name.replace(".", "-"),
+    }
     lock = (_REPO_ROOT / "uv.lock").read_text(encoding="utf-8")
     # Find the package block: [[package]] name = "<name>"
     blocks = lock.split("[[package]]")
