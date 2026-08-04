@@ -25,7 +25,7 @@ import logging
 import threading
 import time
 from pathlib import Path
-from typing import Callable, Dict, List, Optional, Set
+from typing import Any, Callable, Dict, List, Optional, Set
 
 logger = logging.getLogger(__name__)
 try:
@@ -87,12 +87,12 @@ class ToolEntry:
     """Metadata for a single registered tool."""
 
     __slots__ = (
-        "name", "toolset", "schema", "handler", "check_fn",
+        "name", "toolset", "schema", "handler", "check_fn", "health_fn",
         "requires_env", "is_async", "description", "emoji",
         "max_result_size_chars", "dynamic_schema_overrides",
     )
 
-    def __init__(self, name, toolset, schema, handler, check_fn,
+    def __init__(self, name, toolset, schema, handler, check_fn, health_fn,
                  requires_env, is_async, description, emoji,
                  max_result_size_chars=None, dynamic_schema_overrides=None):
         self.name = name
@@ -100,6 +100,7 @@ class ToolEntry:
         self.schema = schema
         self.handler = handler
         self.check_fn = check_fn
+        self.health_fn = health_fn
         self.requires_env = requires_env
         self.is_async = is_async
         self.description = description
@@ -203,6 +204,36 @@ class ToolRegistry:
         with self._lock:
             return self._tools.get(name)
 
+    def get_tool_health(self, name: str) -> Optional[Dict[str, Any]]:
+        """Run a tool's health_fn (E08). Returns None when no health_fn.
+
+        The health_fn contract: zero-arg callable returning a dict with
+        at least ``ok`` (bool) and optionally ``detail`` (str). Exceptions
+        are reported as not-ok, never raised.
+        """
+        entry = self.get_entry(name)
+        if entry is None or entry.health_fn is None:
+            return None
+        try:
+            result = entry.health_fn()
+            if isinstance(result, dict):
+                result.setdefault("ok", False)
+                result.setdefault("detail", "")
+                return result
+            return {"ok": bool(result), "detail": ""}
+        except Exception as exc:
+            return {"ok": False, "detail": f"{type(exc).__name__}: {exc}"}
+
+    def get_all_tool_health(self) -> Dict[str, Dict[str, Any]]:
+        """Run health_fn for every tool that has one (E08)."""
+        result: Dict[str, Dict[str, Any]] = {}
+        for entry in self._snapshot_entries():
+            if entry.health_fn is not None:
+                health = self.get_tool_health(entry.name)
+                if health is not None:
+                    result[entry.name] = health
+        return result
+
     def get_registered_toolset_names(self) -> List[str]:
         """Return sorted unique toolset names present in the registry."""
         return sorted({entry.toolset for entry in self._snapshot_entries()})
@@ -247,6 +278,7 @@ class ToolRegistry:
         schema: dict,
         handler: Callable,
         check_fn: Callable = None,
+        health_fn: Callable = None,
         requires_env: list = None,
         is_async: bool = False,
         description: str = "",
@@ -302,6 +334,7 @@ class ToolRegistry:
                 schema=schema,
                 handler=handler,
                 check_fn=check_fn,
+                health_fn=health_fn,
                 requires_env=requires_env or [],
                 is_async=is_async,
                 description=description or schema.get("description", ""),

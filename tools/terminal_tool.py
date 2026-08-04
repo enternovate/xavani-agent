@@ -2378,12 +2378,39 @@ def _handle_terminal(args, **kw):
     )
 
 
+def check_terminal_health() -> dict:
+    """E08 health probe: env backend + binary reachability with detail."""
+    try:
+        config = _get_env_config()
+        env_type = config["env_type"]
+        if env_type == "local":
+            return {"ok": True, "detail": f"backend={env_type}"}
+        if env_type == "docker":
+            from tools.environments.docker import find_docker
+            docker = find_docker()
+            if not docker:
+                return {"ok": False, "detail": "docker binary not found"}
+            result = subprocess.run(
+                [docker, "version"], capture_output=True, timeout=5
+            )
+            return {"ok": result.returncode == 0,
+                    "detail": "docker daemon reachable" if result.returncode == 0 else "docker daemon unreachable"}
+        if env_type == "ssh":
+            ok = bool(config.get("ssh_host") and config.get("ssh_user"))
+            return {"ok": ok,
+                    "detail": f"backend=ssh host={config.get('ssh_host') or 'unset'}" if ok else "ssh_host/ssh_user not both set"}
+        return {"ok": bool(check_terminal_requirements()), "detail": f"backend={env_type}"}
+    except Exception as exc:
+        return {"ok": False, "detail": f"{type(exc).__name__}: {exc}"}
+
+
 registry.register(
     name="terminal",
     toolset="terminal",
     schema=TERMINAL_SCHEMA,
     handler=_handle_terminal,
     check_fn=check_terminal_requirements,
+    health_fn=check_terminal_health,
     emoji="💻",
     max_result_size_chars=100_000,
 )
