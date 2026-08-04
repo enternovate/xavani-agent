@@ -86,6 +86,37 @@ def _fire_approval_hook(hook_name: str, **kwargs) -> None:
         logger.debug("Approval hook %s dispatch failed: %s", hook_name, exc)
 
 
+def _log_approval_decision(
+    decision: str,
+    reason: str,
+    command: str = "",
+    pattern_key: Optional[str] = None,
+    description: str = "",
+    session_key: str = "",
+    extra: Optional[dict] = None,
+) -> None:
+    """Record an approval decision with its reasoning chain (D09).
+
+    Best-effort: a failing log must never break the approval flow.
+    ``decision`` is one of allow/deny/ask/timeout; ``reason`` names the
+    decision category (hardline, yolo, smart, user, cron, ...).
+    """
+    try:
+        from xavani_approval_reasoning import record_approval_reasoning
+
+        record_approval_reasoning(
+            decision=decision,
+            reason=reason,
+            command=command,
+            pattern_key=pattern_key,
+            description=description,
+            session_key=session_key or get_current_session_key(),
+            extra=extra,
+        )
+    except Exception:
+        pass
+
+
 
 def set_current_session_key(session_key: str) -> contextvars.Token[str]:
     """Bind the active approval session key to the current context."""
@@ -1092,11 +1123,15 @@ def check_dangerous_command(command: str, env_type: str,
     is_hardline, hardline_desc = detect_hardline_command(command)
     if is_hardline:
         logger.warning("Hardline block: %s (command: %s)", hardline_desc, command[:200])
+        _log_approval_decision(
+            "deny", "hardline", command=command, description=hardline_desc,
+        )
         return _hardline_block_result(hardline_desc)
 
     # --yolo: bypass all approval prompts. Gateway /yolo is session-scoped;
     # CLI --yolo remains process-scoped via the env var for local use.
     if is_truthy_value(os.getenv("XAVANI_YOLO_MODE")) or is_current_session_yolo_enabled():
+        _log_approval_decision("allow", "yolo", command=command)
         return {"approved": True, "message": None}
 
     is_dangerous, pattern_key, description = detect_dangerous_command(command)
@@ -1113,6 +1148,10 @@ def check_dangerous_command(command: str, env_type: str,
 
     session_key = get_current_session_key()
     if is_approved(session_key, pattern_key):
+        _log_approval_decision(
+            "allow", "allowlist", command=command, pattern_key=pattern_key,
+            description=description, session_key=session_key,
+        )
         return {"approved": True, "message": None}
 
     is_cli = env_var_enabled("XAVANI_INTERACTIVE")
@@ -1122,6 +1161,10 @@ def check_dangerous_command(command: str, env_type: str,
         # Cron sessions: respect cron_mode config
         if env_var_enabled("XAVANI_CRON_SESSION"):
             if _get_cron_approval_mode() == "deny":
+                _log_approval_decision(
+                    "deny", "cron_mode", command=command,
+                    pattern_key=pattern_key, description=description,
+                )
                 return {
                     "approved": False,
                     "message": (
@@ -1156,6 +1199,10 @@ def check_dangerous_command(command: str, env_type: str,
                                        approval_callback=approval_callback)
 
     if choice == "deny":
+        _log_approval_decision(
+            "deny", "user", command=command, pattern_key=pattern_key,
+            description=description, session_key=session_key,
+        )
         return {
             "approved": False,
             "message": f"BLOCKED: User denied this potentially dangerous command (matched '{description}' pattern). Do NOT retry this command - the user has explicitly rejected it.",
@@ -1170,6 +1217,11 @@ def check_dangerous_command(command: str, env_type: str,
         approve_permanent(pattern_key)
         save_permanent_allowlist(_permanent_approved)
 
+    _log_approval_decision(
+        "allow", "user", command=command, pattern_key=pattern_key,
+        description=description, session_key=session_key,
+        extra={"choice": choice or "once"},
+    )
     return {"approved": True, "message": None}
 
 
@@ -1224,6 +1276,9 @@ def check_all_command_guards(command: str, env_type: str,
     is_hardline, hardline_desc = detect_hardline_command(command)
     if is_hardline:
         logger.warning("Hardline block: %s (command: %s)", hardline_desc, command[:200])
+        _log_approval_decision(
+            "deny", "hardline", command=command, description=hardline_desc,
+        )
         return _hardline_block_result(hardline_desc)
 
     # == Sudo stdin guard ==
@@ -1235,12 +1290,19 @@ def check_all_command_guards(command: str, env_type: str,
     if is_sudo_guess:
         logger.warning("Sudo stdin guard block: %s (command: %s)",
                        sudo_guess_desc, command[:200])
+        _log_approval_decision(
+            "deny", "sudo_stdin", command=command, description=sudo_guess_desc,
+        )
         return _sudo_stdin_block_result(sudo_guess_desc)
 
     # --yolo or approvals.mode=off: bypass all approval prompts.
     # Gateway /yolo is session-scoped; CLI --yolo remains process-scoped.
     approval_mode = _get_approval_mode()
     if is_truthy_value(os.getenv("XAVANI_YOLO_MODE")) or is_current_session_yolo_enabled() or approval_mode == "off":
+        _log_approval_decision(
+            "allow", "yolo", command=command,
+            extra={"approval_mode": approval_mode},
+        )
         return {"approved": True, "message": None}
 
     is_cli = env_var_enabled("XAVANI_INTERACTIVE")
@@ -1256,6 +1318,10 @@ def check_all_command_guards(command: str, env_type: str,
                 # Run detection to get a description for the block message
                 is_dangerous, _pk, description = detect_dangerous_command(command)
                 if is_dangerous:
+                    _log_approval_decision(
+                        "deny", "cron_mode", command=command,
+                        pattern_key=_pk, description=description,
+                    )
                     return {
                         "approved": False,
                         "message": (
@@ -1315,7 +1381,6 @@ def check_all_command_guards(command: str, env_type: str,
     # Nothing to warn about
     if not warnings:
         return {"approved": True, "message": None}
-
     # --- Phase 2.5: Smart approval (auxiliary LLM risk assessment) ---
     # When approvals.mode=smart, ask the aux LLM before prompting the user.
     # Inspired by OpenAI Codex's Smart Approvals guardian subagent
@@ -1329,11 +1394,19 @@ def check_all_command_guards(command: str, env_type: str,
                 approve_session(session_key, key)
             logger.debug("Smart approval: auto-approved '%s' (%s)",
                          command[:60], combined_desc_for_llm)
+            _log_approval_decision(
+                "allow", "smart", command=command, description=combined_desc_for_llm,
+                session_key=session_key, extra={"verdict": "approve"},
+            )
             return {"approved": True, "message": None,
                     "smart_approved": True,
                     "description": combined_desc_for_llm}
         elif verdict == "deny":
             combined_desc_for_llm = "; ".join(desc for _, desc, _ in warnings)
+            _log_approval_decision(
+                "deny", "smart", command=command, description=combined_desc_for_llm,
+                session_key=session_key, extra={"verdict": "deny"},
+            )
             return {
                 "approved": False,
                 "message": f"BLOCKED by smart approval: {combined_desc_for_llm}. "
@@ -1471,6 +1544,12 @@ def check_all_command_guards(command: str, env_type: str,
 
             if not resolved or choice is None or choice == "deny":
                 reason = "timed out" if not resolved else "denied by user"
+                _log_approval_decision(
+                    "timeout" if not resolved else "deny",
+                    "user", command=command, pattern_key=primary_key,
+                    description=combined_desc, session_key=session_key,
+                    extra={"surface": "gateway"},
+                )
                 return {
                     "approved": False,
                     "message": f"BLOCKED: Command {reason}. Do NOT retry this command.",
@@ -1489,6 +1568,11 @@ def check_all_command_guards(command: str, env_type: str,
                 # choice == "once": no persistence — command allowed this
                 # single time only, matching the CLI's behavior.
 
+            _log_approval_decision(
+                "allow", "user", command=command, pattern_key=primary_key,
+                description=combined_desc, session_key=session_key,
+                extra={"surface": "gateway", "choice": choice},
+            )
             return {"approved": True, "message": None,
                     "user_approved": True, "description": combined_desc}
 
@@ -1538,6 +1622,11 @@ def check_all_command_guards(command: str, env_type: str,
     )
 
     if choice == "deny":
+        _log_approval_decision(
+            "deny", "user", command=command, pattern_key=primary_key,
+            description=combined_desc, session_key=session_key,
+            extra={"surface": "cli"},
+        )
         return {
             "approved": False,
             "message": "BLOCKED: User denied. Do NOT retry.",
@@ -1556,6 +1645,11 @@ def check_all_command_guards(command: str, env_type: str,
             approve_permanent(key)
             save_permanent_allowlist(_permanent_approved)
 
+    _log_approval_decision(
+        "allow", "user", command=command, pattern_key=primary_key,
+        description=combined_desc, session_key=session_key,
+        extra={"surface": "cli", "choice": choice},
+    )
     return {"approved": True, "message": None,
             "user_approved": True, "description": combined_desc}
 
