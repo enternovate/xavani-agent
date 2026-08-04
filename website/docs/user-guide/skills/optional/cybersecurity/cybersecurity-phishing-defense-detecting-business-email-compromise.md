@@ -1,0 +1,109 @@
+---
+title: "Detecting Business Email Compromise"
+sidebar_label: "Detecting Business Email Compromise"
+description: "Business Email Compromise (BEC) is a sophisticated fraud scheme where attackers impersonate executives, vendors, or trusted partners to trick employees into ..."
+---
+
+{/* This page is auto-generated from the skill's SKILL.md by website/scripts/generate-skill-docs.py. Edit the source SKILL.md, not this page. */}
+
+# Detecting Business Email Compromise
+
+Business Email Compromise (BEC) is a sophisticated fraud scheme where attackers impersonate executives, vendors, or trusted partners to trick employees into transferring funds, sharing sensitive data,
+
+## Skill metadata
+
+| | |
+|---|---|
+| Source | Optional — install with `xavani skills install official/cybersecurity/detecting-business-email-compromise` |
+| Path | `optional-skills/cybersecurity/phishing-defense/detecting-business-email-compromise` |
+| Platforms | all |
+
+## Reference: full SKILL.md
+
+:::info
+The following is the complete skill definition that Xavani loads when this skill is triggered. This is what the agent sees as instructions when the skill is active.
+:::
+
+# Detecting Business Email Compromise
+
+## Overview
+Business Email Compromise (BEC) is a sophisticated fraud scheme where attackers impersonate executives, vendors, or trusted partners to trick employees into transferring funds, sharing sensitive data, or changing payment details. Unlike traditional phishing, BEC often contains no malicious links or attachments, relying purely on social engineering. This skill covers detection techniques using email gateway rules, behavioral analytics, and financial process controls.
+
+
+## When to Use
+
+- When investigating security incidents that require detecting business email compromise
+- When building detection rules or threat hunting queries for this domain
+- When SOC analysts need structured procedures for this analysis type
+- When validating security monitoring coverage for related attack techniques
+
+## Prerequisites
+- Email security gateway with BEC detection capabilities
+- Understanding of organizational financial processes and approval chains
+- Access to email logs and SIEM platform
+- Knowledge of social engineering tactics
+
+## Key Concepts
+
+### BEC Attack Types (FBI IC3 Classification)
+1. **CEO Fraud**: Attacker impersonates CEO, requests urgent wire transfer
+2. **Account Compromise**: Employee email compromised, used to request payments from vendors
+3. **False Invoice Scheme**: Fake invoices from "vendor" with changed bank details
+4. **Attorney Impersonation**: Impersonates legal counsel for urgent confidential transfers
+5. **Data Theft**: Requests W-2, tax forms, or PII from HR
+
+### Detection Indicators
+- Urgency and secrecy language ("confidential", "do not discuss with others")
+- New or changed payment instructions
+- Executive communication outside normal patterns
+- Display name matches executive but email domain differs
+- Reply-to address differs from From address
+- First-time communication pattern between sender and recipient
+- Request for gift cards or cryptocurrency
+
+## Workflow
+
+### Step 1: Configure BEC-Specific Email Rules
+- Flag emails with VIP display names from external domains
+- Detect financial keywords combined with urgency language
+- Alert on first-time sender to finance/accounting staff
+- Check for Reply-To domain mismatch
+
+### Step 2: Deploy Behavioral Analytics
+- Baseline normal communication patterns per user
+- Detect anomalous requests (unusual recipient, unusual time, unusual request type)
+- Monitor for email forwarding rule changes (T1114.003)
+
+### Step 3: Implement Financial Controls
+- Dual-authorization for wire transfers above threshold
+- Out-of-band verification for payment detail changes (phone callback)
+- Vendor payment change verification process
+- Finance team training on BEC red flags
+
+### Step 4: Monitor for Account Compromise
+- Detect impossible travel in email login locations
+- Alert on email forwarding rule creation
+- Monitor for mailbox delegation changes
+- Check for inbox rules hiding BEC-related emails
+
+## Tools & Resources
+- **Microsoft Defender for O365 Anti-BEC**: Built-in BEC detection
+- **Proofpoint Email Fraud Defense**: BEC-specific solution
+- **Abnormal Security**: AI-driven BEC detection
+- **FBI IC3 BEC Advisory**: https://www.ic3.gov/
+- **FinCEN BEC Advisory**: Financial institution guidance
+
+## Validation
+- BEC detection rules trigger on test scenarios
+- Financial controls prevent unauthorized transfers in drills
+- Account compromise detection catches simulated attacks
+- Reduced BEC susceptibility in awareness assessments
+
+## Standards mapping
+
+- **d3fend_techniques**: Restore Object, Restore Configuration, Application Configuration Hardening, Application Hardening, Disable Remote Access
+- **atlas_techniques**: AML.T0052, AML.T0088
+- **nist_ai_rmf**: GOVERN-6.2, MAP-5.2
+- **nist_csf**: PR.AT-01, DE.CM-09, RS.CO-02, DE.AE-02
+- **license**: Apache-2.0
+- **author**: mahipal

@@ -1,0 +1,66 @@
+---
+title: "Implementing Siem Use Case Tuning"
+sidebar_label: "Implementing Siem Use Case Tuning"
+description: "Tune SIEM detection rules to reduce false positives by analyzing alert volumes, creating whitelists, adjusting thresholds, and measuring detection efficacy m..."
+---
+
+{/* This page is auto-generated from the skill's SKILL.md by website/scripts/generate-skill-docs.py. Edit the source SKILL.md, not this page. */}
+
+# Implementing Siem Use Case Tuning
+
+Tune SIEM detection rules to reduce false positives by analyzing alert volumes, creating whitelists, adjusting thresholds, and measuring detection efficacy metrics in Splunk and Elastic
+
+## Skill metadata
+
+| | |
+|---|---|
+| Source | Optional — install with `xavani skills install official/cybersecurity/implementing-siem-use-case-tuning` |
+| Path | `optional-skills/cybersecurity/security-operations/implementing-siem-use-case-tuning` |
+| Platforms | all |
+
+## Reference: full SKILL.md
+
+:::info
+The following is the complete skill definition that Xavani loads when this skill is triggered. This is what the agent sees as instructions when the skill is active.
+:::
+
+# Implementing SIEM Use Case Tuning
+
+## Overview
+
+SIEM use case tuning reduces alert fatigue by systematically analyzing detection rules for false positive rates, adjusting thresholds based on environmental baselines, creating context-aware whitelists, and measuring detection efficacy through precision/recall metrics. This skill covers tuning workflows for Splunk correlation searches and Elastic detection rules, including statistical baselining, exclusion list management, and alert-to-incident conversion tracking.
+
+
+## When to Use
+
+- When deploying or configuring implementing siem use case tuning capabilities in your environment
+- When establishing security controls aligned to compliance requirements
+- When building or improving security architecture for this domain
+- When conducting security assessments that require this implementation
+
+## Prerequisites
+
+- Splunk Enterprise/Cloud with ES or Elastic SIEM with detection rules enabled
+- Historical alert data (minimum 30 days) for baseline analysis
+- Python 3.8+ with `requests` library
+- SIEM admin credentials or API tokens
+
+## Steps
+
+1. Export current alert volumes per detection rule from SIEM
+2. Calculate false positive rate per rule using analyst disposition data
+3. Identify top noise-generating rules by volume and FP rate
+4. Build environmental baselines for thresholds (e.g., login counts, process spawns)
+5. Create whitelist entries for known-good entities (service accounts, scanners)
+6. Adjust rule thresholds using statistical analysis (mean + N standard deviations)
+7. Measure tuning impact via before/after precision and alert-to-incident ratio
+
+## Expected Output
+
+JSON report with per-rule tuning recommendations including current FP rate, suggested threshold adjustments, whitelist entries, and projected alert reduction percentages.
+
+## Standards mapping
+
+- **nist_csf**: DE.CM-01, RS.MA-01, GV.OV-01, DE.AE-02
+- **license**: Apache-2.0
+- **author**: mahipal
