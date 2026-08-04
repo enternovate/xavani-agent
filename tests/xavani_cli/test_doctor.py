@@ -1331,3 +1331,35 @@ class TestDoctorCodexCliHintPlacement:
         minimax_idx = next(i for i, l in enumerate(lines) if "MiniMax OAuth" in l)
         assert self._hint_line() not in lines[minimax_idx - 1]
         assert minimax_idx + 1 >= len(lines) or self._hint_line() not in lines[minimax_idx + 1]
+
+
+class TestCredentialRotation:
+    def test_stale_env_file_triggers_rotation_warning(self, monkeypatch, tmp_path, capsys):
+        """D05: a credential file older than 90 days produces a rotation warning."""
+        from pathlib import Path
+
+        stale = tmp_path / ".env"
+        stale.write_text("OPENROUTER_API_KEY=sk-stale-value\n", encoding="utf-8")
+        import time as _time
+
+        old = _time.time() - 91 * 86400
+        os.utime(stale, (old, old))
+        monkeypatch.setattr(doctor_mod, "_env_path", stale)
+        monkeypatch.setattr(doctor_mod, "get_xavani_home", lambda: tmp_path / "home")
+        (tmp_path / "home").mkdir(exist_ok=True)
+
+        doctor_mod.run_doctor(Namespace(fix=False))
+        out = capsys.readouterr().out
+        assert "Credential Rotation" in out
+        assert "rotate API keys older than 90 days" in out
+
+    def test_fresh_env_file_no_warning(self, monkeypatch, tmp_path, capsys):
+        fresh = tmp_path / ".env"
+        fresh.write_text("OPENROUTER_API_KEY=sk-fresh-value\n", encoding="utf-8")
+        monkeypatch.setattr(doctor_mod, "_env_path", fresh)
+        monkeypatch.setattr(doctor_mod, "get_xavani_home", lambda: tmp_path / "home")
+        (tmp_path / "home").mkdir(exist_ok=True)
+
+        doctor_mod.run_doctor(Namespace(fix=False))
+        out = capsys.readouterr().out
+        assert "rotate API keys older than 90 days" not in out

@@ -1349,6 +1349,30 @@ def run_doctor(args):
         for note in _termux_install_all_fallback_notes():
             check_info(note)
 
+    _section("Credential Rotation")
+    # D05: warn when credential-bearing files are older than 90 days.
+    # Uses file mtime only — never reads contents, so no plaintext keys
+    # are touched or displayed.
+    _credential_candidates = [
+        ("Xavani home .env", _env_path),
+        ("Project .env", PROJECT_ROOT / ".env"),
+        ("Xavani config.yaml", get_xavani_home() / "config.yaml"),
+    ]
+    import time as _time
+
+    _rotation_days = 90
+    for label, path in _credential_candidates:
+        try:
+            if path.exists():
+                age_days = (_time.time() - path.stat().st_mtime) / 86400.0
+                if age_days > _rotation_days:
+                    issues.append(
+                        f"{label} ({path}) is {age_days:.0f} days old — "
+                        f"rotate API keys older than {_rotation_days} days"
+                    )
+        except OSError:
+            pass
+
     _section("API Connectivity")
     # Refactor: every connectivity probe below is HTTP-bound and fully
     # independent. Running them in series spent ~5s wall on a typical
