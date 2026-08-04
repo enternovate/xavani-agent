@@ -1187,12 +1187,27 @@ class AIAgent:
         """Save session state to both JSON log and SQLite on any exit path.
 
         Ensures conversations are never lost, even on errors or early returns.
+
+        The whole drain is one critical section under ``_session_persist_lock``:
+        close and turn-start persistence can run on separate CLI threads, and
+        without a single funnel both could observe the same unmarked message
+        list and write duplicate durable rows.
         """
-        self._drop_trailing_empty_response_scaffolding(messages)
-        self._apply_persist_user_message_override(messages)
-        self._session_messages = messages
-        self._save_session_log(messages)
-        self._flush_messages_to_session_db(messages, conversation_history)
+        def _persist_and_drain() -> None:
+            self._drop_trailing_empty_response_scaffolding(messages)
+            self._apply_persist_user_message_override(messages)
+            self._session_messages = messages
+            self._save_session_log(messages)
+            # The caller already holds the persist lock — flush unlocked so
+            # the locked wrapper cannot deadlock on the same lock.
+            self._flush_messages_to_session_db_unlocked(messages, conversation_history)
+
+        persist_lock = getattr(self, "_session_persist_lock", None)
+        if persist_lock is None:
+            _persist_and_drain()
+            return
+        with persist_lock:
+            _persist_and_drain()
 
     def _drop_trailing_empty_response_scaffolding(self, messages: List[Dict]) -> None:
         """Remove private empty-response retry/failure scaffolding from transcript tails.
