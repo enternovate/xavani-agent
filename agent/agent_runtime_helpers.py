@@ -1278,9 +1278,21 @@ def create_openai_client(agent, client_kwargs: dict, *, reason: str, shared: boo
     # Tests in ``tests/run_agent/test_create_openai_client_reuse.py`` and
     # ``tests/run_agent/test_sequential_chats_live.py`` pin this invariant.
     if "http_client" not in client_kwargs:
-        keepalive_http = agent._build_keepalive_http_client(client_kwargs.get("base_url", ""))
-        if keepalive_http is not None:
-            client_kwargs["http_client"] = keepalive_http
+        # D03: when egress default-deny is active, build the keepalive
+        # client with an enforcing transport so every provider request is
+        # checked against the allowlist before a socket opens.
+        try:
+            from tools.egress_enforcement import maybe_enforce
+
+            _egress_http = maybe_enforce(client_kwargs.get("base_url", ""))
+            if _egress_http is not None:
+                client_kwargs["http_client"] = _egress_http
+        except Exception:
+            _egress_http = None
+        if "http_client" not in client_kwargs:
+            keepalive_http = agent._build_keepalive_http_client(client_kwargs.get("base_url", ""))
+            if keepalive_http is not None:
+                client_kwargs["http_client"] = keepalive_http
     # Uses the module-level `OpenAI` name, resolved lazily on first
     # access via __getattr__ below. Tests patch via `run_agent.OpenAI`.
     client = _ra().OpenAI(**client_kwargs)
