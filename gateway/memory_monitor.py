@@ -133,6 +133,22 @@ def log_memory_usage(prefix: str = "") -> None:
             thread_count,
             uptime,
         )
+        # E04: warn when RSS exceeds 80% of total system memory so an
+        # operator can act before the OOM killer does. Uses total physical
+        # memory when psutil is available; skips the warning otherwise.
+        try:
+            import psutil  # noqa: WPS433 - lazy import keeps monitor cheap
+
+            total_mb = psutil.virtual_memory().total / (1024 * 1024)
+            if total_mb > 0 and rss / total_mb >= 0.8:
+                logger.warning(
+                    "[MEMORY] WARNING rss=%.0fMB is >=80%% of system memory (%.0fMB) — "
+                    "consider /new, reducing concurrency, or restarting the gateway",
+                    rss,
+                    total_mb,
+                )
+        except Exception:
+            pass  # psutil unavailable — the info log line above still helps
 
 
 def _monitor_loop(stop_event: threading.Event, interval: float) -> None:
