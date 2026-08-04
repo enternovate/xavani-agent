@@ -37,7 +37,7 @@ from typing import Any, Dict, List, Optional
 
 logger = logging.getLogger(__name__)
 
-STATUSES = ("pending", "resolved", "abandoned")
+STATUSES = ("pending", "completed", "resolved", "abandoned")
 
 
 class ContinuationStore:
