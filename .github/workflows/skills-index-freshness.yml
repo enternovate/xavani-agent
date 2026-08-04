@@ -1,0 +1,89 @@
+name: Skills Index Freshness Watchdog
+
+on:
+  schedule:
+    # Every 4 hours — cheap check, opens an issue when the live index is stale
+    - cron: "0 */4 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  freshness-check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0  # v7.0.0
+        with:
+          persist-credentials: false
+
+      - name: Install Python
+        uses: actions/setup-python@8d9ed9ac5c534dbde28788e1cfe8d357a821b1b4  # v5.5.0
+        with:
+          python-version: "3.11"
+
+      - name: Build skills index locally
+        run: |
+          python3 scripts/build_skills_index.py
+
+      - name: Compare with published index
+        id: compare
+        run: |
+          # The published index lives on the deployed site. If the local build
+          # differs from the published one (or the published one is missing),
+          # the deploy pipeline is stale.
+          python3 - <<'EOF'
+          import hashlib, json, urllib.request
+
+          published_url = "https://xavani-agent.enternovate.com/api/skills-index.json"
+          local_path = "website/static/api/skills-index.json"
+          try:
+              with open(local_path, "rb") as f:
+                  local_hash = hashlib.sha256(f.read()).hexdigest()
+          except FileNotFoundError:
+              print("local index missing")
+              raise SystemExit(2)
+
+          try:
+              with urllib.request.urlopen(published_url, timeout=20) as resp:
+                  published_bytes = resp.read()
+              published_hash = hashlib.sha256(published_bytes).hexdigest()
+              stale = local_hash != published_hash
+              print(f"local={local_hash[:12]} published={published_hash[:12]} stale={stale}")
+          except Exception as exc:
+              print(f"published index unreachable: {exc}")
+              raise SystemExit(2)
+
+          if stale:
+              print("STALE")
+              raise SystemExit(1)
+          print("FRESH")
+          EOF
+        env:
+          PYTHONUNBUFFERED: "1"
+
+      - name: Open stale-index issue
+        if: steps.compare.outcome == 'failure'
+        uses: actions/github-script@60a0d83039c74a4aee543508d2cbcb245c8c6ff7  # v7.0.1
+        with:
+          script: |
+            const { data: issues } = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              labels: ['skills-index'],
+            });
+            if (issues.length > 0) {
+              console.log(`existing skills-index issue #${issues[0].number} — skipping`);
+              return;
+            }
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: 'Skills index is stale — deploy pipeline needs attention',
+              body: 'The skills-index freshness watchdog found that the published `skills-index.json` differs from the local build (or is unreachable).\n\nPlease check `skills-index.yml` / `deploy-site.yml` and re-run the deploy. This issue auto-opens at most once (existing open issue suppresses new ones).',
+              labels: ['skills-index'],
+            });
