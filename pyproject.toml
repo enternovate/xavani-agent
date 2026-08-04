@@ -94,7 +94,7 @@ hindsight = ["hindsight-client==0.6.1"]
 #   pip install qiskit qiskit-aer qiskit-ibm-runtime   # IBM / Aer simulator
 #   pip install amazon-braket-sdk                       # AWS Braket
 #   pip install dwave-ocean-sdk                         # D-Wave
-dev = ["debugpy==1.8.20", "pytest==9.0.3", "pytest-asyncio==1.3.0", "pytest-xdist==3.8.0", "pytest-split==0.11.0", "pytest-timeout==2.4.0", "mcp==1.27.2", "ty==0.0.21", "ruff==0.15.10"]
+dev = ["debugpy==1.8.20", "pytest==9.0.3", "pytest-asyncio==1.3.0", "pytest-xdist==3.8.0", "pytest-split==0.11.0", "pytest-timeout==2.4.0", "pytest-forked==1.6.0", "mcp==1.27.2", "ty==0.0.21", "ruff==0.15.10"]
 messaging = ["python-telegram-bot[webhooks]==22.6", "discord.py[voice] @ git+https://github.com/enternovate/discord.py.git@84f9877860d434969443c68ad2bed5f66ac0270f", "aiohttp==3.14.3", "brotlicffi==1.2.0.1", "slack-bolt==1.27.0", "slack-sdk==3.40.1", "qrcode==7.4.2"]
 cron = []  # croniter is now a core dependency; this extra kept for back-compat
 slack = ["slack-bolt==1.27.0", "slack-sdk==3.40.1", "aiohttp==3.14.3"]
