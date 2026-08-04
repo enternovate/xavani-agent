@@ -14392,6 +14392,18 @@ def main(
     except Exception:
         pass
 
+    # A18: validate the home filesystem before any heavy work. Loud
+    # startup warning when the home is unwritable, on a network
+    # filesystem, or too full — silent corruption is the failure mode
+    # this prevents. Skippable with XAVANI_SKIP_HOME_CHECK=1.
+    try:
+        from xavani_home_check import report_home_problems
+        from xavani_constants import get_xavani_home
+
+        report_home_problems(get_xavani_home())
+    except Exception:  # pragma: no cover — never block startup on the check
+        pass
+
     # Signal to terminal_tool that we're in interactive mode
     # This enables interactive sudo password prompts with timeout
     os.environ["XAVANI_INTERACTIVE"] = "1"
