@@ -14335,6 +14335,7 @@ def main(
     base_url: str = None,
     max_turns: int = None,
     verbose: bool = False,
+    brief: bool = False,
     quiet: bool = False,
     compact: bool = False,
     list_tools: bool = False,
@@ -14407,6 +14408,21 @@ def main(
     # Signal to terminal_tool that we're in interactive mode
     # This enables interactive sudo password prompts with timeout
     os.environ["XAVANI_INTERACTIVE"] = "1"
+
+    # C11: resolve the --brief/--verbose output mode and apply it as a
+    # per-run display override. Never touches config.yaml.
+    try:
+        from xavani_cli.output_mode import apply_output_mode, resolve_output_mode
+
+        _output_mode = resolve_output_mode(brief=brief, verbose=verbose)
+        if _output_mode != "default":
+            _display_overrides = apply_output_mode(_output_mode)
+            if "display" not in CLI_CONFIG:
+                CLI_CONFIG["display"] = {}
+            for _k, _v in _display_overrides.items():
+                CLI_CONFIG["display"][_k] = _v
+    except Exception:  # pragma: no cover — display preference must not block
+        pass
     
     # Handle gateway mode (messaging + cron)
     if gateway:
