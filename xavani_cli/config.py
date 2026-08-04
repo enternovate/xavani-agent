@@ -5348,6 +5348,58 @@ def set_config_value(key: str, value: str):
 # Command handler
 # =============================================================================
 
+def diff_config(other_path: Optional[str] = None) -> Dict[str, Any]:
+    """Compare current config.yaml against a backup file (C19).
+
+    Returns a dict with:
+      - ``same`` (bool) — true when both files are equal
+      - ``added`` (list) — keys present in the other file, missing now
+      - ``removed`` (list) — keys present now, missing in the other file
+      - ``changed`` (list) — keys whose values differ
+    """
+    current = read_raw_config()
+    other: Dict[str, Any] = {}
+    if other_path:
+        other_file = Path(other_path).expanduser()
+        if not other_file.exists():
+            return {"error": f"Backup config not found: {other_path}", "same": False}
+        try:
+            other = yaml.safe_load(other_file.read_text(encoding="utf-8")) or {}
+        except Exception as e:
+            return {"error": f"Failed to parse backup config: {e}", "same": False}
+    else:
+        # No backup given — diff against the DEFAULT_CONFIG (upgrade view).
+        other = copy.deepcopy(DEFAULT_CONFIG)
+
+    def _flatten(d: Dict[str, Any], prefix: str = "") -> Dict[str, Any]:
+        flat: Dict[str, Any] = {}
+        for k, v in (d or {}).items():
+            key = f"{prefix}.{k}" if prefix else k
+            if isinstance(v, dict):
+                flat.update(_flatten(v, key))
+            else:
+                flat[key] = v
+        return flat
+
+    cur_flat = _flatten(current)
+    other_flat = _flatten(other)
+
+    added = sorted(other_flat.keys() - cur_flat.keys())
+    removed = sorted(cur_flat.keys() - other_flat.keys())
+    changed = sorted(
+        k for k in cur_flat.keys() & other_flat.keys()
+        if cur_flat[k] != other_flat[k]
+    )
+    return {
+        "same": not added and not removed and not changed,
+        "added": added,
+        "removed": removed,
+        "changed": changed,
+        "current_path": str(get_config_path()),
+        "other_path": str(Path(other_path).expanduser()) if other_path else "defaults",
+    }
+
+
 def config_command(args):
     """Handle config subcommands."""
     subcmd = getattr(args, 'config_command', None)
@@ -5373,6 +5425,29 @@ def config_command(args):
     
     elif subcmd == "path":
         print(get_config_path())
+    
+    elif subcmd == "diff":
+        other = getattr(args, 'other', None)
+        result = diff_config(other)
+        if result.get("error"):
+            print(result["error"])
+            sys.exit(1)
+        print(f"Current: {result['current_path']}")
+        print(f"Other:   {result['other_path']}")
+        print()
+        if result["same"]:
+            print(color("✓ Configurations are identical.", Colors.GREEN))
+            return
+        for key in result["added"]:
+            print(color(f"  + {key}", Colors.GREEN))
+        for key in result["removed"]:
+            print(color(f"  - {key}", Colors.RED))
+        for key in result["changed"]:
+            print(color(f"  ~ {key}", Colors.YELLOW))
+        print()
+        print(f"{len(result['added'])} added, "
+              f"{len(result['removed'])} removed, "
+              f"{len(result['changed'])} changed")
     
     elif subcmd == "env-path":
         print(get_env_path())

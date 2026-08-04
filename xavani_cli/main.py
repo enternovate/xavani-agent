@@ -11510,6 +11510,14 @@ Examples:
     # config path
     config_subparsers.add_parser("path", help="Print config file path")
 
+    # config diff — C19: compare against a backup or defaults
+    config_diff = config_subparsers.add_parser(
+        "diff", help="Compare config.yaml against a backup or defaults"
+    )
+    config_diff.add_argument(
+        "other", nargs="?", help="Path to a backup config.yaml (default: built-in defaults)"
+    )
+
     # config env-path
     config_subparsers.add_parser("env-path", help="Print .env file path")
 
