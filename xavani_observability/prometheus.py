@@ -43,7 +43,26 @@ class _MetricsHandler(BaseHTTPRequestHandler):
             self.send_response(200)
             self.send_header("Content-Type", "application/json")
             self.end_headers()
-            self.wfile.write(json.dumps({"status": "ok"}).encode("utf-8"))
+            try:
+                from gateway.health import health_status
+
+                payload = health_status()
+            except Exception:
+                payload = {"status": "ok"}
+            self.wfile.write(json.dumps(payload).encode("utf-8"))
+        elif self.path == "/ready":
+            try:
+                from gateway.health import readiness_status
+
+                payload = readiness_status()
+                code = 200 if payload.get("ready") else 503
+            except Exception:
+                payload = {"ready": False, "reason": "health module unavailable"}
+                code = 503
+            self.send_response(code)
+            self.send_header("Content-Type", "application/json")
+            self.end_headers()
+            self.wfile.write(json.dumps(payload).encode("utf-8"))
         else:
             self.send_response(404)
             self.end_headers()

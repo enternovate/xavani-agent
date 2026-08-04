@@ -4020,6 +4020,43 @@ class GatewayRunner:
             _sd_notify(f"READY=1\nSTATUS=Gateway running ({connected_count} platform(s))")
         except Exception:
             pass
+
+        # Start the status endpoint (A10/E01): /metrics, /health, /ready.
+        # Port-gated via XAVANI_PROMETHEUS_PORT or observability.prometheus_port.
+        try:
+            from xavani_observability.prometheus import (
+                PrometheusEndpoint,
+                get_prometheus_port,
+                render_metrics_text,
+            )
+            from gateway.health import set_state_provider
+
+            def _gateway_state():
+                return {
+                    "version": str(getattr(self, "version", "") or ""),
+                    "running": self._running,
+                    "platforms_connected": len(self.adapters),
+                    "platforms": sorted(p.value for p in self.adapters.keys()),
+                }
+
+            set_state_provider(_gateway_state)
+            _prom_port = get_prometheus_port()
+            if _prom_port > 0:
+                _prom = PrometheusEndpoint(port=_prom_port)
+                _collector = getattr(self, "_metrics_collector", None)
+
+                def _metrics_text():
+                    if _collector is None:
+                        return ""
+                    try:
+                        return render_metrics_text(_collector.get_summary())
+                    except Exception:
+                        return ""
+
+                _prom.set_metrics_provider(_metrics_text)
+                _prom.start()
+        except Exception:
+            pass  # Status endpoint is optional; never block startup.
         
         # Emit gateway:startup hook
         hook_count = len(self.hooks.loaded_hooks)
