@@ -4011,6 +4011,15 @@ class GatewayRunner:
         self._running = True
         self._update_runtime_status("running")
         
+        # Signal systemd that startup completed (Type=notify units wait for
+        # READY=1 before considering the service up). No-op when not run
+        # under systemd (no NOTIFY_SOCKET).
+        try:
+            from gateway.systemd_notify import notify as _sd_notify
+            _sd_notify(f"READY=1\nSTATUS=Gateway running ({connected_count} platform(s))")
+        except Exception:
+            pass
+        
         # Emit gateway:startup hook
         hook_count = len(self.hooks.loaded_hooks)
         if hook_count:
