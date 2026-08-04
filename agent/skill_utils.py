@@ -100,6 +100,46 @@ def parse_frontmatter(content: str) -> Tuple[Dict[str, Any], str]:
 # ── Platform matching ─────────────────────────────────────────────────────
 
 
+def is_termux() -> bool:
+    """Return True when running inside a Termux (Android) userland."""
+    try:
+        return os.environ.get("TERMUX_VERSION") is not None or os.environ.get("PREFIX") == "/data/data/com.termux/files/usr"
+    except Exception:
+        return False
+
+
+def skill_matches_platform_list(platforms: Any) -> bool:
+    """Return True when *platforms* is compatible with the current OS.
+
+    Termux note: on Termux/Android, ``sys.platform`` is ``"linux"`` on
+    older Pythons but became ``"android"`` on Python 3.13+. Termux is a
+    Linux userland riding on the Android kernel, so skills tagged
+    ``linux`` are treated as compatible in Termux regardless of which
+    ``sys.platform`` value Python reports.
+    """
+    if not platforms:
+        return True
+    if not isinstance(platforms, list):
+        platforms = [platforms]
+    current = sys.platform
+    running_in_termux = is_termux()
+    for platform in platforms:
+        normalized = str(platform).lower().strip()
+        mapped = PLATFORM_MAP.get(normalized, normalized)
+        if current.startswith(mapped):
+            return True
+        # Termux runs a Linux userland on Android. Accept linux-tagged
+        # skills regardless of whether sys.platform is "linux" (pre-3.13
+        # Termux) or "android" (Python 3.13+ Termux, and any other
+        # Android runtime).
+        if running_in_termux and mapped == "linux":
+            return True
+        # Explicit termux/android tags match a Termux session too.
+        if running_in_termux and mapped in ("termux", "android"):
+            return True
+    return False
+
+
 def skill_matches_platform(frontmatter: Dict[str, Any]) -> bool:
     """Return True when the skill is compatible with the current OS.
 
@@ -112,18 +152,7 @@ def skill_matches_platform(frontmatter: Dict[str, Any]) -> bool:
     If the field is absent or empty the skill is compatible with **all**
     platforms (backward-compatible default).
     """
-    platforms = frontmatter.get("platforms")
-    if not platforms:
-        return True
-    if not isinstance(platforms, list):
-        platforms = [platforms]
-    current = sys.platform
-    for platform in platforms:
-        normalized = str(platform).lower().strip()
-        mapped = PLATFORM_MAP.get(normalized, normalized)
-        if current.startswith(mapped):
-            return True
-    return False
+    return skill_matches_platform_list(frontmatter.get("platforms"))
 
 
 # ── Disabled skills ───────────────────────────────────────────────────────

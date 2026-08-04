@@ -7698,6 +7698,32 @@ class XavaniCLI:
         from xavani_cli.skills_hub import handle_skills_slash
         handle_skills_slash(cmd, ChatConsole())
 
+    def _handle_memory_command(self, cmd: str):
+        """Handle /memory slash command — pending review + approval-gate toggle."""
+        from xavani_cli.write_approval_commands import handle_pending_subcommand
+        from tools import write_approval as wa
+        parts = cmd.strip().split()
+        args = parts[1:] if len(parts) > 1 else []
+        store = getattr(self.agent, "_memory_store", None) if getattr(self, "agent", None) else None
+        if store is None:
+            # No live agent store (e.g. /memory approve invoked without an
+            # active agent). Apply against a freshly loaded on-disk store: it
+            # persists to the same MEMORY.md / USER.md, honors the configured
+            # char limits, and creates MEMORY.md on the first approved write.
+            from tools.memory_tool import load_on_disk_store
+            store = load_on_disk_store()
+        out = handle_pending_subcommand(
+            wa.MEMORY, args,
+            memory_store=store,
+            set_mode_fn=lambda enabled: save_config_value(
+                "memory.write_approval", bool(enabled)
+            ),
+        )
+        if out is None:
+            out = ("Unknown /memory subcommand. "
+                   "Use: pending, approve <id>, reject <id>, approval <on|off>.")
+        print(out)
+
     def _show_gateway_status(self):
         """Show status of the gateway and connected messaging platforms."""
         from gateway.config import load_gateway_config, Platform
@@ -7983,6 +8009,8 @@ class XavaniCLI:
         elif canonical == "skills":
             with self._busy_command(self._slow_command_status(cmd_original)):
                 self._handle_skills_command(cmd_original)
+        elif canonical == "memory":
+            self._handle_memory_command(cmd_original)
         elif canonical == "platforms":
             self._show_gateway_status()
         elif canonical == "status":

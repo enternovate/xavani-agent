@@ -1569,12 +1569,37 @@ def handle_skills_slash(cmd: str, console: Optional[Console] = None) -> None:
         repo = args[1] if len(args) > 1 else ""
         do_tap(tap_action, repo=repo, console=c)
 
+    elif action in {"pending", "approve", "apply", "reject", "deny", "drop", "diff", "approval", "mode"}:
+        # Write-approval subcommands: pending review + approval-gate toggle.
+        _handle_skills_write_approval(action, args, c)
+
     elif action in {"help", "--help", "-h"}:
         _print_skills_help(c)
 
     else:
         c.print(f"[bold red]Unknown action:[/] {action}")
         _print_skills_help(c)
+
+
+def _handle_skills_write_approval(action: str, args, c: Console) -> None:
+    """Handle /skills write-approval subcommands (pending/approve/reject/diff/approval)."""
+    from tools import write_approval as wa
+    from xavani_cli.write_approval_commands import handle_pending_subcommand
+
+    def _set_skills_approval(enabled: bool) -> None:
+        from xavani_cli.config import load_config, save_config
+        cfg = load_config()
+        cfg.setdefault("skills", {})["write_approval"] = bool(enabled)
+        save_config(cfg)
+
+    out = handle_pending_subcommand(
+        wa.SKILLS, [action] + list(args),
+        set_mode_fn=_set_skills_approval,
+    )
+    if out is None:
+        out = ("Unknown /skills subcommand. "
+               "Use: pending, approve <id>, reject <id>, diff <id>, approval <on|off>.")
+    c.print(out)
 
 
 def _print_skills_help(console: Console) -> None:

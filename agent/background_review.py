@@ -419,6 +419,10 @@ def _run_review_in_thread(
             review_agent._user_profile_enabled = agent._user_profile_enabled
             review_agent._memory_nudge_interval = 0
             review_agent._skill_nudge_interval = 0
+            # Persistence-isolated fork: never lazily open the canonical
+            # session DB or write the review harness turn into the user's
+            # real session.
+            review_agent._persist_disabled = True
             # Suppress all status/warning emits from the fork so the
             # user only sees the final successful-action summary.
             # Without this, mid-review "Iteration budget exhausted",

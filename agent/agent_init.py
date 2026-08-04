@@ -935,6 +935,11 @@ def init_agent(
     agent._parent_session_id = parent_session_id
     agent._last_flushed_db_idx = 0  # tracks DB-write cursor to prevent duplicate writes
     agent._session_db_created = False  # DB row deferred to run_conversation()
+    agent._session_persist_lock = threading.Lock()  # serialize session-DB flushes
+    # Persistence-isolated forks (background review) must not lazily open the
+    # canonical state DB: doing so re-arms _flush_messages_to_session_db to
+    # write the fork's harness turn into the user's real session.
+    agent._persist_disabled = bool(getattr(session_db, "_persist_disabled", False))
     agent._session_init_model_config = {
         "max_iterations": agent.max_iterations,
         "reasoning_config": reasoning_config,

@@ -472,6 +472,63 @@ class MemoryStore:
             raise RuntimeError(f"Failed to write memory file {path}: {e}")
 
 
+def _apply_write_gate(action: str, target: str, content: Optional[str],
+                      old_text: Optional[str]) -> Optional[str]:
+    """Evaluate the memory write gate. Returns a JSON tool-result string when
+    the write should NOT proceed normally (blocked or staged), or None when the
+    caller should perform the real write.
+
+    Only the mutating actions (add/replace/remove) are gated.
+    """
+    if action not in {"add", "replace", "remove"}:
+        return None
+
+    try:
+        from tools import write_approval as wa
+    except Exception:
+        # If the gate module can't load, fail open (current behaviour) rather
+        # than blocking all memory writes.
+        return None
+
+    # Build a small inline summary/detail for the foreground approval prompt.
+    label = "user profile" if target == "user" else "memory"
+    if action == "add":
+        summary = f"add to {label}"
+        detail = content or ""
+    elif action == "replace":
+        summary = f"replace in {label}"
+        detail = f"old: {old_text}\nnew: {content}"
+    else:  # remove
+        summary = f"remove from {label}"
+        detail = old_text or ""
+
+    decision = wa.evaluate_gate(wa.MEMORY, inline_summary=summary, inline_detail=detail)
+
+    if decision.allow:
+        return None
+
+    if decision.blocked:
+        return tool_error(decision.message, success=False)
+
+    # stage
+    payload = {
+        "action": action,
+        "target": target,
+        "content": content,
+        "old_text": old_text,
+    }
+    record = wa.stage_write(
+        wa.MEMORY, payload,
+        summary=f"{summary}: {detail[:120]}",
+        origin=wa.current_origin(),
+    )
+    return json.dumps(
+        {"success": True, "staged": True, "pending_id": record["id"],
+         "message": decision.message},
+        ensure_ascii=False,
+    )
+
+
 def memory_tool(
     action: str,
     target: str = "memory",
@@ -489,6 +546,22 @@ def memory_tool(
 
     if target not in {"memory", "user"}:
         return tool_error(f"Invalid target '{target}'. Use 'memory' or 'user'.", success=False)
+
+    # Validate required params BEFORE the gate so an invalid write is rejected
+    # immediately instead of being staged and only failing at approve time.
+    if action == "add" and not content:
+        return tool_error("Content is required for 'add' action.", success=False)
+    if action == "replace" and (not old_text or not content):
+        missing = "old_text" if not old_text else "content"
+        return tool_error(f"{missing} is required for 'replace' action.", success=False)
+    if action == "remove" and not old_text:
+        return tool_error("old_text is required for 'remove' action.", success=False)
+
+    # Approval gate: when on, stages the write (background/gateway) or prompts
+    # inline (interactive CLI); when off (default) passes straight through.
+    gate_result = _apply_write_gate(action, target, content, old_text)
+    if gate_result is not None:
+        return gate_result
 
     if action == "add":
         if not content:
@@ -516,6 +589,57 @@ def memory_tool(
 def check_memory_requirements() -> bool:
     """Memory tool has no external requirements -- always available."""
     return True
+
+
+def load_on_disk_store() -> MemoryStore:
+    """Build a fresh on-disk :class:`MemoryStore`, honoring configured char limits.
+
+    Use this from any context that has no live agent (the messaging gateway,
+    the bare CLI ``/memory`` handler) but still needs to read or apply approved
+    memory writes. Mirrors how the live agent constructs its store in
+    ``agent/agent_init.py`` — including the user's ``memory.memory_char_limit``
+    / ``memory.user_char_limit`` overrides — so an approval applied without a
+    live agent enforces the SAME caps as one applied with one.
+
+    Falls back to the built-in defaults if config can't be loaded, so this can
+    never raise on a missing/unreadable config.
+    """
+    memory_char_limit = 2200
+    user_char_limit = 1375
+    try:
+        from xavani_cli.config import load_config
+
+        mem_cfg = (load_config() or {}).get("memory", {}) or {}
+        memory_char_limit = int(mem_cfg.get("memory_char_limit", memory_char_limit))
+        user_char_limit = int(mem_cfg.get("user_char_limit", user_char_limit))
+    except Exception:
+        pass  # config optional — fall back to defaults rather than break /memory
+
+    store = MemoryStore(
+        memory_char_limit=memory_char_limit,
+        user_char_limit=user_char_limit,
+    )
+    store.load_from_disk()
+    return store
+
+
+def apply_memory_pending(payload: Dict[str, Any], store: MemoryStore) -> Dict[str, Any]:
+    """Replay a staged memory write directly against the store, bypassing the
+    write gate. Called by the /memory approve handler.
+
+    Returns the store's result dict.
+    """
+    action = payload.get("action")
+    target = payload.get("target", "memory")
+    content = payload.get("content") or ""
+    old_text = payload.get("old_text") or ""
+    if action == "add":
+        return store.add(target, content)
+    if action == "replace":
+        return store.replace(target, old_text, content)
+    if action == "remove":
+        return store.remove(target, old_text)
+    return {"success": False, "error": f"Unknown staged action '{action}'."}
 
 
 # =============================================================================

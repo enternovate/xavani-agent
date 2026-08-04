@@ -298,9 +298,16 @@ def run_conversation(
     # Runaway-loop detector (A11): when the model repeats the same
     # tool-call sequence with identical arguments, break instead of
     # looping forever. Reset per turn so normal multi-turn use is never
-    # penalized.
+    # penalized. Threshold configurable via XAVANI_RUNAWAY_MAX_REPEATS
+    # (default 5) — 3 identical repeats is a legitimate retry pattern
+    # (the guardrail already warns at 2); true runaways repeat far more.
     agent._response_signature_history = []
-    agent._response_signature_max = 3
+    try:
+        agent._response_signature_max = max(
+            2, int(os.environ.get("XAVANI_RUNAWAY_MAX_REPEATS", "") or 5)
+        )
+    except (TypeError, ValueError):
+        agent._response_signature_max = 5
     # True until the server rejects an image_url content part with an error
     # like "Only 'text' content type is supported."  Set to False on first
     # rejection and kept False for the rest of the session so we never re-send

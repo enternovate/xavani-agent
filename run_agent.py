@@ -498,6 +498,12 @@ class AIAgent:
         opening the default state DB instead of making the advertised
         ``session_search`` tool unusable.
         """
+        # Persistence-isolated forks (background review) must not lazily open the
+        # canonical state DB: doing so would re-arm _flush_messages_to_session_db
+        # to write the fork's harness turn into the user's real session. Recall
+        # degrades to None for them (they don't use session_search anyway).
+        if getattr(self, "_persist_disabled", False):
+            return None
         if self._session_db is not None:
             return self._session_db
         try:
@@ -511,6 +517,8 @@ class AIAgent:
 
     def _ensure_db_session(self) -> None:
         """Create session DB row on first use. Disables _session_db on failure."""
+        if getattr(self, "_persist_disabled", False):
+            return
         if self._session_db_created or not self._session_db:
             return
         try:
@@ -1245,6 +1253,14 @@ class AIAgent:
         return repair_message_sequence(self, messages)
 
     def _flush_messages_to_session_db(self, messages: List[Dict], conversation_history: List[Dict] = None):
+        """Serialize direct and turn-boundary session flushes per agent."""
+        persist_lock = getattr(self, "_session_persist_lock", None)
+        if persist_lock is None:
+            return self._flush_messages_to_session_db_unlocked(messages, conversation_history)
+        with persist_lock:
+            return self._flush_messages_to_session_db_unlocked(messages, conversation_history)
+
+    def _flush_messages_to_session_db_unlocked(self, messages: List[Dict], conversation_history: List[Dict] = None):
         """Persist any un-flushed messages to the SQLite session store.
 
         Uses _last_flushed_db_idx to track which messages have already been
