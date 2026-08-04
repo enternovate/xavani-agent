@@ -295,6 +295,12 @@ def run_conversation(
     agent._unicode_sanitization_passes = 0
     agent._tool_guardrails.reset_for_turn()
     agent._tool_guardrail_halt_decision = None
+    # Runaway-loop detector (A11): when the model repeats the same
+    # tool-call sequence with identical arguments, break instead of
+    # looping forever. Reset per turn so normal multi-turn use is never
+    # penalized.
+    agent._response_signature_history = []
+    agent._response_signature_max = 3
     # True until the server rejects an image_url content part with an error
     # like "Only 'text' content type is supported."  Set to False on first
     # rejection and kept False for the rest of the session so we never re-send
@@ -3137,6 +3143,50 @@ def run_conversation(
             if assistant_message.tool_calls:
                 if not agent.quiet_mode:
                     agent._vprint(f"{agent.log_prefix}🔧 Processing {len(assistant_message.tool_calls)} tool call(s)...")
+                
+                # ── Runaway-loop detector (A11) ────────────────────────
+                # A broken integration (MCP server that always errors, tool
+                # whose result never changes) can drive the model into
+                # repeating the same tool call with identical arguments
+                # forever. Compare a normalized signature of this tool-call
+                # batch against the previous N; on the Nth identical repeat,
+                # stop the turn with a clear error instead of burning the
+                # iteration budget.
+                try:
+                    _sig_parts = []
+                    for _tc in assistant_message.tool_calls:
+                        _args = _tc.function.arguments or ""
+                        if isinstance(_args, str):
+                            try:
+                                _args = json.dumps(json.loads(_args), sort_keys=True)
+                            except (ValueError, TypeError):
+                                _args = _args.strip()
+                        _sig_parts.append(f"{_tc.function.name}:{_args}")
+                    _sig = "|".join(_sig_parts)
+                    _history = getattr(agent, "_response_signature_history", None)
+                    if _history is not None:
+                        _history.append(_sig)
+                        _limit = getattr(agent, "_response_signature_max", 3)
+                        if len(_history) >= _limit and len(set(_history[-_limit:])) == 1:
+                            agent._vprint(
+                                f"{agent.log_prefix}🛑 Runaway loop detected: model repeated "
+                                f"the same tool call {_limit}x in a row — stopping turn.",
+                                force=True,
+                            )
+                            agent._persist_session(messages, conversation_history)
+                            return {
+                                "final_response": None,
+                                "messages": messages,
+                                "api_calls": api_call_count,
+                                "completed": False,
+                                "partial": True,
+                                "error": (
+                                    f"Runaway loop: identical tool call repeated {_limit} times. "
+                                    "A tool integration may be broken (e.g. always-erroring MCP server)."
+                                ),
+                            }
+                except Exception as _runaway_err:
+                    logger.debug("runaway-loop detector error: %s", _runaway_err)
                 
                 if agent.verbose_logging:
                     for tc in assistant_message.tool_calls:
