@@ -75,7 +75,7 @@ def measure_consensus(
         verdict = normalize_verdict(entry.get("verdict"))
         agent = str(entry.get("agent") or "unknown")
         if not verdict:
-            continue
+            continue  # abstention — excluded from the denominator
         cluster = clusters.setdefault(
             verdict, {"verdict": verdict, "count": 0, "agents": []}
         )
@@ -93,7 +93,10 @@ def measure_consensus(
 
     ordered = sorted(clusters.values(), key=lambda c: (-c["count"], c["verdict"]))
     top = ordered[0]
-    agreement_ratio = top["count"] / len(verdicts)
+    # Abstentions do not count against agreement; ratio is over
+    # agents that actually delivered a verdict.
+    voting_agents = sum(c["count"] for c in ordered)
+    agreement_ratio = top["count"] / voting_agents
     consensus = top["verdict"] if agreement_ratio > 0.5 else None
 
     return {

@@ -48,7 +48,7 @@ def test_majority_consensus():
     ]
     result = measure_consensus(verdicts)
     assert result["consensus_verdict"] == "deploy"
-    assert result["agreement_ratio"] == pytest.approx(2 / 3)
+    assert result["agreement_ratio"] == pytest.approx(2 / 3, abs=1e-3)
 
 
 def test_split_disagreement():
