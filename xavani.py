@@ -27,7 +27,7 @@ import logging
 import os
 import sys
 from pathlib import Path
-from typing import Callable, Iterable, Optional
+from typing import Any, Callable, Iterable, Optional
 
 # ---------------------------------------------------------------------------
 # Bootstrap — runs *before* heavy imports
@@ -234,6 +234,40 @@ def show_xavani_banner(console: Optional[Console] = None) -> None:
 class XavaniCLI(_BaseXavaniCLI):  # type: ignore[misc, valid-type]
     """The Xavani CLI — extends the base CLI with the OAG slash commands."""
 
+
+def _split_oag_command(command: str) -> tuple[str, str]:
+    """Split a full command line into ``(canonical_name, args)``.
+
+    Only slash commands produce a name; plain text returns ``("", "")``.
+    """
+    stripped = (command or "").strip()
+    if not stripped.startswith("/"):
+        return "", ""
+    parts = stripped[1:].split(None, 1)
+    name = parts[0].lower()
+    args = parts[1] if len(parts) > 1 else ""
+    return name, args
+
+
+def dispatch_oag_command(command: str, cli: Any) -> bool | None:
+    """Run the OAG handler for ``command`` if one is registered.
+
+    Returns True when an OAG handler ran, None when the command is not an
+    OAG command (caller falls through to the base CLI). Extracted from
+    ``XavaniCLI.process_command`` so the dispatch logic is unit-testable
+    without constructing the full CLI.
+    """
+    cmd_name, args = _split_oag_command(command)
+    handler = OAG_COMMAND_HANDLERS.get(cmd_name) if cmd_name else None
+    if handler:
+        handler(args, cli=cli)
+        return True
+    return None
+
+
+class XavaniCLI(_BaseXavaniCLI):  # type: ignore[misc, valid-type]
+    """The Xavani CLI — extends the base CLI with the OAG slash commands."""
+
     def __init__(self, *args, **kwargs):
         register_oag_commands()
         super().__init__(*args, **kwargs)
@@ -241,12 +275,19 @@ class XavaniCLI(_BaseXavaniCLI):  # type: ignore[misc, valid-type]
     def show_banner(self) -> None:
         show_xavani_banner(self.console)
 
-    def process_command(self, cmd_name: str, args: str = "") -> bool:
-        handler = OAG_COMMAND_HANDLERS.get(cmd_name)
-        if handler:
-            handler(args, cli=self)
+    def process_command(self, command: str) -> bool:
+        """Intercept OAG commands first, then fall through to the base CLI.
+
+        The base ``XavaniCLI.process_command(command)`` contract takes the
+        FULL command line (e.g. ``/install foo``) in one argument. We split
+        the canonical name only for OAG dispatch and always pass the
+        untouched line to the parent — previously the line was misread as
+        the command name and the parent received two args, crashing every
+        slash command with a TypeError.
+        """
+        if dispatch_oag_command(command, self) is True:
             return True
-        return super().process_command(cmd_name, args)
+        return super().process_command(command)
 
 
 # ---------------------------------------------------------------------------
