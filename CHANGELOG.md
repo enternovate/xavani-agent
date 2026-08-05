@@ -2,180 +2,133 @@
 
 All notable changes to Xavani Agent are documented in this file.
 
-## [0.1.0] - 2026-08-04 — "First Official Release"
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-First official release. The full 100-update program from XAVANI_100_UPDATES.md is implemented, tested, and verified: A Reliability & Correctness (20), B Intelligence & Reasoning (15), C Operability & Developer Experience (20), D Safety & Guardrails (15), E Observability & Debugging (10), F Distribution & Ecosystem (10), G Autonomy & Proactivity (10).
+## [0.1.1] - Unreleased — "Reliability & Steer"
 
-### Added (final tranche)
-- F08 Neovim plugin generator with validation (tools/nvim_plugin.py)
-- F09 JetBrains plugin descriptor generator with validation (tools/jetbrains_plugin.py)
-- F10 Cloud instance manifest generator with validation (tools/cloud_instance.py)
-- C03 Real-time dashboard TUI over metrics collector, error budgets, cost ledger (xavani_observability/dashboard_tui.py)
-- Test-suite hardening: plugin test fixtures declare api_version (C12 gate), hermetic env blanks XAVANI_CRON_SESSION, long_running marker for bounded subprocess tests
+Patch release. Fixes, CI hardening, and the first tranche of the 50-update
+program (XAVANI_50_UPDATES.md). No breaking changes.
 
-### Changed
-- Dependencies: mcp 1.27.2 -> 1.28.1 (WebSocket Host/Origin validation), react-router 7.18.2 -> 8.3.0 in web (RSC-mode CSRF fix)
-- Packaging: xavani_memory included in the wheel
+### Fixed
+- **/steer reliability** — end-to-end verification of the steer pipeline (TUI
+  `/steer` → gateway `session.steer` → `AIAgent.steer()` → drain into the next
+  tool result), including idle fallback to queue, leftover-steer delivery at
+  turn end, and a rebuilt TUI bundle.
+- **Python 3.14 compatibility** — `_DaemonThreadPoolExecutor` in
+  `agent/memory_manager.py` broke against the 3.14 stdlib refactor of
+  `concurrent.futures.thread._worker`; `_adjust_thread_count` is now
+  version-agnostic (6 memory-manager tests restored).
+- **D01 secret redaction regression** — `_redact_content_parts()` mangled
+  non-text content parts (e.g. `image_url`) by embedding whole parts as
+  nested text; non-text parts now pass through untouched and the identity
+  contract (`content is result["content"]`) is preserved when nothing is
+  redacted (restores vision-model tool results).
+- **D08 subcommand gating** — `deps-provenance` added to
+  `_BUILTIN_SUBCOMMANDS` so the CLI fast-path skips plugin discovery for it.
+- **Session export timestamps** — export tests computed expectations in the
+  ambient timezone while the suite pins TZ=UTC; expectations are now UTC
+  (renderer was correct).
+- **CI — Windows footgun** — `os.kill(pid, 0)` in `tools/long_running.py`
+  replaced with `psutil.pid_exists` (safe on Windows; bpo-14484).
+- **CI — Nix** — refreshed the stale `ui-tui` npm-deps hash in `nix/tui.nix`.
 
-## [0.7.2] - 2026-08-01 — "Deploy Readiness"
+### Added (50-update program, first tranche)
+- **E03 Crash forensics** — watchdog + `shutdown_forensics` extension; on
+  abnormal exit, last log lines and thread stacks are dumped to
+  `~/.xavani/logs/crash-<ts>.txt` (with tests).
+- **E04 Memory/disk watchdog** — warn at 80% memory / 90% disk, auto-rotate
+  logs past 500 MB (`gateway/memory_monitor.py` extension).
+- **E05 Per-session cost CSV export** — `xavani_cli/session_export_csv.py`;
+  per-session token/cost rows for accounting.
+- **F02 Homebrew formula refresh automation** — CI workflow
+  (`.github/workflows/homebrew-refresh.yml`) that bumps
+  `packaging/homebrew/xavani-agent.rb` on release.
+- **F03 Docker healthcheck** — `HEALTHCHECK` instruction + `docker/healthcheck.sh`
+  hitting the gateway `/health` endpoint.
+- **G03 Autonomous maintenance window** — `xavani_operator/maintenance.py`:
+  idle-time DB VACUUM, log rotation, stale-lock GC (with tests).
 
-Deploy hardening. No new user-facing features.
+## [0.1.0] - 2026-08-05 — "First Official Release"
 
-### Added
-- New blocking `core-gate` CI job: smoke-imports all core subsystems and runs
-  the stable approval + MOA unit tests. Any failure blocks the merge. The full
-  suite stays non-blocking (visibility) to avoid blocking on known real-time
-  flakes. Implements the "no test stays red >1 release" failure budget (A05).
-- `--dist=loadscope` was evaluated for the full suite and **rejected**: measured
-  ~4x wall-clock regression (38% at 10 min) because the large `xavani_cli`
-  module pins to one worker, risking the CI 30-min timeout. Flake prevention
-  stays at the test level (deadline-based waits) to keep the fast path.
-- New shared `wait_for_state(predicate, timeout, interval)` pytest fixture
-  (tests/conftest.py) — the canonical deadline-based poller that replaces
-  fixed-sleep / fixed-iteration-cap waits (A01). Applied to the 4 timing-fragile
-  gateway approval poll loops; covered by its own unit test.
+The first public release of Xavani Agent. Everything before this date —
+internal development builds and pre-release version numbers — has been
+consolidated into this single release. Versioning now starts cleanly at
+0.1.0; the next release is 0.1.1 (SemVer patch).
 
-## [0.7.0] - 2026-06-12 — "Quantum Sentience"
+Xavani is a fully local, zero-telemetry AI agent gateway: one CLI and TUI to
+30+ AI providers, with an MCP gateway, a persistent memory layer, a protocol
+bridge, observability, a portable agent runtime, cron jobs, webhooks, and
+messaging gateways for Telegram, Discord, Slack and WhatsApp.
 
+### Core platform
+- **Agent runtime** — turn-based loop with tool execution, interrupt /
+  redirect / steer semantics, stream single-writer fencing, context
+  compression, and a deterministic-first (R10) architecture: the LLM only
+  *generates*; routing, detection and governance are model-free.
+- **MCP gateway** — native Model Context Protocol client/server; register
+  external MCP servers as tools; expose the tool registry over MCP.
+- **Memory layer** — episodic + procedural memory, hybrid vector/full-text
+  search, zero-cloud, durable across sessions (the Ndlovu memory engine).
+- **Providers** — 30+ OpenAI-compatible and native providers with an
+  intelligent model router (`xavani model --route <task>`).
+- **Messaging gateways** — Telegram, Discord, Slack, WhatsApp (+ more);
+  slash commands, sessions, approvals, and per-platform auth.
+- **Cron, webhooks, delegation** — scheduled jobs, inbound webhooks,
+  sub-agent orchestration with context isolation.
+- **Skill system** — 169+ skills, reusable procedural memory, skill
+  auto-improvement loop, and a skills index.
+- **Tools** — 90+ tools including `read_document`, `eval_harness`,
+  `mixture_of_agents`, `computer_use`, `guidelines_gate`, `process`,
+  `session_search`, `organize_files`, and a budget governor.
 
-Four major updates, each deterministic and zero-LLM at its core: the LLM only
-*generates* (plans, advice copy), never routes or decides.
+### Sentience & wisdom (deterministic, zero-LLM at the core)
+- **Quantum Decision Cortex** (`xavani_operator/quantum/`) — decisions held in
+  superposition, outcomes simulated, correlated risks interfered, collapse by
+  Born rule; classical solver always on, optional QPU backends.
+- **The Oracle** (`xavani_wisdom/`) — consequence projector, downfall
+  detector, self-fault watch-patterns from the 8pm error-log ritual.
+- **Always-On Companion** — 24/7 daemon (`xavani operator serve`),
+  kill-switch, advisor rituals (morning brief, 8pm error-log, tomorrow plan,
+  hourly task-chase), intelligent model router.
+- **Mission Control** — deep-navy dashboard with Sentience page, quantum
+  waveform, and Oracle consequence-check.
 
-### Added
+### The 100-update program (fully implemented, tested, verified)
+A Reliability & Correctness (20) · B Intelligence & Reasoning (15) ·
+C Operability & Developer Experience (20) · D Safety & Guardrails (15) ·
+E Observability & Debugging (10) · F Distribution & Ecosystem (10) ·
+G Autonomy & Proactivity (10). Highlights:
+- Turn leases, session redirect with lock, turn persistence drain, bounded
+  responses, session-store recovery + FTS rebuild, code-skew detection,
+  restart-loop guard, systemd readiness.
+- Chain-of-thought budget enforcement, context-breakdown widget, learn
+  prompt pack, delegation context isolation, subagent lifecycle API.
+- Unified provider catalog, model cost guard, `xavani security-audit`,
+  secrets vault CLI, session recovery, update pipeline with lock, bang
+  shell, prompt stash.
+- Secret redaction on tool output, PII redaction parity, egress policy
+  enforcement, Tirith command-guard, credential rotation reminders,
+  append-only mutation audit, dependency provenance report.
+- Gateway health export, turn timeline trace, crash forensics, memory/disk
+  watchdog, per-session cost CSV, flake dashboard.
+- ACP server hardening, Homebrew refresh automation, Docker healthcheck,
+  Windows portable installer, Nix flake cache, skills freshness watchdog.
+- Smart notifications, daily learning digest, autonomous maintenance,
+  follow-up question queue.
 
-#### ① Quantum Decision Cortex (`xavani_operator/quantum/`)
-- Decisions made by holding candidate strategies in **superposition**, simulating their
-  outcomes, letting correlated risks **interfere**, then **collapsing** (Born-rule) to the
-  best move — so the operator steers away from high-score-but-fragile options.
-- `qubo.py` + pluggable `backends/` — classical `inspired` solver always on; optional real
-  QPU (Qiskit / IBM / Braket / D-Wave) auto-selected only when credentials are present.
-- `outcome_patterns.py` records each decision + its realised result and compares them.
-- Wired into `xavani_operator/decide.py` behind `config.quantum.enabled` (default off).
-- CLI: `xavani operator quantum`.
+### Security & privacy
+- Zero telemetry, local-first, keys stay on the machine.
+- Egress allowlist, sandbox hardening (rlimits, seccomp/Landlock detection),
+  RLS-ready multi-tenant design, encryption at rest/in transit, audit
+  trail on AI actions.
+- CI security stack: Bandit, Gitleaks, Semgrep, pip-audit, Trivy, OSV
+  scanner, supply-chain audit, dependency provenance, and the R10
+  deterministic invariant enforced in tests.
 
-#### ② The Oracle — consequence-conscious wisdom (`xavani_wisdom/`)
-- A corpus of how the great **rose and fell** (Solomon, Bezos, Buffett; Kodak, Lehman,
-  Enron, WeWork, Icarus), a deterministic **consequence projector**, and a **downfall
-  detector** registered in `agent.detectors`.
-- `self_faults.py` turns the user's own recurring mistakes (from the 8pm log) into
-  personalised watch-patterns.
-- **Conscience soul pack** (`skills/research-guidelines/conscience-guidelines.md`) now rides
-  in every session (append-only; base identity untouched, R7).
-- CLI: `xavani wisdom verdict` / `xavani wisdom corpus`.
-
-#### ③ The Always-On Companion
-- **Intelligent model router** (`model_router.py` + `model_capabilities.yaml`): best
-  available model per task by the API keys you've set (best critical-thinker for emails,
-  cheap+fast for bulk). Zero API calls to decide. CLI: `xavani model --route <task>`.
-- **24/7 daemon** (`xavani_operator/daemon.py`): heartbeat, "active only when working,"
-  crash-safe. `xavani operator serve`; launchd + systemd units under `packaging/`.
-- **Kill-switch** (`xavani_operator/killswitch.py`): `xavani operator pause` / `resume`.
-- **Advisor rituals** (`xavani_operator/advisor/`): morning brief, the **8pm error-log**
-  ritual, tomorrow-plan capture, and **hourly task-chase** — delivered over Telegram
-  (08:00 / 09–21 / 20:00 cron specs).
-
-#### ④ Mission Control dashboard (`web/`)
-- Rebranded to the **Enternovate deep-navy** theme (electric-blue accent), default; the
-  original look preserved as the `teal` theme.
-- New **Sentience** page (quantum waveform + interactive Oracle consequence-check + model
-  router) and **Daily Counsel** page (24/7 health + the 8pm error-log timeline), with
-  read-only API endpoints under `/api/quantum`, `/api/wisdom`, `/api/router`,
-  `/api/operator`, `/api/advisor`.
-
-### Notes
-- Optional quantum + Telegram dependencies are extras, lazy-imported, credential-gated.
-- **Deferred to a follow-up (post-1.0 operator hardening):** multi-operator teams and a
-  formal red-team eval harness for autonomous actions. Current safety rests on tiered
-  approval, the kill-switch, and the downfall detector.
-
-## [0.6.0] - 2026-06-02
-
-### Added
-
-#### Zero-cost cognition (deterministic, no-LLM detection)
-- `tools/tool_prefilter.py` — deterministic per-turn tool pre-filter; selects the relevant tool subset from the user's message via keyword/intent rules, shrinking the function-call schema and cutting input-token cost. Never hides a needed tool (falls back to the full set; essentials always included).
-- `agent/detectors.py` — pure-Python detector registry (scrub, stub-guard, secret-leak) with a uniform `Verdict` interface.
-- `skills/research-guidelines/DETERMINISM-RULE.md` — the R10 "deterministic-first" rule (LLM is for generation only; never for routing/detection/governance).
-- Enforcement: `tests/agent/test_deterministic_no_llm.py` fails CI if any detection/routing module imports a model client.
-
-#### New tools
-- `read_document` (`tools/document_tools.py`) — extract text from `.txt`/`.md`/`.csv`/`.json` natively and `.pdf`/`.docx`/`.xlsx`/`.pptx` via optional parsers (graceful missing-dep messages).
-- `tools/mcp_server.py` — expose the tool registry over the Model Context Protocol; schemas reused verbatim, calls dispatch through the agent's own path.
-
-#### Full-stack security
-- `tools/egress_policy.py` — network egress allowlist with optional default-deny, configured via `XAVANI_EGRESS_ALLOWLIST` / `XAVANI_EGRESS_DEFAULT_DENY`.
-- `tools/sandbox_hardening.py` — OS resource caps (address space / CPU time / open files, never raised above the hard cap) plus Linux-gated seccomp/Landlock status detection.
-- `.github/workflows/security.yml` — Bandit, Gitleaks, Semgrep, pip-audit, Trivy, and the R10 invariant.
-- `.pre-commit-config.yaml` — Ruff, Gitleaks, the R10 check, and a scrub check.
-
-#### Quality & docs
-- `tests/test_parity_matrix.py` — capability parity matrix (tools, platforms, runtimes, subsystems, registry) + cyber-skills index regression + deliberate-stub guard.
-- Unit tests for every new module (102 passing across the additions).
-- Website: a v0.4.0 capabilities doc page wired into the Features sidebar.
-
-### Changed
-- Version bumped to 0.6.0 (`pyproject.toml`, `xavani_cli.__version__`, `xavani.VERSION`).
-
-### Notes
-- Detection/routing remains model-free (R10), enforced in CI. Deliberate stubs (`skills_hub`, `weixin`) and agent identity are unchanged.
-
-## [0.3.0] - 2025-05-30
-
-### Added
-
-#### Research Guidelines Enforcement
-- Expanded mandatory research guidelines from 11 to 21 thinkers.
-- New AI/ML thinkers: Chollet, Weng, Huyen, Yan.
-- New software craft thinkers: Beck, Hickey, Fowler, Carmack, Kernighan & Pike, Dijkstra.
-- Karpathy guidelines strengthened with 4 operating rules (Think-Before-Coding, Simplicity-First, Surgical-Changes, Goal-Driven-Execution).
-- CLI: `xavani guidelines list|show|check` subcommand.
-- Pre-ship verification gate tool (`guidelines_gate`).
-
-#### New Tools
-- `eval_harness` — define, run, and report evaluation cases.
-- `mixture_of_agents` — route problems through multiple models collaboratively.
-- `computer_use` — drive screen/keyboard/mouse via MCP server.
-- `guidelines_gate` — pre-ship verification against research principles.
-- Budget governor — per-session token/cost monitoring with threshold warnings.
-
-#### Cybersecurity Skills (754)
-- Full import from mukul975/Anthropic-Cybersecurity-Skills (Apache-2.0).
-- Covers: threat hunting, incident response, cloud security, red team, forensics, and more.
-- Located under `optional-skills/cybersecurity/`.
-- Import script: `scripts/import_cybersecurity_skills.py`.
-- Attribution: `optional-skills/cybersecurity/NOTICE` and `ATTRIBUTION.md`.
-
-#### Elite Build-and-Ship Skills (10)
-- `ship-it-preflight` — pre-release checklist.
-- `rfc-writer` — RFC authoring guide.
-- `prd-writer` — PRD authoring guide.
-- `release-engineering` — release management.
-- `perf-profiling` — performance profiling.
-- `incident-response` — incident response playbook.
-- `api-design-review` — API design review checklist.
-- `observability-setup` — observability setup guide.
-- `database-migration-playbook` — safe database migrations.
-- `secure-by-default-checklist` — security review checklist.
-
-#### Ported Skills (6)
-- `tdd` — test-driven development.
-- `brainstorming` — structured brainstorming.
-- `frontend-design` — frontend design principles.
-- `mcp-builder` — MCP server builder.
-- `security-review` — security review checklist.
-- `verification-before-completion` — verification before declaring done.
-
-#### Infrastructure
-- Skill auto-improvement loop (`xavani_learner/skill_improver.py`).
-- Hibernation adapters (`tools/environments/hibernation.py`).
-- Session budget governor (`agent/budget_governor.py`).
-
-### Changed
-- Version bumped from 0.2.0 to 0.3.0.
-- README updated with v0.3.0 "What's New" section.
-- MANIFEST.md updated with all 21 guideline entries.
-- Test contract updated: `EXPECTED_THINKERS` now includes all 21 names.
-
-## [0.2.0] - Previous release
-
-Initial release.
+### Distribution
+- PyPI wheel (`pip install xavani-agent`), Homebrew formula, Docker image
+  with HEALTHCHECK, Nix flake + Cachix cache, Windows portable installer,
+  one-line installers (`curl -fsSL https://get.xavani.dev | bash`).
+- MIT licensed. Derived from Hermes Agent by Nous Research (MIT) with
+  attribution; maintained independently by Enternovate.

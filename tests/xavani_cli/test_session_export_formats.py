@@ -7,14 +7,17 @@
 from __future__ import annotations
 
 import html as html_mod
-from datetime import datetime
+from datetime import datetime, timezone
 
 import pytest
 
 from xavani_cli.session_export_html import sessions_to_html
 from xavani_cli.session_export_md import sessions_to_markdown
 
-EXPECTED_TS = datetime.fromtimestamp(1783267200.0).strftime("%Y-%m-%d %H:%M:%S")
+# The suite pins TZ=UTC (tests/conftest.py) for deterministic runtime, so
+# expectations must be computed in UTC — naive fromtimestamp() at module
+# import would use the ambient (non-UTC) timezone and mismatch the renderer.
+EXPECTED_TS = datetime.fromtimestamp(1783267200.0, tz=timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
 
 SAMPLE_SESSION = {
     "id": "20260804_100000_abcd12",

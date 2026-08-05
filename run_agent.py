@@ -3616,24 +3616,32 @@ class AIAgent:
         return self._redact_content_parts(summary)
 
     def _redact_content_parts(self, content: Any) -> Any:
-        """Mask secret-shaped text in content lists and strings (D01)."""
+        """Mask secret-shaped text in content lists and strings (D01).
+
+        Only ``text`` keys inside dict content parts are redacted; non-text
+        parts (e.g. ``image_url``) pass through untouched. When nothing was
+        redacted the *same* object is returned, so callers can rely on
+        identity — a vision-capable model receiving a multimodal tool
+        result gets the exact original content list.
+        """
         from agent.redact import redact_sensitive_text
 
         try:
             if isinstance(content, str):
-                return redact_sensitive_text(content)
+                redacted = redact_sensitive_text(content)
+                return redacted if redacted != content else content
             if isinstance(content, list):
-                return [
-                    {
-                        **part,
-                        "text": redact_sensitive_text(part.get("text", ""))
-                        if isinstance(part, dict) and "text" in part
-                        else part,
-                    }
-                    if isinstance(part, dict)
-                    else redact_sensitive_text(part)
-                    for part in content
-                ]
+                out = []
+                changed = False
+                for part in content:
+                    if isinstance(part, dict) and "text" in part:
+                        redacted_text = redact_sensitive_text(part.get("text", ""))
+                        if redacted_text != part["text"]:
+                            changed = True
+                        out.append({**part, "text": redacted_text})
+                    else:
+                        out.append(part)
+                return out if changed else content
         except Exception:
             pass
         return content

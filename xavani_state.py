@@ -746,6 +746,16 @@ class SessionDB:
         """Create a new session record. Returns the session_id."""
         self._insert_session_row(session_id, source, **kwargs)
         return session_id
+
+    def record_session(self, session_id: str, source: str, kind: Optional[str] = None, **kwargs) -> str:
+        """Record the start of a session (convenience alias for ``create_session``).
+
+        ``kind`` (e.g. ``"chat"`` / ``"agent"``) is accepted for API
+        compatibility with maintenance/operator tooling; session type is not
+        a first-class column in the sessions schema, so it is currently
+        informational only.  Returns the session_id.
+        """
+        return self.create_session(session_id, source, **kwargs)
     def end_session(self, session_id: str, end_reason: str) -> None:
         """Mark a session as ended.
 
