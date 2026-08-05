@@ -29,9 +29,18 @@ _COLUMNS = [
     "cost_source",
 ]
 
+# Session dicts produced by ``SessionDB.export_session`` / ``export_all``
+# (and by ``search_sessions``) use the DB column name ``id``; the CSV
+# column is ``session_id``.  Alias so the identity column is never blank.
+_KEY_ALIASES = {
+    "session_id": "id",
+}
+
 
 def _value(session: Dict[str, Any], key: str) -> Any:
     value = session.get(key, "")
+    if value in (None, "") and key in _KEY_ALIASES:
+        value = session.get(_KEY_ALIASES[key], "")
     if value is None:
         return ""
     if key.endswith("_cost_usd") and isinstance(value, (int, float)):
