@@ -4,7 +4,7 @@ let
   src = ../ui-tui;
   npmDeps = pkgs.fetchNpmDeps {
     inherit src;
-    hash = "sha256-YBvNNZW/XGggNhFMsj48hfA/XoVzVCRPKvJYPuEt9d8=";
+    hash = "sha256-2IgXxCRUc5t6U6Q4VO7RzUksekaXNA47ScEXUAnx6qQ=";
   };
 
   npm = xavaniNpmLib.mkNpmPassthru { folder = "ui-tui"; attr = "tui"; pname = "xavani-tui"; };

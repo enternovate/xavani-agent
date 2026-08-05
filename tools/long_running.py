@@ -98,14 +98,17 @@ def check_stale_locks(lock_paths: Iterable[Path], stale_after_s: float = 300.0) 
         if pid is not None and age < stale_after_s:
             # PID may be a live process holding the lock.
             try:
-                os.kill(pid, 0)
-                problems.append(f"lock {lock_path} held by live pid {pid}")
-                continue
-            except OSError as exc:
-                if exc.errno == errno.ESRCH:
-                    continue  # pid dead — stale lock, safe
-                problems.append(f"lock {lock_path} unreadable: {exc}")
-                continue
+                # windows-footgun: ok — psutil.pid_exists is cross-platform;
+                # os.kill(pid, 0) would send CTRL_C_EVENT on Windows (bpo-14484).
+                import psutil
+
+                if psutil.pid_exists(pid):
+                    problems.append(f"lock {lock_path} held by live pid {pid}")
+                    continue
+            except OSError:
+                pass
+            # pid dead (or uncheckable) — stale lock, safe
+            continue
         if pid is None and age < stale_after_s:
             problems.append(f"lock {lock_path} is fresh but has no pid")
     return problems

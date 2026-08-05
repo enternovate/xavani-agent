@@ -12265,9 +12265,9 @@ Examples:
     sessions_export.add_argument("--session-id", help="Export a specific session")
     sessions_export.add_argument(
         "--format",
-        choices=["jsonl", "html", "md"],
+        choices=["jsonl", "html", "md", "csv"],
         default="jsonl",
-        help="Output format: jsonl (default), html (readable transcript), or md (markdown)",
+        help="Output format: jsonl (default), html (readable transcript), md (markdown), or csv (per-session cost rows)",
     )
 
     sessions_delete = sessions_subparsers.add_parser(
@@ -12391,10 +12391,14 @@ Examples:
                     from xavani_cli.session_export_html import sessions_to_html
 
                     document = sessions_to_html(items)
-                else:
+                elif export_format == "md":
                     from xavani_cli.session_export_md import sessions_to_markdown
 
                     document = sessions_to_markdown(items)
+                else:
+                    from xavani_cli.session_export_csv import sessions_to_csv
+
+                    document = sessions_to_csv(items)
                 if args.output == "-":
                     sys.stdout.write(document)
                 else:
