@@ -24,8 +24,10 @@ jobs:
   test:
     runs-on: ubuntu-latest
     # 20 min was too tight for the 24K+ test suite — it consistently
-    # reached ~98% before getting killed by the timeout.
-    timeout-minutes: 30
+    # reached ~98% before getting killed by the timeout. 30 min is also
+    # tight on heavily-oversubscribed runners (seen hit exactly 30:16);
+    # 45 min gives a slow runner a full pass with headroom.
+    timeout-minutes: 45
     steps:
       - name: Checkout code
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0  # v7.0.0
@@ -63,7 +65,9 @@ jobs:
           source .venv/bin/activate
           # A04: --dist=loadscope keeps module tests on one worker,
           # matching the Windows job and the local canonical runner.
-          python -m pytest tests/ -q --ignore=tests/integration --ignore=tests/e2e --tb=short -n auto --dist=loadscope
+          # --max-worker-restart respawns crashed xdist workers instead of
+          # aborting the whole run (rare stdio/pty worker crashes under load).
+          python -m pytest tests/ -q --ignore=tests/integration --ignore=tests/e2e --tb=short -n auto --dist=loadscope --max-worker-restart=12 -p no:cacheprovider
         env:
           # Ensure tests don't accidentally call real APIs
           OPENROUTER_API_KEY: ""
