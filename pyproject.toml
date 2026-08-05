@@ -65,6 +65,7 @@ dependencies = [
   # Secure XML parsing (defusedxml replacement for xml.etree.ElementTree)
   # Used by gateway/platforms/wecom_callback.py to prevent XML bombs / XXE.
   "defusedxml==0.7.1",
+  "msgpack==1.2.1",
 ]
 
 [project.optional-dependencies]
