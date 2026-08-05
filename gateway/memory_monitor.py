@@ -37,6 +37,7 @@ from __future__ import annotations
 import gc
 import logging
 import os
+import shutil
 import sys
 import threading
 import time
@@ -151,6 +152,63 @@ def log_memory_usage(prefix: str = "") -> None:
             pass  # psutil unavailable — the info log line above still helps
 
 
+def _check_disk_and_logs() -> None:
+    """E04: warn at 90% disk; auto-rotate logs over 500MB. Best-effort."""
+    try:
+        from xavani_constants import get_xavani_home
+
+        home = get_xavani_home()
+        try:
+            usage = shutil.disk_usage(str(home))
+            pct = usage.used / usage.total * 100.0
+            if pct >= 90.0:
+                logger.warning(
+                    "[DISK] WARNING disk usage %.1f%% (%.1f GB / %.1f GB) on %s — "
+                    "free space is low",
+                    pct,
+                    usage.used / 1e9,
+                    usage.total / 1e9,
+                    home,
+                )
+        except OSError:
+            pass
+
+        logs_dir = home / "logs"
+        if not logs_dir.exists():
+            return
+        total_bytes = sum(
+            p.stat().st_size
+            for p in logs_dir.iterdir()
+            if p.is_file() and p.suffix == ".log"
+        )
+        _LOG_ROTATE_BYTES = 500 * 1024 * 1024
+        if total_bytes <= _LOG_ROTATE_BYTES:
+            return
+        # Rotate: drop the oldest log files until under the threshold.
+        log_files = sorted(
+            (p for p in logs_dir.iterdir() if p.is_file() and p.suffix == ".log"),
+            key=lambda p: p.stat().st_mtime,
+        )
+        removed = 0
+        for log_file in log_files:
+            if total_bytes <= _LOG_ROTATE_BYTES * 0.8:
+                break
+            try:
+                size = log_file.stat().st_size
+                log_file.unlink()
+                total_bytes -= size
+                removed += 1
+            except OSError:
+                continue
+        if removed:
+            logger.warning(
+                "[LOGS] Auto-rotated %d log file(s); total log size back under 500MB",
+                removed,
+            )
+    except Exception as exc:
+        logger.debug("Disk/log check failed: %s", exc)
+
+
 def _monitor_loop(stop_event: threading.Event, interval: float) -> None:
     """Background thread body — log every ``interval`` seconds until stopped."""
     while not stop_event.wait(interval):
@@ -159,6 +217,7 @@ def _monitor_loop(stop_event: threading.Event, interval: float) -> None:
         except Exception as e:
             # Never let the monitor crash the gateway; just log and carry on.
             logger.debug("Memory monitor iteration failed: %s", e)
+        _check_disk_and_logs()
 
 
 def start_memory_monitoring(interval_seconds: float = 300.0) -> bool:

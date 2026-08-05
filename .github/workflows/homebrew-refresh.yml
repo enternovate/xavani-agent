@@ -1,0 +1,49 @@
+name: Homebrew Formula Refresh
+
+# F02: keep packaging/homebrew/xavani-agent.rb pointing at the current
+# release asset. Runs on every published release: downloads the new
+# sdist, computes its sha256, patches the formula, and commits the bump.
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  bump-formula:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0  # v7.0.0
+        with:
+          persist-credentials: false
+
+      - name: Bump formula to the release asset
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          TAG="${{ github.event.release.tag_name }}"
+          VERSION="${TAG#v}"
+          FORMULA="packaging/homebrew/xavani-agent.rb"
+          ASSET_URL="https://github.com/enternovate/xavani-agent/releases/download/${TAG}/xavani-agent-${VERSION}.tar.gz"
+
+          echo "Bumping formula to ${VERSION} from ${ASSET_URL}"
+          TMP_DIR="$(mktemp -d)"
+          curl -fsSL "${ASSET_URL}" -o "${TMP_DIR}/xavani-agent-${VERSION}.tar.gz"
+          SHA="$(sha256sum "${TMP_DIR}/xavani-agent-${VERSION}.tar.gz" | cut -d' ' -f1)"
+          echo "sha256=${SHA}"
+
+          sed -i "s|url \".*xavani-agent-[^\"]*\.tar\.gz\"|url \"${ASSET_URL}\"|" "${FORMULA}"
+          sed -i "s|sha256 \"[0-9a-f]*\"|sha256 \"${SHA}\"|" "${FORMULA}"
+          grep -E "url |sha256 " "${FORMULA}"
+
+      - name: Commit the bump
+        uses: stefanzweifel/git-auto-commit-action@a5a0cd719cceab3d91e191b657d6c7bb3f17d60c  # v5.1.0
+        with:
+          commit_message: "chore(brew): refresh formula to ${{ github.event.release.tag_name }}"
+          file_pattern: packaging/homebrew/xavani-agent.rb

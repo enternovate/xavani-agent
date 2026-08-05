@@ -464,3 +464,65 @@ def _parse_systemd_duration_to_us(raw: str) -> Optional[int]:
                 return None
             digits = ""
     return total_us if total_us > 0 else None
+
+
+def _tail_log(log_path: Path, n: int = 200) -> list[str]:
+    """Return the last ``n`` lines of a log file, best-effort."""
+    try:
+        if not log_path.exists():
+            return ["(log file not found)"]
+        with open(log_path, "r", encoding="utf-8", errors="replace") as fh:
+            lines = fh.readlines()
+        return [line.rstrip("\n") for line in lines[-n:]]
+    except OSError as exc:
+        return [f"(log tail unavailable: {exc})"]
+
+
+def write_crash_dump(
+    reason: str, *, log_file: Optional[Path] = None, max_tail: int = 200
+) -> Optional[str]:
+    """Write a durable crash dump to ``logs/crash-<ts>.txt`` (E03).
+
+    Contains the reason, shutdown context, the last ``max_tail`` log
+    lines, and thread stacks via faulthandler. Best-effort: returns the
+    dump path on success, ``None`` on any failure. Never raises.
+    """
+    try:
+        import io
+        import faulthandler
+        from datetime import datetime
+
+        from xavani_constants import get_xavani_home
+
+        logs_dir = get_xavani_home() / "logs"
+        logs_dir.mkdir(parents=True, exist_ok=True)
+        path = logs_dir / f"crash-{datetime.now().strftime('%Y%m%d-%H%M%S')}.txt"
+
+        lines: list[str] = [
+            "=== Xavani crash dump ===",
+            f"reason: {reason}",
+            f"time: {datetime.now().isoformat()}",
+        ]
+        try:
+            ctx = snapshot_shutdown_context()
+            lines.append("--- shutdown context ---")
+            lines.append(json.dumps(ctx, indent=2, default=str))
+        except Exception:
+            pass
+
+        log_path = log_file or (logs_dir / "gateway.log")
+        lines.append(f"--- last {max_tail} log lines ({log_path}) ---")
+        lines.extend(_tail_log(log_path, max_tail))
+
+        lines.append("--- thread stacks ---")
+        try:
+            buf = io.StringIO()
+            faulthandler.dump_traceback(file=buf)
+            lines.append(buf.getvalue())
+        except Exception as exc:
+            lines.append(f"(faulthandler unavailable: {exc})")
+
+        path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+        return str(path)
+    except Exception:
+        return None

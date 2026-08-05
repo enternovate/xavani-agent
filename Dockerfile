@@ -117,4 +117,10 @@ ENV XAVANI_HOME=/opt/data
 ENV PATH="/opt/data/.local/bin:${PATH}"
 RUN mkdir -p /opt/data
 VOLUME [ "/opt/data" ]
+# F03: container liveness for orchestrators — PID 1 alive, and /health
+# answers when a status port is configured (XAVANI_PROMETHEUS_PORT).
+COPY docker/healthcheck.sh /opt/xavani/docker/healthcheck.sh
+RUN chmod +x /opt/xavani/docker/healthcheck.sh
+HEALTHCHECK --interval=60s --timeout=5s --start-period=30s --retries=3 \
+  CMD ["/opt/xavani/docker/healthcheck.sh"]
 ENTRYPOINT [ "/usr/bin/tini", "-g", "--", "/opt/xavani/docker/entrypoint.sh" ]

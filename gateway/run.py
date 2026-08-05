@@ -4162,9 +4162,31 @@ class GatewayRunner:
         # checkout on disk drifts from the revision this process booted with.
         asyncio.create_task(self._code_skew_watcher())
 
+        # Start the daily idle-maintenance watcher (G03) — VACUUM, stale
+        # locks, log rotation when no session turns are active.
+        asyncio.create_task(self._maintenance_watcher())
+
         logger.info("Press Ctrl+C to stop")
         
         return True
+
+    async def _maintenance_watcher(self, interval: float = 86400.0) -> None:
+        """Run maintenance once a day when the gateway is idle (G03)."""
+        await asyncio.sleep(interval)
+        while self._running:
+            try:
+                from xavani_operator.maintenance import (
+                    gateway_has_active_turns,
+                    run_maintenance,
+                )
+
+                if not gateway_has_active_turns(self):
+                    run_maintenance()
+            except asyncio.CancelledError:
+                raise
+            except Exception:
+                pass  # Best-effort maintenance; never take down the gateway.
+            await asyncio.sleep(interval)
 
     async def _code_skew_watcher(self, interval: float = 600.0) -> None:
         """Warn when the git checkout moved since this process booted (A08)."""
@@ -18133,6 +18155,19 @@ async def start_gateway(config: Optional[GatewayConfig] = None, replace: bool = 
                 "Received %s — initiating shutdown",
                 _shutdown_ctx["signal"] if _shutdown_ctx else "SIGTERM/SIGINT",
             )
+            # E03: unplanned signal exit — write a durable crash dump
+            # (last log lines + thread stacks + context) before teardown.
+            try:
+                from gateway.shutdown_forensics import write_crash_dump
+
+                _dump_path = write_crash_dump(
+                    "unplanned signal shutdown",
+                    log_file=_xavani_home / "logs" / "gateway.log",
+                )
+                if _dump_path:
+                    logger.warning("Crash dump written to %s", _dump_path)
+            except Exception as _e:
+                logger.debug("write_crash_dump failed: %s", _e)
 
         # Always log who/what triggered the signal — most useful single
         # line when diagnosing "the gateway keeps dying" tickets.  Format
