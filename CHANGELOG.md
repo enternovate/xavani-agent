@@ -33,7 +33,7 @@ program (XAVANI_50_UPDATES.md). No breaking changes.
   replaced with `psutil.pid_exists` (safe on Windows; bpo-14484).
 - **CI — Nix** — refreshed the stale `ui-tui` npm-deps hash in `nix/tui.nix`.
 
-### Added (50-update program, first tranche)
+### Added (50-update program, tranches 1 & 2)
 - **E03 Crash forensics** — watchdog + `shutdown_forensics` extension; on
   abnormal exit, last log lines and thread stacks are dumped to
   `~/.xavani/logs/crash-<ts>.txt` (with tests).
@@ -48,6 +48,15 @@ program (XAVANI_50_UPDATES.md). No breaking changes.
   hitting the gateway `/health` endpoint.
 - **G03 Autonomous maintenance window** — `xavani_operator/maintenance.py`:
   idle-time DB VACUUM, log rotation, stale-lock GC (with tests).
+- **C02 Model cost guard** — `xavani_cli/model_cost_guard.py`; `/model`
+  switches to models above $20/M input tokens now surface a warning via
+  `ModelSwitchResult.warning_message` (shared by CLI and gateway).
+- **C07 Bang shell** — `!cmd` executes a shell command from the chat line
+  (120s timeout, output + exit code printed, never touches the agent).
+- **B02 Context breakdown** — `/usage` now shows a per-call breakdown of
+  system/conversation/cache tokens (estimates marked, cache counts exact).
+- **C08 Prompt stash** — `/stash save|list|show|load|rm`; draft prompts
+  persist across sessions under `~/.xavani/prompt-stash/`.
 
 ## [0.1.0] - 2026-08-05 — "First Official Release"
 
