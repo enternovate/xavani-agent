@@ -985,7 +985,21 @@ def switch_model(
     if validation.get("message"):
         warnings.append(validation["message"])
 
-    # --- Build result ---
+    model_info = get_model_info(target_provider, new_model)
+
+    # C02 — model cost guard: surface a warning when the target model's
+    # input cost exceeds the per-M-token threshold (uses models.dev pricing).
+    if model_info is not None and getattr(model_info, "cost_input", 0.0):
+        from xavani_cli.model_cost_guard import model_cost_guard
+
+        _cost_warning = model_cost_guard(
+            new_model,
+            float(model_info.cost_input or 0.0),
+            provider=target_provider,
+        )
+        if _cost_warning:
+            warnings.append(_cost_warning)
+
     return ModelSwitchResult(
         success=True,
         new_model=new_model,

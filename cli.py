@@ -7335,6 +7335,101 @@ class XavaniCLI:
         except Exception:
             return False
 
+    def _execute_bang_shell(self, command: str) -> None:
+        """C07 — run a shell command from the chat line (`!cmd`).
+
+        Executes ``command`` in the user's shell with a sane timeout, prints
+        the combined output, and shows a non-zero exit code when present.
+        Never touches the agent or the pending-input queue.
+        """
+        import subprocess
+
+        cmd = command.strip()
+        if not cmd:
+            _cprint("  Usage: !<shell command>  (e.g. !ls -la)")
+            return
+        try:
+            proc = subprocess.run(
+                cmd,
+                shell=True,
+                text=True,
+                capture_output=True,
+                timeout=120,
+            )
+        except subprocess.TimeoutExpired:
+            _cprint("  ⏱  Command timed out after 120s.")
+            return
+        except OSError as exc:
+            _cprint(f"  Failed to run: {exc}")
+            return
+        out = (proc.stdout or "").rstrip()
+        err = (proc.stderr or "").rstrip()
+        if out:
+            for line in out.splitlines():
+                _cprint(f"  {line}")
+        if err:
+            for line in err.splitlines():
+                _cprint(f"  {_DIM}{line}{_RST}")
+        if proc.returncode != 0:
+            _cprint(f"  ⚠ exit code {proc.returncode}")
+
+    def _handle_stash_command(self, cmd_original: str) -> None:
+        """C08 — /stash: save/restore draft prompts across sessions."""
+        from xavani_cli.prompt_stash import (
+            stash_delete,
+            stash_list,
+            stash_show,
+            stash_save,
+        )
+
+        parts = cmd_original.split(None, 1)
+        arg = parts[1].strip() if len(parts) > 1 else ""
+        if not arg:
+            _cprint("  Usage: /stash <name> <prompt> | /stash list | /stash show <name> | /stash load <name> | /stash rm <name>")
+            return
+
+        sub, _, rest = arg.partition(" ")
+        if sub == "list":
+            names = stash_list()
+            if not names:
+                _cprint("  (stash is empty — save one with /stash <name> <prompt>)")
+                return
+            _cprint(f"  📚 {len(names)} draft(s):")
+            for n in names:
+                _cprint(f"    · {n}")
+            return
+
+        if sub in ("show", "load", "rm"):
+            name = rest.strip()
+            if not name:
+                _cprint(f"  Usage: /stash {sub} <name>")
+                return
+            try:
+                if sub == "rm":
+                    removed = stash_delete(name)
+                    _cprint(f"  🗑  Removed '{name}'." if removed else f"  No draft named '{name}'.")
+                elif sub == "show":
+                    _cprint(f"  📄 {name}:")
+                    _cprint(f"  {stash_show(name)}")
+                else:  # load
+                    text = stash_show(name)
+                    self._pending_input.put(text)
+                    _cprint(f"  🔀 Loaded '{name}' — queued as next turn.")
+            except (KeyError, ValueError) as exc:
+                _cprint(f"  ✗ {exc}")
+            return
+
+        # Save: /stash <name> <prompt>
+        name, _, prompt = arg.partition(" ")
+        if not prompt:
+            _cprint("  Usage: /stash <name> <prompt>")
+            return
+        try:
+            p = stash_save(name, prompt)
+            _cprint(f"  💾 Saved '{name}' → {p}")
+        except ValueError as exc:
+            _cprint(f"  ✗ {exc}")
+
     def _output_console(self):
         """Use prompt_toolkit-safe Rich rendering once the TUI is live."""
         if getattr(self, "_app", None):
@@ -8245,6 +8340,8 @@ class XavaniCLI:
                 # No active run — treat as a normal next-turn message.
                 self._pending_input.put(payload)
                 _cprint(f"  No agent running; queued as next turn: {payload[:80]}{'...' if len(payload) > 80 else ''}")
+        elif canonical == "stash":
+            self._handle_stash_command(cmd_original)
         elif canonical == "goal":
             self._handle_goal_command(cmd_original)
         elif canonical == "subgoal":
@@ -9633,6 +9730,18 @@ class XavaniCLI:
         print(f"  Current context:  {last_prompt:,} / {ctx_len:,} ({pct:.0f}%)")
         print(f"  Messages:         {msg_count}")
         print(f"  Compressions:     {compressions}")
+
+        # B02 — per-call context breakdown (last model call). System-prompt
+        # and conversation shares are rough estimates (chars/4); cache figures
+        # are exact session counters.
+        _sp_text = getattr(agent, "system_prompt", None) or ""
+        _sys_est = max(0, len(_sp_text) // 4) if _sp_text else 0
+        _conv_est = max(0, last_prompt - _sys_est)
+        print(f"  Context breakdown (last call):")
+        print(f"    System prompt (est.): {_sys_est:>10,}")
+        print(f"    Conversation (est.):  {_conv_est:>10,}")
+        print(f"    Cache written:        {cache_write_tokens:>10,}")
+        print(f"    Cache read:           {cache_read_tokens:>10,}")
         if cost_result.status == "unknown":
             print(f"  Note:             Pricing unknown for {agent.model}")
 
@@ -10392,30 +10501,32 @@ class XavaniCLI:
             except Exception:
                 pass
 
-            # Track consecutive no-speech cycles to avoid infinite restart loops.
-            if not submitted:
-                self._no_speech_count = getattr(self, '_no_speech_count', 0) + 1
-                if self._no_speech_count >= 3:
-                    self._voice_continuous = False
-                    self._no_speech_count = 0
-                    _cprint(f"{_DIM}No speech detected 3 times, continuous mode stopped.{_RST}")
-                    return
-            else:
+        # Track consecutive no-speech cycles to avoid infinite restart loops.
+        # Kept OUTSIDE the finally block: a `return` inside `finally` would
+        # silently swallow any exception raised above (SyntaxWarning hazard).
+        if not submitted:
+            self._no_speech_count = getattr(self, '_no_speech_count', 0) + 1
+            if self._no_speech_count >= 3:
+                self._voice_continuous = False
                 self._no_speech_count = 0
+                _cprint(f"{_DIM}No speech detected 3 times, continuous mode stopped.{_RST}")
+                return
+        else:
+            self._no_speech_count = 0
 
-            # If no transcript was submitted but continuous mode is active,
-            # restart recording so the user can keep talking.
-            # (When transcript IS submitted, process_loop handles restart
-            # after chat() completes.)
-            if self._voice_continuous and not submitted and not self._voice_recording:
-                def _restart_recording():
-                    try:
-                        self._voice_start_recording()
-                        if hasattr(self, '_app') and self._app:
-                            self._app.invalidate()
-                    except Exception as e:
-                        _cprint(f"{_DIM}Voice auto-restart failed: {e}{_RST}")
-                threading.Thread(target=_restart_recording, daemon=True).start()
+        # If no transcript was submitted but continuous mode is active,
+        # restart recording so the user can keep talking.
+        # (When transcript IS submitted, process_loop handles restart
+        # after chat() completes.)
+        if self._voice_continuous and not submitted and not self._voice_recording:
+            def _restart_recording():
+                try:
+                    self._voice_start_recording()
+                    if hasattr(self, '_app') and self._app:
+                        self._app.invalidate()
+                except Exception as e:
+                    _cprint(f"{_DIM}Voice auto-restart failed: {e}{_RST}")
+            threading.Thread(target=_restart_recording, daemon=True).start()
 
     def _voice_speak_response_async(self, text: str) -> None:
         """Schedule TTS and mark it pending before continuous recording can restart."""
@@ -13961,6 +14072,13 @@ class XavaniCLI:
                             # Schedule app exit
                             if app.is_running:
                                 app.exit()
+                        continue
+
+                    # C07 — bang shell: `!cmd` runs a shell command from the
+                    # chat line and prints its output without touching the agent.
+                    if isinstance(user_input, str) and user_input.startswith("!") and not user_input.startswith("!="):
+                        _cprint(f"\n⚙️  {user_input}")
+                        self._execute_bang_shell(user_input[1:])
                         continue
                     
                     # Expand paste references back to full content
