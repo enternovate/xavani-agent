@@ -85,6 +85,15 @@ def _extract_archive(archive_bytes: bytes, dest: Path) -> None:
                 tar.extractall(dest, filter="data")  # safe extraction
         elif archive_bytes[:4] == b"PK\x03\x04":
             with zipfile.ZipFile(tmp_path) as zf:
+                # Zip-slip guard (B202): reject members that would escape
+                # the destination via absolute paths or ".." traversal.
+                dest_resolved = dest.resolve()
+                for info in zf.infolist():
+                    member_path = (dest_resolved / info.filename).resolve()
+                    if member_path != dest_resolved and dest_resolved not in member_path.parents:
+                        raise ValueError(
+                            f"unsafe archive member: {info.filename!r}"
+                        )
                 zf.extractall(dest)
         else:
             raise ValueError("unsupported archive format")
