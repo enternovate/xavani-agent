@@ -20,7 +20,10 @@ jobs:
       matrix:
         os: [ubuntu-latest, macos-latest]
     runs-on: ${{ matrix.os }}
-    timeout-minutes: 30
+    # 30 min is too tight for cold ubuntu nix builds (hit exactly 30:00
+    # twice in a row — killed before the build finished). 60 gives a cold
+    # build headroom; cached builds finish in ~2 min anyway.
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
