@@ -46,7 +46,9 @@ def test_custom_base_url():
     content = gi.generate_installers(
         "0.7.2", base_url="https://example.com/releases"
     )["install.sh"]
-    assert "example.com" in content
+    # Full-string assertion — substring checks on URLs are an
+    # incomplete-sanitization pattern (CodeQL 1276).
+    assert "https://example.com/releases" in content
 
 
 def test_goldens_match_generated():

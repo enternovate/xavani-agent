@@ -330,6 +330,24 @@ class _StreamErrorEvent(Exception):
         }
 
 
+def _safe_log_label(value: Any) -> str:
+    """Return a log-safe label for a provider/model string.
+
+    Strips userinfo (credentials) from URL-shaped values and truncates to a
+    sane length so sensitive data never reaches logs (CodeQL
+    py/clear-text-logging-sensitive-data).
+    """
+    s = str(value or "")
+    if "://" in s:
+        from urllib.parse import urlsplit, urlunsplit
+
+        parts = urlsplit(s)
+        if parts.username or parts.password:
+            host = parts.hostname or ""
+            s = urlunsplit((parts.scheme, host, parts.path, parts.query, ""))
+    return s[:120]
+
+
 class AIAgent:
     """
     AI Agent with tool calling capabilities.
@@ -3610,8 +3628,8 @@ class AIAgent:
             "Tool %s returned image content for non-vision model %s/%s; "
             "falling back to text summary",
             tool_name,
-            self.provider,
-            self.model,
+            _safe_log_label(self.provider),
+            _safe_log_label(self.model),
         )
         return self._redact_content_parts(summary)
 
