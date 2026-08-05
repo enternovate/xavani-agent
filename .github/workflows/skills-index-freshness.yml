@@ -21,7 +21,7 @@ jobs:
           persist-credentials: false
 
       - name: Install Python
-        uses: actions/setup-python@8d9ed9ac5c534dbde28788e1cfe8d357a821b1b4  # v5.5.0
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405  # v5 (verified in tests.yml/lint.yml)
         with:
           python-version: "3.11"
 
@@ -67,7 +67,7 @@ jobs:
 
       - name: Open stale-index issue
         if: steps.compare.outcome == 'failure'
-        uses: actions/github-script@60a0d83039c74a4aee543508d2cbcb245c8c6ff7  # v7.0.1
+        uses: actions/github-script@60a0d83039c74a4aee543508d2cbff1c3799cdea  # v7 (verified in lint.yml)
         with:
           script: |
             const { data: issues } = await github.rest.issues.listForRepo({
