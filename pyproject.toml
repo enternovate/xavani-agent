@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "xavani-agent"
-version = "0.1.1"
+version = "0.1.1.5"
 description = "Xavani Agent — The open-source AI agent gateway. Fully local, private, cross-platform. Built by Enternovate."
 readme = "README.md"
 requires-python = ">=3.11,<3.14"
