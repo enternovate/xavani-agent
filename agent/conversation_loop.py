@@ -590,6 +590,9 @@ def run_conversation(
         except Exception:
             pass
 
+    # E02: start the per-turn timeline clock (best-effort trace).
+    _tl_started = time.time()
+
     # External memory provider: prefetch once before the tool loop.
     # Reuse the cached result on every iteration to avoid re-calling
     # prefetch_all() on each tool call (10 tool calls = 10x latency + cost).
@@ -4213,6 +4216,45 @@ def run_conversation(
             )
         except Exception:
             pass  # Memory recording is best-effort
+
+    # E02: turn timeline trace (JSONL). Best-effort; never breaks the turn.
+    try:
+        from agent.trajectory import record_turn_timeline
+
+        _tl_user = original_user_message if isinstance(original_user_message, str) else ""
+        _tl_tool_calls = sum(
+            1 for _m in messages if isinstance(_m, dict) and _m.get("role") == "tool"
+        )
+        record_turn_timeline({
+            "session_id": agent.session_id,
+            "model": agent.model,
+            "user_msg": (_tl_user or "")[:300],
+            "api_calls": api_call_count,
+            "tool_calls": _tl_tool_calls,
+            "final": (final_response or "")[:500],
+            "exit_reason": _turn_exit_reason,
+            "interrupted": interrupted,
+            "completed": completed,
+            "duration_s": round(time.time() - _tl_started, 3),
+        })
+    except Exception:
+        pass  # Timeline recording is best-effort
+
+    # G04: follow-up question queue — a turn that ends with an open
+    # question is queued so the CLI can surface it at a better moment.
+    # Best-effort; never breaks the turn.
+    try:
+        if completed and not interrupted and final_response:
+            _final_text = str(final_response).strip()
+            if _final_text.endswith("?"):
+                from agent.followup_queue import FollowUpQueue
+
+                FollowUpQueue().record(
+                    question=_final_text[-400:],
+                    session_id=agent.session_id,
+                )
+    except Exception:
+        pass  # Follow-up queue is best-effort
 
     # Background memory/skill review — runs AFTER the response is delivered
     # so it never competes with the user's task for model attention.

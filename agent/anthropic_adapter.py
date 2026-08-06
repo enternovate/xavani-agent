@@ -2184,6 +2184,15 @@ def build_anthropic_kwargs(
                     budget = min(budget, _cap)
             except (TypeError, ValueError):
                 pass
+            # B01: clamp to the per-model-family ceiling (0 = unlimited).
+            try:
+                from agent.reasoning_timeouts import max_reasoning_tokens_for
+
+                _family_cap = max_reasoning_tokens_for(model)
+                if _family_cap > 0:
+                    budget = min(budget, _family_cap)
+            except Exception:
+                pass
             if _supports_adaptive_thinking(model):
                 kwargs["thinking"] = {
                     "type": "adaptive",

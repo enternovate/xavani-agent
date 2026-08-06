@@ -7986,6 +7986,28 @@ class XavaniCLI:
             return None
         return cleaned
 
+    def _handle_learn_command(self, cmd_original: str) -> None:
+        """B04: /learn — turn a correction into a staged skill draft."""
+        try:
+            from agent.learn_prompt import learn_from_correction
+
+            _rest = cmd_original.split(None, 1)
+            _correction = (_rest[1] if len(_rest) > 1 else "").strip()
+            if not _correction:
+                _cprint(
+                    f"  {_DIM}✗ /learn needs the correction text — e.g. /learn Always run tests before committing.{_RST}"
+                )
+                return
+            _result = learn_from_correction(
+                _correction, source=f"cli session {getattr(self, 'session_id', '')}"
+            )
+            if not _result["ok"]:
+                _cprint(f"  {_DIM}✗ Nothing to learn from that correction.{_RST}")
+                return
+            _cprint(f"  {_DIM}✓ Skill draft staged at {_result['path']} (review before publishing).{_RST}")
+        except Exception as _exc:  # pragma: no cover - defensive
+            _cprint(f"  {_DIM}✗ /learn failed: {_exc}{_RST}")
+
     def process_command(self, command: str) -> bool:
         """
         Process a slash command.
@@ -8019,6 +8041,8 @@ class XavaniCLI:
                 _cprint(f"  {_DIM}✗ Unknown argument: {_escape(_args)}. Use /exit --delete to also remove session history.{_RST}")
                 return True
             return False
+        elif canonical == "learn":
+            self._handle_learn_command(cmd_original)
         elif canonical == "help":
             self.show_help()
         elif canonical == "profile":
@@ -12098,6 +12122,22 @@ class XavaniCLI:
         # Surface any active supply-chain security advisories right after the
         # welcome banner. Quiet/single-query paths call this themselves.
         self._show_security_advisories()
+        # G04: surface pending follow-up questions from earlier sessions
+        # right after the banner — answered at a good moment instead of
+        # blocking the task that queued them.
+        try:
+            from agent.followup_queue import FollowUpQueue
+
+            _pending_qs = FollowUpQueue().pending(limit=3)
+            if _pending_qs:
+                _cprint(f"{_DIM}── Pending follow-up questions ──{_RST}")
+                for _pq in _pending_qs:
+                    _pq_text = str(_pq.get("question", "")).strip()
+                    if _pq_text:
+                        _cprint(f"{_DIM}? {_pq_text}{_RST}")
+                _cprint(f"{_DIM}────────────────────────────────{_RST}")
+        except Exception:
+            pass
         # If resuming a session, load history and display it immediately
         # so the user has context before typing their first message.
         if self._resumed:

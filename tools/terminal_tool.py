@@ -1000,6 +1000,68 @@ def _resolve_container_task_id(task_id: Optional[str]) -> str:
 
 # Configuration from environment variables
 
+def _git_capture(args: List[str], timeout: float = 2.0) -> Optional[str]:
+    """Run a bounded ``git`` command and return trimmed stdout (or None)."""
+    try:
+        proc = subprocess.run(
+            ["git"] + args,
+            capture_output=True,
+            text=True,
+            timeout=timeout,
+        )
+        return proc.stdout.strip()
+    except (OSError, subprocess.SubprocessError):
+        return None
+
+
+def _repo_has_no_owner(cwd: str, git_runner: Optional[Any] = None) -> bool:
+    """True when *cwd* is inside a git repo that declares no owner.
+
+    A repo counts as ownerless when neither ``user.name`` nor a
+    ``remote.origin.url`` is configured — a common shape for freshly
+    fetched supply-chain artifacts.  ``git_runner`` is injectable for
+    tests; it receives the argument list and returns stdout (or None).
+    """
+    runner = git_runner or _git_capture
+    inside = runner(["-C", cwd, "rev-parse", "--is-inside-work-tree"])
+    if inside != "true":
+        return False
+    name = runner(["-C", cwd, "config", "--get", "user.name"]) or ""
+    remote = runner(["-C", cwd, "config", "--get", "remote.origin.url"]) or ""
+    return not (name.strip() or remote.strip())
+
+
+def _maybe_sandbox_untrusted_repo(
+    env_type: str,
+    cwd: str,
+    *,
+    docker_available: Optional[bool] = None,
+    git_runner: Optional[Any] = None,
+) -> str:
+    """Escalate local execution to the docker sandbox for ownerless repos.
+
+    D07: when the working directory is a git repo with no owner, run
+    commands in a container sandbox by default.  Fails open (keeps
+    local) when docker is unavailable.
+    """
+    if env_type != "local":
+        return env_type
+    if docker_available is None:
+        docker_available = shutil.which("docker") is not None
+    if not docker_available:
+        return env_type
+    try:
+        if not _repo_has_no_owner(cwd, git_runner=git_runner):
+            return env_type
+    except Exception:
+        return env_type
+    logger.warning(
+        "D07: %r is a git repo with no owner — defaulting to docker sandbox",
+        cwd,
+    )
+    return "docker"
+
+
 def _parse_env_var(name: str, default: str, converter=int, type_label: str = "integer"):
     """Parse an environment variable with *converter*, raising a clear error on bad values.
 
@@ -1063,6 +1125,16 @@ def _get_env_config() -> Dict[str, Any]:
                         "(host/relative path won't work in sandbox). Using %r instead.",
                         cwd, env_type, default_cwd)
             cwd = default_cwd
+
+    # D07: default to the docker sandbox when TERMINAL_CWD points at an
+    # untrusted (ownerless) git repo.  Opt out with
+    # XAVANI_UNTRUSTED_REPO_SANDBOX=0; fails open when docker is absent.
+    _explicit_cwd = os.getenv("TERMINAL_CWD")
+    if (
+        _explicit_cwd
+        and os.getenv("XAVANI_UNTRUSTED_REPO_SANDBOX", "1") not in {"0", "false", "no"}
+    ):
+        env_type = _maybe_sandbox_untrusted_repo(env_type, cwd)
 
     return {
         "env_type": env_type,

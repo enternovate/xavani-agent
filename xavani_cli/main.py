@@ -8031,12 +8031,72 @@ def _run_pre_update_backup(args) -> None:
     print()
 
 
+def _update_lock_path() -> Path:
+    """Return the cross-process update lock file path."""
+    from xavani_constants import get_xavani_home
+
+    return get_xavani_home() / ".update.lock"
+
+
+def _acquire_update_lock():
+    """Claim the cross-process update lock (C06).
+
+    The lock is process-owned.  The OS releases it when the process
+    dies, even after a crash.  Returns the open file handle, or None
+    when another update is already in progress.
+    """
+    path = _update_lock_path()
+    handle = None
+    try:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        handle = open(path, "a+", encoding="utf-8")
+        if sys.platform == "win32":
+            import msvcrt
+
+            handle.seek(0)
+            msvcrt.locking(handle.fileno(), msvcrt.LK_NBLCK, 1)
+        else:
+            import fcntl
+
+            fcntl.flock(handle.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except OSError:
+        if handle is not None:
+            try:
+                handle.close()
+            except OSError:
+                pass
+        return None
+    return handle
+
+
+def _release_update_lock(handle) -> None:
+    """Release the update lock acquired by ``_acquire_update_lock``."""
+    if handle is None:
+        return
+    try:
+        if sys.platform == "win32":
+            import msvcrt
+
+            handle.seek(0)
+            msvcrt.locking(handle.fileno(), msvcrt.LK_UNLCK, 1)
+        else:
+            import fcntl
+
+            fcntl.flock(handle.fileno(), fcntl.LOCK_UN)
+    except OSError:
+        pass
+    try:
+        handle.close()
+    except OSError:
+        pass
+
+
 def cmd_update(args):
     """Update Xavani Agent to the latest version.
 
-    Thin wrapper around ``_cmd_update_impl``: installs hangup protection,
-    runs the update, then restores stdio on the way out (even on
-    ``sys.exit`` or unhandled exceptions).
+    Thin wrapper around ``_cmd_update_impl``: acquires the update lock,
+    installs hangup protection, runs the update, then restores stdio on
+    the way out (even on ``sys.exit`` or unhandled exceptions).
     """
     from xavani_cli.config import is_managed, managed_error
 
@@ -8050,6 +8110,12 @@ def cmd_update(args):
 
     gateway_mode = getattr(args, "gateway", False)
 
+    # Refuse to run when another update is already in progress.
+    _update_lock = _acquire_update_lock()
+    if _update_lock is None:
+        print("✗ Another update is already in progress. Try again later.")
+        sys.exit(1)
+
     # Protect against mid-update terminal disconnects (SIGHUP) and tolerate
     # writes to a closed stdout.  No-op in gateway mode.  See
     # _install_hangup_protection for rationale.
@@ -8058,6 +8124,7 @@ def cmd_update(args):
         _cmd_update_impl(args, gateway_mode=gateway_mode)
     finally:
         _finalize_update_output(_update_io_state)
+        _release_update_lock(_update_lock)
 
 
 def _cmd_update_pip(args):
@@ -10126,6 +10193,7 @@ _BUILTIN_SUBCOMMANDS = frozenset(
         "dump", "fallback", "gateway", "hooks", "import", "insights",
         "finance", "journey", "kanban", "learn", "login", "logout", "logs", "lsp", "mcp", "memory",
         "model", "operator", "pairing", "plugins", "postinstall", "profile", "proxy",
+        "secrets", "security-audit",
         "send", "sessions", "setup",
         "skills", "slack", "status", "tools", "uninstall", "update",
         "validate", "version", "webhook", "whatsapp", "wisdom", "chat",
@@ -12630,6 +12698,47 @@ Examples:
     # =========================================================================
     version_parser = subparsers.add_parser("version", help="Show version information")
     version_parser.set_defaults(func=cmd_version)
+
+    # =========================================================================
+    # security-audit command
+    # =========================================================================
+    from xavani_cli.security_audit import cmd_security_audit
+
+    security_audit_parser = subparsers.add_parser(
+        "security-audit",
+        help="Run local security checks",
+        description="Check secret redaction and file permissions",
+    )
+    security_audit_parser.set_defaults(func=cmd_security_audit)
+
+    # =========================================================================
+    # secrets command
+    # =========================================================================
+    from xavani_cli.secrets_cli import cmd_secrets
+
+    secrets_parser = subparsers.add_parser(
+        "secrets",
+        help="Manage API keys and secrets (vault)",
+        description="Add, list, or remove secrets stored in ~/.xavani/.env",
+    )
+    secrets_subparsers = secrets_parser.add_subparsers(dest="secrets_command")
+    secrets_add_parser = secrets_subparsers.add_parser(
+        "add", help="Store a new secret"
+    )
+    secrets_add_parser.add_argument(
+        "name", help="Environment variable name (e.g. MY_API_KEY)"
+    )
+    secrets_add_parser.add_argument("value", help="Secret value")
+    secrets_add_parser.set_defaults(func=cmd_secrets)
+    secrets_list_parser = secrets_subparsers.add_parser(
+        "list", help="List stored secret names"
+    )
+    secrets_list_parser.set_defaults(func=cmd_secrets)
+    secrets_remove_parser = secrets_subparsers.add_parser(
+        "remove", help="Remove a stored secret"
+    )
+    secrets_remove_parser.add_argument("name", help="Secret name to remove")
+    secrets_remove_parser.set_defaults(func=cmd_secrets)
 
     # =========================================================================
     # update command
