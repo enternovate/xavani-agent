@@ -3,7 +3,7 @@
 # MIT License -- See LICENSE file for full terms.
 # Built by Enternovate -- Open source. Private. Local.
 
-"""Eval-gate runner (harness item 1, HARNESS_UPGRADES_0115.md).
+"""Eval-gate runner.
 
 Runs the golden eval set through a deterministic handler and exits
 non-zero when any case fails. CI (eval-gate.yml) invokes this whenever

@@ -454,14 +454,14 @@ Xavani stores everything in `~/.xavani/`:
 - **D08 subcommand gating** — `deps-provenance` registered in the CLI fast-path.
 - **Update-path dependency refresh** — `xavani update` refreshes pinned deps with `--upgrade` and refreshes cua-driver.
 
-### 0.1.1.5 (in progress) — Harness Upgrade
-- **50-update program** — all 50 items verified or implemented with test evidence (see `STATUS_50.md`): turn finalizer, session-store recovery, turn lease, CoT budget, learn prompt pack, episodic memory summarization, reasoning-effort auto-tuning, security-audit command, secrets vault CLI, update lock, PII/egress/tirith/rotation/audit/sandbox hardening, health export, turn timeline, flake dashboard, ACP hardening, Windows portable installer, Nix cache, notifications, daily digest, follow-up queue.
+### 0.1.1.5 — "Harness & Tokens" (2026-08-06)
+- **Complete update programme** — every planned reliability item ships: turn finalizer, session-store recovery, turn lease, CoT budget, learn prompt pack, episodic memory summarization, reasoning-effort auto-tuning, security-audit command, secrets vault CLI, update lock, PII/egress/tirith/rotation/audit/sandbox hardening, health export, turn timeline, flake dashboard, ACP hardening, Windows portable installer, Nix cache, notifications, daily digest, follow-up queue.
 - **Eval-gate on steer changes** — golden evals run in CI when steer paths change; a failing eval blocks the merge.
 - **Tool-call quality metrics** — per-session CSV/JSONL: tool, latency, success, retries; surfaced via `xavani stats`.
 - **Self-critique pass** — config-gated final-answer review against a rubric, bounded to one fix iteration.
 - **Context-budget governor UI** — warns at 85%, blocks new tools at 95%.
 - **Flake dashboard** — `tests/flakiness.json` aggregated into per-release reports.
-- **Research-backed harness** — `HARNESS_UPGRADES_0115.md` ranks 15 improvements with sources (Anthropic evals, Red Hat 8-stage framework, Kimi K3, DeepSeek-V4, OpenMLE, TraceCompiler, AgentSLABench).
+- **Research-backed harness** — the harness upgrade plan drew on public research (Anthropic evals, Red Hat 8-stage framework, Kimi K3, DeepSeek-V4, OpenMLE, TraceCompiler, AgentSLABench).
 - **Pinned dependencies** — pydantic-settings, jsonschema (direct pins), diskcache, structlog, orjson added, exact-pinned and uv-locked.
 
 ### Research Guidelines Enforcement

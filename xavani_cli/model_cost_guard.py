@@ -5,7 +5,7 @@
 """C02 — Model cost guard.
 
 Warns before switching to models whose per-million-token input cost exceeds
-a threshold (default $20/M input, per the 50-update program). Cheap, pure,
+a threshold (default $20/M input). Cheap, pure,
 zero-LLM: a simple threshold check on models.dev pricing metadata.
 
 Kept as its own module so the CLI, the gateway, and tests share one rule.

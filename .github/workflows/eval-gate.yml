@@ -1,7 +1,7 @@
 name: Eval Gate
 
-# Harness item 1 (HARNESS_UPGRADES_0115.md): run golden evals on steer-path
-# changes. A failing eval blocks the merge — behaviour regressions must be
+# Golden steer-path regression evals: run on PRs touching steer paths.
+# A failing eval blocks the merge — behaviour regressions must be
 # caught before they reach users.
 
 on:
