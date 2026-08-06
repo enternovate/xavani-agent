@@ -709,6 +709,111 @@ class MemoryManager:
             strategy=strategy,
         )
 
+    # ── Episodic Summarization (B05) ─────────────────────────────────
+
+    def summarize_recent_episodes(
+        self, days: int = 7, limit: int = 500
+    ) -> List[Dict[str, Any]]:
+        """Aggregate episodes from the last ``days`` (B05).
+
+        Returns one row per topic (task_type from metadata, else first
+        tag, else ``general``): episode count, completion count, and the
+        top tags.  Deterministic and offline — no LLM involved.
+        """
+        from collections import Counter
+
+        from datetime import datetime, timedelta, timezone
+
+        episodes = self.episodic.get_recent(limit=limit, agent_id=self._current_agent_id)
+        cutoff = datetime.now(timezone.utc) - timedelta(days=days)
+
+        per_topic: Dict[str, Dict[str, Any]] = {}
+        tag_counter: Counter = Counter()
+        for ep in episodes:
+            ts = ep.get("timestamp") or ""
+            try:
+                parsed = datetime.fromisoformat(ts)
+            except ValueError:
+                continue
+            if parsed.tzinfo is None:
+                parsed = parsed.replace(tzinfo=timezone.utc)
+            if parsed < cutoff:
+                continue
+            metadata = ep.get("metadata") or {}
+            if isinstance(metadata, str):
+                metadata = {}
+            tags = ep.get("tags") or []
+            if isinstance(tags, str):
+                tags = []
+            topic = (
+                str(metadata.get("task_type") or "")
+                or (str(tags[0]) if tags else "")
+                or "general"
+            )
+            row = per_topic.setdefault(
+                topic, {"topic": topic, "count": 0, "completed": 0, "top_tags": []}
+            )
+            row["count"] += 1
+            if ep.get("outcome"):
+                row["completed"] += 1
+            for tag in tags:
+                tag_counter[str(tag)] += 1
+
+        for row in per_topic.values():
+            row["top_tags"] = [t for t, _ in tag_counter.most_common(3)]
+        return sorted(per_topic.values(), key=lambda r: -r["count"])
+
+    def propose_memory_entries(
+        self, summary: List[Dict[str, Any]], max_entries: int = 5
+    ) -> List[str]:
+        """Render MEMORY.md-style promotion bullets from a summary (B05)."""
+        entries: List[str] = []
+        for row in summary[:max_entries]:
+            line = f"- **{row['topic']}**: {row['count']} recent episode(s)"
+            if row["completed"]:
+                line += f" ({row['completed']} completed)"
+            if row["top_tags"]:
+                line += f" — tags: {', '.join(row['top_tags'])}"
+            entries.append(line + " — candidate for MEMORY.md")
+        return entries
+
+    # ── Daily Learning Digest (G02) ────────────────────────────────
+
+    def build_daily_digest(self, days: int = 1, limit: int = 500) -> str:
+        """Render a markdown digest of the last ``days`` of episodes (G02).
+
+        Offline and deterministic — no LLM involved.  Aggregates the
+        episode summary and renders MEMORY.md promotion bullets so a
+        cron job can turn the episodic store into daily growth.
+        Returns an empty string when no episodes fall in the window.
+        """
+        summary = self.summarize_recent_episodes(days=days, limit=limit)
+        if not summary:
+            return ""
+        total = sum(row["count"] for row in summary)
+        completed = sum(row["completed"] for row in summary)
+        lines = [
+            "# Daily Learning Digest",
+            "",
+            f"Episodes in the last {days} day(s): **{total}** "
+            f"({completed} completed).",
+            "",
+            "## Topics",
+            "",
+        ]
+        for row in summary:
+            tags = f" — tags: {', '.join(row['top_tags'])}" if row["top_tags"] else ""
+            lines.append(
+                f"- **{row['topic']}**: {row['count']} episode(s)"
+                f" ({row['completed']} completed){tags}"
+            )
+        lines.append("")
+        lines.append("## Proposed skill updates")
+        lines.append("")
+        entries = self.propose_memory_entries(summary)
+        lines.extend(entries if entries else ["- (none — no clear promotion candidate)"])
+        return "\n".join(lines) + "\n"
+
     # ── Statistics ───────────────────────────────────────────────────
 
     def stats(self) -> Dict[str, Any]:

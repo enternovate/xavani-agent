@@ -65,3 +65,56 @@ def save_trajectory(trajectory: List[Dict[str, Any]], model: str,
         logger.info("Trajectory saved to %s", filename)
     except Exception as e:
         logger.warning("Failed to save trajectory: %s", e)
+
+
+# ── E02: per-turn timeline trace ────────────────────────────────
+
+def turn_timeline_path() -> str:
+    """Path of the per-turn timeline JSONL under the Xavani home."""
+    from xavani_constants import get_xavani_home
+
+    logs_dir = get_xavani_home() / "logs"
+    try:
+        logs_dir.mkdir(parents=True, exist_ok=True)
+    except OSError:
+        pass
+    return str(logs_dir / "turn_timeline.jsonl")
+
+
+def record_turn_timeline(entry: Dict[str, Any]) -> bool:
+    """Append one per-turn trace record (E02). Best-effort; never raises.
+
+    The record carries the user message, model call count, tool call
+    count, final response snippet, exit reason and duration so a
+    debugging session can answer "why did the agent do X".
+    """
+    try:
+        from agent.redact import redact_sensitive_text
+
+        record = dict(entry)
+        record.setdefault("timestamp", datetime.now().isoformat())
+        safe = json.loads(redact_sensitive_text(json.dumps(record, ensure_ascii=False)))
+        with open(turn_timeline_path(), "a", encoding="utf-8") as f:
+            f.write(json.dumps(safe, ensure_ascii=False) + "\n")  # nosec B105 - already redacted before write
+        return True
+    except Exception as exc:
+        logger.warning("Failed to record turn timeline: %s", exc)
+        return False
+
+
+def load_turn_timeline(limit: int = 100) -> List[Dict[str, Any]]:
+    """Read the most recent turn-timeline records, newest first."""
+    records: List[Dict[str, Any]] = []
+    try:
+        with open(turn_timeline_path(), "r", encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    records.append(json.loads(line))
+                except json.JSONDecodeError:
+                    continue
+    except OSError:
+        return []
+    return records[-limit:][::-1]

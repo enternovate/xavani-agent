@@ -58,6 +58,31 @@ class ModelChoice:
     score: float
     task_class: str
     reason: str
+    effort: str = "medium"
+
+
+def suggest_reasoning_effort(
+    task_class: str = DEFAULT_TASK_CLASS,
+    *,
+    capabilities: dict | None = None,
+) -> str:
+    """Map a task class to a reasoning-effort level (B06).
+
+    Reads the task spec's ``reasoning`` requirement from the capability
+    map: 0.8+ routes to ``high``, 0.4 or less routes to ``low``, and
+    everything between stays ``medium``.  Deterministic and zero-LLM.
+    """
+    caps = capabilities if capabilities is not None else load_capabilities()
+    spec = caps.get("task_classes", {}).get(task_class) or {"reasoning": 0.5}
+    try:
+        reasoning = float(spec.get("reasoning", 0.5))
+    except (TypeError, ValueError):
+        reasoning = 0.5
+    if reasoning >= 0.8:
+        return "high"
+    if reasoning <= 0.4:
+        return "low"
+    return "medium"
 
 
 def available_providers(env: dict | None = None) -> set[str]:
@@ -134,6 +159,7 @@ def route_detailed(
         score=score,
         task_class=task_class,
         reason=reason,
+        effort=suggest_reasoning_effort(task_class, capabilities=caps),
     )
 
 

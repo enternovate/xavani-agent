@@ -70,6 +70,28 @@ def _no_restart_verify_sleep(monkeypatch):
     monkeypatch.setattr(_real_time, "monotonic", _fake_monotonic)
 
 
+@pytest.fixture(autouse=True)
+def _no_live_skills_sync(monkeypatch):
+    """Keep cmd_update tests away from the live ~/.xavani/skills directory.
+
+    ``cmd_update`` calls the real ``sync_skills()``, which hashes every file
+    under the user's live skills dir. A running gateway writes to that same
+    directory concurrently; under heavy CI/serial load the hash walk can
+    exceed the 120s thread timeout. These tests assert gateway-restart
+    behaviour, not skills syncing — patch the sync out entirely.
+    """
+
+    def _fake_sync_skills(quiet: bool = False) -> dict:
+        return {
+            "copied": [], "updated": [], "skipped": 0,
+            "user_modified": [], "cleaned": [], "total_bundled": 0,
+        }
+
+    monkeypatch.setattr(
+        "tools.skills_sync.sync_skills", _fake_sync_skills,
+    )
+
+
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
