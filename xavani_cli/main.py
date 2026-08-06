@@ -10193,7 +10193,7 @@ _BUILTIN_SUBCOMMANDS = frozenset(
         "dump", "fallback", "gateway", "hooks", "import", "insights",
         "finance", "journey", "kanban", "learn", "login", "logout", "logs", "lsp", "mcp", "memory",
         "model", "operator", "pairing", "plugins", "postinstall", "profile", "proxy",
-        "secrets", "security-audit",
+        "secrets", "security-audit", "tokens",
         "send", "sessions", "setup",
         "skills", "slack", "status", "tools", "uninstall", "update",
         "validate", "version", "webhook", "whatsapp", "wisdom", "chat",
@@ -12739,6 +12739,40 @@ Examples:
     )
     secrets_remove_parser.add_argument("name", help="Secret name to remove")
     secrets_remove_parser.set_defaults(func=cmd_secrets)
+
+    # =========================================================================
+    # tokens command — one credential vault for all products (Task 6.1)
+    # =========================================================================
+    from xavani_cli.tokens_cli import cmd_tokens
+
+    tokens_parser = subparsers.add_parser(
+        "tokens",
+        help="Manage API tokens in the credential vault (~/.xavani/credentials.json)",
+        description="Add, list, remove tokens, or show vault usage. Values are never printed.",
+    )
+    tokens_subparsers = tokens_parser.add_subparsers(dest="tokens_command")
+    tokens_add_parser = tokens_subparsers.add_parser(
+        "add", help="Store a new token"
+    )
+    tokens_add_parser.add_argument("name", help="Token name (e.g. ANTHROPIC_API_KEY)")
+    tokens_add_parser.add_argument("value", help="Token value")
+    tokens_add_parser.add_argument(
+        "--provider", default="", help="Optional provider label (e.g. anthropic)"
+    )
+    tokens_add_parser.set_defaults(func=cmd_tokens)
+    tokens_list_parser = tokens_subparsers.add_parser(
+        "list", help="List stored token names (values hidden)"
+    )
+    tokens_list_parser.set_defaults(func=cmd_tokens)
+    tokens_remove_parser = tokens_subparsers.add_parser(
+        "remove", help="Remove a stored token"
+    )
+    tokens_remove_parser.add_argument("name", help="Token name to remove")
+    tokens_remove_parser.set_defaults(func=cmd_tokens)
+    tokens_usage_parser = tokens_subparsers.add_parser(
+        "show-usage", help="Show vault usage summary"
+    )
+    tokens_usage_parser.set_defaults(func=cmd_tokens)
 
     # =========================================================================
     # update command
