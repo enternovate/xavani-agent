@@ -41,6 +41,7 @@ def _read_until(bridge: PtyBridge, needle: bytes, timeout: float = 5.0) -> bytes
 
 
 @skip_on_windows
+@pytest.mark.forked
 class TestPtyBridgeSpawn:
     def test_is_available_on_posix(self):
         assert PtyBridge.is_available() is True
@@ -58,6 +59,7 @@ class TestPtyBridgeSpawn:
 
 
 @skip_on_windows
+@pytest.mark.forked
 class TestPtyBridgeIO:
     def test_reads_child_stdout(self):
         bridge = PtyBridge.spawn(["/bin/sh", "-c", "printf xavani-ok"])
@@ -98,6 +100,7 @@ class TestPtyBridgeIO:
 
 
 @skip_on_windows
+@pytest.mark.forked
 class TestPtyBridgeResize:
     def test_resize_updates_child_winsize(self):
         # Query the TTY ioctl directly instead of using tput, which requires
@@ -125,6 +128,7 @@ class TestPtyBridgeResize:
 
 
 @skip_on_windows
+@pytest.mark.forked
 class TestPtyBridgeClose:
     def test_close_is_idempotent(self):
         bridge = PtyBridge.spawn(["/bin/sh", "-c", "sleep 30"])
@@ -150,6 +154,7 @@ class TestPtyBridgeClose:
 
 
 @skip_on_windows
+@pytest.mark.forked
 class TestPtyBridgeEnv:
     def test_cwd_is_respected(self, tmp_path):
         bridge = PtyBridge.spawn(

@@ -342,7 +342,7 @@ def _safe_log_label(value: Any) -> str:
         from urllib.parse import urlsplit, urlunsplit
 
         parts = urlsplit(s)
-        if parts.username or parts.password:
+        if "@" in parts.netloc:  # netloc carries userinfo when credentials are embedded
             host = parts.hostname or ""
             s = urlunsplit((parts.scheme, host, parts.path, parts.query, ""))
     return s[:120]
