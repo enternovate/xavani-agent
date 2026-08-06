@@ -5,6 +5,62 @@ All notable changes to Xavani Agent are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.1.5] - 2026-08-06 — "Harness & Tokens"
+
+Release with the research-backed harness upgrade, the token vault, and the
+completed 50-update programme. No breaking changes.
+
+### Added
+- **`xavani tokens` CLI** — one credential vault for all Enternovate products:
+  `add`, `list`, `remove`, `show-usage`. Tokens live in
+  `~/.xavani/credentials.json` with 0600 permissions; values are never
+  printed back. `xavani doctor` now validates the vault (permissions,
+  empty entries) in a Token Vault section.
+- **Eval gate (harness item 1)** — golden steer-path evals run in CI on any
+  PR touching the steer paths (`run_agent.py`, `conversation_loop.py`,
+  `agent_init.py`, `cli.py`, harness modules). A failing eval blocks the
+  merge. Runner: `scripts/run_golden_evals.py`.
+- **Tool-call metrics (harness item 2)** — `agent/tool_metrics.py` records
+  one row per tool call (tool, latency ms, success, retries, error class)
+  to per-session JSONL/CSV under `~/.xavani/metrics/`. Wired into both
+  dispatch paths (concurrent worker and sequential tail); a metrics
+  failure can never break tool execution.
+- **Self-critique pass (harness item 3)** — `agent/self_critique.py` runs a
+  bounded model review of the final answer against a rubric (correctness,
+  completeness, citations, STE compliance) and may rewrite it once.
+  Config-gated: `harness: {self_critique: true}` in config.yaml (default
+  off). Wired at end-of-turn; the reviewer routes through the agent's
+  active model configuration; failures keep the original answer.
+- **Context-budget governor UI (harness item 4)** —
+  `agent/context_budget_ui.py` classifies context usage: warn at 85%
+  with a compaction suggestion, block at 95%. Wired into `/usage` and the
+  status bar (⚠ at warn, ⛔ at block).
+- **Flake dashboard ingestion (harness item 5)** —
+  `scripts/flake_dashboard.py` + `tests/test_flake_dashboard.py` aggregate
+  flake evidence from fixture runs (Tukey: the data may not contain the
+  answer; a visible flake report turns guesswork into measurement).
+- **50-update programme complete** — all 50 items implemented or verified
+  with per-item test evidence (`STATUS_50.md`), including D07 sandbox
+  subcommand gating and C03/C04/C06 completions.
+- **Harness research** — `HARNESS_UPGRADES_0115.md` documents the
+  research-backed improvement plan (Anthropic evals, Red Hat 8-stage,
+  OpenMLE, TraceCompiler, AgentSLABench and more) with sources and test
+  plans.
+
+### Changed
+- **Pinned 5 dependencies**: pydantic-settings 2.14.2, jsonschema 4.26.0,
+  diskcache 5.6.3, structlog 26.1.0, orjson 3.11.9 (locked in uv.lock).
+- **`xavani update`** refreshes pinned dependencies with `--upgrade`.
+- **README** — removed the stale v0.3.0 section; release notes now match
+  the real 0.1.1 / 0.1.1.5 history.
+
+### Fixed
+- **D07 sandbox + subcommand gating** — `sandbox` no longer collides with
+  built-in subcommands; autostash and gating test expectations updated to
+  the `--upgrade` update pipeline (7c6a0ab).
+- **CI** — `github-script` action pinned to a resolvable commit SHA
+  (v7.1.0).
+
 ## [0.1.1] - 2026-08-05 — "Reliability & Steer"
 
 Patch release. Fixes, CI hardening, and the first tranche of the 50-update
