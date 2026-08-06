@@ -7397,11 +7397,17 @@ def _install_python_dependencies_with_optional_fallback(
     *,
     env: dict[str, str] | None = None,
     group: str = "all",
+    upgrade: bool = False,
 ) -> None:
     """Install base deps plus as many optional extras as the environment supports.
 
     By default this targets ``.[all]``; Termux callers can pass
     ``group='termux-all'`` to use the curated Android-compatible profile.
+
+    When ``upgrade=True`` the install commands get ``--upgrade`` so pinned
+    dependencies are refreshed to the latest versions declared in
+    pyproject.toml (the update path uses this; fresh installs skip it to
+    reuse whatever the resolver already selected).
 
     On Windows, pre-renames live ``xavani.exe`` / ``xavani-gateway.exe`` shims
     in the venv Scripts dir before each install attempt so uv can write fresh
@@ -7423,21 +7429,24 @@ def _install_python_dependencies_with_optional_fallback(
                 _restore_quarantined_exes(moved)
             raise
 
+    def _upgrade_flag() -> list[str]:
+        return ["--upgrade"] if upgrade else []
+
     try:
-        _install(["install", "-e", f".[{group}]"])
+        _install(["install", *(_upgrade_flag()), "-e", f".[{group}]"])
         return
     except subprocess.CalledProcessError:
         print(
             "  ⚠ Optional extras failed, reinstalling base dependencies and retrying extras individually..."
         )
 
-    _install(["install", "-e", "."])
+    _install(["install", *(_upgrade_flag()), "-e", "."])
 
     failed_extras: list[str] = []
     installed_extras: list[str] = []
     for extra in _load_installable_optional_extras(group=group):
         try:
-            _install(["install", "-e", f".[{extra}]"])
+            _install(["install", *(_upgrade_flag()), "-e", f".[{extra}]"])
             installed_extras.append(extra)
         except subprocess.CalledProcessError:
             failed_extras.append(extra)
@@ -8394,7 +8403,7 @@ def _cmd_update_impl(args, gateway_mode: bool):
                 print("  → Termux/Android detected: prebuilding psutil with Linux source path compatibility...")
                 _install_psutil_android_compat([uv_bin, "pip"], env=uv_env)
             _install_python_dependencies_with_optional_fallback(
-                [uv_bin, "pip"], env=uv_env, group=install_group
+                [uv_bin, "pip"], env=uv_env, group=install_group, upgrade=True
             )
         else:
             # Use sys.executable to explicitly call the venv's pip module,
@@ -8421,7 +8430,7 @@ def _cmd_update_impl(args, gateway_mode: bool):
             if _is_termux_env() and _is_android_python():
                 print("  → Termux/Android detected: prebuilding psutil with Linux source path compatibility...")
                 _install_psutil_android_compat(pip_cmd)
-            _install_python_dependencies_with_optional_fallback(pip_cmd, group=install_group)
+            _install_python_dependencies_with_optional_fallback(pip_cmd, group=install_group, upgrade=True)
 
         _refresh_active_lazy_features()
 
