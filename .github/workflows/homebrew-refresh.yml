@@ -30,12 +30,23 @@ jobs:
           TAG="${{ github.event.release.tag_name }}"
           VERSION="${TAG#v}"
           FORMULA="packaging/homebrew/xavani-agent.rb"
-          ASSET_URL="https://github.com/enternovate/xavani-agent/releases/download/${TAG}/xavani-agent-${VERSION}.tar.gz"
+          # Discover the sdist asset name — uv/PEP 625 may normalize the
+          # project name (xavani_agent vs xavani-agent), so never hardcode.
+          ASSET_NAME="$(
+            gh release view "${TAG}" --repo "${GITHUB_REPOSITORY}" \
+              --json assets --jq '.assets[].name' \
+            | grep -E '\.tar\.gz$' | head -1
+          )"
+          if [ -z "${ASSET_NAME}" ]; then
+            echo "::error::No sdist asset found on release ${TAG}"
+            exit 1
+          fi
+          ASSET_URL="https://github.com/enternovate/xavani-agent/releases/download/${TAG}/${ASSET_NAME}"
 
           echo "Bumping formula to ${VERSION} from ${ASSET_URL}"
           TMP_DIR="$(mktemp -d)"
-          curl -fsSL "${ASSET_URL}" -o "${TMP_DIR}/xavani-agent-${VERSION}.tar.gz"
-          SHA="$(sha256sum "${TMP_DIR}/xavani-agent-${VERSION}.tar.gz" | cut -d' ' -f1)"
+          curl -fsSL "${ASSET_URL}" -o "${TMP_DIR}/${ASSET_NAME}"
+          SHA="$(sha256sum "${TMP_DIR}/${ASSET_NAME}" | cut -d' ' -f1)"
           echo "sha256=${SHA}"
 
           sed -i "s|url \".*xavani-agent-[^\"]*\.tar\.gz\"|url \"${ASSET_URL}\"|" "${FORMULA}"
