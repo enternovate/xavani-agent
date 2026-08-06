@@ -28,6 +28,11 @@ jobs:
         run: |
           set -euo pipefail
           TAG="${{ github.event.release.tag_name }}"
+          # On workflow_dispatch there is no release event; use the latest
+          # release tag as the target.
+          if [ -z "${TAG}" ]; then
+            TAG="$(gh release list --repo "${GITHUB_REPOSITORY}" --limit 1 --json tagName --jq '.[0].tagName')"
+          fi
           VERSION="${TAG#v}"
           FORMULA="packaging/homebrew/xavani-agent.rb"
           # Discover the sdist asset name — uv/PEP 625 may normalize the
