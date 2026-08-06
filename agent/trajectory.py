@@ -11,6 +11,7 @@ the file-write logic live here.
 
 import json
 import logging
+import re
 from datetime import datetime
 from typing import Any, Dict, List
 
@@ -81,6 +82,30 @@ def turn_timeline_path() -> str:
     return str(logs_dir / "turn_timeline.jsonl")
 
 
+# Keys that may carry credentials are replaced whole, not just scrubbed.
+_SENSITIVE_KEY_RE = re.compile(
+    r"(?i)(token|secret|passwd|password|api[_-]?key|authorization|cookie|credential)"
+)
+
+
+def _sanitize_timeline_value(value: Any) -> Any:
+    """Recursively redact credentials in a timeline record before storage."""
+    if isinstance(value, str):
+        from agent.redact import redact_sensitive_text
+
+        return redact_sensitive_text(value)
+    if isinstance(value, dict):
+        return {
+            key: "<redacted>"
+            if _SENSITIVE_KEY_RE.search(key)
+            else _sanitize_timeline_value(item)
+            for key, item in value.items()
+        }
+    if isinstance(value, list):
+        return [_sanitize_timeline_value(item) for item in value]
+    return value
+
+
 def record_turn_timeline(entry: Dict[str, Any]) -> bool:
     """Append one per-turn trace record (E02). Best-effort; never raises.
 
@@ -89,13 +114,11 @@ def record_turn_timeline(entry: Dict[str, Any]) -> bool:
     debugging session can answer "why did the agent do X".
     """
     try:
-        from agent.redact import redact_sensitive_text
-
         record = dict(entry)
         record.setdefault("timestamp", datetime.now().isoformat())
-        safe = json.loads(redact_sensitive_text(json.dumps(record, ensure_ascii=False)))
+        safe = _sanitize_timeline_value(record)
         with open(turn_timeline_path(), "a", encoding="utf-8") as f:
-            f.write(json.dumps(safe, ensure_ascii=False) + "\n")  # nosec B105 - already redacted before write
+            f.write(json.dumps(safe, ensure_ascii=False) + "\n")
         return True
     except Exception as exc:
         logger.warning("Failed to record turn timeline: %s", exc)

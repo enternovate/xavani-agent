@@ -51,5 +51,6 @@ def cmd_secrets(args) -> None:
             print(f"\u2717 Secret '{args.name}' not found.")
             sys.exit(1)
     else:
+        # Names only. Secret VALUES are never printed or logged.
         for name in secrets_list():
             print(name)

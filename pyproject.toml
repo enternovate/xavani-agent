@@ -48,9 +48,6 @@ dependencies = [
   "pydantic-settings==2.14.2",
   # Tool-output schema validation in eval cases (jsonschema validators).
   "jsonschema==4.26.0",
-  # Persistent eval/metrics state cache (diskcache) — avoids re-running
-  # expensive evals; no server, on-disk, thread-safe.
-  "diskcache==5.6.3",
   # Structured logging for tool metrics + turn timeline (structlog).
   "structlog==26.1.0",
   # Fast JSON for metrics CSV/JSONL paths (orjson).

@@ -18,6 +18,9 @@ on:
       - "tests/fixtures/golden-evals.json"
       - "scripts/run_golden_evals.py"
 
+permissions:
+  contents: read
+
 jobs:
   eval-gate:
     name: Golden evals on steer paths
