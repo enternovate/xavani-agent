@@ -445,7 +445,24 @@ Xavani stores everything in `~/.xavani/`:
 
 ---
 
-## What's New in v0.3.0 "Perpetuity"
+## What's New
+
+### v0.1.1 — "Reliability & Steer" (2026-08-05)
+- **/steer reliability** — end-to-end verified steer pipeline (TUI → gateway → AIAgent → drain into the next tool result), with idle fallback to queue and leftover-steer delivery at turn end.
+- **Python 3.14 compatibility** — memory-manager thread pool fixed against the 3.14 stdlib refactor.
+- **D01 secret redaction regression** — non-text content parts pass through untouched; vision-model tool results restored.
+- **D08 subcommand gating** — `deps-provenance` registered in the CLI fast-path.
+- **Update-path dependency refresh** — `xavani update` refreshes pinned deps with `--upgrade` and refreshes cua-driver.
+
+### 0.1.1.5 (in progress) — Harness Upgrade
+- **50-update program** — all 50 items verified or implemented with test evidence (see `STATUS_50.md`): turn finalizer, session-store recovery, turn lease, CoT budget, learn prompt pack, episodic memory summarization, reasoning-effort auto-tuning, security-audit command, secrets vault CLI, update lock, PII/egress/tirith/rotation/audit/sandbox hardening, health export, turn timeline, flake dashboard, ACP hardening, Windows portable installer, Nix cache, notifications, daily digest, follow-up queue.
+- **Eval-gate on steer changes** — golden evals run in CI when steer paths change; a failing eval blocks the merge.
+- **Tool-call quality metrics** — per-session CSV/JSONL: tool, latency, success, retries; surfaced via `xavani stats`.
+- **Self-critique pass** — config-gated final-answer review against a rubric, bounded to one fix iteration.
+- **Context-budget governor UI** — warns at 85%, blocks new tools at 95%.
+- **Flake dashboard** — `tests/flakiness.json` aggregated into per-release reports.
+- **Research-backed harness** — `HARNESS_UPGRADES_0115.md` ranks 15 improvements with sources (Anthropic evals, Red Hat 8-stage framework, Kimi K3, DeepSeek-V4, OpenMLE, TraceCompiler, AgentSLABench).
+- **Pinned dependencies** — pydantic-settings, jsonschema (direct pins), diskcache, structlog, orjson added, exact-pinned and uv-locked.
 
 ### Research Guidelines Enforcement
 - Expanded mandatory research guidelines from 11 to 21 thinkers.
