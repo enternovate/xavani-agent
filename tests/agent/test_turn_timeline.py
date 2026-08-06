@@ -44,3 +44,22 @@ def test_record_never_raises_when_logs_dir_blocked(tmp_path):
 
 def test_timeline_path_under_home_logs(tmp_path):
     assert turn_timeline_path() == str(tmp_path / "logs" / "turn_timeline.jsonl")
+
+
+def test_record_redacts_credential_values():
+    assert record_turn_timeline({"user_msg": "my key is sk-1234567890abcdef"})
+    records = load_turn_timeline()
+    assert "1234567890abcdef" not in records[0]["user_msg"]
+    assert "sk-" in records[0]["user_msg"]
+
+
+def test_record_replaces_sensitive_keys():
+    record_turn_timeline({
+        "session_id": "s1",
+        "api_key": "AKIA1234567890",
+        "nested": {"token": "abc", "name": "ok"},
+    })
+    records = load_turn_timeline()
+    assert records[0]["api_key"] == "<redacted>"
+    assert records[0]["nested"]["token"] == "<redacted>"
+    assert records[0]["nested"]["name"] == "ok"
