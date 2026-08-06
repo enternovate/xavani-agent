@@ -15,11 +15,9 @@ from xavani_cli.config import (
 from xavani_cli.main import cmd_update
 from tools.skills_hub import OptionalSkillSource
 
-# Tests below depend on the real OptionalSkillSource crawler, which has been
-# stripped from this fork. Skip until the full implementation is restored.
-pytestmark = pytest.mark.skip(
-    reason="tools.skills_hub.OptionalSkillSource stripped to a stub in this fork"
-)
+# Managed-install detection and the skills-hub stub contract. The real
+# OptionalSkillSource crawler was stripped from this fork; the managed-update
+# logic below does not need it and runs in full.
 
 
 def test_get_managed_system_homebrew(monkeypatch):
@@ -63,11 +61,16 @@ def test_cmd_update_blocks_managed_homebrew(monkeypatch, capsys):
     assert "brew upgrade xavani-agent" in captured.err
 
 
-def test_optional_skill_source_honors_env_override(monkeypatch, tmp_path):
+def test_optional_skill_source_stub_contract(monkeypatch, tmp_path):
+    # The crawler is stripped in this fork — the stub must stay a safe
+    # no-op: never raise, never return results, never touch the network.
     optional_dir = tmp_path / "optional-skills"
     optional_dir.mkdir()
     monkeypatch.setenv("XAVANI_OPTIONAL_SKILLS", str(optional_dir))
 
     source = OptionalSkillSource()
 
-    assert source._optional_dir == optional_dir
+    assert source.name == "official"
+    assert source.search("anything") == []
+    assert source.inspect("any") is None
+    assert source.fetch("any") is None
