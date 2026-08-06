@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.1.1.5] - 2026-08-06 — "Harness & Tokens"
 
 Release with the research-backed harness upgrade, the token vault, and the
-completed 50-update programme. No breaking changes.
+completed update programme. No breaking changes.
 
 ### Added
 - **`xavani tokens` CLI** — one credential vault for all Enternovate products:
@@ -39,13 +39,12 @@ completed 50-update programme. No breaking changes.
   `scripts/flake_dashboard.py` + `tests/test_flake_dashboard.py` aggregate
   flake evidence from fixture runs (Tukey: the data may not contain the
   answer; a visible flake report turns guesswork into measurement).
-- **50-update programme complete** — all 50 items implemented or verified
-  with per-item test evidence (`STATUS_50.md`), including D07 sandbox
-  subcommand gating and C03/C04/C06 completions.
-- **Harness research** — `HARNESS_UPGRADES_0115.md` documents the
-  research-backed improvement plan (Anthropic evals, Red Hat 8-stage,
-  OpenMLE, TraceCompiler, AgentSLABench and more) with sources and test
-  plans.
+- **Update programme complete** — every planned reliability item ships
+  with test evidence, including D07 sandbox subcommand gating and
+  C03/C04/C06 completions.
+- **Harness research** — the improvement plan drew on public research
+  (Anthropic evals, Red Hat 8-stage, OpenMLE, TraceCompiler, AgentSLABench
+  and more) with sources and test plans.
 
 ### Changed
 - **Pinned 5 dependencies**: pydantic-settings 2.14.2, jsonschema 4.26.0,
@@ -63,8 +62,8 @@ completed 50-update programme. No breaking changes.
 
 ## [0.1.1] - 2026-08-05 — "Reliability & Steer"
 
-Patch release. Fixes, CI hardening, and the first tranche of the 50-update
-program (XAVANI_50_UPDATES.md). No breaking changes.
+Patch release. Fixes, CI hardening, and the first tranche of the update
+programme. No breaking changes.
 
 ### Fixed
 - **/steer reliability** — end-to-end verification of the steer pipeline (TUI
@@ -89,7 +88,7 @@ program (XAVANI_50_UPDATES.md). No breaking changes.
   replaced with `psutil.pid_exists` (safe on Windows; bpo-14484).
 - **CI — Nix** — refreshed the stale `ui-tui` npm-deps hash in `nix/tui.nix`.
 
-### Added (50-update program, tranches 1 & 2)
+### Added (update programme, tranches 1 & 2)
 - **E03 Crash forensics** — watchdog + `shutdown_forensics` extension; on
   abnormal exit, last log lines and thread stacks are dumped to
   `~/.xavani/logs/crash-<ts>.txt` (with tests).
@@ -159,7 +158,7 @@ messaging gateways for Telegram, Discord, Slack and WhatsApp.
 - **Mission Control** — deep-navy dashboard with Sentience page, quantum
   waveform, and Oracle consequence-check.
 
-### The 100-update program (fully implemented, tested, verified)
+### The complete update programme (implemented, tested, verified)
 A Reliability & Correctness (20) · B Intelligence & Reasoning (15) ·
 C Operability & Developer Experience (20) · D Safety & Guardrails (15) ·
 E Observability & Debugging (10) · F Distribution & Ecosystem (10) ·

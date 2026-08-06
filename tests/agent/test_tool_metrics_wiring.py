@@ -2,7 +2,7 @@
 # MIT License -- See LICENSE file for full terms.
 # Built by Enternovate -- Open source. Private. Local.
 
-"""Wiring tests for tool-call metrics (harness item 2, HARNESS_UPGRADES_0115.md)."""
+"""Wiring tests for tool-call metrics."""
 
 from __future__ import annotations
 

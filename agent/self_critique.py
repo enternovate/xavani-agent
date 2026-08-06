@@ -2,7 +2,7 @@
 # MIT License -- See LICENSE file for full terms.
 # Built by Enternovate -- Open source. Private. Local.
 
-"""Self-critique pass (harness item 3, HARNESS_UPGRADES_0115.md).
+"""Self-critique pass.
 
 Config-gated final-answer review: the model reviews its own answer against
 a rubric (correctness, completeness, citations, STE compliance) and may

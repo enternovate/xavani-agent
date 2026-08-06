@@ -2,7 +2,7 @@
 # MIT License -- See LICENSE file for full terms.
 # Built by Enternovate -- Open source. Private. Local.
 
-"""Tool-call quality metrics (harness item 2, HARNESS_UPGRADES_0115.md).
+"""Tool-call quality metrics.
 
 Records one row per tool call: tool name, latency ms, success, retry
 count, error class. Exports per-session CSV/JSONL and aggregates for the
