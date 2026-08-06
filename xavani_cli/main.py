@@ -5916,11 +5916,31 @@ def _clear_bytecode_cache(root: Path) -> int:
     """
     removed = 0
     for dirpath, dirnames, _ in os.walk(root):
-        # Skip venv / node_modules / .git entirely
+        # Skip venv / node_modules / .git entirely, plus build artifacts.
+        # Build output (docusaurus, vite, setuptools) can be gigabytes of
+        # files that never contain Python bytecode. Walking it stalls the
+        # update on slow disks.
         dirnames[:] = [
             d
             for d in dirnames
-            if d not in {"venv", ".venv", "node_modules", ".git", ".worktrees"}
+            if d
+            not in {
+                "venv",
+                ".venv",
+                "node_modules",
+                ".git",
+                ".worktrees",
+                "build",
+                "dist",
+                ".next",
+                ".docusaurus",
+                "coverage",
+                ".pytest_cache",
+                ".cache",
+                ".turbo",
+                ".mypy_cache",
+                ".ruff_cache",
+            }
         ]
         if os.path.basename(dirpath) == "__pycache__":
             try:
