@@ -2326,6 +2326,11 @@ class TestPtyWebSocket:
                 raise AssertionError(
                     "subscriber did not register on channel within 5s"
                 )
+            # Settle grace: the channel entry appears before the per-socket
+            # send task is guaranteed ready; a publish straight after the
+            # poll can still race under parallel load (xdist). 50ms of
+            # breathing room makes the broadcast deterministic.
+            time.sleep(0.05)
 
             with self.client.websocket_connect(pub_path) as pub:
                 pub.send_text('{"type":"tool.start","payload":{"tool_id":"t1"}}')

@@ -372,6 +372,9 @@ _CATEGORY_MERGE: Dict[str, str] = {
     "code_execution": "agent",
     "prompt_caching": "agent",
     "goals": "agent",
+    # `harness` currently holds one field (self_critique) — fold it in with
+    # the other agent-behaviour config so it isn't an orphan tab of one field.
+    "harness": "agent",
     # Only `telegram.reactions` currently lives under telegram — fold it in
     # with the other messaging-platform config (discord) so it isn't an
     # orphan tab of one field.
