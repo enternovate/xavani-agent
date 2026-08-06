@@ -91,6 +91,39 @@ def _ra():
     return run_agent
 
 
+def _maybe_self_critique(agent, answer):
+    """Run the config-gated self-critique pass on a final answer.
+
+    Gated by ``harness.self_critique`` in config.yaml (default off).
+    Never raises — a critique failure keeps the original answer.
+    """
+    if not answer:
+        return answer
+    try:
+        from xavani_cli.config import load_config
+
+        if not load_config().get("harness", {}).get("self_critique", False):
+            return answer
+
+        from agent.self_critique import run_self_critique
+
+        def _reviewer(prompt_text):
+            from tools.mixture_of_agents_tool import _call_model
+
+            result = _call_model(
+                model=getattr(agent, "model", ""),
+                prompt=prompt_text,
+                provider=getattr(agent, "provider", None),
+                base_url=getattr(agent, "base_url", None),
+            )
+            return result.get("response", "") or ""
+
+        return run_self_critique(answer, _reviewer)["answer"]
+    except Exception:
+        # Never break the conversation loop on critique failures.
+        return answer
+
+
 def _restore_or_build_system_prompt(agent, system_message, conversation_history):
     """Restore the cached system prompt from the session DB or build it fresh.
 
@@ -3509,7 +3542,7 @@ def run_conversation(
             
             else:
                 # No tool calls - this is the final response
-                final_response = assistant_message.content or ""
+                final_response = _maybe_self_critique(agent, assistant_message.content or "")
 
                 # ── Kanban worker terminal-tool stop guard ─────────────
                 # Workers must end with kanban_complete / kanban_block.

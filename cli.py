@@ -3216,6 +3216,7 @@ class XavaniCLI:
             "context_tokens": 0,
             "context_length": None,
             "context_percent": None,
+            "context_budget_level": "ok",
             "session_input_tokens": 0,
             "session_output_tokens": 0,
             "session_cache_read_tokens": 0,
@@ -3259,6 +3260,13 @@ class XavaniCLI:
             snapshot["compressions"] = getattr(compressor, "compression_count", 0) or 0
             if context_length:
                 snapshot["context_percent"] = max(0, min(100, round((context_tokens / context_length) * 100)))
+                # Harness item 4 — budget level for the status bar.
+                try:
+                    from agent.context_budget_ui import compute_budget_status
+
+                    snapshot["context_budget_level"] = compute_budget_status(context_tokens, context_length).level
+                except Exception:
+                    snapshot["context_budget_level"] = "ok"
 
         return snapshot
 
@@ -3542,6 +3550,11 @@ class XavaniCLI:
                         ("class:status-bar-dim", " · "),
                         (self._status_bar_context_style(percent), percent_label),
                     ]
+                    _budget_level = snapshot.get("context_budget_level", "ok")
+                    if _budget_level == "block":
+                        frags.append(("class:status-bar-critical", " ⛔"))
+                    elif _budget_level == "warn":
+                        frags.append(("class:status-bar-warn", " ⚠"))
                     if compressions:
                         frags.append(("class:status-bar-dim", " · "))
                         frags.append((self._compression_count_style(compressions), f"🗜️ {compressions}"))
@@ -3577,6 +3590,11 @@ class XavaniCLI:
                         ("class:status-bar-dim", " "),
                         (bar_style, percent_label),
                     ]
+                    _budget_level = snapshot.get("context_budget_level", "ok")
+                    if _budget_level == "block":
+                        frags.append(("class:status-bar-critical", " ⛔"))
+                    elif _budget_level == "warn":
+                        frags.append(("class:status-bar-warn", " ⚠"))
                     if compressions:
                         frags.append(("class:status-bar-dim", " │ "))
                         frags.append((self._compression_count_style(compressions), f"🗜️ {compressions}"))
@@ -9765,6 +9783,15 @@ class XavaniCLI:
             print(f"  Total cost:              {'n/a':>10}")
         print(f"  {'─' * 40}")
         print(f"  Current context:  {last_prompt:,} / {ctx_len:,} ({pct:.0f}%)")
+        # Harness item 4 — context-budget governor surface (/usage).
+        try:
+            from agent.context_budget_ui import compute_budget_status
+
+            _budget = compute_budget_status(last_prompt, ctx_len)
+            if _budget.level != "ok":
+                print(f"  Context budget:   {_budget.level.upper()} — {_budget.suggestion}")
+        except Exception:
+            pass
         print(f"  Messages:         {msg_count}")
         print(f"  Compressions:     {compressions}")
 
