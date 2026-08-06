@@ -70,6 +70,26 @@ def _ra():
     return run_agent
 
 
+def _record_tool_metric(agent, function_name, started_at, duration, is_error, error_class=""):
+    """Record one tool call in the session metrics (harness item 2)."""
+    try:
+        from agent.tool_metrics import ToolCallRecord, record_call
+
+        record_call(
+            ToolCallRecord(
+                tool=function_name,
+                started_at=started_at,
+                latency_ms=round(duration * 1000, 2),
+                success=not is_error,
+                error_class=error_class,
+                session_id=getattr(agent, "session_id", "") or "",
+            )
+        )
+    except Exception:
+        # Metrics must never break tool execution.
+        pass
+
+
 def execute_tool_calls_concurrent(agent, assistant_message, messages: list, effective_task_id: str, api_call_count: int = 0) -> None:
     """Execute multiple tool calls concurrently using a thread pool.
 
@@ -241,6 +261,7 @@ def execute_tool_calls_concurrent(agent, assistant_message, messages: list, effe
                 _set_sudo_password_callback(_parent_sudo_cb)
             except Exception:
                 pass
+        tool_error_class = ""
         start = time.time()
         try:
             result = agent._invoke_tool(
@@ -252,6 +273,7 @@ def execute_tool_calls_concurrent(agent, assistant_message, messages: list, effe
                 pre_tool_block_checked=True,
             )
         except Exception as tool_error:
+            tool_error_class = type(tool_error).__name__
             result = f"Error executing tool '{function_name}': {tool_error}"
             logger.error("_invoke_tool raised for %s: %s", function_name, tool_error, exc_info=True)
         duration = time.time() - start
@@ -260,6 +282,7 @@ def execute_tool_calls_concurrent(agent, assistant_message, messages: list, effe
             logger.info("tool %s failed (%.2fs): %s", function_name, duration, result[:200])
         else:
             logger.info("tool %s completed (%.2fs, %d chars)", function_name, duration, len(result))
+        _record_tool_metric(agent, function_name, start, duration, is_error, tool_error_class)
         results[index] = (function_name, function_args, result, duration, is_error, False)
         # Tear down worker-tid tracking.  Clear any interrupt bit we may
         # have set so the next task scheduled onto this recycled tid
@@ -819,6 +842,8 @@ def execute_tool_calls_sequential(agent, assistant_message, messages: list, effe
             logger.warning("Tool %s returned error (%.2fs): %s", function_name, tool_duration, result_preview)
         else:
             logger.info("tool %s completed (%.2fs, %d chars)", function_name, tool_duration, _result_len)
+
+        _record_tool_metric(agent, function_name, tool_start_time, tool_duration, _is_error_result)
 
         # Track file-mutation outcome for the turn-end verifier.  See
         # the concurrent path for the rationale; both paths must feed

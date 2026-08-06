@@ -606,6 +606,12 @@ DEFAULT_CONFIG = {
     "fallback_providers": [],
     "credential_pool_strategies": {},
     "toolsets": ["xavani-cli"],
+    # Harness features (HARNESS_UPGRADES_0115.md). self_critique runs a
+    # bounded model review of the final answer before it reaches the user.
+    # Default off — enable with `harness: {self_critique: true}`.
+    "harness": {
+        "self_critique": False,
+    },
     "agent": {
         "max_turns": 300,
         # Hard cap on reasoning/thinking output tokens per response (B06).

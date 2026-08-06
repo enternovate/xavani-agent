@@ -338,6 +338,23 @@ def _build_apikey_providers_list() -> list:
     return _static
 
 
+def _check_token_vault(manual_issues: list) -> None:
+    """Report token vault health from ``xavani tokens`` (task 6.1)."""
+    _section("Token Vault")
+    try:
+        from xavani_cli.tokens_cli import validate_tokens
+
+        token_problems = validate_tokens()
+        if token_problems:
+            for problem in token_problems:
+                check_warn(problem)
+            manual_issues.append("Fix the token vault issues listed above (xavani tokens add).")
+        else:
+            check_ok("Token vault healthy")
+    except Exception as exc:
+        check_warn(f"Token vault check failed: {exc}")
+
+
 def run_doctor(args):
     """Run diagnostic checks."""
     should_fix = getattr(args, 'fix', False)
@@ -432,7 +449,9 @@ def run_doctor(args):
     except Exception as e:
         # Never let a bug in the advisory check block the rest of doctor.
         check_warn(f"Security advisory check failed: {e}")
-    
+
+    _check_token_vault(manual_issues)
+
     _section("Python Environment")
     py_version = sys.version_info
     if py_version >= (3, 11):
