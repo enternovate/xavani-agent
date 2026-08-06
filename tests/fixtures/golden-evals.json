@@ -1,0 +1,20 @@
+{
+  "name": "golden",
+  "description": "Golden steer-path regression evals for the eval-gate (harness item 1).",
+  "cases": [
+    {
+      "id": "greeting",
+      "input": "hello",
+      "expected": "hello back",
+      "assertion": "",
+      "tags": ["steer"]
+    },
+    {
+      "id": "steer-echo",
+      "input": "steer: remember this",
+      "expected": "steer acknowledged",
+      "assertion": "",
+      "tags": ["steer"]
+    }
+  ]
+}

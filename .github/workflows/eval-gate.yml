@@ -1,0 +1,40 @@
+name: Eval Gate
+
+# Harness item 1 (HARNESS_UPGRADES_0115.md): run golden evals on steer-path
+# changes. A failing eval blocks the merge — behaviour regressions must be
+# caught before they reach users.
+
+on:
+  pull_request:
+    paths:
+      - "run_agent.py"
+      - "agent/conversation_loop.py"
+      - "agent/agent_init.py"
+      - "agent/self_critique.py"
+      - "agent/tool_metrics.py"
+      - "agent/context_budget_ui.py"
+      - "cli.py"
+      - "tools/eval_harness_tool.py"
+      - "tests/fixtures/golden-evals.json"
+      - "scripts/run_golden_evals.py"
+
+jobs:
+  eval-gate:
+    name: Golden evals on steer paths
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install package (no extras)
+        run: |
+          pip install -e .
+
+      - name: Run golden eval gate
+        run: |
+          python scripts/run_golden_evals.py --evals tests/fixtures/golden-evals.json \
+            --handler tests.eval_gate_handlers:golden_handler
