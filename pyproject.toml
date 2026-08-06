@@ -42,6 +42,19 @@ dependencies = [
   "requests==2.33.0",  # CVE-2026-25645
   "jinja2==3.1.6",
   "pydantic==2.12.5",
+  # Typed config for harness modules (self-critique, tool metrics).
+  # Exact pin: these were previously floating transitives — the supply-chain
+  # policy requires every direct dep to be pinned (see dependency comment).
+  "pydantic-settings==2.14.2",
+  # Tool-output schema validation in eval cases (jsonschema validators).
+  "jsonschema==4.26.0",
+  # Persistent eval/metrics state cache (diskcache) — avoids re-running
+  # expensive evals; no server, on-disk, thread-safe.
+  "diskcache==5.6.3",
+  # Structured logging for tool metrics + turn timeline (structlog).
+  "structlog==26.1.0",
+  # Fast JSON for metrics CSV/JSONL paths (orjson).
+  "orjson==3.11.9",
   # Interactive CLI (prompt_toolkit is used directly by cli.py)
   "prompt_toolkit==3.0.52",
   # Cron scheduler (built-in feature — scheduled cron/interval jobs use croniter).
