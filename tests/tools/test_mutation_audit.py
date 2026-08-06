@@ -16,6 +16,20 @@ from tools import skill_manager_tool
 @pytest.fixture(autouse=True)
 def _isolated_home(monkeypatch, tmp_path):
     monkeypatch.setenv("XAVANI_HOME", str(tmp_path))
+    # Force the memory write-approval gate OFF. This suite asserts the
+    # direct-write audit path; if an earlier test in the same xdist worker
+    # left a config (or the load_config cache) with the gate enabled, writes
+    # would be staged instead of written, and no audit record would appear.
+    from tools import write_approval
+
+    monkeypatch.setattr(write_approval, "write_approval_enabled", lambda subsystem: False)
+    # Reset any leaked write-origin ContextVar (set by agent-sediment/background
+    # review tests in this worker thread). Without this, an earlier test that
+    # set the origin without resetting it makes every audit record here carry
+    # origin='assistant_tool'/'background_review' instead of 'foreground'.
+    from tools import skill_provenance
+
+    skill_provenance.set_current_write_origin("foreground")
     # Memory store path follows XAVANI_HOME.
     return tmp_path
 

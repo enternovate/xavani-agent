@@ -8459,12 +8459,25 @@ class XavaniCLI:
                     if len(exact) == 1:
                         matches = exact
                     else:
-                        # Prefer the unique shortest match:
-                        # /qui → /quit (5) wins over /quint-pipeline (15)
-                        min_len = min(len(c) for c in matches)
-                        shortest = [c for c in matches if len(c) == min_len]
-                        if len(shortest) == 1:
-                            matches = shortest
+                        # Prefer the "family head": a match that is the strict
+                        # prefix of exactly ONE other match — the classic
+                        # command-plus-toggle pair (/status + /statusbar,
+                        # /quit + /quint-pipeline). A head with many variants
+                        # (/reload + /reload-mcp|skills|_mcp|_skills) is a real
+                        # family, so /re stays ambiguous instead.
+                        heads = [
+                            c for c in matches
+                            if sum(1 for o in matches if o != c and o.startswith(c)) == 1
+                        ]
+                        if len(heads) == 1:
+                            matches = heads
+                        else:
+                            # Fall back to the unique shortest match:
+                            # /qui → /quit (5) wins over /quint-pipeline (15)
+                            min_len = min(len(c) for c in matches)
+                            shortest = [c for c in matches if len(c) == min_len]
+                            if len(shortest) == 1:
+                                matches = shortest
                 if len(matches) == 1:
                     # Expand the prefix to the full command name, preserving arguments.
                     # Guard against redispatching the same token to avoid infinite
@@ -10455,37 +10468,41 @@ class XavaniCLI:
 
             if wav_path is None:
                 _cprint(f"{_DIM}No speech detected.{_RST}")
-                return
-
-            # _voice_processing is already True (set atomically above)
-            if hasattr(self, '_app') and self._app:
-                self._app.invalidate()
-            _cprint(f"{_DIM}Transcribing...{_RST}")
-
-            # Get STT model from config
-            stt_model = None
-            try:
-                from xavani_cli.config import load_config
-                stt_config = load_config().get("stt", {})
-                stt_model = stt_config.get("model")
-            except Exception:
-                pass
-
-            from tools.voice_mode import transcribe_recording
-            result = transcribe_recording(wav_path, model=stt_model)
-
-            if result.get("success") and result.get("transcript", "").strip():
-                transcript = result["transcript"].strip()
-                self._attached_images.clear()
+                # No early return here: fall through so the continuous-mode
+                # restart + 3-strike guard below also covers the "no speech"
+                # path (recorder.stop() -> None). Previously this path returned
+                # before restarting, so continuous mode died silently after
+                # one silent capture and the no-speech counter never fired.
+            else:
+                # _voice_processing is already True (set atomically above)
                 if hasattr(self, '_app') and self._app:
                     self._app.invalidate()
-                self._pending_input.put(transcript)
-                submitted = True
-            elif result.get("success"):
-                _cprint(f"{_DIM}No speech detected.{_RST}")
-            else:
-                error = result.get("error", "Unknown error")
-                _cprint(f"\n{_DIM}Transcription failed: {error}{_RST}")
+                _cprint(f"{_DIM}Transcribing...{_RST}")
+
+                # Get STT model from config
+                stt_model = None
+                try:
+                    from xavani_cli.config import load_config
+                    stt_config = load_config().get("stt", {})
+                    stt_model = stt_config.get("model")
+                except Exception:
+                    pass
+
+                from tools.voice_mode import transcribe_recording
+                result = transcribe_recording(wav_path, model=stt_model)
+
+                if result.get("success") and result.get("transcript", "").strip():
+                    transcript = result["transcript"].strip()
+                    self._attached_images.clear()
+                    if hasattr(self, '_app') and self._app:
+                        self._app.invalidate()
+                    self._pending_input.put(transcript)
+                    submitted = True
+                elif result.get("success"):
+                    _cprint(f"{_DIM}No speech detected.{_RST}")
+                else:
+                    error = result.get("error", "Unknown error")
+                    _cprint(f"\n{_DIM}Transcription failed: {error}{_RST}")
 
         except Exception as e:
             _cprint(f"\n{_DIM}Voice processing error: {e}{_RST}")

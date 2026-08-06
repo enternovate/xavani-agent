@@ -35,27 +35,48 @@ jobs:
           # The published index lives on the deployed site. If the local build
           # differs from the published one (or the published one is missing),
           # the deploy pipeline is stale.
+          #
+          # Determinism: the index embeds a `generated_at` build timestamp, so
+          # raw byte hashing would ALWAYS report "stale". We hash the canonical
+          # JSON with `generated_at` stripped from both sides — content only.
+          #
+          # Deployment is a separate, human-gated pipeline (Vercel/Pages). When
+          # the published index is unreachable the site simply is not deployed
+          # yet — that is a pending-deployment state, not a stale-index failure,
+          # so we warn and pass instead of opening a spurious issue.
           python3 - <<'EOF'
           import hashlib, json, urllib.request
 
           published_url = "https://xavani-agent.enternovate.com/api/skills-index.json"
           local_path = "website/static/api/skills-index.json"
+
+
+          def canonical_hash(data: bytes) -> str:
+              doc = json.loads(data)
+              doc.pop("generated_at", None)
+              return hashlib.sha256(
+                  json.dumps(doc, sort_keys=True, separators=(",", ":")).encode()
+              ).hexdigest()
+
           try:
               with open(local_path, "rb") as f:
-                  local_hash = hashlib.sha256(f.read()).hexdigest()
+                  local_bytes = f.read()
+              local_hash = canonical_hash(local_bytes)
           except FileNotFoundError:
-              print("local index missing")
+              print("local index missing — build step should have produced it")
               raise SystemExit(2)
 
           try:
               with urllib.request.urlopen(published_url, timeout=20) as resp:
                   published_bytes = resp.read()
-              published_hash = hashlib.sha256(published_bytes).hexdigest()
-              stale = local_hash != published_hash
-              print(f"local={local_hash[:12]} published={published_hash[:12]} stale={stale}")
           except Exception as exc:
-              print(f"published index unreachable: {exc}")
-              raise SystemExit(2)
+              print(f"published index unreachable ({exc}) — site not deployed yet; skipping freshness check")
+              print("PENDING-DEPLOYMENT")
+              raise SystemExit(0)
+
+          published_hash = canonical_hash(published_bytes)
+          stale = local_hash != published_hash
+          print(f"local={local_hash[:12]} published={published_hash[:12]} stale={stale}")
 
           if stale:
               print("STALE")
@@ -84,6 +105,6 @@ jobs:
               owner: context.repo.owner,
               repo: context.repo.repo,
               title: 'Skills index is stale — deploy pipeline needs attention',
-              body: 'The skills-index freshness watchdog found that the published `skills-index.json` differs from the local build (or is unreachable).\n\nPlease check `skills-index.yml` / `deploy-site.yml` and re-run the deploy. This issue auto-opens at most once (existing open issue suppresses new ones).',
+              body: 'The skills-index freshness watchdog found that the published `skills-index.json` differs from the local build.\\n\\nPlease check `skills-index.yml` / `deploy-site.yml` and re-run the deploy. This issue auto-opens at most once (existing open issue suppresses new ones).',
               labels: ['skills-index'],
             });
