@@ -25,6 +25,9 @@ jobs:
         with:
           python-version: "3.11"
 
+      - name: Install package dependencies
+        run: pip install -e . --quiet
+
       - name: Build skills index locally
         run: |
           python3 scripts/build_skills_index.py
