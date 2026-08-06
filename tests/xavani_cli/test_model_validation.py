@@ -80,11 +80,17 @@ class TestParseModelInput:
         assert provider == "openrouter"
         assert model == "gpt-5.4"
 
-    @pytest.mark.skip(reason="Nous not a recognized provider prefix in this fork")
-    def test_nous_provider_switch(self):
+    def test_unknown_provider_prefix_keeps_current_provider(self):
+        # 'nous' is not a provider in this fork — an unknown prefix must
+        # not switch providers; the whole string stays the model name.
         provider, model = parse_model_input("nous:xavani-3", "openrouter")
-        assert provider == "nous"
-        assert model == "xavani-3"
+        assert provider == "openrouter"
+        assert model == "nous:xavani-3"
+
+    def test_known_provider_prefix_switches(self):
+        provider, model = parse_model_input("deepseek:deepseek-r1", "openrouter")
+        assert provider == "deepseek"
+        assert model == "deepseek-r1"
 
     def test_empty_model_after_colon_keeps_current(self):
         provider, model = parse_model_input("openrouter:", "nous")
