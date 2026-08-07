@@ -5904,6 +5904,11 @@ def cmd_uninstall(args):
     run_uninstall(args)
 
 
+# Best-effort budget: stop the bytecode-cache sweep after this many
+# seconds so a huge or heavily-loaded tree cannot stall xavani update.
+_BYTECODE_CACHE_BUDGET = 15.0
+
+
 def _clear_bytecode_cache(root: Path) -> int:
     """Remove all __pycache__ directories under *root*.
 
@@ -5912,9 +5917,12 @@ def _clear_bytecode_cache(root: Path) -> int:
     (or don't yet exist) in the updated source.  Clearing them forces Python
     to recompile from the .py source on next import.
 
-    Returns the number of directories removed.
+    The cleanup is best-effort: it stops after ``_BYTECODE_CACHE_BUDGET``
+    seconds so a huge or heavily-loaded tree cannot stall the update.  A
+    partial clear still prevents the ImportError for everything it reached.
     """
     removed = 0
+    deadline = _time.monotonic() + _BYTECODE_CACHE_BUDGET
     for dirpath, dirnames, _ in os.walk(root):
         # Skip venv / node_modules / .git entirely, plus build artifacts.
         # Build output (docusaurus, vite, setuptools) can be gigabytes of
@@ -5946,9 +5954,11 @@ def _clear_bytecode_cache(root: Path) -> int:
             try:
                 shutil.rmtree(dirpath)
                 removed += 1
+                dirnames.clear()  # nothing left to recurse into
             except OSError:
                 pass
-            dirnames.clear()  # nothing left to recurse into
+        if _time.monotonic() >= deadline:
+            break
     return removed
 
 
