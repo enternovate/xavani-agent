@@ -10159,6 +10159,13 @@ def _cmd_journey_dispatch(args):
     return cmd_journey(args)
 
 
+def _cmd_constellation_dispatch(args):
+    """Dispatch xavani constellation subcommands."""
+    from xavani_cli.constellation import cmd_constellation
+
+    return cmd_constellation(args)
+
+
 def cmd_logs(args):
     """View and filter Xavani log files."""
     from xavani_cli.logs import tail_log, list_logs
@@ -10211,6 +10218,7 @@ _BUILTIN_SUBCOMMANDS = frozenset(
         "computer-use",
         "config", "cron", "curator", "dashboard", "debug", "deps-provenance", "doctor",
         "dump", "fallback", "gateway", "hooks", "import", "insights",
+        "constellation",
         "finance", "journey", "kanban", "learn", "login", "logout", "logs", "lsp", "mcp", "memory",
         "model", "operator", "pairing", "plugins", "postinstall", "profile", "proxy",
         "secrets", "security-audit", "tokens",
@@ -13255,6 +13263,18 @@ Examples:
     from xavani_cli.journey import build_journey_parser
     build_journey_parser(journey_parser)
     journey_parser.set_defaults(func=lambda args: _cmd_journey_dispatch(args))
+
+    # =========================================================================
+    # constellation command — install and verify the constellation tools
+    # =========================================================================
+    constellation_parser = subparsers.add_parser(
+        "constellation",
+        help="Install and verify the Enternovate constellation tools",
+        description="Manage the nyarhi, gavaza, and mhangani CLIs and the constellation MCP server",
+    )
+    from xavani_cli.constellation import build_constellation_parser
+    build_constellation_parser(constellation_parser)
+    constellation_parser.set_defaults(func=lambda args: _cmd_constellation_dispatch(args))
 
     # =========================================================================
     # deps-provenance — supply-chain transparency (D08)

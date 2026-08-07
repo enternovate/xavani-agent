@@ -92,6 +92,8 @@ fal = ["fal-client==0.13.1"]
 # Edge TTS — default TTS provider but still optional (users can pick
 # ElevenLabs / OpenAI / MiniMax instead).
 edge-tts = ["edge-tts==7.2.7"]
+# Enternovate constellation companion tools (xavani constellation install)
+constellation = ["constellation-mcp>=0.1", "nyarhi>=0.1", "gavaza>=0.1", "mhangani>=0.1"]
 modal = ["modal==1.3.4"]
 daytona = ["daytona==0.155.0"]
 vercel = ["vercel==0.5.7"]
