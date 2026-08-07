@@ -62,3 +62,15 @@ def test_clear_bytecode_cache_returns_zero_for_empty_tree(tmp_path):
 def test_clear_bytecode_cache_handles_missing_root(tmp_path):
     missing = tmp_path / "does-not-exist"
     assert _clear_bytecode_cache(missing) == 0
+
+
+def test_clear_bytecode_cache_respects_time_budget(tmp_path, monkeypatch):
+    # A zero-second budget must stop the sweep immediately: the update
+    # flow cannot stall on a huge or heavily-loaded tree.
+    _make_pycache(tmp_path, "pkg")
+    monkeypatch.setattr("xavani_cli.main._BYTECODE_CACHE_BUDGET", 0.0)
+
+    removed = _clear_bytecode_cache(tmp_path)
+
+    assert removed == 0
+    assert (tmp_path / "pkg" / "__pycache__").exists()

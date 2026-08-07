@@ -825,7 +825,16 @@ class BaseEnvironment(ABC):
         proc = self._run_bash(
             wrapped, login=login, timeout=effective_timeout, stdin_data=effective_stdin
         )
-        result = self._wait_for_process(proc, timeout=effective_timeout)
+        try:
+            result = self._wait_for_process(proc, timeout=effective_timeout)
+        except (KeyboardInterrupt, SystemExit):
+            # The interrupt can land between spawn and the poll loop's own
+            # guard.  Kill the group here so no orphan escapes either path.
+            try:
+                self._kill_process(proc)
+            except Exception:
+                pass  # cleanup is best-effort
+            raise
         self._update_cwd(result)
 
         return result
