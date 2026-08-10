@@ -204,7 +204,7 @@ def _apply_hashline(args: dict, task_id: str) -> str:
     """Apply a hashline payload via the default snapshot store; never raises."""
     from contextlib import ExitStack
 
-    from tools import file_state
+    from tools import file_state, fs_scan_cache
     from tools.file_tools import (
         _check_file_staleness,
         _check_sensitive_path,
@@ -320,12 +320,14 @@ def _apply_hashline(args: dict, task_id: str) -> str:
                         os.unlink(fr.path)
                     except FileNotFoundError:
                         pass
+                    fs_scan_cache.invalidate(fr.path)
                 else:
                     parent = os.path.dirname(os.path.abspath(fr.path))
                     if parent:
                         os.makedirs(parent, exist_ok=True)
                     with open(fr.path, "w", encoding="utf-8") as f:
                         f.write(fr.preview)
+                    fs_scan_cache.invalidate(fr.path)
                     if fr.action == "move" and fr.source:
                         # MV: unlink the source ONLY after the destination
                         # write succeeded — a failed write must not lose the
@@ -339,6 +341,7 @@ def _apply_hashline(args: dict, task_id: str) -> str:
                                 f"edit hashline: destination {fr.path} written "
                                 f"but failed to remove source {fr.source}: {exc}"
                             )
+                        fs_scan_cache.invalidate(fr.source)
                 written.append({"path": fr.path, "tag": fr.tag, "action": fr.action})
             except OSError as exc:
                 return tool_error(f"edit hashline: failed to write {fr.path}: {exc}")
@@ -373,7 +376,7 @@ def _apply_replace(args: dict, task_id: str) -> str:
     """Minimal exact old/new string replace over one file; never raises."""
     from contextlib import nullcontext
 
-    from tools import file_state
+    from tools import file_state, fs_scan_cache
     from tools.file_tools import (
         _check_file_staleness,
         _check_sensitive_path,
@@ -446,6 +449,7 @@ def _apply_replace(args: dict, task_id: str) -> str:
                 f.write(content.replace(old_string, new_string))
         except OSError as exc:
             return tool_error(f"edit replace: {exc}")
+        fs_scan_cache.invalidate(path)
 
         # Refresh stamps after the successful write so consecutive edits by
         # this task don't trigger false staleness warnings (mirrors patch).
