@@ -1,6 +1,6 @@
 """Pure data model for the hashline patch language (ported from omp).
 
-Each dataclass is a frozen, comparable value object.  Bodies are lists of
+Each dataclass is a frozen, comparable value object.  Bodies are tuples of
 lines — the VERBATIM final content of the touched region, never unified-diff
 before/after pairs.  ``body=None`` on :class:`PutRange` / :class:`PutBlock`
 marks a register paste (the bodyless ``PUT N.=M @name`` / ``PUT N* @name``
@@ -9,8 +9,8 @@ forms); ``register`` names the source register in that case.
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from typing import List, Optional, Union
+from dataclasses import dataclass
+from typing import Optional, Tuple, Union
 
 #: File-tail marker used as the ``anchor`` of a tail paste (``PUT >$``).
 TAIL = "$"
@@ -26,7 +26,7 @@ class PutRange:
 
     start: int
     end: int
-    body: Optional[List[str]] = None
+    body: Optional[Tuple[str, ...]] = None
     register: Optional[str] = None
 
 
@@ -39,7 +39,7 @@ class PutBlock:
     """
 
     line: int
-    body: Optional[List[str]] = None
+    body: Optional[Tuple[str, ...]] = None
     register: Optional[str] = None
 
 
@@ -48,7 +48,7 @@ class InsertBefore:
     """``PUT <N:`` — insert body rows immediately before line N (``<1`` = file head)."""
 
     line: int
-    body: List[str]
+    body: Tuple[str, ...]
 
 
 @dataclass(frozen=True)
@@ -60,7 +60,7 @@ class InsertAfter:
     """
 
     line: int
-    body: List[str]
+    body: Tuple[str, ...]
     block: bool = False
 
 
@@ -68,7 +68,7 @@ class InsertAfter:
 class AppendTail:
     """``PUT >$:`` — append body rows at file tail."""
 
-    body: List[str]
+    body: Tuple[str, ...]
 
 
 @dataclass(frozen=True)
@@ -140,7 +140,7 @@ class Section:
 
     path: str
     tag: str
-    ops: List[Op] = field(default_factory=list)
+    ops: Tuple[Op, ...] = ()
 
 
 __all__ = [

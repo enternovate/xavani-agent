@@ -128,7 +128,7 @@ def _parse_section(lines: List[str], i: int) -> Tuple[Section, int]:
         )
     path, tag = match.group("path"), match.group("tag")
     ops: List[Op] = []
-    ranges: List[Tuple[int, int]] = []  # explicit spans, for overlap checks
+    ranges: List[Tuple[int, int, int]] = []  # (start, end, patch line), overlap checks
     i += 1
     while i < len(lines):
         line = lines[i]
@@ -138,10 +138,11 @@ def _parse_section(lines: List[str], i: int) -> Tuple[Section, int]:
         # Next section, envelope markers, or EOF end this section's hunks.
         if line.startswith("[") or line in (_BEGIN_PATCH, _END_PATCH):
             break
+        op_line = i + 1
         op, i = _parse_op(lines, i)
         ops.append(op)
         if isinstance(op, (PutRange, CutRange)):
-            ranges.append((op.start, op.end))
+            ranges.append((op.start, op.end, op_line))
     if not ops:
         raise ParseError(
             f"section [{path}#{tag}] contains no operations; "
@@ -149,19 +150,24 @@ def _parse_section(lines: List[str], i: int) -> Tuple[Section, int]:
             header_line_num,
         )
     _check_overlaps(ranges, header_line)
-    return Section(path=path, tag=tag, ops=ops), i
+    return Section(path=path, tag=tag, ops=tuple(ops)), i
 
 
-def _check_overlaps(ranges: List[Tuple[int, int]], header_line: str) -> None:
+def _check_overlaps(
+    ranges: List[Tuple[int, int, int]], header_line: str
+) -> None:
     """Reject two explicit ranges that target any of the same original lines."""
     ordered = sorted(ranges)
-    for (start_a, end_a), (start_b, end_b) in zip(ordered, ordered[1:]):
+    for (start_a, end_a, _), (start_b, end_b, line_b) in zip(
+        ordered, ordered[1:]
+    ):
         if start_b <= end_a:
             raise ParseError(
                 f"overlapping ranges in section {header_line!r}: "
                 f"[{start_a}..{end_a}] and [{start_b}..{end_b}] target the "
                 "same original lines; split non-adjacent changes into "
-                "separate hunks"
+                "separate hunks",
+                line_b,
             )
 
 
@@ -218,12 +224,39 @@ def _raise_unknown_op(line: str, line_num: int) -> NoReturn:
 
 def _parse_put(lines: List[str], i: int) -> Tuple[Op, int]:
     line = lines[i]
-    tokens = line[4:].split(" ")
-    locator = tokens[0]
+    # split() drops the empty tokens that ' '.split() leaves behind, so
+    # 'PUT  1.=2:' and 'PUT 1.=2:  ' tokenize to ['1.=2:'] (a body-taking
+    # PUT), never to phantom register tokens.
+    tokens = line[4:].split()
+    if not tokens:
+        raise ParseError(
+            f"{line!r}: 'PUT' requires a target "
+            "(N.=M, N*, <N, >N, >N*, >$)",
+            i + 1,
+        )
+    locator_raw = tokens[0]
+    colon = locator_raw.endswith(":")
+    locator = locator_raw[:-1] if colon else locator_raw
     register: Optional[str] = None
-    colon = locator.endswith(":")
-    if colon:
-        locator = locator[:-1]
+
+    # Validate the locator BEFORE register semantics so the error names the
+    # actual problem ('PUT  1.=2:' is a PUT with a colon, not a register).
+    range_match = _RANGE_RE.match(locator)
+    block_match = _BLOCK_RE.match(locator)
+    before_match = _BEFORE_RE.match(locator)
+    after_block_match = _AFTER_BLOCK_RE.match(locator)
+    after_match = _AFTER_RE.match(locator)
+    is_tail = locator == ">$"
+    if not (
+        range_match
+        or block_match
+        or before_match
+        or after_block_match
+        or after_match
+        or is_tail
+    ):
+        raise ParseError(f"unknown PUT target {locator!r} in {line!r}", i + 1)
+
     if len(tokens) > 1:
         reg_tok = tokens[1]
         if len(tokens) > 2:
@@ -251,7 +284,6 @@ def _parse_put(lines: List[str], i: int) -> Tuple[Op, int]:
                 i + 1,
             )
 
-    range_match = _RANGE_RE.match(locator)
     if range_match:
         start, end = int(range_match.group("a")), int(range_match.group("b"))
         if end < start:
@@ -319,7 +351,11 @@ def _parse_put(lines: List[str], i: int) -> Tuple[Op, int]:
 
 def _parse_cut(lines: List[str], i: int) -> Tuple[Op, int]:
     line = lines[i]
-    tokens = line[4:].split(" ")
+    tokens = line[4:].split()  # split() drops empty tokens from extra spaces
+    if not tokens:
+        raise ParseError(
+            f"{line!r}: 'CUT' requires a target (N.=M or N*)", i + 1
+        )
     locator = tokens[0]
     register: Optional[str] = None
     if locator.endswith(":"):
@@ -362,18 +398,19 @@ def _parse_cut(lines: List[str], i: int) -> Tuple[Op, int]:
     )
 
 
-def _read_body(lines: List[str], i: int) -> Tuple[List[str], int]:
+def _read_body(lines: List[str], i: int) -> Tuple[Tuple[str, ...], int]:
     """Collect consecutive '+TEXT' rows after a body-taking header at line i.
 
     Every row is verbatim content after the '+'; '+' alone is a blank line.
-    Returns (body_rows, index_after_last_row).
+    Returns (body_rows, index_after_last_row); body_rows is an immutable tuple
+    so frozen ops expose no mutable container.
     """
-    body: List[str] = []
+    rows: List[str] = []
     j = i + 1
     while j < len(lines) and lines[j].startswith("+"):
-        body.append(lines[j][1:])
+        rows.append(lines[j][1:])
         j += 1
-    if not body:
+    if not rows:
         header = lines[i]
         offender = lines[j] if j < len(lines) else "<end of input>"
         if isinstance(offender, str) and offender.startswith(("-", "@@", "---", "+++")):
@@ -387,7 +424,7 @@ def _read_body(lines: List[str], i: int) -> Tuple[List[str], int]:
             "(use CUT to delete, not an empty PUT)",
             i + 1,
         )
-    return body, j
+    return tuple(rows), j
 
 
 def _unquote_dest(dest: str) -> str:
