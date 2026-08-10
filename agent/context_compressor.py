@@ -29,6 +29,7 @@ from typing import Any, Dict, List, Optional
 
 from agent.auxiliary_client import call_llm, _is_connection_error
 from agent.context_engine import ContextEngine
+from agent.history_shake import shake
 from agent.model_metadata import (
     MINIMUM_CONTEXT_LENGTH,
     get_model_context_length,
@@ -946,7 +947,10 @@ class ContextCompressor(ContextEngine):
             return None
 
         summary_budget = self._compute_summary_budget(turns_to_summarize)
-        content_to_summarize = self._serialize_for_summary(turns_to_summarize)
+        # Mechanical pre-pass before paying for the LLM summary: collapse
+        # repeated tool boilerplate and drop qualifying decorative banners.
+        # Pure, deterministic, no LLM call; user/assistant text untouched.
+        content_to_summarize = self._serialize_for_summary(shake(turns_to_summarize))
 
         # Preamble shared by both first-compaction and iterative-update prompts.
         # Keep the wording deliberately plain: Azure/OpenAI-compatible content
