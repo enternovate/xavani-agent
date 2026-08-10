@@ -91,6 +91,8 @@ const config: Config = {
     image: 'img/xavani-agent-banner.png',
     colorMode: {
       defaultMode: 'dark',
+      disableSwitch: false,
+      // Dark-first brand decision: dark is the default; users may still toggle.
       respectPrefersColorScheme: true,
     },
     docs: {

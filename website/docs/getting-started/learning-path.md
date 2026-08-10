@@ -6,7 +6,7 @@ description: 'Choose your learning path through the Xavani Agent documentation b
 
 # Learning Path
 
-Xavani Agent can do a lot — CLI assistant, Telegram/Discord bot, task automation, RL training, and more. This page helps you figure out where to start and what to read based on your experience level and what you're trying to accomplish.
+Xavani Agent can do a lot — CLI agent, Telegram/Discord bot, task automation, RL training, and more. This page helps you figure out where to start and what to read based on your experience level and what you're trying to accomplish.
 
 :::tip Start Here
 If you haven't installed Xavani Agent yet, begin with the [Installation guide](/docs/getting-started/installation) and then run through the [Quickstart](/docs/getting-started/quickstart). Everything below assumes you have a working installation.
@@ -30,9 +30,9 @@ If you haven't installed Xavani Agent yet, begin with the [Installation guide](/
 
 Pick the scenario that matches what you want to do. Each one links you to the relevant docs in the order you should read them.
 
-### "I want a CLI coding assistant"
+### "I want a CLI coding agent"
 
-Use Xavani Agent as an interactive terminal assistant for writing, reviewing, and running code.
+Use Xavani Agent as an interactive terminal agent for writing, reviewing, and running code.
 
 1. [Installation](/docs/getting-started/installation)
 2. [Quickstart](/docs/getting-started/quickstart)

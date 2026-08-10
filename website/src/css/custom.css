@@ -4,6 +4,17 @@
  * Colors from landingpage/style.css
  */
 
+/* ─── Dark-first brand decision ────────────────────────────────────────────
+   Xavani is an agent with a terminal-first identity: the docs are DARK-FIRST.
+   docusaurus.config.ts sets colorMode.defaultMode: 'dark' and the dark
+   palette below (#07070d) is the primary brand surface. Light mode exists
+   only as an accessible fallback.
+   Guarantee a dark body background even before the theme script runs
+   (prevents a white flash on first paint). */
+html:not([data-theme='light']) body {
+  background-color: var(--ifm-background-color, #07070d);
+}
+
 /* Import fonts to match landing page */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
 
