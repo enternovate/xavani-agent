@@ -114,3 +114,64 @@ Python 3.11+ required. Uses psutil for cross-platform process management
 ## License
 
 MIT — free for any use. Built by Enternovate.
+
+## Pre-Generation Invariants (read BEFORE writing any code)
+
+Emit code in the correct shape the FIRST time — these gates cost more to
+fix after the fact than to write correctly.
+
+### Lint gate: ruff
+- This repo lints with **ruff** (config in `pyproject.toml`, `[tool.ruff]`).
+  Run `python3 -m ruff check <files>` on every Python file you touch
+  before saying "done", and keep ruff clean on touched files.
+- `preview = true` is enabled; the load-bearing lint is `PLW1514`
+  (unspecified-encoding) — bare `open()`/`read_text()`/`write_text()` in
+  text mode silently corrupts non-ASCII content on Windows. `tests/**`,
+  `skills/**`, `optional-skills/**`, and `plugins/**` are per-file-ignored.
+
+### Python version and tests
+- The interpreter is **`python3`** (Python 3.11+ required).
+- Tests run as `python3 -m pytest <paths> -q` — never the bare `pytest`
+  command, and not the full suite by default; run targeted paths.
+
+### No-narration-comments rule (zero tolerance)
+- Default to **no comments**. Add a comment only to capture non-obvious
+  *why*: a bug workaround, an upstream/platform issue, a non-obvious
+  invariant or trade-off chosen after investigation, or a link to the
+  PR/issue that explains the decision.
+- Never narrate what the code does, restate types, or write "TODO:
+  refactor" / "this should be cleaner" notes. When in doubt, prefer better
+  naming/types over a comment.
+
+### Never edit generated files
+- `oag_skills/MANIFEST.json` — the skills index consumed by
+  `xavani_learner/` at runtime; it is tooling-generated (the skills-index
+  tooling is `scripts/build_skills_index.py`, which writes
+  `website/static/api/skills-index.json`). Regenerate, never hand-edit.
+- `uv.lock` — managed by uv; change dependencies via uv and let it
+  rewrite the lockfile.
+- `xavani_agent.egg-info/`, `dist/`, `build/` — build output; never edit.
+
+### Post-edit checks (run before you say "done")
+
+| Touched | Required check |
+|---|---|
+| Python | `python3 -m ruff check <files>` + targeted `python3 -m pytest <paths> -q` |
+| Docs (AGENTS.md, README, website content) | Website build only when explicitly asked |
+| Workflow / CI files (`*.yml`, `*.yaml`) | Validate with `yaml.safe_load` |
+
+## Git Discipline (concurrent sessions)
+
+Multiple sessions may be running in this cwd at the same time, each
+modifying different files. Git operations that touch unstaged, staged, or
+untracked files outside your own changes will stomp on other sessions'
+work.
+
+- Stage **explicit paths only** (`git add <path1> <path2>`); **never**
+  `git add -A` or `git add .`.
+- Before committing, run `git status` and verify you are only staging
+  files YOU changed in THIS session.
+- Other sessions may share this cwd — do not touch, revert, or commit
+  unstaged/untracked files you did not create.
+- Conventional commits only: `feat:` / `fix:` / `perf:` / `test:` /
+  `docs:` / `ci:` / `style:`.
