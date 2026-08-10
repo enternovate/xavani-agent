@@ -20,6 +20,7 @@ from __future__ import annotations
 import json
 import logging
 import os
+import sqlite3
 import threading
 import time
 from concurrent.futures import ThreadPoolExecutor
@@ -59,6 +60,43 @@ RECALL_TRIGGER_INTERVAL = 5
 
 # Background maintenance interval (seconds)
 MAINTENANCE_INTERVAL = 3600  # 1 hour
+
+# Episode columns included in full-text / substring search.
+SEARCH_FIELDS = (
+    "user_input",
+    "agent_response",
+    "agent_thought",
+    "agent_action",
+    "outcome",
+    "tags",
+)
+
+
+def _fts5_supported() -> bool:
+    """True when the bundled sqlite3 was compiled with FTS5 support.
+
+    Module-level so tests can monkeypatch it to exercise the substring
+    fallback on FTS5-less builds.
+    """
+    try:
+        conn = sqlite3.connect(":memory:")
+        try:
+            options = {row[0] for row in conn.execute("PRAGMA compile_options")}
+            return "ENABLE_FTS5" in options
+        finally:
+            conn.close()
+    except sqlite3.Error:
+        return False
+
+
+def _fts_escape(query: str) -> str:
+    """Render a plain-text query as a literal FTS5 MATCH expression.
+
+    Each whitespace-separated token is double-quoted (embedded quotes
+    doubled) so user input is matched literally; tokens OR together and
+    bm25 ranks docs matching more terms above partial matches.
+    """
+    return " OR ".join('"' + token.replace('"', '""') + '"' for token in query.split())
 
 
 # ---------------------------------------------------------------------------
@@ -108,6 +146,9 @@ class MemoryManager:
         self._current_session_id: Optional[str] = None
         self._current_agent_id: str = "default"
         self._started_at: str = datetime.now(timezone.utc).isoformat()
+
+        # Search backend, resolved lazily on first search() call
+        self._search_backend: Optional[str] = None
 
         # Background maintenance
         self._auto_maintenance = auto_maintenance
@@ -234,6 +275,93 @@ class MemoryManager:
     def get_episode(self, episode_id: str) -> Optional[Dict[str, Any]]:
         """Retrieve a single episode by ID."""
         return self.episodic.get_episode(episode_id)
+
+    # ── Search (S3-5 / E101) ─────────────────────────────────────────
+
+    def search(self, query: str, limit: int = 10) -> List[Tuple[Dict[str, Any], float]]:
+        """Search stored memory entries, most relevant first.
+
+        Backend selection: FTS5 full-text MATCH when enabled via
+        ``memory.backend: fts5`` in ``~/.xavani/config.yaml`` or the
+        ``XAVANI_MEMORY_FTS5=1`` env var AND the bundled sqlite3 supports
+        FTS5; otherwise a substring scan. Scores are higher = more
+        relevant in both backends. Deterministic tie-break: recency.
+
+        Returns a list of ``(entry_dict, score)`` tuples.
+        """
+        query = (query or "").strip()
+        if not query:
+            return []
+        if self._resolve_search_backend() == "fts5" and _fts5_supported():
+            try:
+                return self._search_fts5(query, limit)
+            except sqlite3.Error as exc:
+                logger.warning(
+                    "FTS5 search failed (%s); falling back to substring scan", exc
+                )
+        return self._search_substring(query, limit)
+
+    def _resolve_search_backend(self) -> str:
+        """Pick the search backend: ``fts5`` or ``substring`` (cached)."""
+        if self._search_backend is None:
+            backend = "fts5" if os.environ.get("XAVANI_MEMORY_FTS5") == "1" else "substring"
+            if backend == "substring":
+                try:
+                    from xavani_cli.config import load_config
+
+                    mem_cfg = (load_config() or {}).get("memory", {}) or {}
+                    if mem_cfg.get("backend") == "fts5":
+                        backend = "fts5"
+                except Exception:
+                    pass  # config optional — keep the substring default
+            self._search_backend = backend
+        return self._search_backend
+
+    def _search_fts5(self, query: str, limit: int) -> List[Tuple[Dict[str, Any], float]]:
+        """FTS5 MATCH against the ``episodes_fts`` virtual table.
+
+        bm25 rank is negated so the score is higher = more relevant;
+        ties break on recency (timestamp DESC).
+        """
+        conn = self.episodic._get_conn()
+        rows = conn.execute(
+            f"""
+            SELECT e.*, -bm25(episodes_fts) AS score
+            FROM episodes_fts
+            JOIN episodes e ON e.id = episodes_fts.rowid
+            WHERE episodes_fts MATCH ?
+              AND e.archived = 0
+            ORDER BY score DESC, e.timestamp DESC
+            LIMIT ?
+            """,
+            (_fts_escape(query), limit),
+        ).fetchall()
+        return [(self.episodic._row_to_dict(r), float(r["score"])) for r in rows]
+
+    def _search_substring(self, query: str, limit: int) -> List[Tuple[Dict[str, Any], float]]:
+        """Substring scan fallback for sqlite builds without FTS5.
+
+        Score = number of searched fields containing the query (higher =
+        more relevant); ties break on recency. ``%``/``_`` in the query
+        are escaped so they match literally.
+        """
+        conn = self.episodic._get_conn()
+        escaped = query.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+        like = f"%{escaped}%"
+        per_field = [
+            f"(COALESCE(e.{col}, '') LIKE ? ESCAPE '\\')" for col in SEARCH_FIELDS
+        ]
+        rows = conn.execute(
+            f"""
+            SELECT e.*, ({' + '.join(per_field)}) AS score
+            FROM episodes e
+            WHERE ({' OR '.join(per_field)}) AND e.archived = 0
+            ORDER BY score DESC, e.timestamp DESC
+            LIMIT ?
+            """,
+            [like] * len(SEARCH_FIELDS) * 2 + [limit],
+        ).fetchall()
+        return [(self.episodic._row_to_dict(r), float(r["score"])) for r in rows]
 
     # ── Recall Context Generation ────────────────────────────────────
 
