@@ -4572,9 +4572,8 @@ class XavaniCLI:
                 resolved_meta = self._session_db.get_session(self.session_id)
                 if resolved_meta:
                     session_meta = resolved_meta
-            restored = self._session_db.get_messages_as_conversation(self.session_id)
+            restored = self._load_resumed_conversation(self.session_id)
             if restored:
-                restored = [m for m in restored if m.get("role") != "session_meta"]
                 self.conversation_history = restored
                 msg_count = len([m for m in restored if m.get("role") == "user"])
                 title_part = ""
@@ -4690,6 +4689,59 @@ class XavaniCLI:
             ChatConsole().print(f"[bold red]Failed to initialize agent: {e}[/]")
             return False
     
+    def _resume_tail_size(self) -> int:
+        try:
+            size = int(os.environ.get("XAVANI_RESUME_TAIL", "40"))
+        except (TypeError, ValueError):
+            size = 40
+        return size if size > 0 else 40
+
+    def _load_resumed_conversation(self, session_id: str) -> List[Dict[str, Any]]:
+        """Return the tail of a session's history in conversation format.
+
+        Only the last XAVANI_RESUME_TAIL (default 40) messages are loaded
+        into the conversation; older messages stay in the DB and are fetched
+        on demand via _fetch_older_session_messages. Transcript metadata rows
+        are stripped before tailing so the loaded conversation matches the
+        old full-load behaviour for every message that matters.
+        """
+        if not self._session_db:
+            return []
+        restored = self._session_db.get_messages_as_conversation(session_id) or []
+        restored = [m for m in restored if m.get("role") != "session_meta"]
+        return restored[-self._resume_tail_size():]
+
+    def _fetch_older_session_messages(self, before_index: int = 0) -> List[Dict[str, Any]]:
+        """Fetch messages strictly older than the loaded resume tail.
+
+        Anchors on the last message before the tail and returns up to
+        XAVANI_RESUME_TAIL older messages via SessionDB.get_messages_around
+        (a bounded SQL window — no full-history load).  A future /history
+        seam inserts the result at before_index in conversation_history.
+        """
+        if not getattr(self, "_resumed", False) or not self._session_db:
+            return []
+        tail_size = self._resume_tail_size()
+        try:
+            boundary = self._session_db._conn.execute(
+                "SELECT id FROM messages WHERE session_id = ? "
+                "ORDER BY id DESC LIMIT 1 OFFSET ?",
+                (self.session_id, tail_size),
+            ).fetchone()
+        except Exception:
+            return []
+        if boundary is None:
+            return []
+        boundary_id = boundary["id"]
+        anchored = self._session_db.get_messages_around(
+            self.session_id, boundary_id, window=tail_size
+        )
+        return [
+            m
+            for m in anchored["window"]
+            if m.get("role") != "session_meta" and m.get("id", 0) <= boundary_id
+        ]
+
     def _show_security_advisories(self):
         """Show a startup banner if any unacked security advisories match.
 
@@ -4818,9 +4870,8 @@ class XavaniCLI:
             if resolved_meta:
                 session_meta = resolved_meta
 
-        restored = self._session_db.get_messages_as_conversation(self.session_id)
+        restored = self._load_resumed_conversation(self.session_id)
         if restored:
-            restored = [m for m in restored if m.get("role") != "session_meta"]
             self.conversation_history = restored
             msg_count = len([m for m in restored if m.get("role") == "user"])
             title_part = ""
