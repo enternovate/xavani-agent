@@ -1,0 +1,78 @@
+name: Edit-Format Benchmark
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'scripts/edit_benchmark/**'
+      - 'tools/hashline/**'
+      - 'tools/edit_tool.py'
+      - '.github/workflows/edit-benchmark.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/edit_benchmark/**'
+      - 'tools/hashline/**'
+      - 'tools/edit_tool.py'
+      - '.github/workflows/edit-benchmark.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  benchmark:
+    name: Edit-format benchmark gate (H178)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install project
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[all,dev]" --quiet
+
+      - name: Benchmark hashline mode (fake)
+        run: |
+          python3 scripts/edit_benchmark/runner.py --mode hashline --model fake 2>/dev/null | tee /tmp/edit-benchmark-hashline.json | python3 -c '
+          import json, sys
+          data = json.load(sys.stdin)
+          print(f'mode={data["mode"]} passed={data["passed"]}/{data["tasks_total"]}')
+          if data["passed"] != data["tasks_total"]:
+              print(f'::error::hashline edit benchmark: {data["passed"]}/{data["tasks_total"]} tasks passed')
+              sys.exit(1)
+          '
+
+      - name: Benchmark patch mode (fake)
+        run: |
+          python3 scripts/edit_benchmark/runner.py --mode patch --model fake 2>/dev/null | python3 -c '
+          import json, sys
+          data = json.load(sys.stdin)
+          print(f'mode={data["mode"]} passed={data["passed"]}/{data["tasks_total"]}')
+          if data["passed"] != data["tasks_total"]:
+              print(f'::error::patch edit benchmark: {data["passed"]}/{data["tasks_total"]} tasks passed')
+              sys.exit(1)
+          '
+
+      - name: Benchmark replace mode (fake)
+        run: |
+          python3 scripts/edit_benchmark/runner.py --mode replace --model fake 2>/dev/null | python3 -c '
+          import json, sys
+          data = json.load(sys.stdin)
+          print(f'mode={data["mode"]} passed={data["passed"]}/{data["tasks_total"]}')
+          if data["passed"] != data["tasks_total"]:
+              print(f'::error::replace edit benchmark: {data["passed"]}/{data["tasks_total"]} tasks passed')
+              sys.exit(1)
+          '
+
+      - name: Upload hashline summary
+        uses: actions/upload-artifact@v4
+        with:
+          name: edit-benchmark-hashline-summary
+          path: /tmp/edit-benchmark-hashline.json
+          if-no-files-found: error
