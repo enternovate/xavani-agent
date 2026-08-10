@@ -2011,6 +2011,23 @@ def convert_messages_to_anthropic(
     return system, result
 
 
+def _count_cache_control_markers(obj: Any) -> int:
+    """Count cache_control markers anywhere in a converted payload.
+
+    Recursive dict/list walk — mirrors the test-suite counter. Used to
+    enforce Anthropic's hard limit of 4 cache_control breakpoints per
+    request when the tools-block marker is added in build_anthropic_kwargs
+    on top of message-level markers injected upstream.
+    """
+    if isinstance(obj, dict):
+        return (1 if "cache_control" in obj else 0) + sum(
+            _count_cache_control_markers(v) for v in obj.values()
+        )
+    if isinstance(obj, list):
+        return sum(_count_cache_control_markers(v) for v in obj)
+    return 0
+
+
 def build_anthropic_kwargs(
     model: str,
     messages: List[Dict],
@@ -2173,9 +2190,20 @@ def build_anthropic_kwargs(
     if cache_control and anthropic_tools and not any(
         isinstance(t.get("cache_control"), dict) for t in anthropic_tools
     ):
-        from agent.prompt_caching import _build_marker
+        # Anthropic hard-caps cache_control breakpoints at 4 per request.
+        # Message-level markers (system block + history boundary) are applied
+        # upstream by apply_anthropic_cache_control; count them on the
+        # converted payload and only add the tools marker while a slot
+        # remains. Without this guard a legacy history_breakpoints=3 layout
+        # (4 message markers) plus the tools marker would ship 5 breakpoints
+        # and get HTTP 400 from the API.
+        remaining = 4 - _count_cache_control_markers(system) - _count_cache_control_markers(
+            anthropic_messages
+        )
+        if remaining > 0:
+            from agent.prompt_caching import _build_marker
 
-        anthropic_tools[-1]["cache_control"] = _build_marker(cache_ttl)
+            anthropic_tools[-1]["cache_control"] = _build_marker(cache_ttl)
 
     # Map reasoning_config to Anthropic's thinking parameter.
     # Claude 4.6+ models use adaptive thinking + output_config.effort.
