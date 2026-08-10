@@ -240,6 +240,22 @@ class ScriptedSession:
             return chunks
         self._script.append(_stream)
 
+    def stream_tool_call_truncated(self, name: str, arguments: dict, model: str = "faux-model") -> None:
+        """Script a streaming tool-call response whose final chunk reports
+        finish_reason 'length' — the output-token-limit truncation signal."""
+        def _stream() -> List[_Chunk]:
+            args_json = json.dumps(arguments) if isinstance(arguments, dict) else str(arguments)
+            return [
+                _Chunk(tool_calls=[_ToolCallDelta(
+                    name=name,
+                    arguments=args_json,
+                    call_id="call_0",
+                    index=0,
+                )]),
+                _Chunk(finish_reason="length"),
+            ]
+        self._script.append(_stream)
+
     def raise_(self, exc: Exception) -> None:
         """Script a provider exception (e.g. a 429) at this position."""
         def _raise() -> Any:

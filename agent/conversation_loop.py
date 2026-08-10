@@ -1539,6 +1539,47 @@ def run_conversation(
                     if agent.api_mode in {"chat_completions", "bedrock_converse", "anthropic_messages"}:
                         assistant_message = _trunc_msg
                         if assistant_message is not None and _trunc_has_tool_calls:
+                            # Complete tool calls in a length-truncated message
+                            # (valid JSON args — the model emitted them fully,
+                            # then hit the output token limit) are failed, never
+                            # executed: pi's failToolCallsFromTruncatedMessage.
+                            # Cut-off args (invalid JSON) keep the retry-once
+                            # path below, which existing tests rely on.
+                            _all_args_complete = True
+                            for _trunc_tc in assistant_message.tool_calls:
+                                _trunc_args = getattr(getattr(_trunc_tc, "function", None), "arguments", None)
+                                if isinstance(_trunc_args, str):
+                                    try:
+                                        json.loads(_trunc_args)
+                                    except (ValueError, TypeError):
+                                        _all_args_complete = False
+                                        break
+                                elif not isinstance(_trunc_args, (dict, list)):
+                                    _all_args_complete = False
+                                    break
+                            if _all_args_complete:
+                                agent._vprint(
+                                    f"{agent.log_prefix}⚠️  Truncated response (finish_reason='length') contains complete tool calls — failing them instead of executing.",
+                                    force=True,
+                                )
+                                assistant_msg = agent._build_assistant_message(assistant_message, finish_reason)
+                                messages.append(assistant_msg)
+                                # api_messages is the wire copy built BEFORE
+                                # this inner retry loop; mirror the assistant
+                                # message + failed tool results onto it so the
+                                # next iteration actually sends them.
+                                api_messages.append(assistant_msg)
+                                for _trunc_tc in assistant_message.tool_calls:
+                                    _tool_result = {
+                                        "role": "tool",
+                                        "name": _trunc_tc.function.name,
+                                        "tool_call_id": _trunc_tc.id,
+                                        "content": "Error: assistant output was truncated (length) — re-issue the tool call with complete arguments.",
+                                    }
+                                    messages.append(_tool_result)
+                                    api_messages.append(_tool_result)
+                                truncated_tool_call_retries = 0
+                                continue
                             if truncated_tool_call_retries < 1:
                                 truncated_tool_call_retries += 1
                                 agent._vprint(
