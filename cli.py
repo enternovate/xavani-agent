@@ -3465,9 +3465,9 @@ class XavaniCLI:
         return [("class:voice-status", f" 🎤 Voice mode{tts}{cont}  —  {label} to record ")]
 
     def _build_status_bar_text(self, width: Optional[int] = None) -> str:
+        """Return a compact one-line session status string for the TUI footer."""
         from agent.usage_pricing import format_token_count_compact
 
-        """Return a compact one-line session status string for the TUI footer."""
         try:
             snapshot = self._get_status_bar_snapshot()
             if width is None:
@@ -9723,13 +9723,13 @@ class XavaniCLI:
         return True
 
     def _show_usage(self):
+        """Show rate limits (if available) and session token usage."""
         from agent.usage_pricing import (
             CanonicalUsage,
             estimate_usage_cost,
             format_duration_compact,
         )
 
-        """Show rate limits (if available) and session token usage."""
         if not self.agent:
             print("(._.) No active agent -- send a message first.")
             return
