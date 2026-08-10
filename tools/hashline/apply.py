@@ -32,6 +32,7 @@ from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Tuple, Union, cast
 
 from .blocks import BlockResolutionError, language_for_path, resolve_block_range
+from .guard import NoopGuard, NOOP_HARD_LIMIT
 from .model import (
     TAIL,
     AppendTail,
@@ -47,6 +48,7 @@ from .model import (
     RemoveFile,
     Section,
 )
+from .recovery import recover_section
 from .snapshots import Snapshot, SnapshotStore
 
 __all__ = ["ApplyError", "ApplyResult", "FileResult", "apply_sections"]
@@ -265,8 +267,8 @@ def _apply_op(
 
 
 def _simulate_section(
-    sec: Section, base: Snapshot, state
-) -> Tuple[str, Optional[Union[str, Tuple[str, str]]]]:
+    sec: Section, base: Snapshot, state, guard: Optional[NoopGuard] = None
+) -> Tuple[str, Optional[Union[str, Tuple[str, str], int]]]:
     """Dry-run a section's ops; returns (action, value) without any writes.
 
     ``action`` is ``"edit"`` (value = new content str), ``"remove"``
@@ -325,28 +327,45 @@ def _simulate_section(
         return ("move", (dest, new_text))
 
     if new_text.encode("utf-8") == base.content:
-        raise ApplyError(
-            f"[{path}#{base.tag}]: edit is a byte-identical no-op — nothing "
-            "changed; fix the PUT/CUT hunks or drop the section"
-        )
+        if guard is None:
+            raise ApplyError(
+                f"[{path}#{base.tag}]: edit is a byte-identical no-op — nothing "
+                "changed; fix the PUT/CUT hunks or drop the section"
+            )
+        count, escalate = guard.record(path, _noop_key(sec))
+        if escalate:
+            raise ApplyError(guard.hard_error(path, count))
+        return ("noop", count)
     return ("edit", new_text)
 
 
-def _resolve_base(sec: Section, store: SnapshotStore) -> Snapshot:
-    entry = store.by_hash(sec.path, sec.tag)
-    if entry is not None:
-        return entry
+def _noop_key(sec: Section) -> str:
+    """Stable per-section key for the no-op guard (payload identity)."""
+    return f"{sec.path}#{sec.tag}|{sec.ops!r}"
+
+
+def _resolve_base(
+    sec: Section, store: SnapshotStore
+) -> Tuple[Snapshot, Optional[Section]]:
+    """Resolve a section's base snapshot; returns (base, recovered_section).
+
+    When the section's tag matches the store head, the base is that head
+    and ``recovered_section`` is None.  When the tag is stale (the head
+    drifted), :func:`~tools.hashline.recovery.recover_section` re-anchors
+    the section onto the head when a unique safe mapping exists, otherwise
+    raises :class:`ApplyError` with re-read guidance.
+    """
     head = store.get(sec.path)
     if head is None:
         raise ApplyError(
             f"[{sec.path}#{sec.tag}]: no snapshot recorded for this path — "
             "read the file first (re-read the file)"
         )
-    raise ApplyError(
-        f"[{sec.path}#{sec.tag}]: snapshot tag {sec.tag} not found — the "
-        f"file changed since your read (latest tag {head.tag}); re-read the "
-        "file"
-    )
+    if sec.tag == head.tag:
+        return head, None
+    # Stale tag: try conservative recovery against the drifted head.
+    recovered = recover_section(sec, store, head)
+    return head, recovered
 
 
 def _full_ranges(content: str) -> Tuple[Tuple[int, int], ...]:
@@ -389,7 +408,11 @@ def _commit(
 # -- public API --------------------------------------------------------------
 
 
-def apply_sections(sections: List[Section], store: SnapshotStore) -> ApplyResult:
+def apply_sections(
+    sections: List[Section],
+    store: SnapshotStore,
+    guard: Optional[NoopGuard] = None,
+) -> ApplyResult:
     """Validate and apply every section against ``store``; returns an
     :class:`ApplyResult`.
 
@@ -398,6 +421,12 @@ def apply_sections(sections: List[Section], store: SnapshotStore) -> ApplyResult
     sections are committed in file order; an unexpected mid-way failure is
     returned as ``ApplyResult.error`` with the already-applied prefix in
     ``results`` (no rollback is attempted yet).
+
+    ``guard`` optionally supplies a :class:`NoopGuard`: byte-identical
+    no-op edits then emit a warning instead of an error on the first two
+    occurrences, escalating to a hard :class:`ApplyError` on the third
+    identical payload (omp's loop guard).  Without a guard, a no-op edit
+    is an error, as before.
     """
     if not sections:
         raise ApplyError("nothing to apply: no sections provided")
@@ -407,15 +436,30 @@ def apply_sections(sections: List[Section], store: SnapshotStore) -> ApplyResult
     state: Dict[str, object] = {"anon": None, "named": {}}
     bases: List[Snapshot] = []
     sims = []
+    recovery_warnings: List[str] = []
     for sec in sections:
-        base = _resolve_base(sec, store)
+        base, recovered = _resolve_base(sec, store)
         bases.append(base)
-        sims.append(_simulate_section(sec, base, state))
+        effective = recovered if recovered is not None else sec
+        if recovered is not None:
+            recovery_warnings.append(
+                f"[{sec.path}#{sec.tag}]: the file changed since your read; "
+                "anchors recovered against the current content"
+            )
+        sims.append(_simulate_section(effective, base, state, guard=guard))
 
     # Phase 2 — commit in file order.
     results: List[FileResult] = []
-    warnings: List[str] = []
+    warnings: List[str] = list(recovery_warnings)
     for sec, base, sim in zip(sections, bases, sims):
+        action = sim[0]
+        if action == "noop":
+            # A guard-suppressed no-op: warn and record nothing. The guard
+            # keeps its consecutive count so the ladder can escalate.
+            if guard is not None:
+                count = int(sim[1])
+                warnings.append(guard.warning(sec.path, count))
+            continue
         try:
             fr, warns = _commit(sec, base, sim, store)
         except Exception as exc:  # pragma: no cover - store-level failure
@@ -429,4 +473,6 @@ def apply_sections(sections: List[Section], store: SnapshotStore) -> ApplyResult
             )
         results.append(fr)
         warnings.extend(warns)
+        if guard is not None:
+            guard.reset(sec.path)
     return ApplyResult(results=results, warnings=warnings)
