@@ -5649,6 +5649,14 @@ class XavaniCLI:
             f"Agent Running: {'Yes' if is_running else 'No'}",
         ])
 
+        # Provider cache savings — only when the agent recorded hits or cached reads
+        cache_hits = getattr(agent, "_or_cache_hits", 0) or 0
+        cache_read_tokens = getattr(agent, "session_cache_read_tokens", 0) or 0
+        if cache_hits or cache_read_tokens:
+            lines.append(
+                f"Provider cache hits: {cache_hits} (cache read ~{cache_read_tokens:,} tokens)"
+            )
+
         # Session recap — pure local compute summary of recent activity
         # (turn counts, tools used, files touched, last ask, last reply).
         # No LLM call, no prompt-cache impact. Inspired by Claude Code
