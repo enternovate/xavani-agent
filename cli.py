@@ -8351,7 +8351,7 @@ class XavaniCLI:
             self._handle_reasoning_command(cmd_original)
         elif canonical == "fast":
             self._handle_fast_command(cmd_original)
-        elif canonical == "compress":
+        elif canonical in {"compress", "compact"}:
             self._manual_compress(cmd_original)
         elif canonical == "usage":
             self._show_usage()
@@ -9626,13 +9626,52 @@ class XavaniCLI:
     def _manual_compress(self, cmd_original: str = ""):
         """Manually trigger context compression on the current conversation.
 
-        Accepts an optional focus topic: ``/compress <focus>`` guides the
-        summariser to preserve information related to *focus* while being
-        more aggressive about discarding everything else.  Inspired by
-        Claude Code's ``/compact <focus>`` feature.
+        Accepts an optional level: ``/compress 1|2|3`` (also available as
+        ``/compact 1|2|3``).  Level 1 is a mechanical shake only and never
+        calls an LLM; level 2 shakes first, then summarizes older turns
+        through the existing compressor; level 3 (the default when no
+        argument is given) is the full compaction path, unchanged.
+
+        A leading non-numeric argument remains a focus topic:
+        ``/compress <focus>`` guides the summariser to preserve information
+        related to *focus* while being more aggressive about discarding
+        everything else.  Inspired by Claude Code's ``/compact <focus>``.
         """
         if not self.conversation_history or len(self.conversation_history) < 4:
             print("(._.) Not enough conversation to compress (need at least 4 messages).")
+            return
+
+        # Optional leading level argument: /compress 1|2|3 [focus...].
+        level = 3
+        focus_topic = ""
+        if cmd_original:
+            parts = cmd_original.strip().split(None, 2)
+            if len(parts) > 1:
+                _maybe_level = parts[1]
+                _is_level = _maybe_level.isdigit() or (
+                    _maybe_level.startswith("-") and _maybe_level[1:].isdigit()
+                )
+                if _is_level:
+                    level = int(_maybe_level)
+                    if not 1 <= level <= 3:
+                        print(
+                            "(._.) Invalid compaction level. "
+                            "Valid levels: 1 (mechanical shake only), "
+                            "2 (shake + summarize), 3 (full compact)."
+                        )
+                        return
+                    if len(parts) > 2:
+                        focus_topic = parts[2].strip()
+                else:
+                    focus_topic = " ".join(parts[1:]).strip()
+
+        if level == 1:
+            from agent.history_shake import shake
+
+            shaken = shake(self.conversation_history)
+            before, after = len(self.conversation_history), len(shaken)
+            self.conversation_history = shaken
+            print(f"  🌀 Shake only: {before} -> {after} messages (no LLM summary).")
             return
 
         if not self.agent:
@@ -9643,19 +9682,22 @@ class XavaniCLI:
             print("(._.) Compression is disabled in config.")
             return
 
-        # Extract optional focus topic from the command (e.g. "/compress database schema")
-        focus_topic = ""
-        if cmd_original:
-            parts = cmd_original.strip().split(None, 1)
-            if len(parts) > 1:
-                focus_topic = parts[1].strip()
-
         original_count = len(self.conversation_history)
         with self._busy_command("Compressing context..."):
             try:
                 from agent.model_metadata import estimate_request_tokens_rough
                 from agent.manual_compression_feedback import summarize_manual_compression
-                original_history = list(self.conversation_history)
+                if level == 2:
+                    from agent.history_shake import shake
+
+                    shaken = shake(self.conversation_history)
+                    print(
+                        f"  🌀 Mechanical shake first: "
+                        f"{len(self.conversation_history)} -> {len(shaken)} messages"
+                    )
+                    original_history = shaken
+                else:
+                    original_history = list(self.conversation_history)
                 # Include system prompt + tool schemas in the estimate —
                 # a transcript-only number understates real request pressure
                 # and can even appear to grow after compression because a
