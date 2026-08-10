@@ -5,6 +5,7 @@ Emits ONE JSON object on stdout (nothing else — diagnostics go to stderr):
 
     {
       "startup_seconds":     median wall time of `python3 -c "import cli"` in fresh subprocesses,
+                             or null (with "startup_error") if every repeat failed or timed out,
       "system_prompt_tokens": estimated tokens of the default identity system prompt,
       "tool_schema_tokens":   estimated tokens of the full JSON tool-schema list,
       "tools_sent":           number of tool definitions sent to the model
@@ -24,6 +25,7 @@ from __future__ import annotations
 import argparse
 import json
 import math
+import os
 import subprocess
 import sys
 import time
@@ -31,38 +33,52 @@ from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 
+# Allow importing from repo root on a bare checkout (mirrors
+# scripts/tool_payload_report.py).
+sys.path.insert(0, str(REPO_ROOT))
+
+# Some model_tools imports expect XAVANI_HOME to exist.
+os.environ.setdefault("XAVANI_HOME", os.path.join(os.path.expanduser("~"), ".xavani"))
+
 
 def est_tokens(text: str) -> int:
     """Rough token estimate: ceil(chars / 4)."""
     return math.ceil(len(text) / 4)
 
 
-def measure_startup_seconds(repeats: int) -> float:
-    """Median wall time of a cold `python3 -c "import cli"` in fresh subprocesses.
+def collect_startup_samples(repeats: int) -> tuple[list[float], list[str]]:
+    """Wall times of a cold `python3 -c "import cli"` in fresh subprocesses.
 
     Each repeat is a brand-new interpreter process so module-level imports
-    (cli.py is ~15k lines, ~3.7s cold) are counted every time.
+    (cli.py is ~15k lines, ~3.7s cold) are counted every time. Repeats that
+    fail (nonzero exit) or time out are skipped; returns (sorted valid
+    samples, error descriptions).
     """
     samples: list[float] = []
+    errors: list[str] = []
     for _ in range(repeats):
         t0 = time.perf_counter()
-        proc = subprocess.run(
-            [sys.executable, "-c", "import cli"],
-            cwd=str(REPO_ROOT),
-            capture_output=True,
-            text=True,
-            timeout=60,
-        )
+        try:
+            proc = subprocess.run(
+                [sys.executable, "-c", "import cli"],
+                cwd=str(REPO_ROOT),
+                capture_output=True,
+                text=True,
+                timeout=60,
+            )
+        except subprocess.TimeoutExpired:
+            errors.append("timed out after 60s")
+            print("warning: `import cli` repeat timed out after 60s", file=sys.stderr)
+            continue
         dt = time.perf_counter() - t0
         if proc.returncode != 0:
-            print(
-                f"warning: `import cli` repeat failed (rc={proc.returncode}): "
-                f"{proc.stderr.strip()[:300]}",
-                file=sys.stderr,
-            )
+            err = f"rc={proc.returncode}: {proc.stderr.strip()[:300]}"
+            errors.append(err)
+            print(f"warning: `import cli` repeat failed ({err})", file=sys.stderr)
+            continue
         samples.append(dt)
     samples.sort()
-    return samples[len(samples) // 2]  # median (1 repeat -> the single sample)
+    return samples, errors
 
 
 def measure_system_prompt_tokens() -> int:
@@ -105,16 +121,27 @@ def main() -> int:
     args = parser.parse_args()
 
     repeats = 1 if args.quick else 3
-    startup_seconds = measure_startup_seconds(repeats)
+    samples, startup_errors = collect_startup_samples(repeats)
     system_prompt_tokens = measure_system_prompt_tokens()
     tool_schema_tokens, tools_sent = measure_tool_schema()
 
+    # Median of valid samples (1 repeat -> the single sample). If every
+    # repeat failed/timed out, report null + startup_error and still exit 0:
+    # this is a measurement tool, not a gate.
+    startup_seconds = (
+        round(samples[len(samples) // 2], 4) if samples else None
+    )
+
     baseline = {
-        "startup_seconds": round(startup_seconds, 4),
+        "startup_seconds": startup_seconds,
         "system_prompt_tokens": system_prompt_tokens,
         "tool_schema_tokens": tool_schema_tokens,
         "tools_sent": tools_sent,
     }
+    if not samples:
+        baseline["startup_error"] = (
+            "; ".join(startup_errors) or "all startup repeats failed or timed out"
+        )
     print(json.dumps(baseline, indent=2))
     return 0
 
