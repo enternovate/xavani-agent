@@ -129,6 +129,18 @@ scripts/run_tests.sh
 pytest tests/ -v
 ```
 
+**Regression tests.** Bug fixes ship with a regression test in
+`tests/regressions/`, one issue per file, named
+`<issue-or-slug>-<short-description>.py` (the pi pattern). A regression
+test must fail on the buggy code and pass on the fix — write it red
+before the fix, green after. See `tests/regressions/README.md`.
+
+**Lockfile guard.** `uv.lock` is the dependency ground truth and CI
+enforces it (`.github/workflows/uv-lockfile-check.yml`), so a pre-commit
+hook (`scripts/guard_lockfile.py`) blocks commits that stage `uv.lock`
+unless `XAVANI_ALLOW_LOCKFILE_CHANGE=1` is set. Set that env var only for
+real dependency updates; never to sneak in accidental lockfile churn.
+
 ---
 
 ## Project Structure

@@ -50,3 +50,9 @@ repos:
         language: system
         pass_filenames: true
         exclude: '^(LICENSE|README.*|.*/ATTRIBUTION\.md|.*/NOTICE)$'
+      # Lockfile guard: block staged uv.lock commits unless explicitly allowed.
+      - id: guard-lockfile
+        name: guard uv.lock commits (XAVANI_ALLOW_LOCKFILE_CHANGE=1 to override)
+        entry: python3 scripts/guard_lockfile.py
+        language: system
+        pass_filenames: false
