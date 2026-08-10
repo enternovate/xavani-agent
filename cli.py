@@ -2484,6 +2484,31 @@ def _looks_like_slash_command(text: str) -> bool:
     return "/" not in first_word[1:]
 
 
+def _fuzzy_slash_suggestion(typed_base: str) -> str | None:
+    """Return the closest known slash command for a typo, or None.
+
+    Matches against the central COMMAND_REGISTRY names and aliases (the
+    same surface the completions generator emits) plus the two
+    dispatch-only names process_command recognizes that the registry
+    omits ("compact" is a /compress synonym, "learn" a legacy handler).
+    """
+    import difflib
+
+    from xavani_cli.commands import COMMAND_REGISTRY
+    candidates: set[str] = set()
+    for cmd in COMMAND_REGISTRY:
+        if cmd.gateway_only:
+            continue
+        candidates.add(f"/{cmd.name}")
+        candidates.update(f"/{alias}" for alias in cmd.aliases)
+        candidates.update(f"/{alias}" for alias in cmd.cli_aliases)
+    candidates.update({"/compact", "/learn"})
+    matches = difflib.get_close_matches(
+        typed_base, sorted(candidates), n=1, cutoff=0.7
+    )
+    return matches[0] if matches else None
+
+
 # ============================================================================
 # Skill Slash Commands — dynamic commands generated from installed skills
 # ============================================================================
@@ -8610,6 +8635,15 @@ class XavaniCLI:
                     _cprint(f"{_ACCENT}Ambiguous command: {cmd_lower}{_RST}")
                     _cprint(f"{_DIM}Did you mean: {', '.join(sorted(matches))}?{_RST}")
                 else:
+                    suggestion = _fuzzy_slash_suggestion(typed_base)
+                    if suggestion and suggestion != typed_base:
+                        _cprint(f"  {_DIM}Did you mean {suggestion}?{_RST}")
+                        answer = self._prompt_text_input(
+                            f"Run {suggestion} instead? [y/N] "
+                        )
+                        if answer and answer.strip().lower() in {"y", "yes"}:
+                            remainder = cmd_original.strip()[len(typed_base):]
+                            return self.process_command(suggestion + remainder)
                     _cprint(f"\033[1;31mUnknown command: {cmd_lower}{_RST}")
                     _cprint(f"{_DIM}{_ACCENT}Type /help for available commands{_RST}")
         
