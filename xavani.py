@@ -30,6 +30,63 @@ from pathlib import Path
 from typing import Any, Callable, Iterable, Optional
 
 # ---------------------------------------------------------------------------
+# Constants
+# ---------------------------------------------------------------------------
+
+VERSION: str = "0.1.1"
+PRONUNCIATION: str = "shahr-vaa-nee"
+PRODUCT_NAME: str = "Xavani Agent"
+VENDOR: str = "Enternovate"
+
+# ---------------------------------------------------------------------------
+# Fast entry — --version/--help without importing the heavy CLI module (A21)
+# ---------------------------------------------------------------------------
+
+_FAST_EXIT_FLAGS = frozenset({"--version", "--help", "-h", "-v"})
+
+
+def _handle_fast_entry() -> None:
+    """Serve --version/--help without importing ``cli`` (~1s warm import).
+
+    Only fires when xavani itself is the program being run — never when
+    the module is imported by a host like pytest (whose argv can contain
+    the same short flags, e.g. ``pytest -v``).
+    """
+    if len(sys.argv) < 2:
+        return
+    flag = sys.argv[1]
+    if flag not in _FAST_EXIT_FLAGS:
+        return
+    prog = os.path.basename(sys.argv[0])
+    if __name__ != "__main__" and not prog.startswith("xavani"):
+        return
+    if flag in ("--version", "-v"):
+        print(f"{PRODUCT_NAME} v{VERSION}")
+        print(f"Pronounced: {PRONUNCIATION}")
+        print(f"Built by {VENDOR} — Open Source")
+        print("MIT License — Free for any use.")
+    else:
+        print(f"Usage: {prog} [options]")
+        print()
+        print(f"{PRODUCT_NAME} — open-source AI agent gateway by {VENDOR}.")
+        print()
+        print("Options:")
+        print("  --version            Show version and exit")
+        print("  --help, -h           Show this help and exit")
+        print("  --message TEXT       Run a one-shot query and exit")
+        print("  --gateway            Start the MCP gateway server")
+        print("  --setup              Run the setup wizard")
+        print("  --agents [NAME]      List specialist personas")
+        print("  --install NAME       Install an MCP server from the registry")
+        print("  --list-tools         List available tools and exit")
+        print("  --tui                TUI mode")
+        print("  --migrate-from-agent, --migrate-from-openclaw  Config import")
+    sys.exit(0)
+
+
+_handle_fast_entry()
+
+# ---------------------------------------------------------------------------
 # Bootstrap — runs *before* heavy imports
 # ---------------------------------------------------------------------------
 # Order matters: every downstream module reads ``XAVANI_HOME`` and the
@@ -102,13 +159,8 @@ from rich.text import Text  # noqa: E402
 logger = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
-# Constants
+# Banner rendering
 # ---------------------------------------------------------------------------
-
-VERSION: str = "0.1.1"
-PRONUNCIATION: str = "shahr-vaa-nee"
-PRODUCT_NAME: str = "Xavani Agent"
-VENDOR: str = "Enternovate"
 
 BUFFALO_LOGO: str = """
                           ╔══════════════════════════════╗
