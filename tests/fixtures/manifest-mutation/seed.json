@@ -1,0 +1,16 @@
+{
+  "schema_version": "1.0",
+  "total_skills": 2,
+  "skills": [
+    {
+      "name": "fixture-skill-a",
+      "description": "First fixture skill for the append-only guard.",
+      "category": "fixtures"
+    },
+    {
+      "name": "fixture-skill-b",
+      "description": "Second fixture skill for the append-only guard.",
+      "category": "fixtures"
+    }
+  ]
+}
