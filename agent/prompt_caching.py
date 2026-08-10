@@ -4,10 +4,20 @@
 
 """Anthropic prompt caching strategy.
 
-Single layout: ``system_and_3``. 4 cache_control breakpoints — system
-prompt + last 3 non-system messages, all at the same TTL (5m or 1h).
-Reduces input token costs by ~75% on multi-turn conversations within a
-single session.
+Two layouts, all cache_control breakpoints at the same TTL (5m or 1h):
+
+- ``system_and_3`` (default, non-anthropic-messages paths): system prompt +
+  last 3 non-system messages = 4 message-level breakpoints.
+- ``tools_system_boundary`` (api_mode=anthropic_messages): tools block +
+  system prompt + the last message of the stable history prefix (the
+  oldest-kept boundary) = 3 breakpoints, leaving room inside Anthropic's
+  hard limit of 4 cache_control breakpoints per request.
+
+Byte-stability contract: the system prompt is built once per session and
+replayed verbatim (see conversation_loop), and tool schemas are emitted in
+deterministic sorted-by-name order (tools/registry.py) — both are required
+for cross-turn cache hits. Reduces input token costs by ~70-75% on
+multi-turn conversations within a single session.
 
 Pure functions -- no class state, no AIAgent dependency.
 """
@@ -54,11 +64,22 @@ def apply_anthropic_cache_control(
     api_messages: List[Dict[str, Any]],
     cache_ttl: str = "5m",
     native_anthropic: bool = False,
+    history_breakpoints: int = 3,
 ) -> List[Dict[str, Any]]:
-    """Apply system_and_3 caching strategy to messages for Anthropic models.
+    """Apply prompt-cache breakpoints to messages for Anthropic models.
 
-    Places up to 4 cache_control breakpoints: system prompt + last 3 non-system
-    messages, all at the same TTL.
+    Places a cache_control breakpoint on the system prompt (breakpoint 2 in
+    the request ordering: tools block → system → oldest-kept boundary) plus
+    ``history_breakpoints`` trailing non-system messages. The oldest of those
+    trailing markers is the "oldest-kept boundary" — the last message of the
+    byte-stable history prefix, which is what makes cross-turn cache hits
+    possible (new turns append at the end, so everything before the boundary
+    is replayed verbatim).
+
+    ``history_breakpoints`` defaults to 3 (legacy ``system_and_3`` strategy,
+    4 message-level breakpoints). The api_mode=anthropic_messages path passes
+    1 so the tools-block breakpoint (added by build_anthropic_kwargs) fits
+    inside Anthropic's hard limit of 4 cache_control breakpoints per request.
 
     Returns:
         Deep copy of messages with cache_control breakpoints injected.
@@ -75,7 +96,7 @@ def apply_anthropic_cache_control(
         _apply_cache_marker(messages[0], marker, native_anthropic=native_anthropic)
         breakpoints_used += 1
 
-    remaining = 4 - breakpoints_used
+    remaining = min(history_breakpoints, 4 - breakpoints_used)
     non_sys = [i for i in range(len(messages)) if messages[i].get("role") != "system"]
     for idx in non_sys[-remaining:]:
         _apply_cache_marker(messages[idx], marker, native_anthropic=native_anthropic)
