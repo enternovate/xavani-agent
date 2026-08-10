@@ -202,7 +202,9 @@ def _check_disk_usage_warning():
         total_bytes = 0
         import glob
         for path in glob.glob(str(scratch_dir / "xavani-*")):
-            for f in Path(path).rglob('*'):
+            from tools import fs_scan_cache
+            for rel in fs_scan_cache.walk(path):
+                f = Path(path) / rel
                 if f.is_file():
                     try:
                         total_bytes += f.stat().st_size

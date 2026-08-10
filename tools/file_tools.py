@@ -20,7 +20,7 @@ from tools.file_operations import (
     normalize_read_pagination,
     normalize_search_pagination,
 )
-from tools import file_state
+from tools import file_state, fs_scan_cache
 from agent.redact import redact_sensitive_text
 
 logger = logging.getLogger(__name__)
@@ -925,6 +925,8 @@ def write_file_tool(path: str, content: str, task_id: str = "default") -> str:
             file_ops = _get_file_ops(task_id)
             result = file_ops.write_file(path, content)
             result_dict = result.to_dict()
+            if not result_dict.get("error"):
+                fs_scan_cache.invalidate(path)
             if stale_warning:
                 result_dict["_warning"] = stale_warning
             _update_read_timestamp(path, task_id)
@@ -949,6 +951,7 @@ def write_file_tool(path: str, content: str, task_id: str = "default") -> str:
             _update_read_timestamp(path, task_id)
             if not result_dict.get("error"):
                 file_state.note_write(task_id, _resolved)
+                fs_scan_cache.invalidate(path)
         return json.dumps(result_dict, ensure_ascii=False)
     except Exception as e:
         if _is_expected_write_exception(e):
@@ -1039,6 +1042,7 @@ def patch_tool(mode: str = "replace", path: str = None, old_string: str = None,
                     _r = _path_to_resolved.get(_p)
                     if _r:
                         file_state.note_write(task_id, _r)
+                    fs_scan_cache.invalidate(_p)
         # Hint when old_string not found — saves iterations where the agent
         # retries with stale content instead of re-reading the file.
         # Suppressed when patch_replace already attached a rich "Did you mean?"
