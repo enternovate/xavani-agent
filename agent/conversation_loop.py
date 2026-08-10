@@ -31,6 +31,8 @@ import time
 import uuid
 from typing import Any, Dict, List, Optional
 
+from model_tools import DEFERRED_TOOL_NAMES
+
 from agent.anthropic_adapter import _is_oauth_token
 from agent.auxiliary_client import set_runtime_main
 from agent.codex_responses_adapter import _summarize_user_message_for_log
@@ -1613,15 +1615,7 @@ def run_conversation(
                         agent.context_compressor._context_probed = False
                         agent.context_compressor._context_probe_persistable = False
 
-                    agent.session_prompt_tokens += prompt_tokens
-                    agent.session_completion_tokens += completion_tokens
-                    agent.session_total_tokens += total_tokens
-                    agent.session_api_calls += 1
-                    agent.session_input_tokens += canonical_usage.input_tokens
-                    agent.session_output_tokens += canonical_usage.output_tokens
-                    agent.session_cache_read_tokens += canonical_usage.cache_read_tokens
-                    agent.session_cache_write_tokens += canonical_usage.cache_write_tokens
-                    agent.session_reasoning_tokens += canonical_usage.reasoning_tokens
+                    agent.record_session_usage(canonical_usage)
 
                     # Log API call details for debugging/observability
                     _cache_pct = ""
@@ -3275,6 +3269,8 @@ def run_conversation(
                     for tc in assistant_message.tool_calls:
                         if tc.function.name not in agent.valid_tool_names:
                             content = f"Tool '{tc.function.name}' does not exist. Available tools: {available}"
+                            if tc.function.name in DEFERRED_TOOL_NAMES:
+                                content += " This tool is deferred - use tool_call to invoke it."
                         else:
                             content = "Skipped: another tool call in this turn used an invalid name. Please retry this tool call."
                         messages.append({

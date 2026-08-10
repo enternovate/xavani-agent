@@ -61,3 +61,44 @@ def test_explicit_toolset_reenables_deferred_tool():
     assert "text_to_speech" in DEFERRED_TOOL_NAMES  # sanity: it IS deferred
     defs = model_tools.get_tool_definitions(enabled_toolsets=["tts"], quiet_mode=True)
     assert "text_to_speech" in _names(defs)
+
+
+def test_tool_call_self_invocation_returns_error():
+    """(d) tool_call must refuse to invoke itself — no infinite recursion."""
+    result = model_tools.handle_function_call(
+        "tool_call",
+        {"name": "tool_call", "arguments": {}},
+    )
+    payload = json.loads(result)
+    assert "error" in payload
+
+
+def test_tool_search_nonsense_query_returns_empty():
+    """tool_search with a nonsense query returns an empty result, not an error."""
+    result = model_tools.handle_function_call(
+        "tool_search",
+        {"query": "zzzz_nonsense_query_xyzzy"},
+    )
+    payload = json.loads(result)
+    assert payload.get("count") == 0
+    assert payload.get("results") == []
+
+
+def test_tool_describe_unknown_name_returns_error():
+    """tool_describe with an unknown name returns an error, not an exception."""
+    result = model_tools.handle_function_call(
+        "tool_describe",
+        {"name": "definitely_not_a_registered_tool"},
+    )
+    payload = json.loads(result)
+    assert "error" in payload
+
+
+def test_meta_tools_survive_disabled_toolsets():
+    """Meta-tools stay on the wire even when a toolset is disabled."""
+    defs = model_tools.get_tool_definitions(
+        enabled_toolsets=None,
+        disabled_toolsets=["xavani-cli"],
+        quiet_mode=True,
+    )
+    assert "tool_search" in _names(defs)
