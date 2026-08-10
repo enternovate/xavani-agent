@@ -71,7 +71,11 @@ def _count_banners(messages: List[Dict[str, Any]]) -> Dict[str, int]:
     """
     counts: Dict[str, int] = {}
     for msg in messages:
-        content = msg.get("content") if isinstance(msg, dict) else None
+        # Only tool-result content is eligible for banner removal; banners
+        # in user/assistant text must never count toward the threshold.
+        if not isinstance(msg, dict) or msg.get("role") != "tool":
+            continue
+        content = msg.get("content")
         if not isinstance(content, str):
             continue
         for line in content.split("\n"):
