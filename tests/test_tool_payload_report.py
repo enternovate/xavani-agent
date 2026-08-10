@@ -10,6 +10,7 @@ def test_report_lists_every_tool_with_tokens():
     import subprocess, sys, json
     out = subprocess.run([sys.executable, "scripts/tool_payload_report.py"],
                          capture_output=True, text=True, timeout=120)
+    assert out.returncode == 0, out.stderr
     data = json.loads(out.stdout)
     assert data["total_tools"] > 20
     assert data["total_tokens"] > 0
@@ -21,6 +22,7 @@ def test_by_toolset_rollup_matches_tool_list():
     import subprocess, sys, json
     out = subprocess.run([sys.executable, "scripts/tool_payload_report.py"],
                          capture_output=True, text=True, timeout=120)
+    assert out.returncode == 0, out.stderr
     data = json.loads(out.stdout)
 
     from collections import Counter
