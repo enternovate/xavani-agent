@@ -31,6 +31,13 @@ def _build_parser() -> argparse.ArgumentParser:
         default=MEMORY_DIR,
         help="Memory directory (default: $XAVANI_HOME/data/memory)",
     )
+    # Subparser copies use default=SUPPRESS so the flag works on EITHER side
+    # of the subcommand: provided after -> sets the value; omitted -> leaves
+    # the main parser's value intact (classic argparse shadowing fix).
+    sub_parent = argparse.ArgumentParser(add_help=False)
+    sub_parent.add_argument(
+        "--memory-dir", type=Path, default=argparse.SUPPRESS, help=argparse.SUPPRESS
+    )
     parser = argparse.ArgumentParser(
         prog="xavani memory",
         parents=[parent],
@@ -38,18 +45,18 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     sub = parser.add_subparsers(dest="command", required=True)
 
-    p_view = sub.add_parser("view", parents=[parent], help="list stored memory entries")
+    p_view = sub.add_parser("view", parents=[sub_parent], help="list stored memory entries")
     p_view.add_argument("--limit", type=int, default=100)
 
-    sub.add_parser("stats", parents=[parent], help="show counts per store")
-    sub.add_parser("diagnose", parents=[parent], help="check store health")
+    sub.add_parser("stats", parents=[sub_parent], help="show counts per store")
+    sub.add_parser("diagnose", parents=[sub_parent], help="check store health")
 
-    p_clear = sub.add_parser("clear", parents=[parent], help="empty the memory store")
+    p_clear = sub.add_parser("clear", parents=[sub_parent], help="empty the memory store")
     p_clear.add_argument(
         "--yes", action="store_true", help="confirm the destructive clear"
     )
 
-    p_enqueue = sub.add_parser("enqueue", parents=[parent], help="add a memory entry")
+    p_enqueue = sub.add_parser("enqueue", parents=[sub_parent], help="add a memory entry")
     p_enqueue.add_argument("text", help="the entry text to store")
 
     return parser
@@ -103,6 +110,37 @@ def _cmd_diagnose(manager: MemoryManager, args: argparse.Namespace) -> int:
     return 0 if healthy else 1
 
 
+def _make_manager(memory_dir: Path) -> MemoryManager:
+    """Build the manager, surfacing corrupt-store failures to the caller."""
+    return MemoryManager(memory_dir=memory_dir, auto_maintenance=False)
+
+
+def _cmd_diagnose_direct(memory_dir: Path) -> int:
+    """Health-check the store FILES without constructing a manager first.
+
+    A corrupt store can make MemoryManager construction itself raise
+    (StateCorruptionError); diagnose exists precisely to report that case
+    gracefully instead of tracebacking.
+    """
+    healthy = True
+    # Same filenames MemoryManager uses (manager.py: episodic.db / procedural.db).
+    for name in ("episodic.db", "procedural.db"):
+        path = memory_dir / name
+        if not path.exists():
+            print(f"{name}: MISSING ({path})")
+            healthy = False
+            continue
+        try:
+            conn = sqlite3.connect(str(path))
+            conn.execute("SELECT 1")
+            conn.close()
+            print(f"{name}: OK ({path.stat().st_size} bytes)")
+        except sqlite3.Error as exc:
+            print(f"{name}: UNREADABLE ({exc})")
+            healthy = False
+    return 0 if healthy else 1
+
+
 def _cmd_clear(manager: MemoryManager, args: argparse.Namespace) -> int:
     if not args.yes:
         print("Refusing to clear memory without confirmation. Pass --yes to proceed.")
@@ -130,12 +168,23 @@ def main(argv: Optional[List[str]] = None) -> int:
         args = parser.parse_args(argv)
     except SystemExit as exc:
         return int(exc.code or 0)
-    manager = MemoryManager(memory_dir=args.memory_dir, auto_maintenance=False)
+
+    # diagnose must NOT construct the manager first: a corrupt store can
+    # make MemoryManager raise, and reporting that gracefully is the whole
+    # point of the subcommand (S3-6 review finding).
+    if args.command == "diagnose":
+        return _cmd_diagnose_direct(args.memory_dir)
+
+    try:
+        manager = _make_manager(args.memory_dir)
+    except Exception as exc:
+        print(f"memory store failed to open: {type(exc).__name__}: {exc}", file=sys.stderr)
+        print("Run 'xavani memory diagnose' for a file-level health check.", file=sys.stderr)
+        return 1
     try:
         handlers = {
             "view": _cmd_view,
             "stats": _cmd_stats,
-            "diagnose": _cmd_diagnose,
             "clear": _cmd_clear,
             "enqueue": _cmd_enqueue,
         }

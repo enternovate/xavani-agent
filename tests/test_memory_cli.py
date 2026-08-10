@@ -87,3 +87,34 @@ def test_no_subcommand_is_usage_error(capsys):
     rc = main([])
     assert rc != 0
     assert "usage" in capsys.readouterr().err.lower()
+
+
+def test_diagnose_reports_corrupt_store_without_traceback(tmp_path, monkeypatch, capsys):
+    """A corrupt store must yield a graceful diagnose report, exit 1, no traceback."""
+    from pathlib import Path
+    from xavani_memory import cli as memory_cli
+    memory_dir = Path(tmp_path)
+    # Corrupt one store file so MemoryManager construction would raise.
+    (memory_dir / "episodic.db").write_bytes(b"not a sqlite database at all")
+    (memory_dir / "procedural.db").write_bytes(b"")
+
+    code = memory_cli.main(["--memory-dir", str(memory_dir), "diagnose"])
+    out = capsys.readouterr().out
+    assert code == 1
+    assert "episodic.db" in out
+    assert "Traceback" not in out
+
+
+def test_corrupt_store_other_commands_fail_gracefully(tmp_path, capsys):
+    """view/stats on a corrupt store exit 1 with guidance, never traceback."""
+    from pathlib import Path
+    from xavani_memory import cli as memory_cli
+    memory_dir = Path(tmp_path)
+    (memory_dir / "episodic.db").write_bytes(b"garbage not sqlite")
+    (memory_dir / "procedural.db").write_bytes(b"garbage not sqlite")
+
+    code = memory_cli.main(["--memory-dir", str(memory_dir), "stats"])
+    err = capsys.readouterr().err
+    assert code == 1
+    assert "diagnose" in err
+    assert "Traceback" not in err
