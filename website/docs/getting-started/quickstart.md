@@ -223,7 +223,7 @@ If the agent is taking too long, type a new message and press Enter — it inter
 
 Only after the base chat works. Pick what you need:
 
-### Bot or shared assistant
+### Bot or shared agent
 
 ```bash
 xavani gateway setup    # Interactive platform configuration

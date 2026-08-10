@@ -199,8 +199,8 @@ You can also define custom personalities in `~/.xavani/config.yaml`:
 
 ```yaml
 personalities:
-  helpful: "You are a helpful, friendly AI assistant."
-  kawaii: "You are a kawaii assistant! Use cute expressions..."
+  helpful: "You are a helpful, friendly AI agent."
+  kawaii: "You are a kawaii agent! Use cute expressions..."
   pirate: "Arrr! Ye be talkin' to Captain Xavani..."
   # Add your own!
 ```
