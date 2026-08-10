@@ -263,6 +263,15 @@ def build_api_kwargs(agent, api_messages: list) -> dict:
             base_url=getattr(agent, "_anthropic_base_url", None),
             fast_mode=(agent.request_overrides or {}).get("speed") == "fast",
             drop_context_1m_beta=bool(getattr(agent, "_oauth_1m_beta_disabled", False)),
+            # Prompt-cache breakpoints: tools block (here) + system + history
+            # boundary (injected upstream by apply_anthropic_cache_control,
+            # which conversation_loop caps at 1 history slot for this path so
+            # the total stays ≤ Anthropic's 4-breakpoint limit).
+            cache_control=bool(getattr(agent, "_use_prompt_caching", False)),
+            cache_ttl=getattr(agent, "_cache_ttl", "5m"),
+            # Persistent session id — plumbed for cache-key uniformity with
+            # the codex path; native Anthropic caching is content-addressed.
+            session_id=getattr(agent, "session_id", None),
         )
 
     # AWS Bedrock native Converse API — bypasses the OpenAI client entirely.

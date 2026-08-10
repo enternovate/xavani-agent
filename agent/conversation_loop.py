@@ -883,6 +883,12 @@ def run_conversation(
                 api_messages,
                 cache_ttl=agent._cache_ttl,
                 native_anthropic=agent._use_native_cache_layout,
+                # Anthropic path: the tools-block breakpoint is added by
+                # build_anthropic_kwargs, so history gets exactly ONE slot
+                # (the oldest-kept boundary) — total breakpoints stay ≤ 4
+                # (Anthropic's hard limit). Other transports keep the
+                # legacy system + last-3 layout (4 message-level markers).
+                history_breakpoints=1 if agent.api_mode == "anthropic_messages" else 3,
             )
 
         # Safety net: strip orphaned tool results / add stubs for missing

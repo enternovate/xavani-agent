@@ -2024,6 +2024,9 @@ def build_anthropic_kwargs(
     base_url: str | None = None,
     fast_mode: bool = False,
     drop_context_1m_beta: bool = False,
+    cache_control: bool = False,
+    cache_ttl: str = "5m",
+    session_id: Optional[str] = None,
 ) -> Dict[str, Any]:
     """Build kwargs for anthropic.messages.create().
 
@@ -2062,6 +2065,19 @@ def build_anthropic_kwargs(
     fast-mode beta header for ~2.5x faster output throughput on Opus 4.6.
     Currently only supported on native Anthropic endpoints (not third-party
     compatible ones).
+
+    When *cache_control* is True (prompt caching enabled), a cache_control
+    breakpoint is added on the tools block — Anthropic caches the whole tools
+    array when the LAST tool carries cache_control. This is breakpoint 1 in
+    the request ordering (tools block → system → oldest-kept boundary); the
+    system + history-boundary breakpoints are injected by
+    ``agent.prompt_caching.apply_anthropic_cache_control`` upstream. Existing
+    per-tool cache_control markers are never doubled.
+
+    *session_id* is accepted for transport-chain uniformity (the codex path
+    uses it for prompt_cache_key). Anthropic's Messages API has no session
+    identifier for cache keys — its caching is content/prefix-addressed — so
+    the value is a documented no-op here.
     """
     system, anthropic_messages = convert_messages_to_anthropic(
         messages, base_url=base_url, model=model
@@ -2147,6 +2163,19 @@ def build_anthropic_kwargs(
         elif isinstance(tool_choice, str):
             # Specific tool name
             kwargs["tool_choice"] = {"type": "tool", "name": tool_choice}
+
+    # ── Prompt-cache breakpoint on the tools block ─────────────────────
+    # Anthropic caches the entire tools array when the LAST tool carries
+    # cache_control (breakpoint 1 in the request ordering: tools block →
+    # system → oldest-kept boundary). Only applied when prompt caching is
+    # enabled by the caller; a cache_control already forwarded on any tool
+    # (see convert_tools_to_anthropic) is never doubled.
+    if cache_control and anthropic_tools and not any(
+        isinstance(t.get("cache_control"), dict) for t in anthropic_tools
+    ):
+        from agent.prompt_caching import _build_marker
+
+        anthropic_tools[-1]["cache_control"] = _build_marker(cache_ttl)
 
     # Map reasoning_config to Anthropic's thinking parameter.
     # Claude 4.6+ models use adaptive thinking + output_config.effort.

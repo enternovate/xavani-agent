@@ -63,6 +63,11 @@ class AnthropicTransport(ProviderTransport):
             base_url: str | None
             fast_mode: bool
             drop_context_1m_beta: bool
+            cache_control: bool — add a tools-block cache breakpoint
+            cache_ttl: str — '5m' or '1h' (tools breakpoint TTL)
+            session_id: str | None — accepted for chain uniformity; the
+                Anthropic Messages API has no session-id cache key, so it is
+                a documented no-op (caching is content/prefix-addressed)
         """
         from agent.anthropic_adapter import build_anthropic_kwargs
 
@@ -79,6 +84,9 @@ class AnthropicTransport(ProviderTransport):
             base_url=params.get("base_url"),
             fast_mode=params.get("fast_mode", False),
             drop_context_1m_beta=params.get("drop_context_1m_beta", False),
+            cache_control=params.get("cache_control", False),
+            cache_ttl=params.get("cache_ttl", "5m"),
+            session_id=params.get("session_id"),
         )
 
     def normalize_response(self, response: Any, **kwargs) -> NormalizedResponse:
