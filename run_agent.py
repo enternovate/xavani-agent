@@ -588,6 +588,10 @@ class AIAgent:
         self.session_estimated_cost_usd = 0.0
         self.session_cost_status = "unknown"
         self.session_cost_source = "none"
+
+        # Per-turn token meter (Task 10) — one compact entry per provider
+        # response, appended by record_session_usage() / accumulate_session_usage().
+        self.session_turn_usage = []
         
         # Turn counter (added after reset_session_state was first written — #2635)
         self._user_turn_count = 0
@@ -595,6 +599,19 @@ class AIAgent:
         # Context engine reset (works for both built-in compressor and plugins)
         if hasattr(self, "context_compressor") and self.context_compressor:
             self.context_compressor.on_session_reset()
+
+    def record_session_usage(self, usage) -> dict:
+        """Record one provider response's token usage (Task 10).
+
+        Thin wrapper over the module-level :func:`accumulate_session_usage` so
+        the conversation loop stays declarative and the accounting logic is
+        unit-testable without a live agent. Accepts a ``CanonicalUsage``-like
+        object or a dict with ``input_tokens`` / ``output_tokens`` /
+        ``cache_read_tokens`` / ``cache_write_tokens`` (+ optional
+        ``reasoning_tokens`` / ``prompt_tokens`` / ``total_tokens``) keys.
+        Returns the per-turn entry that was appended.
+        """
+        return accumulate_session_usage(self, usage)
 
     def _ensure_lmstudio_runtime_loaded(self, config_context_length: Optional[int] = None) -> None:
         """
@@ -4203,6 +4220,124 @@ class AIAgent:
         """Forwarder — see ``agent.codex_runtime.run_codex_app_server_turn``."""
         from agent.codex_runtime import run_codex_app_server_turn
         return run_codex_app_server_turn(self, user_message=user_message, original_user_message=original_user_message, messages=messages, effective_task_id=effective_task_id, should_review_memory=should_review_memory)
+
+
+def accumulate_session_usage(agent, usage) -> dict:
+    """Accumulate one provider response's token usage into session totals.
+
+    ``usage`` may be a ``CanonicalUsage``-like object (attribute access) or a
+    plain dict with the same keys. Updates the agent's cumulative
+    ``session_*`` counters, increments ``session_api_calls``, and appends a
+    compact per-turn entry to ``agent.session_turn_usage`` (creating the list
+    and any missing counters if the agent was not fully initialized).
+
+    This is the single accounting path for every provider response — plain,
+    streaming, and tool-call turns all flow through it — so the session
+    totals and the per-turn meter can never drift apart.
+
+    Returns the per-turn entry dict that was appended.
+    """
+    def _get(key: str) -> int:
+        if isinstance(usage, dict):
+            return int(usage.get(key) or 0)
+        return int(getattr(usage, key, 0) or 0)
+
+    inp = _get("input_tokens")
+    out = _get("output_tokens")
+    cache_read = _get("cache_read_tokens")
+    cache_write = _get("cache_write_tokens")
+    reasoning = _get("reasoning_tokens")
+    prompt = _get("prompt_tokens") or (inp + cache_read + cache_write)
+    total = _get("total_tokens") or (prompt + out)
+
+    agent.session_input_tokens = getattr(agent, "session_input_tokens", 0) + inp
+    agent.session_output_tokens = getattr(agent, "session_output_tokens", 0) + out
+    agent.session_cache_read_tokens = getattr(agent, "session_cache_read_tokens", 0) + cache_read
+    agent.session_cache_write_tokens = getattr(agent, "session_cache_write_tokens", 0) + cache_write
+    agent.session_reasoning_tokens = getattr(agent, "session_reasoning_tokens", 0) + reasoning
+    agent.session_prompt_tokens = getattr(agent, "session_prompt_tokens", 0) + prompt
+    agent.session_completion_tokens = getattr(agent, "session_completion_tokens", 0) + out
+    agent.session_total_tokens = getattr(agent, "session_total_tokens", 0) + total
+    agent.session_api_calls = getattr(agent, "session_api_calls", 0) + 1
+
+    per_turn = {
+        "input": inp,
+        "output": out,
+        "cache_read": cache_read,
+        "cache_write": cache_write,
+        "reasoning": reasoning,
+        "total": total,
+    }
+    turns = getattr(agent, "session_turn_usage", None)
+    if turns is None:
+        turns = []
+        agent.session_turn_usage = turns
+    turns.append(per_turn)
+    return per_turn
+
+
+def render_cost_report(*, model, totals, per_turn=None, cost_result=None,
+                       max_turns: int = 20) -> list:
+    """Render the /cost report lines from plain totals (no live agent needed).
+
+    ``totals`` is a dict with ``input_tokens`` / ``output_tokens`` /
+    ``cache_read_tokens`` / ``cache_write_tokens`` (+ optional
+    ``reasoning_tokens`` / ``total_tokens`` / ``api_calls``). ``per_turn`` is
+    the list of per-turn entries produced by :func:`accumulate_session_usage`.
+    ``cost_result`` is an optional ``agent.usage_pricing.CostResult``.
+
+    Keeping the rendering here (rather than in the CLI handler) makes the
+    /cost output unit-testable without constructing a live agent.
+    """
+    inp = int(totals.get("input_tokens", 0) or 0)
+    out = int(totals.get("output_tokens", 0) or 0)
+    cache_read = int(totals.get("cache_read_tokens", 0) or 0)
+    cache_write = int(totals.get("cache_write_tokens", 0) or 0)
+    reasoning = int(totals.get("reasoning_tokens", 0) or 0)
+    total = int(totals.get("total_tokens", 0) or 0) or (inp + out + cache_read + cache_write)
+    calls = int(totals.get("api_calls", 0) or 0)
+
+    lines = []
+    lines.append("  💵 Session Cost")
+    lines.append("  " + "─" * 40)
+    if model:
+        lines.append(f"  Model:                    {model}")
+    lines.append(f"  Input tokens:             {inp:>10,}")
+    lines.append(f"  Cache read tokens:        {cache_read:>10,}")
+    lines.append(f"  Cache write tokens:       {cache_write:>10,}")
+    lines.append(f"  Output tokens:            {out:>10,}")
+    if reasoning:
+        lines.append(f"  ↳ Reasoning (subset):     {reasoning:>10,}")
+    lines.append(f"  Total tokens:             {total:>10,}")
+    if calls:
+        lines.append(f"  API calls:                {calls:>10,}")
+    if cost_result is not None:
+        if cost_result.amount_usd is not None:
+            prefix = "~" if cost_result.status == "estimated" else ""
+            lines.append(f"  Total cost:               {prefix}${float(cost_result.amount_usd):>10.4f}")
+            lines.append(f"  Cost status:              {cost_result.status:>10}")
+            lines.append(f"  Cost source:              {cost_result.source:>10}")
+        elif cost_result.status == "included":
+            lines.append(f"  Total cost:               {'included':>10}")
+        else:
+            lines.append(f"  Total cost:               {'n/a':>10}")
+    lines.append("  " + "─" * 40)
+
+    turns = list(per_turn or [])
+    if turns:
+        shown = turns[-max_turns:]
+        first_idx = max(1, len(turns) - len(shown) + 1)
+        lines.append(f"  Per-turn tokens (last {len(shown)} of {len(turns)}):")
+        for i, t in enumerate(shown, start=first_idx):
+            lines.append(
+                f"    #{i:<3} in={t.get('input', 0):>8,} out={t.get('output', 0):>8,}"
+                f" cache_r={t.get('cache_read', 0):>8,} cache_w={t.get('cache_write', 0):>8,}"
+                f" tot={t.get('total', 0):>10,}"
+            )
+    else:
+        lines.append("  Per-turn meter:           (no turns recorded yet)")
+    return lines
+
 
 def main(
     query: str = None,

@@ -8296,6 +8296,8 @@ class XavaniCLI:
             self._manual_compress(cmd_original)
         elif canonical == "usage":
             self._show_usage()
+        elif canonical == "cost":
+            self._show_cost()
         elif canonical == "insights":
             self._show_insights(cmd_original)
         elif canonical == "copy":
@@ -9866,6 +9868,51 @@ class XavaniCLI:
             # into stream-retry events, credential rotations, etc.
             # Console quietness is enforced by xavani_logging not
             # installing a console StreamHandler in non-verbose mode.
+
+    def _show_cost(self):
+        """Show the per-turn token meter and estimated session cost (/cost).
+
+        Thin handler: pulls the session totals + per-turn meter off the agent
+        and delegates rendering to ``run_agent.render_cost_report`` so the
+        output stays unit-testable without a live agent. Cost is estimated
+        via ``agent.usage_pricing.estimate_usage_cost`` when possible.
+        """
+        from agent.usage_pricing import CanonicalUsage, estimate_usage_cost
+        from run_agent import render_cost_report
+
+        if not self.agent:
+            print("(._.) No active agent -- send a message first.")
+            return
+
+        agent = self.agent
+        totals = {
+            "input_tokens": getattr(agent, "session_input_tokens", 0) or 0,
+            "output_tokens": getattr(agent, "session_output_tokens", 0) or 0,
+            "cache_read_tokens": getattr(agent, "session_cache_read_tokens", 0) or 0,
+            "cache_write_tokens": getattr(agent, "session_cache_write_tokens", 0) or 0,
+            "reasoning_tokens": getattr(agent, "session_reasoning_tokens", 0) or 0,
+            "total_tokens": getattr(agent, "session_total_tokens", 0) or 0,
+            "api_calls": getattr(agent, "session_api_calls", 0) or 0,
+        }
+        cost_result = estimate_usage_cost(
+            agent.model,
+            CanonicalUsage(
+                input_tokens=totals["input_tokens"],
+                output_tokens=totals["output_tokens"],
+                cache_read_tokens=totals["cache_read_tokens"],
+                cache_write_tokens=totals["cache_write_tokens"],
+            ),
+            provider=getattr(agent, "provider", None),
+            base_url=getattr(agent, "base_url", None),
+        )
+        per_turn = getattr(agent, "session_turn_usage", None) or []
+        lines = render_cost_report(
+            model=agent.model,
+            totals=totals,
+            per_turn=per_turn,
+            cost_result=cost_result,
+        )
+        print("\n".join(lines))
 
     def _show_insights(self, command: str = "/insights"):
         """Show usage insights and analytics from session history."""
