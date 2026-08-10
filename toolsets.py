@@ -39,7 +39,7 @@ _XAVANI_CORE_TOOLS = [
     # Terminal + process management
     "terminal", "process",
     # File manipulation
-    "read_file", "write_file", "patch", "search_files", "organize_files",
+    "read_file", "write_file", "patch", "edit", "search_files", "organize_files",
     # Vision + image generation
     "vision_analyze", "image_generate",
     # Skills
