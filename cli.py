@@ -88,12 +88,9 @@ except Exception:
 import threading
 import queue
 
-from agent.usage_pricing import (
-    CanonicalUsage,
-    estimate_usage_cost,
-    format_duration_compact,
-    format_token_count_compact,
-)
+# NOTE: `from agent.usage_pricing import ...` is deliberately NOT at module
+# top — it transitively pulls agent.model_metadata (~180 ms cold) and is only
+# needed for status-bar/usage display. Lazy-imported inside the methods below.
 from agent.markdown_tables import (
     is_table_divider,
     looks_like_table_row,
@@ -706,7 +703,10 @@ from rich.text import Text as _RichText
 import fire
 
 # Import the agent and tool systems
-from run_agent import AIAgent
+# NOTE: `from run_agent import AIAgent` is deliberately NOT at module top — it
+# transitively pulls the OpenAI/aiohttp stack (~540 ms cold) and is only needed
+# when an agent is actually constructed. Lazy-imported in _init_agent() and
+# the /background handler.
 from model_tools import get_tool_definitions, get_toolset_for_tool
 
 # Extracted CLI modules (Phase 3)
@@ -715,14 +715,13 @@ from xavani_cli.commands import SlashCommandCompleter, SlashCommandAutoSuggest
 from toolsets import get_all_toolsets, get_toolset_info, validate_toolset
 
 # Cron job system for scheduled tasks (execution is handled by the gateway)
-from cron import get_job
+# NOTE: `from cron import get_job` is lazy-imported inside the /cron handler to
+# keep croniter out of the startup path.
 
 # Resource cleanup imports for safe shutdown (terminal VMs, browser sessions)
-from tools.terminal_tool import cleanup_all_environments as _cleanup_all_terminals
-from tools.terminal_tool import set_sudo_password_callback, set_approval_callback
-from tools.skills_tool import set_secret_capture_callback
-from xavani_cli.callbacks import prompt_for_secret
-from tools.browser_tool import _emergency_cleanup_all_sessions as _cleanup_all_browsers
+# NOTE: terminal/skills/browser/callback imports are lazy-imported inside
+# _run_cleanup(), run(), chat(), and the handlers that use them — keeps
+# tools.approval and xavani_cli.config chains out of the startup path.
 
 # Guard to prevent cleanup from running multiple times on exit
 _cleanup_done = False
@@ -735,6 +734,9 @@ def _run_cleanup():
     if _cleanup_done:
         return
     _cleanup_done = True
+
+    from tools.terminal_tool import cleanup_all_environments as _cleanup_all_terminals
+    from tools.browser_tool import _emergency_cleanup_all_sessions as _cleanup_all_browsers
 
     try:
         _cleanup_all_terminals()
@@ -2872,7 +2874,7 @@ class XavaniCLI:
         self._active_agent_route_signature = None
 
         # Agent will be initialized on first use
-        self.agent: Optional[AIAgent] = None
+        self.agent: Optional["AIAgent"] = None
         self._app = None  # prompt_toolkit Application (set in run())
         
         # Conversation state
@@ -3191,6 +3193,8 @@ class XavaniCLI:
         return f"{emoji} {time_str}"
 
     def _get_status_bar_snapshot(self) -> Dict[str, Any]:
+        from agent.usage_pricing import format_duration_compact
+
         # Prefer the agent's model name — it updates on fallback.
         # self.model reflects the originally configured model and never
         # changes mid-session, so the TUI would show a stale name after
@@ -3461,6 +3465,8 @@ class XavaniCLI:
         return [("class:voice-status", f" 🎤 Voice mode{tts}{cont}  —  {label} to record ")]
 
     def _build_status_bar_text(self, width: Optional[int] = None) -> str:
+        from agent.usage_pricing import format_token_count_compact
+
         """Return a compact one-line session status string for the TUI footer."""
         try:
             snapshot = self._get_status_bar_snapshot()
@@ -3514,6 +3520,8 @@ class XavaniCLI:
             return f"⚕ {self.model if getattr(self, 'model', None) else 'Xavani'}"
 
     def _get_status_bar_fragments(self):
+        from agent.usage_pricing import format_token_count_compact
+
         if not self._status_bar_visible or getattr(self, '_model_picker_state', None):
             return []
         try:
@@ -4521,6 +4529,8 @@ class XavaniCLI:
         Returns:
             bool: True if successful, False otherwise
         """
+        from run_agent import AIAgent
+
         if self.agent is not None:
             return True
 
@@ -7564,6 +7574,7 @@ class XavaniCLI:
     def _handle_cron_command(self, cmd: str):
         """Handle the /cron command to manage scheduled tasks."""
         import shlex
+        from cron import get_job
         from tools.cronjob_tools import cronjob as cronjob_tool
 
         def _cron_api(**kwargs):
@@ -8550,6 +8561,10 @@ class XavaniCLI:
         When it completes, prints the result to the CLI without modifying
         the active session's conversation history.
         """
+        from run_agent import AIAgent
+        from tools.terminal_tool import set_sudo_password_callback, set_approval_callback
+        from tools.skills_tool import set_secret_capture_callback
+
         parts = cmd.strip().split(maxsplit=1)
         if len(parts) < 2 or not parts[1].strip():
             _cprint("  Usage: /background <prompt>")
@@ -9708,6 +9723,12 @@ class XavaniCLI:
         return True
 
     def _show_usage(self):
+        from agent.usage_pricing import (
+            CanonicalUsage,
+            estimate_usage_cost,
+            format_duration_compact,
+        )
+
         """Show rate limits (if available) and session token usage."""
         if not self.agent:
             print("(._.) No active agent -- send a message first.")
@@ -11208,6 +11229,8 @@ class XavaniCLI:
         return lines
 
     def _secret_capture_callback(self, var_name: str, prompt: str, metadata=None) -> dict:
+        from xavani_cli.callbacks import prompt_for_secret
+
         return prompt_for_secret(self, var_name, prompt, metadata)
 
     def _capture_modal_input_snapshot(self) -> None:
@@ -11274,6 +11297,9 @@ class XavaniCLI:
         Returns:
             The agent's response, or None on error
         """
+        from tools.terminal_tool import set_sudo_password_callback, set_approval_callback
+        from tools.skills_tool import set_secret_capture_callback
+
         # Single-query and direct chat callers do not go through run(), so
         # register secure secret capture here as well.
         set_secret_capture_callback(self._secret_capture_callback)
@@ -12127,6 +12153,9 @@ class XavaniCLI:
 
     def run(self):
         """Run the interactive CLI loop with persistent input at bottom."""
+        from tools.terminal_tool import set_sudo_password_callback, set_approval_callback
+        from tools.skills_tool import set_secret_capture_callback
+
         # Detect light/dark terminal mode now (before pt grabs the tty).
         # Caches the result so subsequent _hex_to_ansi / style calls
         # don't risk re-querying mid-render.
