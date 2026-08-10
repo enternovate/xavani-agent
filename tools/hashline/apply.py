@@ -332,10 +332,10 @@ def _simulate_section(
                 f"[{path}#{base.tag}]: edit is a byte-identical no-op — nothing "
                 "changed; fix the PUT/CUT hunks or drop the section"
             )
-        count, escalate = guard.record(path, _noop_key(sec))
-        if escalate:
-            raise ApplyError(guard.hard_error(path, count))
-        return ("noop", count)
+        # Defer guard.record() to apply_sections AFTER full-patch validation
+        # (fail-fast): a no-op section followed by an invalid section must
+        # not advance the guard counter for a patch that never applies.
+        return ("noop", _noop_key(sec))
     return ("edit", new_text)
 
 
@@ -448,6 +448,15 @@ def apply_sections(
             )
         sims.append(_simulate_section(effective, base, state, guard=guard))
 
+    # Guard escalation happens only AFTER the whole patch validates (fail
+    # fast): a no-op section followed by an invalid section must not advance
+    # the counter for a patch that never applies.
+    for sec, sim in zip(sections, sims):
+        if sim[0] == "noop" and guard is not None:
+            count, escalate = guard.record(sec.path, str(sim[1]))
+            if escalate:
+                raise ApplyError(guard.hard_error(sec.path, count))
+
     # Phase 2 — commit in file order.
     results: List[FileResult] = []
     warnings: List[str] = list(recovery_warnings)
@@ -457,8 +466,7 @@ def apply_sections(
             # A guard-suppressed no-op: warn and record nothing. The guard
             # keeps its consecutive count so the ladder can escalate.
             if guard is not None:
-                count = int(sim[1])
-                warnings.append(guard.warning(sec.path, count))
+                warnings.append(guard.warning(sec.path, guard.count(sec.path)))
             continue
         try:
             fr, warns = _commit(sec, base, sim, store)
