@@ -7,16 +7,18 @@ replace-mode exact-string substitution, and unknown-mode error handling.
 """
 
 import json
+import os
 
 import pytest
 
 import tools.edit_tool as edit_tool
+import tools.file_tools as file_tools
 from tools.edit_tool import (
     DEFAULT_EDIT_MODE,
     _handle_edit,
     resolve_edit_mode,
 )
-from tools.hashline.snapshots import default_store
+from tools.hashline.snapshots import compute_tag, default_store
 
 
 # ---------------------------------------------------------------------------
@@ -107,6 +109,47 @@ def test_hashline_parse_error_returns_error_string(tmp_path):
     assert "hashline" in data["error"]
 
 
+def test_hashline_stale_tag_error_returns_fresh_tag(monkeypatch, tmp_path):
+    """First-edit loop: on a stale/unknown tag, the error must hand back the
+    fresh on-disk tag so the model can re-issue the edit immediately
+    (read_file does not emit [path#TAG] tags yet)."""
+    monkeypatch.delenv("XAVANI_EDIT_MODE", raising=False)
+    monkeypatch.setattr(edit_tool, "get_config_path", lambda: tmp_path / "no-such-config.yaml")
+
+    f = tmp_path / "greet.py"
+    f.write_text("a\nb\nc\n", encoding="utf-8")
+    fresh_tag = compute_tag("a\nb\nc\n")
+    stale_tag = "FFFF" if fresh_tag != "FFFF" else "0000"
+
+    payload = f"[{f}#{stale_tag}]\nPUT 2.=3:\n+X\n+Y\n"
+    result = _handle_edit({"input": payload, "mode": "hashline"}, task_id="t6")
+    data = json.loads(result)
+    assert "error" in data
+    # The stale tag alone would be an undocumented error-leak retry: the
+    # error must name the exact retryable header with the fresh tag.
+    assert f"[{f}#{fresh_tag}]" in data["error"]
+    assert "re-issue" in data["error"].lower()
+
+
+def test_hashline_mode_refuses_sensitive_path(monkeypatch, tmp_path):
+    """hashline writes must be rejected for sensitive paths, like patch."""
+    f = tmp_path / "note.txt"
+    f.write_text("a\nb\nc\n", encoding="utf-8")
+    monkeypatch.setattr(
+        file_tools,
+        "_SENSITIVE_PATH_PREFIXES",
+        file_tools._SENSITIVE_PATH_PREFIXES + (str(tmp_path) + os.sep,),
+    )
+    result = _handle_edit(
+        {"input": f"[{f}#DEAD]\nPUT 2.=3:\n+X\n", "mode": "hashline"},
+        task_id="t7",
+    )
+    data = json.loads(result)
+    assert "error" in data
+    assert "sensitive" in data["error"].lower()
+    assert f.read_text(encoding="utf-8") == "a\nb\nc\n"
+
+
 # ---------------------------------------------------------------------------
 # replace mode: exact-string substitution
 # ---------------------------------------------------------------------------
@@ -133,6 +176,25 @@ def test_replace_mode_missing_old_string_returns_error(tmp_path):
     )
     data = json.loads(result)
     assert "error" in data
+
+
+def test_replace_mode_refuses_sensitive_path(monkeypatch, tmp_path):
+    """replace writes must be rejected for sensitive paths, like patch."""
+    f = tmp_path / "note.txt"
+    f.write_text("hello world\n", encoding="utf-8")
+    monkeypatch.setattr(
+        file_tools,
+        "_SENSITIVE_PATH_PREFIXES",
+        file_tools._SENSITIVE_PATH_PREFIXES + (str(tmp_path) + os.sep,),
+    )
+    result = _handle_edit(
+        {"mode": "replace", "path": str(f), "old_string": "world", "new_string": "there"},
+        task_id="t5",
+    )
+    data = json.loads(result)
+    assert "error" in data
+    assert "sensitive" in data["error"].lower()
+    assert f.read_text(encoding="utf-8") == "hello world\n"
 
 
 # ---------------------------------------------------------------------------

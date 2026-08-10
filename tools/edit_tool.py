@@ -24,9 +24,21 @@ or configured resolution:
   with no recorded snapshot is auto-recorded from its current on-disk
   content (full visible ranges) before applying, so ``[path#TAG]`` works
   when TAG is the fresh tag of the current content; a stale/unknown tag is
-  rejected with an error string (nothing is written — fail-fast).
+  rejected with an error string (nothing is written — fail-fast).  Because
+  the read tool cannot supply the tag, that error re-reads the on-disk
+  content itself and returns the fresh ``[path#TAG]`` to re-issue with —
+  the first-edit loop is an explicit re-read flow, not an error-leak retry.
 * ``replace`` — minimal exact old/new string substitution over one file
   (read, replace, write) using ``path`` / ``old_string`` / ``new_string``.
+
+File-safety: ``hashline`` and ``replace`` route their writes through the
+same guards as the ``patch`` / ``write_file`` tools — sensitive system
+paths are rejected up front (:func:`tools.file_tools._check_sensitive_path`),
+the read->modify->write region is serialized per-path with
+:func:`tools.file_state.lock_path` (cross-agent staleness + per-task
+warnings collected inside the lock), and successful writes refresh the
+read timestamps via :func:`tools.file_tools._update_read_timestamp` and
+:func:`tools.file_state.note_write`.  ``patch`` mode is unchanged.
 
 Errors NEVER raise out of the tool: parse/apply/OS errors are returned as
 JSON error result strings, matching the rest of the file-tool family.
@@ -114,8 +126,52 @@ def _full_ranges(content: str) -> Tuple[Tuple[int, int], ...]:
     return ((1, len(lines)),) if lines else ()
 
 
+def _hashline_tag_guidance(sections: List, msg: str) -> str:
+    """Augment a stale/unknown-tag ApplyError with first-edit guidance.
+
+    ``read_file`` does not emit ``[path#TAG]`` tags yet, so a bare
+    "re-read the file" error is not actionable on a first edit.  The edit
+    tool re-reads the on-disk content itself, records it (so the retry can
+    resolve its tag), and returns the fresh ``[path#TAG]`` header(s) the
+    model should re-issue with.  *msg* is returned unchanged when it is not
+    a missing/stale-tag error.
+    """
+    if "snapshot tag" not in msg and "no snapshot recorded" not in msg:
+        return msg
+    from tools.hashline.snapshots import default_store
+
+    hints: List[str] = []
+    for sec in sections:
+        try:
+            with open(sec.path, encoding="utf-8") as f:
+                content = f.read()
+        except OSError:
+            continue
+        fresh_tag = default_store.record(sec.path, content, ranges=_full_ranges(content))
+        if fresh_tag != sec.tag:
+            hints.append(f"[{sec.path}#{fresh_tag}]")
+    if not hints:
+        return msg
+    return (
+        f"{msg}\n"
+        "NOTE: read_file does not emit [path#TAG] tags yet, so the edit "
+        "tool re-read the file(s) on disk for you. Re-issue your edit with "
+        f"{', '.join(hints)} to retry immediately (or read the file via "
+        "read_file first, then edit with the tag above)."
+    )
+
+
 def _apply_hashline(args: dict, task_id: str) -> str:
     """Apply a hashline payload via the default snapshot store; never raises."""
+    from contextlib import ExitStack
+
+    from tools import file_state
+    from tools.file_tools import (
+        _check_file_staleness,
+        _check_sensitive_path,
+        _resolve_path_for_task,
+        _update_read_timestamp,
+    )
     from tools.hashline import ParseError, parse
     from tools.hashline.apply import ApplyError, apply_sections
     from tools.hashline.snapshots import default_store
@@ -129,56 +185,135 @@ def _apply_hashline(args: dict, task_id: str) -> str:
     except ParseError as exc:
         return tool_error(f"edit hashline parse error: {exc}")
 
-    # Auto-record on-disk content for paths with no recorded snapshot, so a
-    # [path#TAG] section whose tag matches the current content applies even
-    # though read_file does not emit tags yet (Task 12/15 follow-up).
+    # Sensitive-path guard on every section path, up front — same rejection
+    # the patch/write_file tools apply (checked after realpath resolution).
     for sec in sections:
-        if default_store.get(sec.path) is not None:
-            continue
+        sensitive_err = _check_sensitive_path(sec.path, task_id)
+        if sensitive_err:
+            return tool_error(sensitive_err)
+
+    # Resolve + lock every section path in sorted order (mirrors
+    # tools.file_tools.patch_tool) so concurrent subagents cannot interleave
+    # between our auto-record reads, apply, and writes.  Unresolvable paths
+    # degrade to an unlocked no-op.
+    resolved_paths: list = []
+    _seen: set = set()
+    for sec in sections:
         try:
-            with open(sec.path, encoding="utf-8") as f:
-                content = f.read()
-        except FileNotFoundError:
-            # Leave unrecorded; apply_sections reports the missing snapshot.
-            continue
-        except OSError as exc:
-            return tool_error(f"edit hashline: cannot read {sec.path}: {exc}")
-        default_store.record(sec.path, content, ranges=_full_ranges(content))
+            _r = str(_resolve_path_for_task(sec.path, task_id))
+        except Exception:
+            _r = None
+        if _r and _r not in _seen:
+            resolved_paths.append(_r)
+            _seen.add(_r)
+    resolved_paths.sort()
 
-    try:
-        result = apply_sections(sections, default_store)
-    except ApplyError as exc:
-        return tool_error(f"edit hashline apply error: {exc}")
+    with ExitStack() as _locks:
+        for _r in resolved_paths:
+            _locks.enter_context(file_state.lock_path(_r))
 
-    if result.error:
-        return tool_error(f"edit hashline apply error: {result.error}")
+        # Staleness warnings — cross-agent registry first (names the sibling
+        # subagent), per-task tracker as fallback; same precedence as patch.
+        stale_warnings: list = []
+        for sec in sections:
+            try:
+                _r = str(_resolve_path_for_task(sec.path, task_id))
+            except Exception:
+                _r = None
+            _cross = file_state.check_stale(task_id, _r) if _r else None
+            _sw = _cross or _check_file_staleness(sec.path, task_id)
+            if _sw:
+                stale_warnings.append(_sw)
 
-    written: List[dict] = []
-    for fr in result.results:
+        # Auto-record on-disk content for paths with no recorded snapshot, so
+        # a [path#TAG] section whose tag matches the current content applies
+        # even though read_file does not emit tags yet (Task 12/15 follow-up).
+        for sec in sections:
+            if default_store.get(sec.path) is not None:
+                continue
+            try:
+                with open(sec.path, encoding="utf-8") as f:
+                    content = f.read()
+            except FileNotFoundError:
+                # Leave unrecorded; apply_sections reports the missing snapshot.
+                continue
+            except OSError as exc:
+                return tool_error(f"edit hashline: cannot read {sec.path}: {exc}")
+            default_store.record(sec.path, content, ranges=_full_ranges(content))
+
         try:
-            if fr.action == "remove":
-                try:
-                    os.unlink(fr.path)
-                except FileNotFoundError:
-                    pass
-            else:
-                parent = os.path.dirname(os.path.abspath(fr.path))
-                if parent:
-                    os.makedirs(parent, exist_ok=True)
-                with open(fr.path, "w", encoding="utf-8") as f:
-                    f.write(fr.preview)
-            written.append({"path": fr.path, "tag": fr.tag, "action": fr.action})
-        except OSError as exc:
-            return tool_error(f"edit hashline: failed to write {fr.path}: {exc}")
+            result = apply_sections(sections, default_store)
+        except ApplyError as exc:
+            # First-edit flow: read_file cannot supply the tag, so hand back
+            # the fresh one the model can re-issue with (see docstring).
+            return tool_error(_hashline_tag_guidance(sections, str(exc)))
 
-    return json.dumps(
-        {"ok": True, "mode": "hashline", "files": written, "warnings": result.warnings},
-        ensure_ascii=False,
-    )
+        if result.error:
+            return tool_error(f"edit hashline apply error: {result.error}")
+
+        # Sensitive-path guard on FileResults too — an MV destination is a
+        # write target the model never named in a section header.
+        for fr in result.results:
+            sensitive_err = _check_sensitive_path(fr.path, task_id)
+            if sensitive_err:
+                return tool_error(sensitive_err)
+
+        written: List[dict] = []
+        for fr in result.results:
+            try:
+                if fr.action == "remove":
+                    try:
+                        os.unlink(fr.path)
+                    except FileNotFoundError:
+                        pass
+                else:
+                    parent = os.path.dirname(os.path.abspath(fr.path))
+                    if parent:
+                        os.makedirs(parent, exist_ok=True)
+                    with open(fr.path, "w", encoding="utf-8") as f:
+                        f.write(fr.preview)
+                written.append({"path": fr.path, "tag": fr.tag, "action": fr.action})
+            except OSError as exc:
+                return tool_error(f"edit hashline: failed to write {fr.path}: {exc}")
+
+        # Refresh stamps after the successful writes so consecutive edits by
+        # this task don't trigger false staleness warnings, and sibling
+        # subagents see this task as the last writer (mirrors patch_tool).
+        for fr in result.results:
+            _update_read_timestamp(fr.path, task_id)
+            try:
+                _r = str(_resolve_path_for_task(fr.path, task_id))
+            except Exception:
+                _r = None
+            if _r:
+                file_state.note_write(task_id, _r)
+
+    out: dict = {
+        "ok": True,
+        "mode": "hashline",
+        "files": written,
+        "warnings": result.warnings,
+    }
+    if stale_warnings:
+        out["_warning"] = (
+            stale_warnings[0] if len(stale_warnings) == 1
+            else " | ".join(stale_warnings)
+        )
+    return json.dumps(out, ensure_ascii=False)
 
 
 def _apply_replace(args: dict, task_id: str) -> str:
     """Minimal exact old/new string replace over one file; never raises."""
+    from contextlib import nullcontext
+
+    from tools import file_state
+    from tools.file_tools import (
+        _check_file_staleness,
+        _check_sensitive_path,
+        _resolve_path_for_task,
+        _update_read_timestamp,
+    )
+
     path = args.get("path")
     old_string = args.get("old_string")
     if not path or not isinstance(path, str):
@@ -190,31 +325,56 @@ def _apply_replace(args: dict, task_id: str) -> str:
         new_string = ""
     replace_all = bool(args.get("replace_all", False))
 
-    try:
-        with open(path, encoding="utf-8") as f:
-            content = f.read()
-    except OSError as exc:
-        return tool_error(f"edit replace: {exc}")
-
-    count = content.count(old_string)
-    if count == 0:
-        return tool_error(f"edit replace: old_string not found in {path}")
-    if not replace_all and count > 1:
-        return tool_error(
-            f"edit replace: old_string occurs {count} times in {path}; "
-            "pass replace_all=True or include more context"
-        )
+    # Sensitive-path guard — same rejection the patch/write_file tools apply.
+    sensitive_err = _check_sensitive_path(path, task_id)
+    if sensitive_err:
+        return tool_error(sensitive_err)
 
     try:
-        with open(path, "w", encoding="utf-8") as f:
-            f.write(content.replace(old_string, new_string))
-    except OSError as exc:
-        return tool_error(f"edit replace: {exc}")
+        resolved = str(_resolve_path_for_task(path, task_id))
+    except Exception:
+        resolved = None
 
-    return json.dumps(
-        {"ok": True, "mode": "replace", "path": path, "replaced": count},
-        ensure_ascii=False,
-    )
+    # Serialize the read→modify→write region per-path so concurrent
+    # subagents can't interleave on the same file (mirrors write_file_tool).
+    with file_state.lock_path(resolved) if resolved else nullcontext():
+        # Cross-agent staleness wins over per-task warning when both fire —
+        # its message names the sibling subagent (mirrors write_file_tool).
+        cross_warning = file_state.check_stale(task_id, resolved) if resolved else None
+        stale_warning = _check_file_staleness(path, task_id)
+        effective_warning = cross_warning or stale_warning
+
+        try:
+            with open(path, encoding="utf-8") as f:
+                content = f.read()
+        except OSError as exc:
+            return tool_error(f"edit replace: {exc}")
+
+        count = content.count(old_string)
+        if count == 0:
+            return tool_error(f"edit replace: old_string not found in {path}")
+        if not replace_all and count > 1:
+            return tool_error(
+                f"edit replace: old_string occurs {count} times in {path}; "
+                "pass replace_all=True or include more context"
+            )
+
+        try:
+            with open(path, "w", encoding="utf-8") as f:
+                f.write(content.replace(old_string, new_string))
+        except OSError as exc:
+            return tool_error(f"edit replace: {exc}")
+
+        # Refresh stamps after the successful write so consecutive edits by
+        # this task don't trigger false staleness warnings (mirrors patch).
+        _update_read_timestamp(path, task_id)
+        if resolved:
+            file_state.note_write(task_id, resolved)
+
+    out: dict = {"ok": True, "mode": "replace", "path": path, "replaced": count}
+    if effective_warning:
+        out["_warning"] = effective_warning
+    return json.dumps(out, ensure_ascii=False)
 
 
 # ---------------------------------------------------------------------------
