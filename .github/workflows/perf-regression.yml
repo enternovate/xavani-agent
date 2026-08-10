@@ -60,8 +60,12 @@ jobs:
         run: |
           python3 scripts/perf_baseline.py --quick | python3 -c '
           import json, sys
-          startup = json.load(sys.stdin)["startup_seconds"]
+          data = json.load(sys.stdin)
+          startup = data["startup_seconds"]
           limit = 5.0
+          if startup is None:
+              print(f"::error::Startup measurement failed: {data.get('startup_error', 'no startup samples')}")
+              sys.exit(1)
           print(f"startup_seconds={startup:.4f}s (limit {limit:.1f}s)")
           if startup > limit:
               print(f"::error::Startup time {startup:.2f}s exceeds the {limit:.1f}s gate")
