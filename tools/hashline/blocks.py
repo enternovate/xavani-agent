@@ -5,9 +5,11 @@ Resolves the syntactic block beginning at an anchor line for ``PUT N*`` /
 tree-sitter grammars, with graceful degradation:
 
 * Language is detected from the section path extension (``.py`` -> python,
-  ``.ts``/``.tsx``/``.js`` -> typescript, ``.rs`` -> rust, ``.go`` -> go,
-  ``.md`` -> markdown).  Unknown extensions raise :class:`BlockResolutionError`
-  with guidance to use explicit line ranges.
+  ``.ts``/``.js`` -> typescript, ``.tsx`` -> tsx, ``.rs`` -> rust,
+  ``.go`` -> go, ``.md`` -> markdown).  ``.tsx`` parses with the TSX
+  grammar (``language_tsx`` from the tree-sitter-typescript wheel) because
+  JSX is not valid TypeScript grammar.  Unknown extensions raise
+  :class:`BlockResolutionError` with guidance to use explicit line ranges.
 * Tree-sitter and the grammar wheels are OPTIONAL (the ``hashline`` extra);
   when they are not installed every resolution raises
   :class:`BlockResolutionError` with install guidance — the apply engine
@@ -15,7 +17,9 @@ tree-sitter grammars, with graceful degradation:
   grammar never crashes the engine.
 * Markdown uses ``tree-sitter-markdown`` when available, otherwise a pure
   heading heuristic: a heading at line N opens a block that runs through
-  deeper subsections to the next heading of equal or higher level.
+  deeper subsections to the next heading of equal or higher level.  Fenced
+  code blocks (`` ``` `` or ``~~~``) are skipped while scanning, so a code
+  line that looks like a heading never truncates the block.
 
 Resolution semantics (omp rules): the block STARTS at the anchor line (the
 anchor must be the *opener* — the first decorator, the ``def``/``class``/
@@ -40,17 +44,31 @@ __all__ = [
 ]
 
 #: Extension -> tree-sitter language name (lowercased extension).
+#: ``.tsx`` maps to the ``tsx`` dialect: the tree-sitter-typescript wheel
+#: bundles BOTH the plain TypeScript and the TSX (JSX) grammar, and JSX is
+#: not valid TS grammar (ERROR nodes would swallow siblings to EOF), so
+#: ``.tsx`` must load ``language_tsx`` — see :data:`_LANG_VARIANTS`.
 _EXT_TO_LANG = {
     ".py": "python",
     ".pyw": "python",
     ".ts": "typescript",
-    ".tsx": "typescript",
+    ".tsx": "tsx",
     ".js": "typescript",
     ".mjs": "typescript",
     ".cjs": "typescript",
     ".rs": "rust",
     ".go": "go",
     ".md": "markdown",
+}
+
+#: Dialects whose grammar lives in a wheel named after a different language.
+#: Maps the dialect name used by :data:`_EXT_TO_LANG` to ``(wheel module,
+#: preferred language accessor)``.  tree-sitter-typescript ships the TSX
+#: grammar alongside the plain TS one; ``.tsx`` MUST parse with
+#: ``language_tsx`` because JSX is invalid TS grammar (the TS grammar emits
+#: ERROR nodes that consume the rest of the file).
+_LANG_VARIANTS = {
+    "tsx": ("tree_sitter_typescript", "language_tsx"),
 }
 
 #: ATX heading opener: 1..6 '#' followed by whitespace or end of line.
@@ -188,18 +206,27 @@ def _load_parser(language: str):
         Language = tree_sitter.Language  # type: ignore[attr-defined]
         Parser = tree_sitter.Parser  # type: ignore[attr-defined]
 
+    module_name = f"tree_sitter_{language}"
+    fn_names = ("language", f"language_{language}", "LANGUAGE")
+    variant = _LANG_VARIANTS.get(language)
+    if variant is not None:
+        # Dialect shipped inside another wheel (e.g. tsx inside
+        # tree-sitter-typescript): import that wheel and PREFER the
+        # dialect accessor (language_tsx) over the generic probes.
+        module_name, preferred = variant
+        fn_names = (preferred,) + tuple(n for n in fn_names if n != preferred)
     try:
-        module = importlib.import_module(f"tree_sitter_{language}")
+        module = importlib.import_module(module_name)
     except ImportError:
         raise TreeSitterUnavailable(
             f"the tree-sitter grammar wheel for {language!r} is not installed "
             f"— block anchors need the optional 'hashline' extra "
-            f"(tree-sitter-{language}); use explicit line ranges "
-            "(PUT N.=M: / CUT N.=M) for now"
+            f"({module_name.replace('tree_sitter_', 'tree-sitter-')}); use "
+            "explicit line ranges (PUT N.=M: / CUT N.=M) for now"
         )
 
     lang = None
-    for name in ("language", f"language_{language}", "LANGUAGE"):
+    for name in fn_names:
         fn = getattr(module, name, None)
         if fn is None:
             continue
@@ -247,8 +274,23 @@ def _resolve_markdown_heading(source: str, line: int) -> Tuple[int, int]:
         )
     level = len(match.group(1))
     end = line
+    fence_char: Optional[str] = None
     for idx in range(line, total):  # 0-indexed scan, exclusive of the anchor
-        nxt = _HEADING_RE.match(lines[idx])
+        raw = lines[idx]
+        stripped = raw.lstrip()
+        if fence_char is not None:
+            # Inside a fenced code block: only the matching closing fence
+            # (3+ of the same char) ends it; a '#...' line here is CODE and
+            # must not be treated as the next heading.
+            if stripped.startswith(fence_char * 3):
+                fence_char = None
+            end = idx + 1
+            continue
+        if stripped.startswith("```") or stripped.startswith("~~~"):
+            fence_char = stripped[0]  # fenced code block swallows headings
+            end = idx + 1
+            continue
+        nxt = _HEADING_RE.match(raw)
         if nxt is not None and len(nxt.group(1)) <= level:
             break  # next heading of equal or higher level ends the block
         end = idx + 1
