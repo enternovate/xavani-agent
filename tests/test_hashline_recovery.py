@@ -176,3 +176,57 @@ def test_apply_sections_without_guard_still_rejects_noop():
         apply_sections(
             parse(f"[f.py#{tag}]\nPUT 1.=3:\n+a\n+b\n+c\n"), store
         )
+
+
+# ---------------------------------------------------------------------------
+# regressions from code-quality review (safety class: wrong remap)
+# ---------------------------------------------------------------------------
+
+
+def test_recovery_line1_anchor_remaps_correctly():
+    # C1: anchor starts at line 1 (no above-context); drift prepends lines.
+    # The mapped line must be matches[0] + 1 (unconditional).
+    store = make_store("f.py", "p\nq\n", [(1, 2)])
+    tag1 = store.get("f.py").tag
+    store.record("f.py", "x0\nx1\np\nq\n", ranges=[(1, 4)])
+    tag2 = store.get("f.py").tag
+    assert tag1 != tag2
+
+    res = apply_sections(
+        parse(f"[f.py#{tag1}]\nPUT 1.=2:\n+P\n+Q\n"),
+        store,
+    )
+    assert res.error is None
+    (fr,) = res.results
+    assert fr.preview == "x0\nx1\nP\nQ\n"
+
+
+def test_recovery_out_of_range_stale_tag_fails_closed():
+    # C2: model wrote a range past the OLD snapshot's EOF; with a stale tag
+    # the malformed range must be rejected, never silently truncated/remapped.
+    store = make_store("f.py", "a\nb\nc\nd\ne\n", [(1, 5)])
+    tag1 = store.get("f.py").tag
+    store.record("f.py", "a\nb\nc\nd\ne\nx\ny\nz\n", ranges=[(1, 8)])
+
+    with pytest.raises(ApplyError, match="out of range|re-read"):
+        apply_sections(
+            parse(f"[f.py#{tag1}]\nPUT 4.=6:\n+Z\n+Y\n+Z\n"),
+            store,
+        )
+
+
+def test_guard_not_advanced_when_patch_fails_validation():
+    # M1: a no-op section followed by an invalid section must NOT advance
+    # the guard counter (the patch never applies).
+    store = make_store("a.py", "x\ny\n", [(1, 2)])
+    store.record("b.py", "u\nv\n", [(1, 2)])
+    guard = NoopGuard()
+    ta = store.get("a.py").tag
+    tb = store.get("b.py").tag
+    patch = (
+        f"[a.py#{ta}]\nPUT 1.=2:\n+x\n+y\n"   # byte-identical no-op
+        f"[b.py#{tb}]\nPUT 5.=5:\n+oops\n"    # out of range -> fails
+    )
+    with pytest.raises(ApplyError):
+        apply_sections(parse(patch), store, guard=guard)
+    assert guard.count("a.py") == 0  # never recorded

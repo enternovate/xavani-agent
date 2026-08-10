@@ -63,6 +63,12 @@ def _window_lines(
     if text.endswith("\n"):
         raw = raw[:-1]
     total = len(raw)
+    if not (1 <= start <= end <= total):
+        raise _apply_error(
+            old.path, old.tag,
+            f"range {start}..{end} is out of range — the recorded snapshot "
+            f"has {total} line(s); re-read the file",
+        )
     ctx_above = start - 1 if start > 1 else 0
     ctx_below = end + 1 if end < total else total + 1
     # Inclusive slice from ctx_above..ctx_below (1-indexed, both optional).
@@ -122,8 +128,10 @@ def _find_unique_run(
     for line, count in window_counts.items():
         if raw.count(line) != count:
             return None
-    offset = matches[0]
-    return offset + (1 if has_above else 0)
+    # `matches[0]` is the 0-based index where the ANCHOR starts in `raw`;
+    # 1-indexed line = index + 1 (unconditional, whether or not the window
+    # carried an above-context row).
+    return matches[0] + 1
 
 
 def recover_section(
