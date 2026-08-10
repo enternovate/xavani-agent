@@ -31,6 +31,15 @@ or configured resolution:
 * ``replace`` — minimal exact old/new string substitution over one file
   (read, replace, write) using ``path`` / ``old_string`` / ``new_string``.
 
+LIMITATION: unlike the ``patch`` / ``write_file`` tools, ``hashline`` and
+``replace`` write files directly on the LOCAL filesystem via plain
+``open()`` calls — they do not route through ``ShellFileOperations`` /
+``file_ops`` like the rest of the file-tool family.  They are therefore
+only correct when the terminal backend is local: with a non-local backend
+(docker/modal/singularity/daytona/vercel_sandbox/ssh) active, the paths a
+model names refer to the sandbox filesystem, and both modes refuse with a
+clear error rather than silently editing the wrong file.
+
 File-safety: ``hashline`` and ``replace`` route their writes through the
 same guards as the ``patch`` / ``write_file`` tools — sensitive system
 paths are rejected up front (:func:`tools.file_tools._check_sensitive_path`),
@@ -101,6 +110,36 @@ def _config_edit_mode() -> Optional[str]:
         return mode if isinstance(mode, str) and mode else None
     except Exception:
         return None
+
+
+# ---------------------------------------------------------------------------
+# Local-backend guard (hashline/replace write directly on the host FS)
+# ---------------------------------------------------------------------------
+
+
+def _backend_is_local(task_id: str = "default") -> bool:
+    """True when the terminal backend for *task_id* runs on the local host.
+
+    ``hashline`` and ``replace`` modes write files with plain ``open()``
+    calls on this process's filesystem, so they are only correct when the
+    terminal backend is local — the same signal
+    :func:`tools.file_tools._get_file_ops` uses (``TERMINAL_ENV`` config,
+    plus the D07 untrusted-repo sandbox escalation).  With a container/cloud
+    backend (docker/modal/singularity/daytona/vercel_sandbox/ssh) the paths
+    a model names refer to the sandbox filesystem, not the host one this
+    process writes; the caller must fail fast instead of editing the wrong
+    file.  Fails open (returns True) when the config cannot be read so a
+    broken env setup cannot disable editing entirely.
+    """
+    try:
+        from tools.terminal_tool import _get_env_config
+    except Exception:
+        return True
+    try:
+        env_type = _get_env_config().get("env_type") or "local"
+    except Exception:
+        return True
+    return env_type == "local"
 
 
 # ---------------------------------------------------------------------------
@@ -180,6 +219,16 @@ def _apply_hashline(args: dict, task_id: str) -> str:
     if payload is None or not isinstance(payload, str) or not payload.strip():
         return tool_error("edit: mode='hashline' requires a non-empty 'input' payload")
 
+    # Local-only writes: hashline applies via plain open() on this host's
+    # filesystem, so a non-local terminal backend must refuse up front.
+    if not _backend_is_local(task_id):
+        return tool_error(
+            "edit: mode='hashline' writes files directly on the local "
+            "filesystem, but the active TERMINAL_ENV backend is not local — "
+            "the paths in this call would not edit the files the model "
+            "sees. Use patch mode or re-run with the local backend."
+        )
+
     try:
         sections = parse(payload)
     except ParseError as exc:
@@ -252,11 +301,16 @@ def _apply_hashline(args: dict, task_id: str) -> str:
             return tool_error(f"edit hashline apply error: {result.error}")
 
         # Sensitive-path guard on FileResults too — an MV destination is a
-        # write target the model never named in a section header.
+        # write target the model never named in a section header, and the
+        # MV source must pass the same check (unlink target).
         for fr in result.results:
             sensitive_err = _check_sensitive_path(fr.path, task_id)
             if sensitive_err:
                 return tool_error(sensitive_err)
+            if fr.action == "move" and fr.source:
+                sensitive_err = _check_sensitive_path(fr.source, task_id)
+                if sensitive_err:
+                    return tool_error(sensitive_err)
 
         written: List[dict] = []
         for fr in result.results:
@@ -272,6 +326,19 @@ def _apply_hashline(args: dict, task_id: str) -> str:
                         os.makedirs(parent, exist_ok=True)
                     with open(fr.path, "w", encoding="utf-8") as f:
                         f.write(fr.preview)
+                    if fr.action == "move" and fr.source:
+                        # MV: unlink the source ONLY after the destination
+                        # write succeeded — a failed write must not lose the
+                        # original file.
+                        try:
+                            os.unlink(fr.source)
+                        except FileNotFoundError:
+                            pass
+                        except OSError as exc:
+                            return tool_error(
+                                f"edit hashline: destination {fr.path} written "
+                                f"but failed to remove source {fr.source}: {exc}"
+                            )
                 written.append({"path": fr.path, "tag": fr.tag, "action": fr.action})
             except OSError as exc:
                 return tool_error(f"edit hashline: failed to write {fr.path}: {exc}")
@@ -323,7 +390,22 @@ def _apply_replace(args: dict, task_id: str) -> str:
     new_string = args.get("new_string", "")
     if new_string is None:
         new_string = ""
+    if not isinstance(new_string, str):
+        return tool_error(
+            f"edit: mode='replace' 'new_string' must be a string, got "
+            f"{type(new_string).__name__}"
+        )
     replace_all = bool(args.get("replace_all", False))
+
+    # Local-only writes: replace rewrites the file via plain open() on this
+    # host's filesystem, so a non-local terminal backend must refuse up front.
+    if not _backend_is_local(task_id):
+        return tool_error(
+            "edit: mode='replace' writes files directly on the local "
+            "filesystem, but the active TERMINAL_ENV backend is not local — "
+            "the path in this call would not edit the file the model sees. "
+            "Use patch mode or re-run with the local backend."
+        )
 
     # Sensitive-path guard — same rejection the patch/write_file tools apply.
     sensitive_err = _check_sensitive_path(path, task_id)
