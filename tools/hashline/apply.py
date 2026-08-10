@@ -70,13 +70,15 @@ class FileResult:
     ``tag`` is the fresh content tag of the recorded snapshot (``None`` for
     a removed file), ``preview`` the full new file content, and ``action``
     one of ``"edit"`` / ``"remove"`` / ``"move"`` (for a move, ``path`` is
-    the destination).
+    the destination and ``source`` the original path the caller must unlink
+    after writing the destination; ``None`` for edit/remove).
     """
 
     path: str
     tag: Optional[str]
     preview: str
     action: str
+    source: Optional[str] = None
 
 
 @dataclass(frozen=True)
@@ -402,7 +404,7 @@ def _commit(
         )
     tag = store.record(dest, content, ranges=_full_ranges(content))
     store.invalidate(sec.path)
-    return FileResult(dest, tag, content, "move"), warnings
+    return FileResult(dest, tag, content, "move", source=sec.path), warnings
 
 
 # -- public API --------------------------------------------------------------
