@@ -208,6 +208,23 @@ class TestMaxFourBreakpoints:
         )
         assert _count_cache_control(kwargs) <= 4
 
+    def test_full_pipeline_cap_holds_in_legacy_three_history_layout(self):
+        """history_breakpoints=3 + cache_control=True must still fit inside
+        Anthropic's 4-breakpoint cap on the FINAL wire payload.
+
+        Full pipeline (apply_anthropic_cache_control → build_anthropic_kwargs,
+        which runs convert_messages_to_anthropic internally): system(1) + last
+        3 history messages(3) already consume all 4 message-level slots, so the
+        tools-block marker added by build_anthropic_kwargs must be skipped —
+        the cap is enforced by construction, not by call-site convention.
+        """
+        kwargs = _build_anthropic_payload(
+            _history_messages(6), tools=TOOLS, history_breakpoints=3
+        )
+        # system(1) + last 3 history(3) = 4 markers; tools block stays unmarked.
+        assert _count_cache_control(kwargs) == 4
+        assert _count_cache_control(kwargs) <= 4
+
 
 class TestNoCacheControlOffPath:
     def test_builder_default_carries_no_cache_control(self):
