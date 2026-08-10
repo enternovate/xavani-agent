@@ -42,7 +42,13 @@ class TestHandleFunctionCall:
         assert isinstance(parsed, dict)
         assert "error" in parsed
         assert len(parsed["error"]) > 0
-        assert "error" in parsed["error"].lower() or "failed" in parsed["error"].lower()
+        # S3-2 registry validation returns a clear message that names the
+        # problem; accept "error"/"failed" wording OR the validation wording.
+        assert (
+            "error" in parsed["error"].lower()
+            or "failed" in parsed["error"].lower()
+            or "must be" in parsed["error"].lower()
+        )
 
     def test_tool_hooks_receive_session_and_tool_call_ids(self):
         with (
