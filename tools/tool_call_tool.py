@@ -40,7 +40,12 @@ def invoke_tool_by_name(args: dict, **kwargs) -> str:
     from model_tools import handle_function_call
 
     try:
-        return handle_function_call(name, arguments)
+        return handle_function_call(
+            name,
+            arguments,
+            task_id=kwargs.get("task_id"),
+            user_task=kwargs.get("user_task"),
+        )
     except Exception as exc:  # defensive: never raise from a tool handler
         return tool_error(f"Failed to dispatch {name}: {type(exc).__name__}: {exc}")
 
