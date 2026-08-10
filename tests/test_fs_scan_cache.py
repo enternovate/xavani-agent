@@ -67,7 +67,74 @@ def test_ignore_rules(tmp_path):
     assert not any(e.endswith(".secret") for e in listing)
 
 
-def test_lru_eviction_caps_cache_at_16_entries(tmp_path):
+def test_ignore_dirs_string_form_ignores_dir_not_letters(tmp_path):
+    # Regression: {"ignore_dirs": ".git"} used to do set(".git") -> {'.','g','i','t'},
+    # so ".git" itself was NOT ignored (only masked by the hidden rule) while any
+    # directory named after a single letter was silently dropped. A string must be
+    # treated as ONE dir name. ignore_hidden=False so the hidden rule can't mask it.
+    tree = tmp_path / "tree"
+    tree.mkdir()
+    (tree / ".git").mkdir()
+    (tree / ".git" / "HEAD").write_text("x")
+    (tree / "src").mkdir()
+    (tree / "src" / "main.py").write_text("x")
+    (tree / "t").mkdir()  # a dir named after one letter of ".git"
+    (tree / "t" / "keep.txt").write_text("x")
+    (tree / "data.txt").write_text("x")
+
+    listing = set(walk(str(tree), {"ignore_dirs": ".git", "ignore_hidden": False}))
+    assert listing == {"src", "src/main.py", "t", "t/keep.txt", "data.txt"}
+    assert ".git" not in listing
+    assert not any(e.startswith(".git/") for e in listing)
+
+
+def test_invalidate_ancestor_dir_invalidates_subtree_entries(tmp_path):
+    # A write to an ancestor dir must drop every cached subtree entry beneath it.
+    fsc.hits = 0
+    root = tmp_path / "root"
+    (root / "sub").mkdir(parents=True)
+    (root / "sub" / "a.txt").write_text("x")
+    (root / "sub" / "b.txt").write_text("x")
+
+    first = walk(str(root / "sub"))
+    assert any(e.endswith("a.txt") for e in first)
+
+    (root / "sub" / "c.txt").write_text("x")
+    invalidate(str(root))  # ancestor of the cached root/sub entry
+    second = walk(str(root / "sub"))
+    assert any(e.endswith("c.txt") for e in second)
+
+
+def test_path_canonicalization_equivalent_roots_share_entry(tmp_path):
+    # foo, foo/./ and foo/../foo must resolve to the same cache entry.
+    fsc.hits = 0
+    tree = tmp_path / "tree"
+    tree.mkdir()
+    (tree / "a.txt").write_text("x")
+
+    plain = walk(str(tree))
+    with_dot = walk(str(tree) + "/./")
+    with_parent = walk(str(tree) + "/../" + tree.name)
+    assert plain == with_dot == with_parent
+    assert fsc.hits == 2  # both variants served from the same canonical entry
+
+
+def test_options_dict_ignore_hidden_false_shows_hidden_files(tmp_path):
+    # The options-dict path must honor ignore_hidden=False (hidden entries shown).
+    tree = tmp_path / "tree"
+    tree.mkdir()
+    (tree / ".env").write_text("x")
+    (tree / "visible.txt").write_text("x")
+
+    default_listing = set(walk(str(tree)))
+    assert ".env" not in default_listing
+
+    hidden_listing = set(walk(str(tree), {"ignore_hidden": False}))
+    assert ".env" in hidden_listing
+    assert "visible.txt" in hidden_listing
+
+
+def test_lru_eviction_caps_cache_at_exactly_16_entries(tmp_path):
     fsc.hits = 0
     roots = []
     for i in range(17):
@@ -78,7 +145,8 @@ def test_lru_eviction_caps_cache_at_16_entries(tmp_path):
 
     for r in roots:
         walk(r)
-    assert len(fsc._cache) <= 16
+    # Capacity is exactly MAX_ENTRIES (16): the 17th insert evicts one, no more.
+    assert len(fsc._cache) == 16
 
     # d0 was the first inserted, so LRU eviction must have dropped it:
     walk(roots[0])

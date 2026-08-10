@@ -60,7 +60,8 @@ def _normalize_options(options_key):
     Accepts:
     * ``None`` -- defaults (ignore hidden + common junk dirs, include dirs).
     * a dict -- ``ignore_hidden`` (bool, default True), ``ignore_dirs``
-      (iterable of extra directory names, additive over the defaults),
+      (iterable of extra directory names — a plain string is treated as
+      ONE name, not a set of characters — additive over the defaults),
       ``include_dirs`` (bool, default True).
     * a frozenset/set/tuple/list of names -- additive ignore dirs.
     """
@@ -72,6 +73,8 @@ def _normalize_options(options_key):
         ignore_hidden = bool(options_key.get("ignore_hidden", True))
         include_dirs = bool(options_key.get("include_dirs", True))
         extra = options_key.get("ignore_dirs", ())
+        if isinstance(extra, str):
+            extra = [extra]  # lenient: one dir name, never a set of chars
         ignore_dirs = tuple(sorted(set(DEFAULT_IGNORE_DIRS) | set(extra)))
     elif isinstance(options_key, (frozenset, set, tuple, list)):
         ignore_dirs = tuple(sorted(set(DEFAULT_IGNORE_DIRS) | set(options_key)))
@@ -112,8 +115,8 @@ def _scan(root, opts):
 
 
 def _evict_locked(now):
-    """Drop expired entries, then LRU-evict until under MAX_ENTRIES."""
-    while len(_cache) >= MAX_ENTRIES:
+    """Drop expired entries, then LRU-evict until at most MAX_ENTRIES."""
+    while len(_cache) > MAX_ENTRIES:
         expired = [k for k, (_, exp, _) in _cache.items() if exp <= now]
         if expired:
             for k in expired:
