@@ -16,6 +16,26 @@ Import chain (circular-import safe):
     model_tools.py  (imports tools.registry + all tool modules)
            ^
     run_agent.py, cli.py, batch_runner.py, etc.
+
+Tool-argument schema validation (backlog D78 / S3-2)
+=====================================================
+``dispatch()`` validates a call's args against the tool's registered schema
+BEFORE invoking the handler: unknown parameters (strict schemas), missing
+required fields, and primitive type mismatches are rejected with a
+``tool_error``-style string. Complex nested types and enums are intentionally
+not validated in this pass, and ``None`` values are never type-checked.
+
+The validation plan is precomputed at ``register()`` time so the hot path
+stays cheap: plain dict lookups and isinstance checks only, no jsonschema
+import at call time.
+
+Opt-out list (``_SCHEMA_VALIDATION_OPT_OUTS``) — tools whose schema cannot
+describe their accepted arguments and therefore skip validation entirely:
+  * tool_call  — the meta-tool's ``arguments`` payload is arbitrary by design;
+                 only the outer {name, arguments} envelope is schematized.
+Tools with an empty/None schema bypass validation automatically (no plan is
+built). A per-tool opt-out also exists: pass ``schema_validation=False`` to
+``register()`` (e.g. tools whose schemas are built dynamically at runtime).
 """
 
 import ast
@@ -61,6 +81,102 @@ def _module_registers_tools(module_path: Path) -> bool:
         return False
 
     return any(_is_registry_register_call(stmt) for stmt in tree.body)
+
+
+# ---------------------------------------------------------------------------
+# Tool-argument schema validation (backlog D78 / S3-2)
+#
+# Validation runs in dispatch() before the handler is invoked. The plan is
+# precomputed at register() time so the hot path is pure dict lookups +
+# isinstance checks — no jsonschema import at call time. See the module
+# docstring for the opt-out policy.
+# ---------------------------------------------------------------------------
+
+_SCHEMA_VALIDATION_OPT_OUTS = frozenset({"tool_call"})
+
+_PRIMITIVE_TYPES = frozenset({"string", "boolean", "integer", "number"})
+
+
+def _type_ok(expected: str, value: Any) -> bool:
+    """Return True when *value* matches the JSON-schema primitive *expected*."""
+    if expected == "string":
+        return isinstance(value, str)
+    if expected == "boolean":
+        return isinstance(value, bool)
+    if expected == "integer":
+        return isinstance(value, int) and not isinstance(value, bool)
+    if expected == "number":
+        return isinstance(value, (int, float)) and not isinstance(value, bool)
+    return True
+
+
+def _build_validation_plan(schema: Optional[dict]) -> Optional[dict]:
+    """Precompute a fast arg-validation plan from an OpenAI-style tool schema.
+
+    Returns None (validation skipped) for empty/None schemas and schemas with
+    nothing checkable. Only primitive property types are planned; array/object
+    and multi-type (e.g. ``["string", "null"]``) properties are not checked.
+    """
+    if not isinstance(schema, dict):
+        return None
+    try:
+        params = schema.get("parameters")
+        if not isinstance(params, dict):
+            return None
+        properties = params.get("properties")
+        if not isinstance(properties, dict):
+            properties = {}
+        typed: Dict[str, str] = {}
+        for prop_name, prop_schema in properties.items():
+            if not isinstance(prop_schema, dict):
+                continue
+            prop_type = prop_schema.get("type")
+            if isinstance(prop_type, str) and prop_type in _PRIMITIVE_TYPES:
+                typed[prop_name] = prop_type
+        required = params.get("required")
+        required_set = (
+            frozenset(required) if isinstance(required, (list, tuple, set)) else frozenset()
+        )
+        strict = params.get("additionalProperties") is False
+        if not typed and not required_set and not strict:
+            return None
+        return {
+            "typed": typed,
+            "known": frozenset(properties) | required_set,
+            "required": required_set,
+            "strict": strict,
+        }
+    except Exception:
+        return None
+
+
+def _validate_args(name: str, args: Any, plan: dict) -> Optional[str]:
+    """Return an error message for the first violation, or None when valid."""
+    if not isinstance(args, dict):
+        return f"Arguments for tool '{name}' must be a JSON object"
+    if plan["strict"]:
+        unknown = [k for k in args if k not in plan["known"]]
+        if unknown:
+            return (
+                f"Unknown parameter(s) for tool '{name}': "
+                + ", ".join(sorted(unknown))
+            )
+    missing = [k for k in plan["required"] if k not in args]
+    if missing:
+        return (
+            f"Missing required parameter(s) for tool '{name}': "
+            + ", ".join(sorted(missing))
+        )
+    for key, expected in plan["typed"].items():
+        value = args.get(key)
+        if value is None:
+            continue
+        if not _type_ok(expected, value):
+            return (
+                f"Parameter '{key}' for tool '{name}' must be a {expected} "
+                f"(got {type(value).__name__})"
+            )
+    return None
 
 
 # ---------------------------------------------------------------------------
@@ -201,11 +317,13 @@ class ToolEntry:
         "name", "toolset", "schema", "handler", "check_fn", "health_fn",
         "requires_env", "is_async", "description", "emoji",
         "max_result_size_chars", "dynamic_schema_overrides",
+        "schema_validation", "validation_plan",
     )
 
     def __init__(self, name, toolset, schema, handler, check_fn, health_fn,
                  requires_env, is_async, description, emoji,
-                 max_result_size_chars=None, dynamic_schema_overrides=None):
+                 max_result_size_chars=None, dynamic_schema_overrides=None,
+                 schema_validation=True):
         self.name = name
         self.toolset = toolset
         self.schema = schema
@@ -225,6 +343,12 @@ class ToolEntry:
         # on every get_definitions() call; results are merged shallow on top
         # of the base schema before the {"type": "function", ...} wrap.
         self.dynamic_schema_overrides = dynamic_schema_overrides
+        self.schema_validation = (
+            schema_validation and name not in _SCHEMA_VALIDATION_OPT_OUTS
+        )
+        self.validation_plan = (
+            _build_validation_plan(self.schema) if self.schema_validation else None
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -396,6 +520,7 @@ class ToolRegistry:
         emoji: str = "",
         max_result_size_chars: int | float | None = None,
         dynamic_schema_overrides: Callable = None,
+        schema_validation: bool = True,
         override: bool = False,
     ):
         """Register a tool.  Called at module-import time by each tool file.
@@ -405,6 +530,10 @@ class ToolRegistry:
         default browser tool for a headed-Chrome CDP backend). Without it,
         registrations that would shadow an existing tool from a different
         toolset are rejected to prevent accidental overwrites.
+
+        ``schema_validation=False`` opts this tool out of dispatch-time
+        argument validation (see the module docstring for the opt-out policy
+        and the name-based opt-out list).
         """
         with self._lock:
             existing = self._tools.get(name)
@@ -452,6 +581,7 @@ class ToolRegistry:
                 emoji=emoji,
                 max_result_size_chars=max_result_size_chars,
                 dynamic_schema_overrides=dynamic_schema_overrides,
+                schema_validation=schema_validation,
             )
             if check_fn and toolset not in self._toolset_checks:
                 self._toolset_checks[toolset] = check_fn
@@ -546,10 +676,18 @@ class ToolRegistry:
         * Async handlers are bridged automatically via ``_run_async()``.
         * All exceptions are caught and returned as ``{"error": "..."}``
           for consistent error format.
+        * Args are validated against the tool's registered schema before the
+          handler runs; violations return a ``tool_error``-style string and
+          never reach the handler (see module docstring, backlog D78 / S3-2).
         """
         entry = self.get_entry(name)
         if not entry:
             return json.dumps({"error": f"Unknown tool: {name}"})
+        plan = entry.validation_plan
+        if plan is not None:
+            violation = _validate_args(name, args, plan)
+            if violation is not None:
+                return tool_error(violation)
         try:
             if entry.is_async:
                 from model_tools import _run_async
