@@ -242,6 +242,53 @@ _LEGACY_TOOLSET_MAP = {
 
 
 # =============================================================================
+# Deferred-tool classification  (per-turn schema token budget)
+#
+# Tools listed here are NOT wired into the DEFAULT per-turn schema list, so
+# their schemas don't cost tokens on every turn (see
+# scripts/tool_payload_report.py for the per-tool evidence). They remain
+# fully registered and dispatchable: the always-on meta-tools
+# (tool_search / tool_describe / tool_call) let the agent discover, inspect,
+# and invoke them on demand, and explicitly enabling a toolset that contains
+# one of them wires it back in full (explicit opt-in always wins).
+# =============================================================================
+
+# START CONSERVATIVE — defer only rarely-used capability families:
+# computer use, image/video *generation*, discord/social platform
+# integrations, document tools, and voice tools. Everything else
+# (terminal / file / search / web / browser / delegate / cron / memory /
+# registry-active tools) stays on the default wire.
+DEFERRED_TOOL_NAMES: frozenset = frozenset({
+    # Computer use (macOS desktop control)
+    "computer_use",
+    # Image / video generation
+    "image_generate",
+    "video_generate",
+    # Discord + social platform integrations
+    "discord",
+    "discord_admin",
+    "feishu_doc_read",
+    "feishu_drive_list_comments",
+    "feishu_drive_list_comment_replies",
+    "feishu_drive_reply_comment",
+    "feishu_drive_add_comment",
+    "yb_query_group_info",
+    "yb_query_group_members",
+    "yb_send_dm",
+    "yb_search_sticker",
+    "yb_send_sticker",
+    "x_search",
+    # Document tools (docx/xlsx/pptx/pdf reading)
+    "read_document",
+    # Voice tools
+    "text_to_speech",
+})
+
+# The three meta-tools are ALWAYS wired, so deferred tools stay reachable.
+META_TOOL_NAMES: frozenset = frozenset({"tool_search", "tool_describe", "tool_call"})
+
+
+# =============================================================================
 # get_tool_definitions  (the main schema provider)
 # =============================================================================
 
@@ -392,6 +439,21 @@ def _compute_tool_definitions(
     # all check the tool registry for plugin-provided toolsets.  No bypass
     # needed; plugins respect enabled_toolsets / disabled_toolsets like any
     # other toolset.
+
+    # ------------------------------------------------------------------
+    # Deferred-tool classification (per-turn schema token budget).
+    #
+    # On the default wire (no explicit enabled_toolsets), rarely-used
+    # tools are deferred behind the always-on meta-tools so their schemas
+    # don't cost tokens on every turn. When a toolset is explicitly
+    # enabled, its tools are wired in full — explicit opt-in wins.
+    # ------------------------------------------------------------------
+    if enabled_toolsets is None:
+        tools_to_include.difference_update(DEFERRED_TOOL_NAMES)
+    # The meta-tools are ALWAYS on the wire, regardless of toolset
+    # selection, and are added after the disabled-toolsets subtraction so
+    # nothing can strip them. Unknown names are a no-op in the registry.
+    tools_to_include.update(META_TOOL_NAMES)
 
     # Ask the registry for schemas (only returns tools whose check_fn passes)
     filtered_tools = registry.get_definitions(tools_to_include, quiet=quiet_mode)
