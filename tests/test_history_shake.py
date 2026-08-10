@@ -136,6 +136,23 @@ def test_banner_under_three_occurrences_kept():
     assert out[1]["content"] == f"{banner}\nB"
 
 
+def test_user_message_banners_do_not_count_toward_removal():
+    # Only tool-result banners count toward the 3+ removal threshold. A
+    # banner in a user message is decoration the shake must not touch, so
+    # 1 user occurrence + 2 tool occurrences stays below the threshold and
+    # the banner survives in every tool result.
+    banner = "=" * 40
+    messages = [
+        _msg("user", f"{banner}\nplease format this"),
+        _msg("tool", f"{banner}\nA"),
+        _msg("tool", f"{banner}\nB"),
+    ]
+    out = shake(messages)
+    assert out[0]["content"] == f"{banner}\nplease format this"
+    assert out[1]["content"] == f"{banner}\nA"
+    assert out[2]["content"] == f"{banner}\nB"
+
+
 def test_short_separators_not_removed():
     # 20 chars is NOT "longer than 20" — kept. (Three identical messages
     # still collapse, and the separator must survive inside the kept one.)
