@@ -63,16 +63,74 @@ def _module_registers_tools(module_path: Path) -> bool:
     return any(_is_registry_register_call(stmt) for stmt in tree.body)
 
 
-def discover_builtin_tools(tools_dir: Optional[Path] = None) -> List[str]:
-    """Import built-in self-registering tool modules and return their module names."""
-    tools_path = Path(tools_dir) if tools_dir is not None else Path(__file__).resolve().parent
-    module_names = [
-        f"tools.{path.stem}"
-        for path in sorted(tools_path.glob("*.py"))
-        if path.name not in {"__init__.py", "registry.py", "mcp_tool.py"}
-        and _module_registers_tools(path)
-    ]
+# ---------------------------------------------------------------------------
+# Tool-discovery fingerprint cache
+#
+# discover_builtin_tools() pays two costs per call: a directory scan with an
+# AST parse of every tools/*.py (the capability check) and the module imports
+# themselves. The scan is pure waste when tools/ is unchanged between runs,
+# so we fingerprint tools/*.py (mtime+size) and persist the resulting module
+# list at <xavani home>/cache/tool_discovery.json. A matching fingerprint
+# skips the scan; the imports still run, but sys.modules makes repeat imports
+# free. A process-level memo makes the second call in the same process return
+# instantly. Any cache read/write error falls back silently to a full scan —
+# discovery must never break.
+# ---------------------------------------------------------------------------
 
+_discovery_memo: Optional[tuple] = None  # (tools_path_str, fingerprint, modules)
+_discovery_cache_hits = 0
+_discovery_memo_lock = threading.Lock()
+
+
+def _discovery_fingerprint(tools_path: Path) -> list:
+    """Return a sorted ``[(name, mtime_ns, size)]`` fingerprint of tools/*.py."""
+    entries = []
+    for path in sorted(tools_path.glob("*.py")):
+        try:
+            st = path.stat()
+        except OSError:
+            continue
+        entries.append([path.name, st.st_mtime_ns, st.st_size])
+    return entries
+
+
+def _discovery_cache_path() -> Optional[Path]:
+    """Return the cache file path under the Xavani home, or None on failure."""
+    try:
+        from xavani_constants import get_xavani_home
+        return get_xavani_home() / "cache" / "tool_discovery.json"
+    except Exception:
+        return None
+
+
+def _discovery_cache_read() -> Optional[dict]:
+    """Return the cached payload, or None when unreadable/invalid."""
+    path = _discovery_cache_path()
+    if path is None:
+        return None
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError, TypeError):
+        return None
+
+
+def _discovery_cache_write(fingerprint: list, modules: list) -> None:
+    """Persist the fingerprint + module list. Never raises."""
+    path = _discovery_cache_path()
+    if path is None:
+        return
+    try:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(
+            json.dumps({"fingerprint": fingerprint, "modules": modules}, indent=2),
+            encoding="utf-8",
+        )
+    except OSError:
+        pass
+
+
+def _import_tool_modules(module_names: List[str]) -> List[str]:
+    """Import each module name, returning the names that imported cleanly."""
     imported: List[str] = []
     for mod_name in module_names:
         try:
@@ -80,6 +138,56 @@ def discover_builtin_tools(tools_dir: Optional[Path] = None) -> List[str]:
             imported.append(mod_name)
         except Exception as e:
             logger.warning("Could not import tool module %s: %s", mod_name, e)
+    return imported
+
+
+def discover_builtin_tools(tools_dir: Optional[Path] = None) -> List[str]:
+    """Import built-in self-registering tool modules and return their module names.
+
+    The directory scan + AST capability check is skipped when the on-disk
+    fingerprint cache (``<xavani home>/cache/tool_discovery.json``) matches
+    the current ``tools/*.py`` fingerprint, and a process-level memo makes
+    repeat calls in the same process return instantly. Both layers are
+    transparent: any cache read/write failure degrades silently to a full
+    scan, so discovery itself never breaks.
+    """
+    tools_path = Path(tools_dir) if tools_dir is not None else Path(__file__).resolve().parent
+    fingerprint = _discovery_fingerprint(tools_path)
+
+    global _discovery_cache_hits, _discovery_memo
+    with _discovery_memo_lock:
+        if (
+            _discovery_memo is not None
+            and _discovery_memo[0] == str(tools_path)
+            and _discovery_memo[1] == fingerprint
+        ):
+            _discovery_cache_hits += 1
+            return list(_discovery_memo[2])
+
+    # The on-disk cache is only consulted for the default tools dir; explicit
+    # tools_dir callers (tests, embedders) always get a fresh scan + import.
+    if tools_dir is None:
+        cached = _discovery_cache_read()
+        if cached is not None and cached.get("fingerprint") == fingerprint:
+            modules = cached.get("modules")
+            if isinstance(modules, list):
+                imported = _import_tool_modules(modules)
+                with _discovery_memo_lock:
+                    _discovery_memo = (str(tools_path), fingerprint, imported)
+                    _discovery_cache_hits += 1
+                return imported
+
+    module_names = [
+        f"tools.{path.stem}"
+        for path in sorted(tools_path.glob("*.py"))
+        if path.name not in {"__init__.py", "registry.py", "mcp_tool.py"}
+        and _module_registers_tools(path)
+    ]
+    imported = _import_tool_modules(module_names)
+    with _discovery_memo_lock:
+        _discovery_memo = (str(tools_path), fingerprint, imported)
+    if tools_dir is None:
+        _discovery_cache_write(fingerprint, imported)
     return imported
 
 
