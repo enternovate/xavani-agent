@@ -72,6 +72,14 @@ def _get_max_read_chars() -> int:
 # range (limit <= 200), we include a hint encouraging targeted reads.
 _LARGE_FILE_HINT_BYTES = 512_000  # 512 KB
 
+# Hashline read v2 (B28/C75/C61/C66): files with more lines than this are
+# summarized on the default whole-window read — first/last windows with an
+# elision footer of concrete re-read ranges (omp read.md pattern). Explicit
+# offset/limit windows and full=true bypass the summary.
+_SUMMARY_MIN_LINES = 100
+_SUMMARY_HEAD_LINES = 25
+_SUMMARY_TAIL_LINES = 25
+
 # ---------------------------------------------------------------------------
 # Device path blocklist — reading these hangs the process (infinite output
 # or blocking on input).  Checked by path only (no I/O).
@@ -456,7 +464,62 @@ def clear_file_ops_cache(task_id: str = None):
             _file_ops_cache.clear()
 
 
-def read_file_tool(path: str, offset: int = 1, limit: int = 500, task_id: str = "default") -> str:
+def _read_full_content(file_ops, path: str):
+    """Best-effort full-file text for snapshot recording; None if unavailable.
+
+    Uses the backend's raw read (no line prefixes, no pagination) so the
+    recorded snapshot matches the on-disk bytes the hashline edit tool
+    verifies against.
+    """
+    raw = getattr(file_ops, "read_file_raw", None)
+    if callable(raw):
+        try:
+            r = raw(path)
+        except Exception:
+            r = None
+        if r is not None:
+            rc = getattr(r, "content", None)
+            if isinstance(rc, str) and rc:
+                return rc
+    return None
+
+
+def _should_summarize(offset: int, limit: int, full: bool, total_lines: int) -> bool:
+    """True when the default whole-window read of a large file is summarized.
+
+    Only untouched defaults (the window the model gets when it omits
+    offset/limit) summarize; any explicit window, full=true, or files at or
+    under the threshold stay verbatim.
+    """
+    if full or total_lines <= _SUMMARY_MIN_LINES:
+        return False
+    default_offset, default_limit = normalize_read_pagination()
+    return offset == default_offset and limit == default_limit
+
+
+def _build_summarized_content(path: str, content: str, total_lines: int, tag: str) -> str:
+    """First/last line windows with a ``...`` elision marker and re-read footer."""
+    lines = content.split("\n")
+    if content.endswith("\n"):
+        lines = lines[:-1]
+    head = lines[:_SUMMARY_HEAD_LINES]
+    tail = lines[-_SUMMARY_TAIL_LINES:] if _SUMMARY_TAIL_LINES else []
+    tail_start = total_lines - len(tail) + 1
+    elided = total_lines - len(head) - len(tail)
+    elided_range = f"{len(head) + 1}-{total_lines - len(tail)}"
+    body = [f"[{path}#{tag}]"]
+    for i, ln in enumerate(head, start=1):
+        body.append(f"{i}|{ln}")
+    body.append("...")
+    for i, ln in enumerate(tail, start=tail_start):
+        body.append(f"{i}|{ln}")
+    body.append(
+        f"[... {elided} lines elided; re-read needed ranges, e.g. {path}:{elided_range}]"
+    )
+    return "\n".join(body)
+
+
+def read_file_tool(path: str, offset: int = 1, limit: int = 500, task_id: str = "default", full: bool = False) -> str:
     """Read a file with pagination and line numbers."""
     try:
         offset, limit = normalize_read_pagination(offset, limit)
@@ -580,6 +643,42 @@ def read_file_tool(path: str, offset: int = 1, limit: int = 500, task_id: str = 
                 "file_size": file_size,
             }, ensure_ascii=False)
 
+        # ── Hashline snapshot + tag header / summarization ──────────
+        # Record the full file content in the snapshot store so the
+        # [path#TAG] header the model sees is resolvable by the hashline
+        # edit tool.  Large files on the default whole-window read are
+        # summarized (first/last windows + elision footer with concrete
+        # re-read ranges); explicit offset/limit windows and full=true
+        # stay verbatim.  Any failure degrades to the plain window.
+        try:
+            total_lines = result_dict.get("total_lines", 0) or 0
+            if result.content and total_lines > 0:
+                full_content = _read_full_content(file_ops, path)
+                if full_content is not None:
+                    from tools.hashline.snapshots import default_store
+
+                    summarize = _should_summarize(offset, limit, full, total_lines)
+                    if summarize:
+                        visible_ranges = (
+                            (1, min(_SUMMARY_HEAD_LINES, total_lines)),
+                            (total_lines - _SUMMARY_TAIL_LINES + 1, total_lines),
+                        )
+                    else:
+                        visible_ranges = (
+                            (offset, min(offset + limit - 1, total_lines)),
+                        )
+                    tag = default_store.record(path, full_content, ranges=visible_ranges)
+                    if summarize:
+                        result.content = _build_summarized_content(
+                            path, full_content, total_lines, tag
+                        )
+                        result_dict["_summarized"] = True
+                    else:
+                        result.content = f"[{path}#{tag}]\n{result.content}"
+                    result_dict["content"] = result.content
+        except Exception:
+            logger.debug("hashline snapshot/summarize failed for %s", path, exc_info=True)
+
         # ── Redact secrets (after guard check to skip oversized content) ──
         if result.content:
             result.content = redact_sensitive_text(result.content, code_file=True)
@@ -640,7 +739,7 @@ def read_file_tool(path: str, offset: int = 1, limit: int = 500, task_id: str = 
         # Outside the _read_tracker_lock so the registry's own locking
         # isn't nested under ours.
         try:
-            _partial = (offset > 1) or bool(result_dict.get("truncated"))
+            _partial = (offset > 1) or bool(result_dict.get("truncated")) or bool(result_dict.get("_summarized"))
             file_state.record_read(task_id, resolved_str, partial=_partial)
         except Exception:
             logger.debug("file_state.record_read failed", exc_info=True)
@@ -1040,13 +1139,14 @@ def _check_file_reqs():
 
 READ_FILE_SCHEMA = {
     "name": "read_file",
-    "description": "Read a text file with line numbers and pagination. Use this instead of cat/head/tail in terminal. Output format: 'LINE_NUM|CONTENT'. Suggests similar filenames if not found. Use offset and limit for large files. Reads exceeding ~100K characters are rejected; use offset and limit to read specific sections of large files. NOTE: Cannot read images or binary files — use vision_analyze for images.",
+    "description": "Read a text file with line numbers and pagination. Use this instead of cat/head/tail in terminal. Output format: a '[path#TAG]' header line (the tag is a content hash the edit tool's hashline mode accepts) followed by 'LINE_NUM|CONTENT' lines. Suggests similar filenames if not found. Files over 100 lines are summarized on the default read: first 25 + last 25 lines with a '...' elision marker and a footer of concrete re-read ranges (e.g. path:26-175). Pass full=true, or an explicit offset/limit window, to bypass summarization and get the verbatim window. Reads exceeding ~100K characters are rejected; use offset and limit to read specific sections of large files. NOTE: Cannot read images or binary files — use vision_analyze for images.",
     "parameters": {
         "type": "object",
         "properties": {
             "path": {"type": "string", "description": "Path to the file to read (absolute, relative, or ~/path)"},
             "offset": {"type": "integer", "description": "Line number to start reading from (1-indexed, default: 1)", "default": 1, "minimum": 1},
-            "limit": {"type": "integer", "description": "Maximum number of lines to read (default: 500, max: 2000)", "default": 500, "maximum": 2000}
+            "limit": {"type": "integer", "description": "Maximum number of lines to read (default: 500, max: 2000)", "default": 500, "maximum": 2000},
+            "full": {"type": "boolean", "description": "Return the verbatim window instead of a summarized view (default: false)", "default": False}
         },
         "required": ["path"]
     }
@@ -1133,7 +1233,7 @@ SEARCH_FILES_SCHEMA = {
 
 def _handle_read_file(args, **kw):
     tid = kw.get("task_id") or "default"
-    return read_file_tool(path=args.get("path", ""), offset=args.get("offset", 1), limit=args.get("limit", 500), task_id=tid)
+    return read_file_tool(path=args.get("path", ""), offset=args.get("offset", 1), limit=args.get("limit", 500), task_id=tid, full=args.get("full", False))
 
 
 def _handle_write_file(args, **kw):
