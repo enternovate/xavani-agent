@@ -38,3 +38,32 @@ jobs:
           echo "slows startup, update the baseline with:"
           echo "  python scripts/benchmark.py --update-baseline"
           exit 1
+
+  startup-gate:
+    name: Gate startup time (E10)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install project
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[all,dev]" --quiet
+
+      - name: Measure startup and fail if over 5.0s
+        run: |
+          python3 scripts/perf_baseline.py --quick | python3 -c '
+          import json, sys
+          startup = json.load(sys.stdin)["startup_seconds"]
+          limit = 5.0
+          print(f"startup_seconds={startup:.4f}s (limit {limit:.1f}s)")
+          if startup > limit:
+              print(f"::error::Startup time {startup:.2f}s exceeds the {limit:.1f}s gate")
+              sys.exit(1)
+          '
