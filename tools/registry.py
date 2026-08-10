@@ -109,9 +109,12 @@ def _discovery_cache_read() -> Optional[dict]:
     if path is None:
         return None
     try:
-        return json.loads(path.read_text(encoding="utf-8"))
+        payload = json.loads(path.read_text(encoding="utf-8"))
     except (OSError, ValueError, TypeError):
         return None
+    # A valid-JSON but non-dict payload (interrupted write, external clobber)
+    # must degrade to None like any other invalid cache state.
+    return payload if isinstance(payload, dict) else None
 
 
 def _discovery_cache_write(fingerprint: list, modules: list) -> None:
