@@ -136,7 +136,7 @@ def _hashline_tag_guidance(sections: List, msg: str) -> str:
     model should re-issue with.  *msg* is returned unchanged when it is not
     a missing/stale-tag error.
     """
-    if "snapshot tag" not in msg and "no snapshot recorded" not in msg:
+    if not any(k in msg for k in ("snapshot tag", "no snapshot recorded", "re-read")):
         return msg
     from tools.hashline.snapshots import default_store
 
