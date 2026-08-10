@@ -39,15 +39,21 @@ class TestToolResolution:
     """Verify get_tool_definitions returns all expected tools for eval."""
 
     def test_terminal_and_file_toolsets_resolve_all_tools(self):
-        """enabled_toolsets=['terminal', 'file'] should produce 7 tools."""
+        """enabled_toolsets=['terminal', 'file'] should produce the core
+        tools plus the always-on edit/meta tools (edit T15, tool_* T6)."""
         from model_tools import get_tool_definitions
         tools = get_tool_definitions(
             enabled_toolsets=["terminal", "file"],
             quiet_mode=True,
         )
         names = {t["function"]["name"] for t in tools}
-        expected = {"terminal", "process", "read_file", "write_file",
-                    "search_files", "patch", "organize_files"}
+        expected = {
+            "terminal", "process", "read_file", "write_file",
+            "search_files", "patch", "organize_files",
+            # Always-on additions from the harness upgrade plan:
+            "edit",                      # T15: mode-selected edit tool
+            "tool_search", "tool_describe", "tool_call",  # T6: meta-tools
+        }
         assert expected == names, f"Expected {expected}, got {names}"
 
     def test_terminal_tool_present(self):
