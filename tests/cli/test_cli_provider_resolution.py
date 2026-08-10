@@ -166,7 +166,9 @@ def test_runtime_resolution_failure_is_not_sticky(monkeypatch):
 
     monkeypatch.setattr("xavani_cli.runtime_provider.resolve_runtime_provider", _runtime_resolve)
     monkeypatch.setattr("xavani_cli.runtime_provider.format_runtime_provider_error", lambda exc: str(exc))
-    monkeypatch.setattr(cli, "AIAgent", _DummyAgent)
+    # AIAgent is lazy-imported inside _init_agent from run_agent (perf: T3);
+    # patch the source module so the local import resolves to the dummy.
+    monkeypatch.setattr("run_agent.AIAgent", _DummyAgent)
 
     shell = cli.XavaniCLI(model="gpt-5", compact=True, max_turns=1)
 
