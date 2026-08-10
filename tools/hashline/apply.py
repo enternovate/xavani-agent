@@ -18,9 +18,12 @@ in-memory file mutations against the per-session
   content tag (``store.record``); ``REM`` invalidates the entry; ``MV``
   records under the destination and invalidates the source.
 
-Block ops (``PUT N*`` / ``CUT N*`` / ``PUT >N*``) need tree-sitter block
-resolution (Task 14) and raise :class:`ApplyError` with guidance to use
-explicit line ranges instead.
+Block ops (``PUT N*`` / ``CUT N*`` / ``PUT >N*``) resolve their anchor to
+an explicit line range via tree-sitter (Task 14,
+:mod:`tools.hashline.blocks`) before applying; a failed resolution (grammar
+not installed, unknown extension, anchor not a block opener) raises
+:class:`ApplyError` with the resolution error's guidance to use explicit
+line ranges instead.
 """
 
 from __future__ import annotations
@@ -28,6 +31,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Tuple, Union, cast
 
+from .blocks import BlockResolutionError, language_for_path, resolve_block_range
 from .model import (
     TAIL,
     AppendTail,
@@ -92,12 +96,23 @@ class ApplyResult:
 # -- validation / simulation helpers ----------------------------------------
 
 
-def _block_msg(path: str) -> str:
-    return (
-        f"[{path}]: block operations (PUT N*: / PUT >N* / CUT N*) are not "
-        "resolvable yet — they need tree-sitter block resolution (Task 14); "
-        "use explicit line ranges (PUT N.=M: / CUT N.=M) instead"
-    )
+def _resolve_block(path: str, source: str, line: int) -> Tuple[int, int]:
+    """Resolve a block anchor for ``path``; raise ApplyError on failure.
+
+    The language comes from the section path extension
+    (:func:`~tools.hashline.blocks.language_for_path`); both the mapping and
+    the resolution failures are surfaced as :class:`ApplyError` carrying the
+    resolution error's text (grammar missing, unknown extension, anchor not
+    a block opener).
+    """
+    try:
+        language = language_for_path(path)
+    except BlockResolutionError as exc:
+        raise ApplyError(f"[{path}]: {exc}") from exc
+    try:
+        return resolve_block_range(source, line, language)
+    except BlockResolutionError as exc:
+        raise ApplyError(f"[{path}]: {exc}") from exc
 
 
 def _covered(lo: int, hi: int, visible: Tuple[Tuple[int, int], ...]) -> bool:
@@ -174,10 +189,27 @@ def _ensure_no_inserts(work, i: int, j: int, path: str) -> None:
         )
 
 
-def _apply_op(work, op: Op, path: str, visible, total: int, state) -> None:
-    if isinstance(op, (PutBlock, CutBlock)):
-        raise ApplyError(_block_msg(path))
-    if isinstance(op, PutRange):
+def _apply_op(
+    work, op: Op, path: str, visible, total: int, state, source: str
+) -> None:
+    if isinstance(op, PutBlock):
+        start, end = _resolve_block(path, source, op.line)
+        _check_range_visible(path, start, end, visible, total)
+        body = op.body if op.body is not None else _require_register(
+            op.register, state, path
+        )
+        i, j = _find(work, path, start), _find(work, path, end)
+        _ensure_no_inserts(work, i, j, path)
+        work[i : j + 1] = [("i", ln) for ln in body]
+    elif isinstance(op, CutBlock):
+        start, end = _resolve_block(path, source, op.line)
+        _check_range_visible(path, start, end, visible, total)
+        i, j = _find(work, path, start), _find(work, path, end)
+        _ensure_no_inserts(work, i, j, path)
+        captured = [entry[2] for entry in work[i : j + 1]]
+        del work[i : j + 1]
+        _store_register(state, op.register, captured)
+    elif isinstance(op, PutRange):
         _check_range_visible(path, op.start, op.end, visible, total)
         body = op.body if op.body is not None else _require_register(
             op.register, state, path
@@ -191,10 +223,15 @@ def _apply_op(work, op: Op, path: str, visible, total: int, state) -> None:
         work[i:i] = [("i", ln) for ln in op.body]
     elif isinstance(op, InsertAfter):
         if op.block:
-            raise ApplyError(_block_msg(path))
-        _check_line_visible(path, op.line, visible, total)
-        i = _find(work, path, op.line)
-        work[i + 1 : i + 1] = [("i", ln) for ln in op.body]
+            # PUT >N*: insert after the END of the block opening at N.
+            _, end = _resolve_block(path, source, op.line)
+            _check_line_visible(path, end, visible, total)
+            i = _find(work, path, end)
+            work[i + 1 : i + 1] = [("i", ln) for ln in op.body]
+        else:
+            _check_line_visible(path, op.line, visible, total)
+            i = _find(work, path, op.line)
+            work[i + 1 : i + 1] = [("i", ln) for ln in op.body]
     elif isinstance(op, AppendTail):
         work.extend(("i", ln) for ln in op.body)
     elif isinstance(op, CutRange):
@@ -205,10 +242,15 @@ def _apply_op(work, op: Op, path: str, visible, total: int, state) -> None:
         del work[i : j + 1]
         _store_register(state, op.register, captured)
     elif isinstance(op, Paste):
-        if op.block:
-            raise ApplyError(_block_msg(path))
         body = _require_register(op.register, state, path)
-        if op.anchor == TAIL:
+        if op.block:
+            # PUT >N* @name: paste after the END of the block opening at N.
+            assert isinstance(op.anchor, int)
+            _, end = _resolve_block(path, source, op.anchor)
+            _check_line_visible(path, end, visible, total)
+            i = _find(work, path, end)
+            work[i + 1 : i + 1] = [("i", ln) for ln in body]
+        elif op.anchor == TAIL:
             work.extend(("i", ln) for ln in body)
         else:
             assert isinstance(op.anchor, int)
@@ -265,7 +307,7 @@ def _simulate_section(
         )
 
     for op in (sec.ops if term is None else sec.ops[:term]):
-        _apply_op(work, op, path, visible, total, state)
+        _apply_op(work, op, path, visible, total, state, text)
 
     new_text = "\n".join(entry[-1] for entry in work)
     if has_trailing:

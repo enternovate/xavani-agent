@@ -79,6 +79,13 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+# Hashline block anchors — tree-sitter grammars for PUT N* / CUT N* /
+# PUT >N* resolution (tools/hashline/blocks.py).  Kept out of the base
+# install (large native wheels, optional feature); install with
+# `pip install xavani-agent[hashline]`.  Intentionally unpinned: grammar
+# wheels must stay ABI-compatible with the tree-sitter core they pair with,
+# and the language wheels track core releases closely.
+hashline = ["tree-sitter", "tree-sitter-python", "tree-sitter-typescript", "tree-sitter-rust", "tree-sitter-go"]
 # Native Anthropic provider — only needed when provider=anthropic (not via
 # OpenRouter or other aggregators).
 anthropic = ["anthropic==0.120.2"]
