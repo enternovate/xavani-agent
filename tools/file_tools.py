@@ -498,15 +498,24 @@ def _should_summarize(offset: int, limit: int, full: bool, total_lines: int) -> 
 
 
 def _build_summarized_content(path: str, content: str, total_lines: int, tag: str) -> str:
-    """First/last line windows with a ``...`` elision marker and re-read footer."""
+    """First/last line windows with a ``...`` elision marker and re-read footer.
+
+    ``total_lines`` is the caller-provided count (real backend ``wc -l``
+    semantics).  The split below may differ by one for files without a
+    trailing newline, so all labels, ranges, and the elision count derive
+    from the SPLIT line list — never from the raw ``wc -l`` value — keeping
+    the recorded visible ranges in lockstep with what the model actually
+    sees (safety: seen-lines-only enforcement).
+    """
     lines = content.split("\n")
     if content.endswith("\n"):
         lines = lines[:-1]
+    n = len(lines)
     head = lines[:_SUMMARY_HEAD_LINES]
     tail = lines[-_SUMMARY_TAIL_LINES:] if _SUMMARY_TAIL_LINES else []
-    tail_start = total_lines - len(tail) + 1
-    elided = total_lines - len(head) - len(tail)
-    elided_range = f"{len(head) + 1}-{total_lines - len(tail)}"
+    tail_start = n - len(tail) + 1
+    elided = n - len(head) - len(tail)
+    elided_range = f"{len(head) + 1}-{n - len(tail)}"
     body = [f"[{path}#{tag}]"]
     for i, ln in enumerate(head, start=1):
         body.append(f"{i}|{ln}")
@@ -658,19 +667,27 @@ def read_file_tool(path: str, offset: int = 1, limit: int = 500, task_id: str = 
                     from tools.hashline.snapshots import default_store
 
                     summarize = _should_summarize(offset, limit, full, total_lines)
+                    # Canonical line count from the actual content bytes we
+                    # snapshot (split semantics).  The backend's `wc -l`
+                    # differs by one for unterminated files; labels, ranges,
+                    # and visible_ranges must all agree with what the model
+                    # sees (seen-lines-only enforcement safety).
+                    n = len(full_content.split("\n"))
+                    if full_content.endswith("\n"):
+                        n -= 1
                     if summarize:
                         visible_ranges = (
-                            (1, min(_SUMMARY_HEAD_LINES, total_lines)),
-                            (total_lines - _SUMMARY_TAIL_LINES + 1, total_lines),
+                            (1, min(_SUMMARY_HEAD_LINES, n)),
+                            (max(n - _SUMMARY_TAIL_LINES + 1, 1), n),
                         )
                     else:
                         visible_ranges = (
-                            (offset, min(offset + limit - 1, total_lines)),
+                            (offset, min(offset + limit - 1, n)),
                         )
                     tag = default_store.record(path, full_content, ranges=visible_ranges)
                     if summarize:
                         result.content = _build_summarized_content(
-                            path, full_content, total_lines, tag
+                            path, full_content, n, tag
                         )
                         result_dict["_summarized"] = True
                     else:

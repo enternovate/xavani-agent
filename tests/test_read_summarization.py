@@ -269,3 +269,56 @@ def test_full_true_bypasses_summarization(tmp_path, monkeypatch):
     assert "200|line 200" in body
     assert "elided" not in body
     assert result.get("_summarized") is None
+
+
+class _WcStyleFileOps(_FakeFileOps):
+    """Fake emulating the REAL backend: total_lines = wc -l (newline count).
+
+    For a file WITHOUT a trailing newline, wc -l reports one FEWER than the
+    split line count.  The summarized read must derive its canonical count
+    from the content split, never from wc -l, or labels/ranges/visible
+    ranges drift by one (regression from the S2 wave-1 review).
+    """
+
+    def __init__(self, full_text):
+        super().__init__(full_text)
+        # wc -l counts newlines: an unterminated 150-line file reports 149.
+        self._wc_lines = self.full_text.count("\n")
+
+    def read_file(self, path, offset=1, limit=500):
+        r = super().read_file(path, offset, limit)
+        r.total_lines = self._wc_lines
+        return r
+
+    def read_file_raw(self, path):
+        r = super().read_file_raw(path)
+        r.total_lines = self._wc_lines
+        return r
+
+
+def test_unterminated_file_labels_and_ranges_use_split_count(tmp_path, monkeypatch):
+    """wc -l reports 149 for an unterminated 150-line file; labels, footer
+    ranges, and recorded visible_ranges must still say 1..150 (regression)."""
+    f = tmp_path / "unterminated.py"
+    content = "".join(f"line {i}\n" for i in range(1, 150)) + "line 150"  # no trailing \n
+    f.write_text(content, encoding="utf-8")
+    assert content.count("\n") == 149  # wc -l would say 149
+
+    ops = _WcStyleFileOps(content)
+    ops.path = str(f)
+    monkeypatch.setattr(file_tools, "_get_file_ops", lambda tid="default": ops)
+    default_store.invalidate(str(f))
+
+    result = json.loads(read_file_tool(str(f), task_id="t-unterm"))
+    body = result["content"]
+    labels = [int(l.split("|")[0]) for l in body.split("\n") if "|" in l and l.split("|")[0].isdigit()]
+    assert max(labels) == 150, labels
+    assert "150|line 150" in body, body
+    footer = [l for l in body.split("\n") if "elided" in l][0]
+    # The footer names the ELIDED middle (26-125); the tail is already shown.
+    assert f"{f}:26-125" in footer, footer
+
+    # The recorded snapshot's visible ranges must match the labels (1-25, 126-150).
+    snap = default_store.get(str(f))
+    assert snap is not None
+    assert snap.visible_ranges == ((1, 25), (126, 150)), snap.visible_ranges
