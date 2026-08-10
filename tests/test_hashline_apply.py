@@ -197,10 +197,11 @@ def test_stale_tag_rejected():
         apply_sections(parse("[f.py#FFFF]\nPUT 1.=1:\n+X\n"), store)
 
 
-def test_block_op_error():
+def test_block_op_resolves_and_applies():
     store = make_store("f.py", "def f():\n    pass\n", [(1, 2)])
-    with pytest.raises(ApplyError, match="line ranges|Task 14|tree-sitter"):
-        apply_edit(store, "f.py", "PUT 1*:\n+def g():\n+    pass\n")
+    res = apply_edit(store, "f.py", "PUT 1*:\n+def g():\n+    pass\n")
+    fr = res.results[0]
+    assert fr.preview == "def g():\n    pass\n"
 
 
 # ---------------------------------------------------------------------------
