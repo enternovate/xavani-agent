@@ -67,7 +67,7 @@ from agent.nous_rate_guard import (
 )
 from agent.process_bootstrap import _install_safe_stdio
 from agent.prompt_caching import apply_anthropic_cache_control
-from agent.retry_utils import jittered_backoff
+from agent.retry_utils import jittered_backoff, rate_limit_backoff_delay
 from agent.trajectory import has_incomplete_scratchpad
 from agent.usage_pricing import estimate_usage_cost, normalize_usage
 from xavani_constants import display_xavani_home as _dhh_fn
@@ -2963,17 +2963,11 @@ def run_conversation(
                     }
 
                 # For rate limits, respect the Retry-After header if present
-                _retry_after = None
                 if is_rate_limited:
                     _resp_headers = getattr(getattr(api_error, "response", None), "headers", None)
-                    if _resp_headers and hasattr(_resp_headers, "get"):
-                        _ra_raw = _resp_headers.get("retry-after") or _resp_headers.get("Retry-After")
-                        if _ra_raw:
-                            try:
-                                _retry_after = min(float(_ra_raw), 120)  # Cap at 2 minutes
-                            except (TypeError, ValueError):
-                                pass
-                wait_time = _retry_after if _retry_after else jittered_backoff(retry_count, base_delay=2.0, max_delay=60.0)
+                    wait_time = rate_limit_backoff_delay(_resp_headers, retry_count)
+                else:
+                    wait_time = jittered_backoff(retry_count, base_delay=2.0, max_delay=60.0)
                 if is_rate_limited:
                     agent._emit_status(f"⏱️ Rate limited. Waiting {wait_time:.1f}s (attempt {retry_count + 1}/{max_retries})...")
                 else:

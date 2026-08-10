@@ -9,9 +9,12 @@ thundering-herd retry spikes when multiple sessions hit the same
 rate-limited provider concurrently.
 """
 
+import email.utils
 import random
 import threading
 import time
+from datetime import timezone
+from typing import Any, Mapping, Optional
 
 # Monotonic counter for jitter seed uniqueness within the same process.
 # Protected by a lock to avoid race conditions in concurrent retry paths
@@ -59,3 +62,63 @@ def jittered_backoff(
     jitter = rng.uniform(0, jitter_ratio * delay)
 
     return delay + jitter
+
+
+def parse_retry_after(
+    raw_value: Any,
+    *,
+    now: Optional[float] = None,
+    max_delay: float = 120.0,
+) -> Optional[float]:
+    """Parse a Retry-After header value into a capped delay in seconds.
+
+    Supports both RFC 7231 formats: delta-seconds (``"5"``) and HTTP-date
+    (``"Wed, 21 Oct 2015 07:28:00 GMT"``).  Returns None when the value is
+    missing, malformed, or negative so callers fall back to their own
+    backoff policy instead of sleeping forever or not at all.
+    """
+    if raw_value is None:
+        return None
+    raw = str(raw_value).strip()
+    if not raw:
+        return None
+    try:
+        seconds = float(raw)
+    except (TypeError, ValueError):
+        seconds = None
+    if seconds is None:
+        try:
+            when = email.utils.parsedate_to_datetime(raw)
+        except (TypeError, ValueError, OverflowError):
+            return None
+        if when is None:
+            return None
+        if when.tzinfo is None:
+            when = when.replace(tzinfo=timezone.utc)
+        now_ts = time.time() if now is None else now
+        seconds = when.timestamp() - now_ts
+    if seconds < 0:
+        return None
+    return min(seconds, max_delay)
+
+
+def rate_limit_backoff_delay(
+    headers: Optional[Mapping[str, Any]],
+    attempt: int,
+    *,
+    base_delay: float = 2.0,
+    max_delay: float = 60.0,
+    retry_after_cap: float = 120.0,
+) -> float:
+    """Delay before the next attempt after a 429.
+
+    Uses the server's Retry-After header when present and parseable
+    (capped at ``retry_after_cap``); otherwise falls back to jittered
+    exponential backoff.
+    """
+    if headers is not None:
+        raw = headers.get("retry-after") or headers.get("Retry-After")
+        parsed = parse_retry_after(raw, max_delay=retry_after_cap)
+        if parsed is not None:
+            return parsed
+    return jittered_backoff(attempt, base_delay=base_delay, max_delay=max_delay)
