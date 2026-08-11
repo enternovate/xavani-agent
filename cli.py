@@ -8121,6 +8121,22 @@ class XavaniCLI:
         except Exception as _exc:  # pragma: no cover - defensive
             _cprint(f"  {_DIM}✗ /learn failed: {_exc}{_RST}")
 
+    def _handle_plan_command(self, command: str) -> None:
+        """Toggle read-only plan mode (backlog D82)."""
+        from tools.registry import is_plan_mode, set_plan_mode
+
+        rest = command.split(None, 1)
+        arg = (rest[1] if len(rest) > 1 else "").strip().lower()
+        if arg in {"on", "1", "true", "yes"}:
+            set_plan_mode(True)
+            _cprint("  🧭 Plan mode ON — only read-only tools are allowed.")
+        elif arg in {"off", "0", "false", "no"}:
+            set_plan_mode(False)
+            _cprint("  🧭 Plan mode OFF — all tools are allowed.")
+        else:
+            state = "ON" if is_plan_mode() else "OFF"
+            _cprint(f"  🧭 Plan mode is {state}. Usage: /plan on | /plan off")
+
     def process_command(self, command: str) -> bool:
         """
         Process a slash command.
@@ -8156,6 +8172,8 @@ class XavaniCLI:
             return False
         elif canonical == "learn":
             self._handle_learn_command(cmd_original)
+        elif canonical == "plan":
+            self._handle_plan_command(cmd_original)
         elif canonical == "help":
             self.show_help()
         elif canonical == "profile":

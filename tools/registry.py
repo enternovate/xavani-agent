@@ -94,6 +94,39 @@ def _module_registers_tools(module_path: Path) -> bool:
 
 _SCHEMA_VALIDATION_OPT_OUTS = frozenset({"tool_call"})
 
+# Plan mode (backlog D82): when active, dispatch rejects every tool outside
+# this allowlist with a tool_error. The list is curated and fail-closed:
+# anything not listed is blocked. Only tools that never mutate state belong.
+_PLAN_READ_ONLY_TOOLS = frozenset({
+    "read_file",
+    "search_files",
+    "skills_list",
+    "skill_view",
+    "session_search",
+    "web_search",
+    "web_extract",
+    "tool_search",
+    "tool_describe",
+    "vision_analyze",
+    "ha_list_entities",
+    "ha_get_state",
+    "ha_list_services",
+    "bfl_flux3_prompting_guide",
+})
+
+_PLAN_MODE = False
+
+
+def set_plan_mode(active: bool) -> None:
+    """Enable or disable read-only plan mode (backlog D82)."""
+    global _PLAN_MODE
+    _PLAN_MODE = bool(active)
+
+
+def is_plan_mode() -> bool:
+    """Return True when plan mode is active."""
+    return _PLAN_MODE
+
 _PRIMITIVE_TYPES = frozenset({"string", "boolean", "integer", "number"})
 
 
@@ -683,6 +716,11 @@ class ToolRegistry:
         entry = self.get_entry(name)
         if not entry:
             return json.dumps({"error": f"Unknown tool: {name}"})
+        if _PLAN_MODE and name not in _PLAN_READ_ONLY_TOOLS:
+            return tool_error(
+                f"BLOCKED: plan mode is read-only. Tool {name!r} is not "
+                "allowed. Exit plan mode with /plan off to use it."
+            )
         plan = entry.validation_plan
         if plan is not None:
             violation = _validate_args(name, args, plan)
