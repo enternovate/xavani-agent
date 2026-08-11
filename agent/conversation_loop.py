@@ -228,6 +228,30 @@ def _restore_or_build_system_prompt(agent, system_message, conversation_history)
             )
 
 
+def prefetch_memory_context(agent, query: str) -> str:
+    """Build the per-turn memory prefetch cache (backlog E102).
+
+    Merges external-provider prefetch with query-relevant recall from the
+    local episodic store. Provider failures never block the recall path.
+    """
+    cache = ""
+    if agent._memory_manager:
+        try:
+            cache = agent._memory_manager.prefetch_all(query) or ""
+        except Exception:
+            pass
+    if getattr(agent, "_xavani_memory", None) is not None:
+        try:
+            from agent.memory_manager import recall_xavani_memory
+
+            recalled = recall_xavani_memory(agent._xavani_memory, query)
+            if recalled:
+                cache = (cache + "\n\n" + recalled).strip()
+        except Exception:
+            pass
+    return cache
+
+
 def run_conversation(
     agent,
     user_message: str,
@@ -634,12 +658,8 @@ def run_conversation(
     # Use original_user_message (clean input) — user_message may contain
     # injected skill content that bloats / breaks provider queries.
     _ext_prefetch_cache = ""
-    if agent._memory_manager:
-        try:
-            _query = original_user_message if isinstance(original_user_message, str) else ""
-            _ext_prefetch_cache = agent._memory_manager.prefetch_all(_query) or ""
-        except Exception:
-            pass
+    _query = original_user_message if isinstance(original_user_message, str) else ""
+    _ext_prefetch_cache = prefetch_memory_context(agent, _query)
 
     # Optional opt-in runtime: if api_mode == codex_app_server, hand the
     # turn to the codex app-server subprocess (terminal/file ops/patching

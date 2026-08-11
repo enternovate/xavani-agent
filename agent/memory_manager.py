@@ -317,6 +317,53 @@ def build_memory_context_block(raw_context: str) -> str:
     )
 
 
+_XAVANI_MEMORY_RECALL_LIMIT = 5
+_XAVANI_MEMORY_RECALL_CAP_CHARS = 3000
+
+
+def _episode_recall_text(entry: dict) -> str:
+    user_input = str(entry.get("user_input") or "").strip()
+    outcome = str(entry.get("outcome") or "").strip()
+    if user_input and outcome:
+        return f"{user_input} → {outcome}"
+    return user_input or outcome or ""
+
+
+def recall_xavani_memory(
+    memory,
+    query: str,
+    *,
+    limit: int = _XAVANI_MEMORY_RECALL_LIMIT,
+    max_chars: int = _XAVANI_MEMORY_RECALL_CAP_CHARS,
+) -> str:
+    """Recall query-relevant episodes from the local episodic store.
+
+    Each hit becomes a compact bullet (user input + outcome). The total
+    output is capped at *max_chars*. Returns "" for empty queries, empty
+    stores, and store failures. Backlog E102.
+    """
+    if memory is None or not (query or "").strip():
+        return ""
+    try:
+        hits = memory.search(query, limit=limit)
+    except Exception:
+        return ""
+    parts = []
+    used = 0
+    for entry, _score in hits or []:
+        if not isinstance(entry, dict):
+            continue
+        text = _episode_recall_text(entry)
+        if not text:
+            continue
+        block = f"- {text}"
+        if used + len(block) + 1 > max_chars:
+            break
+        parts.append(block)
+        used += len(block) + 1
+    return "\n".join(parts)
+
+
 class MemoryManager:
     """Orchestrates the built-in provider plus at most one external provider.
 
