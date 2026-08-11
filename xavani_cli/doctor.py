@@ -338,6 +338,24 @@ def _build_apikey_providers_list() -> list:
     return _static
 
 
+def _check_version(issues: list) -> None:
+    """Report the installed version and compare against PyPI (F139)."""
+    from xavani_cli import __version__ as installed
+    from xavani_cli.banner import check_via_pypi
+
+    _section("Version")
+    check_ok(f"Installed: {installed}")
+    status = check_via_pypi()
+    if status is None:
+        check_warn("Latest version check failed", "(offline or PyPI unreachable)")
+        return
+    if status == 1:
+        check_warn("Update available on PyPI")
+        issues.append("Update Xavani: pip install -U xavani-agent")
+    else:
+        check_ok("Up to date with PyPI")
+
+
 def _check_token_vault(manual_issues: list) -> None:
     """Report token vault health from ``xavani tokens`` (task 6.1)."""
     _section("Token Vault")
@@ -451,6 +469,8 @@ def run_doctor(args):
         check_warn(f"Security advisory check failed: {e}")
 
     _check_token_vault(manual_issues)
+
+    _check_version(issues)
 
     _section("Python Environment")
     py_version = sys.version_info

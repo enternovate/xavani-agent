@@ -1365,3 +1365,35 @@ class TestCredentialRotation:
         doctor_mod.run_doctor(Namespace(fix=False))
         out = capsys.readouterr().out
         assert "rotate API keys older than 90 days" not in out
+
+
+class TestVersionCheck:
+    def test_up_to_date_adds_no_issue(self, monkeypatch, capsys):
+        monkeypatch.setattr("xavani_cli.banner.check_via_pypi", lambda: 0)
+        issues = []
+
+        doctor._check_version(issues)
+
+        out = capsys.readouterr().out
+        assert "Up to date with PyPI" in out
+        assert issues == []
+
+    def test_behind_adds_update_issue(self, monkeypatch, capsys):
+        monkeypatch.setattr("xavani_cli.banner.check_via_pypi", lambda: 1)
+        issues = []
+
+        doctor._check_version(issues)
+
+        out = capsys.readouterr().out
+        assert "Update available" in out
+        assert any("pip install -U xavani-agent" in i for i in issues)
+
+    def test_offline_reports_warning_not_raise(self, monkeypatch, capsys):
+        monkeypatch.setattr("xavani_cli.banner.check_via_pypi", lambda: None)
+        issues = []
+
+        doctor._check_version(issues)
+
+        out = capsys.readouterr().out
+        assert "Latest version check failed" in out
+        assert issues == []
