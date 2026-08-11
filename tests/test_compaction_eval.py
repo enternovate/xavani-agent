@@ -64,6 +64,33 @@ def test_normalization_collapses_case_and_whitespace():
     assert normalize("  Alpha   BETA\n") == "alpha beta"
 
 
+def test_make_facts_beyond_city_list_cycles_cities():
+    facts = make_facts(30)
+
+    assert len(facts) == 30
+    assert len(set(facts)) == 30
+
+
+def test_run_eval_with_more_facts_than_cities():
+    result = run_eval(30)
+
+    assert result["facts_total"] == 30
+    assert result["faithful_retention"] >= RETENTION_PASS
+
+
+def test_cli_rejects_zero_facts():
+    proc = subprocess.run(
+        [sys.executable, "-m", "scripts.compaction_eval.runner", "--facts", "0"],
+        capture_output=True,
+        text=True,
+        cwd=_REPO_ROOT,
+        timeout=60,
+    )
+
+    assert proc.returncode != 0
+    assert "--facts" in proc.stderr
+
+
 def test_scorer_matches_facts_across_case_and_whitespace_variants():
     facts = make_facts(2)
     summary = facts[0].upper().replace(" ", "  \n ")
