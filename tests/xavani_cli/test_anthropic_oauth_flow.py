@@ -5,6 +5,9 @@
 """Tests for Anthropic OAuth setup flow behavior."""
 
 from xavani_cli.config import load_env, save_env_value
+import pytest
+
+pytestmark = pytest.mark.integration
 
 
 def test_run_anthropic_oauth_flow_prefers_claude_code_credentials(tmp_path, monkeypatch, capsys):

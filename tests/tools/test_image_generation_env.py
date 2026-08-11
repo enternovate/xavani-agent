@@ -5,6 +5,10 @@
 """FAL_KEY env var normalization (whitespace-only treated as unset)."""
 
 
+import pytest
+
+pytestmark = pytest.mark.unit
+
 def test_fal_key_whitespace_is_unset(monkeypatch):
     # Whitespace-only FAL_KEY must NOT register as configured, and the managed
     # gateway fallback must be disabled for this assertion to be meaningful.

@@ -24,6 +24,8 @@ from tools.environments.file_sync import (
     _SYNC_BACK_MAX_RETRIES,
 )
 
+pytestmark = pytest.mark.integration
+
 
 # ---------------------------------------------------------------------------
 # Helpers

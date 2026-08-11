@@ -3,6 +3,9 @@
 # Built by Enternovate -- Open source. Private. Local.
 
 from pathlib import Path
+import pytest
+
+pytestmark = pytest.mark.integration
 
 
 def test_tui_finds_bundled_entry_js(tmp_path):

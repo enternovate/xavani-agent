@@ -10,6 +10,8 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
+pytestmark = pytest.mark.integration
+
 
 # ---------------------------------------------------------------------------
 # API layer — _api_post + error mapping

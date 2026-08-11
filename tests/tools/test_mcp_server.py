@@ -10,6 +10,8 @@ import pytest
 
 from tools import mcp_server
 
+pytestmark = pytest.mark.unit
+
 
 def test_exposed_specs_are_well_formed_and_deterministic():
     specs = mcp_server.exposed_tool_specs()

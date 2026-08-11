@@ -19,6 +19,9 @@ future update to the detection logic lives in one place.
 from __future__ import annotations
 
 from xavani_cli.runtime_provider import _detect_api_mode_for_url
+import pytest
+
+pytestmark = pytest.mark.unit
 
 
 class TestCodexResponsesDetection:

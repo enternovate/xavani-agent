@@ -27,6 +27,8 @@ from tools.mcp_tool import (
     _validate_remote_mcp_url,
 )
 
+pytestmark = pytest.mark.integration
+
 
 class TestValidUrlsAccepted:
     """Every valid http(s) URL must pass through untouched (stripped of whitespace)."""

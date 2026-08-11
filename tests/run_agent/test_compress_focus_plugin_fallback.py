@@ -17,6 +17,8 @@ import pytest
 
 from run_agent import AIAgent
 
+pytestmark = pytest.mark.unit
+
 
 def _make_agent_with_engine(engine):
     agent = object.__new__(AIAgent)

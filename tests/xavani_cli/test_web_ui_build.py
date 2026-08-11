@@ -19,6 +19,8 @@ import pytest
 
 from xavani_cli.main import _web_ui_build_needed, _build_web_ui, _run_npm_install_deterministic
 
+pytestmark = pytest.mark.integration
+
 
 def _touch(path: Path, offset: float = 0.0) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)

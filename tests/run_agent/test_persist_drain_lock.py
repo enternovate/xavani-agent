@@ -18,6 +18,8 @@ import pytest
 
 from run_agent import AIAgent
 
+pytestmark = pytest.mark.integration
+
 
 @pytest.fixture()
 def agent(tmp_path):

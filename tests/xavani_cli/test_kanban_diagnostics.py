@@ -21,6 +21,8 @@ import pytest
 from xavani_cli import kanban_db as kb
 from xavani_cli import kanban_diagnostics as kd
 
+pytestmark = pytest.mark.integration
+
 
 # ---------------------------------------------------------------------------
 # Fixtures

@@ -10,6 +10,8 @@ from pathlib import Path
 
 from tools.file_operations import _is_write_denied
 
+pytestmark = pytest.mark.unit
+
 
 class TestWriteDenyExactPaths:
     def test_etc_shadow(self):

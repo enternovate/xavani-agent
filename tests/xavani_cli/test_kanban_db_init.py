@@ -8,6 +8,9 @@ import threading
 from pathlib import Path
 
 from xavani_cli import kanban_db as kb
+import pytest
+
+pytestmark = pytest.mark.integration
 
 
 def test_connect_initialization_is_thread_safe(tmp_path, monkeypatch):

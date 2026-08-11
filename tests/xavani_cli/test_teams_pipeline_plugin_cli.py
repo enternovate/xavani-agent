@@ -15,6 +15,8 @@ import pytest
 from plugins.teams_pipeline.cli import register_cli, teams_pipeline_command
 from plugins.teams_pipeline.store import TeamsPipelineStore
 
+pytestmark = pytest.mark.integration
+
 
 @pytest.fixture(autouse=True)
 def _isolate(tmp_path, monkeypatch):

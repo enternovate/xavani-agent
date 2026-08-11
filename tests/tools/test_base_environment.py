@@ -12,6 +12,9 @@ import uuid
 from unittest.mock import MagicMock
 
 from tools.environments.base import BaseEnvironment, _cwd_marker
+import pytest
+
+pytestmark = pytest.mark.unit
 
 
 class _TestableEnv(BaseEnvironment):

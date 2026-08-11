@@ -28,6 +28,8 @@ import pytest
 
 from tools.file_operations import ShellFileOperations
 
+pytestmark = pytest.mark.integration
+
 
 class _FakeEnv:
     """Minimal terminal env that tracks cwd across execute() calls.

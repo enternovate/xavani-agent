@@ -4,6 +4,9 @@
 
 import json
 from types import SimpleNamespace
+import pytest
+
+pytestmark = pytest.mark.e2e
 
 
 def _tool_call(name: str, arguments):

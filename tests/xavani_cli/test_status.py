@@ -5,6 +5,9 @@
 from types import SimpleNamespace
 
 from xavani_cli.status import show_status
+import pytest
+
+pytestmark = pytest.mark.integration
 
 
 def test_show_status_includes_tavily_key(monkeypatch, capsys, tmp_path):

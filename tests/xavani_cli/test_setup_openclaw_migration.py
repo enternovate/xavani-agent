@@ -9,6 +9,9 @@ from types import ModuleType
 from unittest.mock import MagicMock, patch
 
 from xavani_cli import setup as setup_mod
+import pytest
+
+pytestmark = pytest.mark.integration
 
 
 # ---------------------------------------------------------------------------

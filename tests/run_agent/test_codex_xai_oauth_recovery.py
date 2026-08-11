@@ -35,6 +35,8 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
+pytestmark = pytest.mark.integration
+
 
 # ---------------------------------------------------------------------------
 # Fix A: prelude error fallback

@@ -8,6 +8,9 @@ import sys
 from pathlib import Path
 
 from xavani_cli.env_loader import load_xavani_dotenv
+import pytest
+
+pytestmark = pytest.mark.integration
 
 
 def test_user_env_overrides_stale_shell_values(tmp_path, monkeypatch):

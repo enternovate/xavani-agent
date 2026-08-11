@@ -10,6 +10,9 @@ from unittest.mock import MagicMock
 import xavani_cli.plugins as plugins_mod
 import tools.terminal_tool as terminal_tool_module
 from tools.plugin_api_gate import PLUGIN_API_VERSION
+import pytest
+
+pytestmark = pytest.mark.integration
 
 
 _UNSET = object()

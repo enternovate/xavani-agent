@@ -16,6 +16,8 @@ from tools.risk_budget import (
     risk_budget_for,
 )
 
+pytestmark = pytest.mark.unit
+
 
 @pytest.fixture(autouse=True)
 def _clean_budgets():

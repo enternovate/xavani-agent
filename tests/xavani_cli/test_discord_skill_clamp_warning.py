@@ -21,6 +21,9 @@ from __future__ import annotations
 import logging
 from pathlib import Path
 from unittest.mock import patch
+import pytest
+
+pytestmark = pytest.mark.integration
 
 
 def test_clamp_collision_emits_warning_naming_both_skills(

@@ -7,6 +7,8 @@
 import pytest
 from xavani_cli.main import _coalesce_session_name_args
 
+pytestmark = pytest.mark.unit
+
 
 class TestCoalesceSessionNameArgs:
     """Ensure unquoted multi-word session names are merged into one token."""

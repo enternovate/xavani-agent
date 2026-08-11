@@ -17,6 +17,8 @@ import pytest
 
 from tools import browser_tool as bt
 
+pytestmark = pytest.mark.integration
+
 
 @pytest.fixture(autouse=True)
 def _reset_chromium_cache():

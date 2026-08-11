@@ -15,6 +15,8 @@ import pytest
 
 from tools import slash_confirm
 
+pytestmark = pytest.mark.unit
+
 
 @pytest.fixture(autouse=True)
 def _clean_pending():

@@ -17,6 +17,8 @@ import pytest
 
 from tools.terminal_tool import _get_env_config, _maybe_sandbox_untrusted_repo, _repo_has_no_owner
 
+pytestmark = pytest.mark.integration
+
 
 class _FakeRunner:
     """Git runner stub: returns canned stdout per command."""

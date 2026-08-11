@@ -5,6 +5,9 @@
 """Regression tests for sudo detection and sudo password handling."""
 
 import tools.terminal_tool as terminal_tool
+import pytest
+
+pytestmark = pytest.mark.integration
 
 
 def setup_function():

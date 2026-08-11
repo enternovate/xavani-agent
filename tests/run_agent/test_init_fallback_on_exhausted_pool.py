@@ -8,6 +8,8 @@ import pytest
 from unittest.mock import patch, MagicMock
 from run_agent import AIAgent
 
+pytestmark = pytest.mark.unit
+
 
 def _make_tool_defs():
     return [{"type": "function", "function": {"name": "web_search",

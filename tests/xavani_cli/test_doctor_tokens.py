@@ -7,6 +7,9 @@
 from __future__ import annotations
 
 from xavani_cli.doctor import _check_token_vault
+import pytest
+
+pytestmark = pytest.mark.unit
 
 
 def test_token_vault_healthy(monkeypatch, capsys) -> None:

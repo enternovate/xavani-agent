@@ -19,6 +19,8 @@ from tools.command_sanitizer import (
     sanitize_shell_command,
 )
 
+pytestmark = pytest.mark.unit
+
 
 # ── has_fenced_block ────────────────────────────────────────────────
 

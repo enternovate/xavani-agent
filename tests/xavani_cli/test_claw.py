@@ -13,6 +13,8 @@ import pytest
 
 from xavani_cli import claw as claw_mod
 
+pytestmark = pytest.mark.integration
+
 
 # ---------------------------------------------------------------------------
 # _find_migration_script

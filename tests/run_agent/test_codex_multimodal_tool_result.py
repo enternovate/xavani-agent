@@ -20,6 +20,9 @@ from agent.codex_responses_adapter import (
     _chat_messages_to_responses_input,
     _preflight_codex_input_items,
 )
+import pytest
+
+pytestmark = pytest.mark.unit
 
 
 def _build_messages_with_multimodal_tool_result():

@@ -8,6 +8,9 @@ import importlib
 import unittest
 
 from tools.registry import registry
+import pytest
+
+pytestmark = pytest.mark.unit
 
 # Trigger tool discovery so feishu tools get registered
 importlib.import_module("tools.feishu_doc_tool")

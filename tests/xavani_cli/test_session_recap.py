@@ -11,6 +11,8 @@ import pytest
 
 from xavani_cli.session_recap import build_recap
 
+pytestmark = pytest.mark.unit
+
 
 def _user(text):
     return {"role": "user", "content": text}

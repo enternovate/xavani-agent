@@ -3,6 +3,9 @@
 # Built by Enternovate -- Open source. Private. Local.
 
 from xavani_cli import setup as setup_mod
+import pytest
+
+pytestmark = pytest.mark.unit
 
 
 def test_prompt_strips_bracketed_paste_markers(monkeypatch):

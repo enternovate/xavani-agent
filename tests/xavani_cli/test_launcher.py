@@ -8,6 +8,9 @@ import runpy
 import sys
 import types
 from pathlib import Path
+import pytest
+
+pytestmark = pytest.mark.unit
 
 
 def test_launcher_delegates_to_argparse_entrypoint(monkeypatch):

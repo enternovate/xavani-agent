@@ -16,6 +16,8 @@ sys.modules.setdefault("fal_client", types.SimpleNamespace())
 
 from run_agent import AIAgent
 
+pytestmark = pytest.mark.unit
+
 
 # ── Helpers ──────────────────────────────────────────────────────────────────
 

@@ -8,6 +8,9 @@ import json
 import sys
 
 from run_agent import AIAgent
+import pytest
+
+pytestmark = pytest.mark.e2e
 
 
 def _mock_response(*, usage: dict, content: str = "done"):

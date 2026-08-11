@@ -18,6 +18,8 @@ from unittest.mock import patch, MagicMock
 
 import pytest
 
+pytestmark = pytest.mark.unit
+
 
 class TestHandleSkillsSlashInstallFlags:
     """Test flag parsing in handle_skills_slash for install."""

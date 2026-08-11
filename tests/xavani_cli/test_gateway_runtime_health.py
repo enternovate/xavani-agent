@@ -3,6 +3,9 @@
 # Built by Enternovate -- Open source. Private. Local.
 
 from xavani_cli.gateway import _runtime_health_lines
+import pytest
+
+pytestmark = pytest.mark.unit
 
 
 def test_runtime_health_lines_include_fatal_platform_and_startup_reason(monkeypatch):

@@ -5,6 +5,9 @@
 """G01: autonomous diagnosis tests."""
 
 from tools.auto_diagnosis import _health_score, diagnose, diagnose_from_modules
+import pytest
+
+pytestmark = pytest.mark.unit
 
 
 # ── health scoring ─────────────────────────────────────────────────

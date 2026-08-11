@@ -24,6 +24,8 @@ These tests pin the new caps + prune hooks.
 
 import pytest
 
+pytestmark = pytest.mark.integration
+
 
 class TestReadTrackerCaps:
     def setup_method(self):

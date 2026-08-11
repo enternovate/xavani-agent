@@ -23,6 +23,8 @@ from unittest.mock import patch
 
 import pytest
 
+pytestmark = pytest.mark.unit
+
 
 def _ns(**kwargs):
     return SimpleNamespace(**kwargs)

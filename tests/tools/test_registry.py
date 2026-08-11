@@ -10,6 +10,9 @@ from pathlib import Path
 from unittest.mock import patch
 
 from tools.registry import ToolRegistry, _module_registers_tools, discover_builtin_tools
+import pytest
+
+pytestmark = pytest.mark.integration
 
 
 def _dummy_handler(args, **kwargs):

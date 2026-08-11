@@ -26,6 +26,8 @@ from xavani_cli.models import (
     validate_requested_model,
 )
 
+pytestmark = pytest.mark.integration
+
 
 # -- helpers -----------------------------------------------------------------
 

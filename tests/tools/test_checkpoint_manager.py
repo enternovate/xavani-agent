@@ -36,6 +36,8 @@ from tools.checkpoint_manager import (
     clear_legacy,
 )
 
+pytestmark = pytest.mark.integration
+
 
 # =========================================================================
 # Fixtures

@@ -7,6 +7,8 @@ import logging
 
 import pytest
 
+pytestmark = pytest.mark.integration
+
 terminal_tool_module = importlib.import_module("tools.terminal_tool")
 
 

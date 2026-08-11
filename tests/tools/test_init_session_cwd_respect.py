@@ -21,6 +21,9 @@ from tempfile import TemporaryFile
 from unittest.mock import MagicMock
 
 from tools.environments.base import BaseEnvironment
+import pytest
+
+pytestmark = pytest.mark.integration
 
 
 class _TestableEnv(BaseEnvironment):

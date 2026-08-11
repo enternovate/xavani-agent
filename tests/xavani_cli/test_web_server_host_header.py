@@ -18,6 +18,8 @@ from pathlib import Path
 
 import pytest
 
+pytestmark = pytest.mark.integration
+
 _repo = str(Path(__file__).resolve().parents[1])
 if _repo not in sys.path:
     sys.path.insert(0, _repo)

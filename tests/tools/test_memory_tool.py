@@ -16,6 +16,8 @@ from tools.memory_tool import (
     MEMORY_SCHEMA,
 )
 
+pytestmark = pytest.mark.integration
+
 
 # =========================================================================
 # Tool schema guidance

@@ -11,6 +11,8 @@ import xavani_cli.model_switch as ms
 from xavani_cli.model_switch import DirectAlias
 from xavani_cli.runtime_provider import _resolve_named_custom_runtime
 
+pytestmark = pytest.mark.unit
+
 def test_ensure_direct_aliases_mutates_in_place(monkeypatch):
     """_ensure_direct_aliases mutates DIRECT_ALIASES in place (guards against rebinding regression)."""
     # Ensure we start with an empty but existing dict to check for mutation vs rebinding

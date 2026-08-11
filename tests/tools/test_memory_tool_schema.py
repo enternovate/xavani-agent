@@ -24,6 +24,9 @@ backends reject.
 import json
 
 from tools.memory_tool import MEMORY_SCHEMA
+import pytest
+
+pytestmark = pytest.mark.unit
 
 
 _FORBIDDEN_TOP_LEVEL_KEYS = ("allOf", "anyOf", "oneOf", "enum", "not")

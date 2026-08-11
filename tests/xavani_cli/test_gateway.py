@@ -12,6 +12,8 @@ import pytest
 
 import xavani_cli.gateway as gateway
 
+pytestmark = pytest.mark.integration
+
 
 def _install_fake_gateway_run(monkeypatch, start_gateway):
     module = ModuleType("gateway.run")

@@ -18,6 +18,8 @@ import threading
 
 import pytest
 
+pytestmark = pytest.mark.integration
+
 
 def _spawn_sleep(seconds: float = 60) -> subprocess.Popen:
     """Spawn a portable long-lived Python sleep process (no shell wrapper)."""

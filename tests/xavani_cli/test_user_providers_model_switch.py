@@ -13,6 +13,8 @@ import pytest
 from xavani_cli.model_switch import list_authenticated_providers, switch_model
 from xavani_cli import runtime_provider as rp
 
+pytestmark = pytest.mark.integration
+
 
 # =============================================================================
 # Tests for list_authenticated_providers including full models list

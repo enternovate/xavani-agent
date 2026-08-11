@@ -12,6 +12,8 @@ import ast
 import pytest
 from pathlib import Path
 
+pytestmark = pytest.mark.integration
+
 # Files that must have Windows-safe process management
 GUARDED_FILES = [
     "tools/environments/local.py",

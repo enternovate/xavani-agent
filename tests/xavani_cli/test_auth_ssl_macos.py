@@ -27,6 +27,8 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from xavani_cli.auth import _default_verify, _resolve_verify
 
+pytestmark = pytest.mark.integration
+
 
 @pytest.fixture
 def real_bundle_file(tmp_path: Path) -> str:

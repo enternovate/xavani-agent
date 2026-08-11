@@ -26,6 +26,8 @@ from xavani_cli.plugins_cmd import (
     plugins_command,
 )
 
+pytestmark = pytest.mark.integration
+
 
 # ── _sanitize_plugin_name ─────────────────────────────────────────────────
 

@@ -15,6 +15,8 @@ from unittest.mock import patch
 
 from tools.skills_tool import skill_view
 
+pytestmark = pytest.mark.integration
+
 
 @pytest.fixture()
 def fake_skills(tmp_path):

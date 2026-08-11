@@ -26,6 +26,8 @@ from unittest.mock import patch
 
 import pytest
 
+pytestmark = pytest.mark.unit
+
 
 async def _hanging_run(self, cfg):
     """Stand-in transport that hangs forever so we can cancel it."""

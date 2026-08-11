@@ -17,6 +17,8 @@ from unittest.mock import patch
 
 from xavani_cli.model_switch import switch_model
 
+pytestmark = pytest.mark.unit
+
 
 # Shared mock context — skip network calls, credential resolution, catalog lookups
 _MOCK_VALIDATION = {"accepted": True, "persist": True, "recognized": True, "message": None}

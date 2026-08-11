@@ -20,6 +20,8 @@ from unittest.mock import MagicMock
 
 import pytest
 
+pytestmark = pytest.mark.integration
+
 
 pytest.importorskip("mcp.client.auth.oauth2")
 

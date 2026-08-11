@@ -29,6 +29,9 @@ from unittest.mock import patch
 
 from xavani_cli.model_normalize import normalize_model_for_provider
 from xavani_cli.model_switch import switch_model
+import pytest
+
+pytestmark = pytest.mark.unit
 
 
 # Live catalog opencode-go currently returns from /v1/models (snapshot).

@@ -12,6 +12,8 @@ return ``None`` instead of the default — calling ``.lower()`` on that raises
 from unittest.mock import patch
 import pytest
 
+pytestmark = pytest.mark.unit
+
 
 # ── TTS tool ──────────────────────────────────────────────────────────────
 

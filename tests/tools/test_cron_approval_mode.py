@@ -15,6 +15,8 @@ from tools.approval import (
     detect_dangerous_command,
 )
 
+pytestmark = pytest.mark.unit
+
 
 @pytest.fixture(autouse=True)
 def _clear_approval_state():

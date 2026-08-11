@@ -24,6 +24,8 @@ from tools.budget_config import (
     BudgetConfig,
 )
 
+pytestmark = pytest.mark.unit
+
 
 # ---------------------------------------------------------------------------
 # Module-level constants

@@ -7,6 +7,9 @@ import types
 
 
 from xavani_cli.main import _prompt_reasoning_effort_selection
+import pytest
+
+pytestmark = pytest.mark.unit
 
 
 class _FakeTerminalMenu:

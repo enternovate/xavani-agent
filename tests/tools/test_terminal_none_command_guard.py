@@ -7,6 +7,9 @@
 import json
 
 from tools.terminal_tool import _transform_sudo_command, terminal_tool
+import pytest
+
+pytestmark = pytest.mark.unit
 
 
 def test_transform_sudo_command_none_returns_cleanly():

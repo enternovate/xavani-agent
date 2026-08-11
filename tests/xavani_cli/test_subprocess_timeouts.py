@@ -8,6 +8,8 @@ from pathlib import Path
 
 import pytest
 
+pytestmark = pytest.mark.integration
+
 
 # Parameterise over every CLI module that calls subprocess.run
 _CLI_MODULES = [

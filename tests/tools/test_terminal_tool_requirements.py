@@ -7,6 +7,9 @@
 import importlib
 
 from model_tools import get_tool_definitions
+import pytest
+
+pytestmark = pytest.mark.integration
 
 terminal_tool_module = importlib.import_module("tools.terminal_tool")
 

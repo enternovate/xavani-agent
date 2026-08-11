@@ -25,6 +25,8 @@ import pytest
 
 from tools import tool_output_limits as tol
 
+pytestmark = pytest.mark.unit
+
 
 class TestDefaults:
     def test_defaults_match_previous_hardcoded_values(self):

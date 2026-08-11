@@ -8,6 +8,8 @@ import json
 from unittest.mock import patch, MagicMock
 import pytest
 
+pytestmark = pytest.mark.unit
+
 
 @pytest.fixture(autouse=True)
 def _ensure_redaction_enabled(monkeypatch):

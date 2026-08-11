@@ -40,6 +40,8 @@ from xavani_cli.profiles import (
     NO_BUNDLED_SKILLS_MARKER,
 )
 
+pytestmark = pytest.mark.integration
+
 
 # ---------------------------------------------------------------------------
 # Shared fixture: redirect Path.home() and XAVANI_HOME for profile tests

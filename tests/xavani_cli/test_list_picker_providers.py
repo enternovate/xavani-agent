@@ -22,6 +22,8 @@ network or auth state is required.
 import pytest
 from xavani_cli import model_switch
 
+pytestmark = pytest.mark.unit
+
 
 def _make_provider(slug, name=None, models=None, *, is_current=False,
                    is_user_defined=False, source="built-in", api_url=None):

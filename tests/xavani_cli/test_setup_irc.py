@@ -14,6 +14,8 @@ import pytest
 
 from gateway.platform_registry import PlatformEntry, platform_registry
 
+pytestmark = pytest.mark.integration
+
 
 def _register_irc_platform(**overrides):
     """Manually register the IRC platform entry as if discover_plugins() found it.

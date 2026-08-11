@@ -17,6 +17,9 @@ import json
 import sys
 import types
 from unittest.mock import MagicMock
+import pytest
+
+pytestmark = pytest.mark.unit
 
 
 def _install_fake_ddgs(monkeypatch, *, text_results=None, text_raises=None):

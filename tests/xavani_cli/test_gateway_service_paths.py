@@ -4,6 +4,9 @@
 
 from pathlib import Path
 from unittest.mock import patch
+import pytest
+
+pytestmark = pytest.mark.integration
 
 
 def test_service_path_skips_nonexistent_node_modules(tmp_path):

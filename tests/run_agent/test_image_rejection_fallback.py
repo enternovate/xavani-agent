@@ -11,6 +11,9 @@ require, and that the phrase detector fires on the expected error bodies.
 """
 
 from run_agent import _strip_images_from_messages
+import pytest
+
+pytestmark = pytest.mark.integration
 
 
 class TestStripImagesPreservesAlternation:

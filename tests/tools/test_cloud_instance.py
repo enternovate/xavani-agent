@@ -13,6 +13,9 @@ from tools.cloud_instance import (
     generate_cloud_manifest,
     validate_manifest,
 )
+import pytest
+
+pytestmark = pytest.mark.unit
 
 
 def test_generation_contains_required_files():

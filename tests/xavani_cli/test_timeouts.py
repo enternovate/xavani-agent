@@ -10,6 +10,9 @@ from xavani_cli.timeouts import (
     get_provider_request_timeout,
     get_provider_stale_timeout,
 )
+import pytest
+
+pytestmark = pytest.mark.integration
 
 
 def _write_config(tmp_path, body: str) -> None:

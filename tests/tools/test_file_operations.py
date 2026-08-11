@@ -28,6 +28,8 @@ from tools.file_operations import (
     normalize_search_pagination,
 )
 
+pytestmark = pytest.mark.integration
+
 
 # =========================================================================
 # Write deny list

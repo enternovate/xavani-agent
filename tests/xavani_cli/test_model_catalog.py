@@ -14,6 +14,8 @@ from unittest.mock import patch
 
 import pytest
 
+pytestmark = pytest.mark.integration
+
 
 @pytest.fixture
 def isolated_home(tmp_path, monkeypatch):

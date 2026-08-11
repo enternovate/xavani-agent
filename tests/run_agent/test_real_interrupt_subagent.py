@@ -16,6 +16,9 @@ import unittest
 from unittest.mock import MagicMock, patch, PropertyMock
 
 from tools.interrupt import set_interrupt, is_interrupted
+import pytest
+
+pytestmark = pytest.mark.e2e
 
 
 def _make_slow_api_response(delay=5.0):

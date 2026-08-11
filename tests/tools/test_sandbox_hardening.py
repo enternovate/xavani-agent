@@ -12,6 +12,8 @@ import pytest
 
 from tools import sandbox_hardening as sh
 
+pytestmark = pytest.mark.unit
+
 
 def test_is_linux_matches_platform():
     assert sh.is_linux() == sys.platform.startswith("linux")

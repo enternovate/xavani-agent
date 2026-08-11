@@ -20,6 +20,8 @@ import pytest
 
 from run_agent import _repair_tool_call_arguments
 
+pytestmark = pytest.mark.unit
+
 
 class TestStreamingAssemblyRepair:
     """Verify that _repair_tool_call_arguments is applied to streaming tool

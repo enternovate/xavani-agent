@@ -10,6 +10,8 @@ import pytest
 
 from xavani_cli import auth as auth_mod
 
+pytestmark = pytest.mark.integration
+
 
 def test_store_provider_state_can_skip_active_provider() -> None:
     auth_store = {"active_provider": "nous", "providers": {}}

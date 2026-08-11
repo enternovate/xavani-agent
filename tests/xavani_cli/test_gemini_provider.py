@@ -15,6 +15,8 @@ from agent.model_metadata import get_model_context_length
 from agent.models_dev import PROVIDER_TO_MODELS_DEV, list_agentic_models, _NOISE_PATTERNS
 import urllib.parse
 
+pytestmark = pytest.mark.integration
+
 
 # ── Provider Registry ──
 

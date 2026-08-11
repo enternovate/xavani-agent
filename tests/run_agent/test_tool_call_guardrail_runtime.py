@@ -10,6 +10,9 @@ from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
 from run_agent import AIAgent
+import pytest
+
+pytestmark = pytest.mark.e2e
 
 
 def _make_tool_defs(*names: str) -> list[dict]:

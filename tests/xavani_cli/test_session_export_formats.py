@@ -14,6 +14,8 @@ import pytest
 from xavani_cli.session_export_html import sessions_to_html
 from xavani_cli.session_export_md import sessions_to_markdown
 
+pytestmark = pytest.mark.integration
+
 # The suite pins TZ=UTC (tests/conftest.py) for deterministic runtime, so
 # expectations must be computed in UTC — naive fromtimestamp() at module
 # import would use the ambient (non-UTC) timezone and mismatch the renderer.

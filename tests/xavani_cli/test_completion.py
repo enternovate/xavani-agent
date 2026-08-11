@@ -15,6 +15,8 @@ import pytest
 
 from xavani_cli.completion import _walk, generate_bash, generate_zsh, generate_fish
 
+pytestmark = pytest.mark.integration
+
 
 # ---------------------------------------------------------------------------
 # Helpers

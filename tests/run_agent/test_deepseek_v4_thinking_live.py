@@ -30,6 +30,7 @@ LIVE_BASE_URL = "https://api.deepseek.com"
 pytestmark = [
     pytest.mark.skipif(not LIVE, reason="live-only: set XAVANI_LIVE_TESTS=1"),
     pytest.mark.skipif(not DEEPSEEK_KEY, reason="DEEPSEEK_API_KEY not configured"),
+    pytest.mark.e2e,
 ]
 
 TOOL_NAME = "lookup_ticket_status"

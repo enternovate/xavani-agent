@@ -22,6 +22,8 @@ import pytest
 
 from xavani_state import SessionDB
 
+pytestmark = pytest.mark.integration
+
 
 class TestHandoffStateDB:
     """Test the handoff schema + helper methods on SessionDB."""

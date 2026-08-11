@@ -25,6 +25,8 @@ from tools.process_registry import (
     ProcessSession,
 )
 
+pytestmark = pytest.mark.integration
+
 
 @pytest.fixture()
 def registry():

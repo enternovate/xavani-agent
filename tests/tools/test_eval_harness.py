@@ -19,6 +19,8 @@ from tools.eval_harness_tool import (
     _handle_eval_harness,
 )
 
+pytestmark = pytest.mark.integration
+
 
 @pytest.fixture(autouse=True)
 def _use_tmp_evals(tmp_path):

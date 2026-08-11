@@ -10,6 +10,8 @@ from unittest.mock import MagicMock, patch
 import pytest
 from xavani_cli.config import DEFAULT_CONFIG, load_config, save_config
 
+pytestmark = pytest.mark.integration
+
 
 def _make_setup_args(**overrides):
     return Namespace(

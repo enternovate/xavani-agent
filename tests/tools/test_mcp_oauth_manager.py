@@ -14,6 +14,8 @@ import time
 
 import pytest
 
+pytestmark = pytest.mark.integration
+
 pytest.importorskip(
     "mcp.client.auth.oauth2",
     reason="MCP SDK 1.26.0+ required for OAuth support",

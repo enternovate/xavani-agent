@@ -11,6 +11,9 @@ correctly when reasoning is attached to a tool-calling assistant step
 rather than the final-answer assistant step.
 """
 from __future__ import annotations
+import pytest
+
+pytestmark = pytest.mark.unit
 
 
 def _extract_last_reasoning(messages):

@@ -22,6 +22,8 @@ import pytest
 
 from tools.environments.local import LocalEnvironment
 
+pytestmark = pytest.mark.integration
+
 
 def _pkill(pattern: str) -> None:
     subprocess.run(f"pkill -9 -f {pattern!r} 2>/dev/null", shell=True)

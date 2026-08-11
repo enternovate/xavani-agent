@@ -9,6 +9,9 @@ import sys
 import types
 
 from xavani_cli.config import load_config, save_config
+import pytest
+
+pytestmark = pytest.mark.integration
 
 
 class _BrokenTerminalMenu:

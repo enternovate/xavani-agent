@@ -14,6 +14,9 @@ from xavani_cli.models import (
     union_with_portal_paid_recommendations,
 )
 import xavani_cli.models as _models_mod
+import pytest
+
+pytestmark = pytest.mark.integration
 
 LIVE_OPENROUTER_MODELS = [
     ("anthropic/claude-opus-4.6", "recommended"),

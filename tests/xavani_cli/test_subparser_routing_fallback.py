@@ -19,6 +19,8 @@ import sys
 
 import pytest
 
+pytestmark = pytest.mark.unit
+
 
 def _build_parser():
     """Build a minimal replica of the xavani top-level parser."""

@@ -20,6 +20,8 @@ from types import SimpleNamespace
 
 import pytest
 
+pytestmark = pytest.mark.integration
+
 
 def test_status_uses_last_activity_not_only_last_used(monkeypatch, capsys):
     import agent.curator as curator_state

@@ -26,6 +26,8 @@ import importlib
 
 import pytest
 
+pytestmark = pytest.mark.integration
+
 
 @pytest.fixture(autouse=True)
 def _clean_env(monkeypatch):

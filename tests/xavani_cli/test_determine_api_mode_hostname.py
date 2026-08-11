@@ -14,6 +14,9 @@ custom/unknown providers in ``resolve_custom_provider``.
 from __future__ import annotations
 
 from xavani_cli.providers import determine_api_mode
+import pytest
+
+pytestmark = pytest.mark.unit
 
 
 class TestOpenAIHostHardening:

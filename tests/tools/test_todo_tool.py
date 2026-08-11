@@ -7,6 +7,9 @@
 import json
 
 from tools.todo_tool import TodoStore, todo_tool
+import pytest
+
+pytestmark = pytest.mark.unit
 
 
 class TestWriteAndRead:

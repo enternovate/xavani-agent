@@ -25,6 +25,8 @@ from unittest.mock import MagicMock
 
 import pytest
 
+pytestmark = pytest.mark.unit
+
 
 def _bare_agent():
     """Build an ``AIAgent`` with only the attributes

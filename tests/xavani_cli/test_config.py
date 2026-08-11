@@ -25,6 +25,9 @@ from xavani_cli.config import (
     sanitize_env_file,
     _sanitize_env_lines,
 )
+import pytest
+
+pytestmark = pytest.mark.integration
 
 
 class TestGetXavaniHome:

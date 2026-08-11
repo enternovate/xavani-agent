@@ -7,6 +7,9 @@
 from __future__ import annotations
 
 from xavani_cli.main import _resolve_last_session
+import pytest
+
+pytestmark = pytest.mark.integration
 
 
 class _FakeDB:

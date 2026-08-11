@@ -21,6 +21,8 @@ from tools.tts_tool import (
     _resolve_max_text_length,
 )
 
+pytestmark = pytest.mark.integration
+
 
 class TestResolveMaxTextLength:
     def test_edge_default(self):

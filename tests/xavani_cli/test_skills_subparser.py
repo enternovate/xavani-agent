@@ -5,6 +5,9 @@
 """Test that skills subparser doesn't conflict (regression test for #898)."""
 
 import argparse
+import pytest
+
+pytestmark = pytest.mark.unit
 
 
 def test_no_duplicate_skills_subparser():

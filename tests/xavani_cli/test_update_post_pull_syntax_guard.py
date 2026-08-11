@@ -22,6 +22,9 @@ from pathlib import Path
 from types import SimpleNamespace
 
 from xavani_cli import main as xavani_main
+import pytest
+
+pytestmark = pytest.mark.integration
 
 
 # ---------------------------------------------------------------------------

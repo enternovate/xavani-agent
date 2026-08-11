@@ -12,6 +12,8 @@ import pytest
 
 from tools.environments import docker as docker_env
 
+pytestmark = pytest.mark.integration
+
 
 def _mock_subprocess_run(monkeypatch):
     """Mock subprocess.run to intercept docker run -d and docker version calls.

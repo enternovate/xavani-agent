@@ -10,6 +10,9 @@ resolve like aliases in the CLI but never consume platform slash slots
 """
 
 from xavani_cli.commands import COMMANDS, resolve_command, slack_native_slashes
+import pytest
+
+pytestmark = pytest.mark.unit
 
 
 def _name(alias: str) -> str:

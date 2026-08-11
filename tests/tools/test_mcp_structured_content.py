@@ -13,6 +13,8 @@ import pytest
 
 from tools import mcp_tool
 
+pytestmark = pytest.mark.unit
+
 
 class _FakeContentBlock:
     """Minimal content block with .text and .type attributes."""

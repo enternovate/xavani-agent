@@ -22,6 +22,8 @@ import pytest
 
 from agent.auxiliary_client import extract_content_or_reasoning
 
+pytestmark = pytest.mark.unit
+
 
 # ── helpers ────────────────────────────────────────────────────────────────
 

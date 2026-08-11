@@ -16,6 +16,8 @@ import pytest
 
 from xavani_cli import kanban_db as kb
 
+pytestmark = pytest.mark.integration
+
 
 @pytest.fixture
 def kanban_home(tmp_path, monkeypatch):

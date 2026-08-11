@@ -17,6 +17,8 @@ import pytest
 from xavani_cli import profiles as profiles_mod
 from xavani_cli import profile_describer as describer
 
+pytestmark = pytest.mark.integration
+
 
 @pytest.fixture
 def profile_env(tmp_path, monkeypatch):

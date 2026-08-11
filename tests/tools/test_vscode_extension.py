@@ -11,6 +11,9 @@ from tools.vscode_extension import (
     generate_vscode_extension,
     validate_extension,
 )
+import pytest
+
+pytestmark = pytest.mark.unit
 
 
 def test_generation_contains_required_files():

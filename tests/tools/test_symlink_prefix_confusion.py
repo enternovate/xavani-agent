@@ -14,6 +14,8 @@ import os
 import pytest
 from pathlib import Path
 
+pytestmark = pytest.mark.integration
+
 
 def _old_check_escapes(resolved: Path, skill_dir_resolved: Path) -> bool:
     """The BROKEN check that used startswith without separator.

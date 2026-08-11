@@ -14,6 +14,8 @@ from unittest.mock import MagicMock, patch
 
 from tools.file_operations import ShellFileOperations, _parse_search_context_line
 
+pytestmark = pytest.mark.integration
+
 
 # =========================================================================
 # _is_likely_binary edge cases

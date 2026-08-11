@@ -5,6 +5,9 @@
 """Tests for Nous subscription feature detection."""
 
 from xavani_cli import nous_subscription as ns
+import pytest
+
+pytestmark = pytest.mark.unit
 
 
 def test_get_nous_subscription_features_recognizes_direct_exa_backend(monkeypatch):

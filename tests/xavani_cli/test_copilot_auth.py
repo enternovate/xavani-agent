@@ -8,6 +8,8 @@ import os
 import pytest
 from unittest.mock import patch, MagicMock
 
+pytestmark = pytest.mark.unit
+
 
 class TestTokenValidation:
     """Token type validation."""

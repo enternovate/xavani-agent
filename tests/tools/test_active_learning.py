@@ -8,6 +8,8 @@ import pytest
 
 from tools.active_learning import ActiveLearningLoop, threshold
 
+pytestmark = pytest.mark.integration
+
 
 @pytest.fixture
 def loop(tmp_path):

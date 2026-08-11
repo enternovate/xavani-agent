@@ -8,6 +8,8 @@ from unittest.mock import patch
 
 import pytest
 
+pytestmark = pytest.mark.unit
+
 
 _MOCK_SKILLS = [
     {"name": "skill-a", "description": "A skill", "category": "tools"},

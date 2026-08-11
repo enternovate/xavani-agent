@@ -16,6 +16,9 @@ backstory on why the alternative — fabricating "." stub text — was rejected.
 """
 
 from run_agent import AIAgent
+import pytest
+
+pytestmark = pytest.mark.unit
 
 
 # ---------------------------------------------------------------------------

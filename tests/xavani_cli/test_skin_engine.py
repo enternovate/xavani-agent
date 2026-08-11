@@ -10,6 +10,8 @@ import pytest
 from pathlib import Path
 from unittest.mock import patch
 
+pytestmark = pytest.mark.integration
+
 
 @pytest.fixture(autouse=True)
 def reset_skin_state():

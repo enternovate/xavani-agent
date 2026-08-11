@@ -4,6 +4,9 @@
 
 from pathlib import Path
 from unittest.mock import patch
+import pytest
+
+pytestmark = pytest.mark.integration
 
 
 def test_pip_install_detected_when_no_git_dir(tmp_path):

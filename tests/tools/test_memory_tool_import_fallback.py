@@ -9,6 +9,9 @@ import importlib
 import sys
 
 from tools.registry import registry
+import pytest
+
+pytestmark = pytest.mark.integration
 
 
 def test_memory_tool_imports_without_fcntl(monkeypatch, tmp_path):

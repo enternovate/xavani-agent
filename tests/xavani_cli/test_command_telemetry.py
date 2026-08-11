@@ -16,6 +16,8 @@ from xavani_cli.command_telemetry import (
     telemetry_report,
 )
 
+pytestmark = pytest.mark.integration
+
 
 @pytest.fixture(autouse=True)
 def _isolated_log(tmp_path, monkeypatch):

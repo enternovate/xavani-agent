@@ -4,6 +4,9 @@
 
 from pathlib import Path
 from unittest.mock import patch
+import pytest
+
+pytestmark = pytest.mark.integration
 
 
 def test_ensure_dependency_skips_when_present():

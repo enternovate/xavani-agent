@@ -13,6 +13,8 @@ import pytest
 
 from xavani_cli.config import set_config_value, config_command
 
+pytestmark = pytest.mark.integration
+
 
 @pytest.fixture(autouse=True)
 def _isolated_xavani_home(tmp_path):

@@ -17,6 +17,8 @@ from xavani_cli.auth import (
     AuthError,
 )
 
+pytestmark = pytest.mark.unit
+
 
 # Other provider env vars to clear during auto-detection tests
 _OTHER_PROVIDER_KEYS = (

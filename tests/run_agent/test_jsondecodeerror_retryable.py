@@ -23,6 +23,9 @@ any future refactor of that predicate must preserve the invariant:
 from __future__ import annotations
 
 import json
+import pytest
+
+pytestmark = pytest.mark.unit
 
 
 def _mirror_agent_predicate(err: BaseException) -> bool:

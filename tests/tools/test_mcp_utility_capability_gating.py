@@ -35,6 +35,8 @@ from unittest.mock import MagicMock
 
 import pytest
 
+pytestmark = pytest.mark.unit
+
 
 def _make_init_result(*, resources: bool, prompts: bool):
     """Build a fake ``InitializeResult`` whose ``capabilities`` sub-object

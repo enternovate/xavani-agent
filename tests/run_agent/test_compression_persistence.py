@@ -27,6 +27,8 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
+pytestmark = pytest.mark.e2e
+
 
 # ---------------------------------------------------------------------------
 # Part 1: Agent-side — _flush_messages_to_session_db after compression

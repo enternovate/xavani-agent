@@ -6,6 +6,8 @@
 
 import pytest
 
+pytestmark = pytest.mark.unit
+
 
 class TestHeartbeatStaleThresholds:
     """Verify the heartbeat stale threshold constants are correct."""

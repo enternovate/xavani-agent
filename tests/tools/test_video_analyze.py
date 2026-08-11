@@ -24,6 +24,8 @@ from tools.vision_tools import (
     VIDEO_ANALYZE_SCHEMA,
 )
 
+pytestmark = pytest.mark.integration
+
 
 # ---------------------------------------------------------------------------
 # _detect_video_mime_type

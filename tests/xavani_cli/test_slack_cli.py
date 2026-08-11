@@ -5,6 +5,9 @@
 """Tests for Slack CLI helpers."""
 
 from xavani_cli.slack_cli import _build_full_manifest
+import pytest
+
+pytestmark = pytest.mark.unit
 
 
 class TestSlackFullManifest:

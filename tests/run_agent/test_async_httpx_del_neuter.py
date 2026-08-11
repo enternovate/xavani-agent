@@ -23,6 +23,8 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
+pytestmark = pytest.mark.integration
+
 
 # ---------------------------------------------------------------------------
 # Layer 1: neuter_async_httpx_del

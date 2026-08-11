@@ -11,6 +11,9 @@ from xavani_cli.kanban_swarm import (
     latest_blackboard,
     post_blackboard_update,
 )
+import pytest
+
+pytestmark = pytest.mark.integration
 
 
 def test_create_swarm_builds_parallel_workers_verifier_and_synthesizer(tmp_path):

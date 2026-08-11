@@ -21,6 +21,8 @@ from xavani_cli.tokens_cli import (
     validate_tokens,
 )
 
+pytestmark = pytest.mark.integration
+
 
 @pytest.fixture(autouse=True)
 def _tmp_vault(tmp_path, monkeypatch):

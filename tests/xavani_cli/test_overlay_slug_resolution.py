@@ -19,6 +19,8 @@ import pytest
 
 from xavani_cli.model_switch import list_authenticated_providers
 
+pytestmark = pytest.mark.unit
+
 
 # -- Copilot slug resolution (env var path) ----------------------------------
 

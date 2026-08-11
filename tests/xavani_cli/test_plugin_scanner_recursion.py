@@ -21,6 +21,8 @@ import yaml
 from xavani_cli.plugins import PluginManager, PluginManifest
 from tools.plugin_api_gate import PLUGIN_API_VERSION
 
+pytestmark = pytest.mark.integration
+
 
 # ── Helpers ────────────────────────────────────────────────────────────────
 

@@ -23,6 +23,8 @@ import pytest
 
 from run_agent import AIAgent
 
+pytestmark = pytest.mark.unit
+
 
 def _make_agent() -> AIAgent:
     """Build a bare-bones AIAgent instance without running __init__.

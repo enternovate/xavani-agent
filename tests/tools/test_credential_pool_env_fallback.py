@@ -17,6 +17,8 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
+pytestmark = pytest.mark.integration
+
 
 def _make_pconfig(provider_id="deepseek", env_vars=None):
     """Create a minimal ProviderConfig for testing.

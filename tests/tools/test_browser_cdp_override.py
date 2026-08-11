@@ -3,6 +3,9 @@
 # Built by Enternovate -- Open source. Private. Local.
 
 from unittest.mock import Mock, patch
+import pytest
+
+pytestmark = pytest.mark.integration
 
 
 HOST = "example-host"

@@ -12,6 +12,9 @@ history before the review started (e.g. an earlier "Cron job '...' created.").
 import json
 
 from run_agent import AIAgent
+import pytest
+
+pytestmark = pytest.mark.unit
 
 
 _summarize = AIAgent._summarize_background_review_actions

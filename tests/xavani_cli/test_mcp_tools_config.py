@@ -8,6 +8,9 @@ from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
 from xavani_cli.tools_config import _configure_mcp_tools_interactive
+import pytest
+
+pytestmark = pytest.mark.unit
 
 # Patch targets: imports happen inside the function body, so patch at source
 _PROBE = "tools.mcp_tool.probe_mcp_server_tools"

@@ -8,6 +8,8 @@ import pytest
 
 from tools.scheduled_maintenance import MaintenancePlanner
 
+pytestmark = pytest.mark.integration
+
 
 @pytest.fixture
 def planner(tmp_path):

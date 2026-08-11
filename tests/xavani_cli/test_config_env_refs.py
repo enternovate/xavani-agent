@@ -5,6 +5,9 @@
 import textwrap
 
 from xavani_cli.config import load_config, save_config
+import pytest
+
+pytestmark = pytest.mark.integration
 
 
 def _write_config(tmp_path, body: str):

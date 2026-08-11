@@ -21,6 +21,9 @@ import yaml
 
 from xavani_cli.auth import _update_config_for_provider
 from xavani_cli.config import get_config_path
+import pytest
+
+pytestmark = pytest.mark.integration
 
 
 def _read_model_cfg() -> dict:

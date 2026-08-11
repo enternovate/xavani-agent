@@ -21,6 +21,8 @@ import pytest
 
 from run_agent import AIAgent
 
+pytestmark = pytest.mark.integration
+
 
 def _list_anthropic_tmpfiles(tmpdir: str) -> list[str]:
     return [

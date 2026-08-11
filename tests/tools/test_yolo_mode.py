@@ -21,6 +21,8 @@ from tools.approval import (
     set_current_session_key,
 )
 
+pytestmark = pytest.mark.unit
+
 
 @pytest.fixture(autouse=True)
 def _clear_approval_state():

@@ -47,6 +47,8 @@ from tools.code_execution_tool import (
     execute_code,
 )
 
+pytestmark = pytest.mark.integration
+
 
 @contextmanager
 def _mock_mode(mode):

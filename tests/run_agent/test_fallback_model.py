@@ -17,6 +17,8 @@ import pytest
 from run_agent import AIAgent
 import run_agent
 
+pytestmark = pytest.mark.unit
+
 
 @pytest.fixture(autouse=True)
 def _no_fallback_wait(monkeypatch):

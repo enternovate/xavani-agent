@@ -20,6 +20,8 @@ from xavani_approval_reasoning import (
     record_approval_reasoning,
 )
 
+pytestmark = pytest.mark.integration
+
 
 @pytest.fixture(autouse=True)
 def _isolated_home(tmp_path, monkeypatch):

@@ -17,6 +17,8 @@ import pytest
 from agent import image_gen_registry
 from agent.image_gen_provider import ImageGenProvider
 
+pytestmark = pytest.mark.integration
+
 
 class _FakeProvider(ImageGenProvider):
     def __init__(self, name: str, available: bool = True, schema=None, models=None):

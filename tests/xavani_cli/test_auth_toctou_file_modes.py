@@ -31,10 +31,10 @@ from unittest.mock import patch
 import pytest
 
 
-pytestmark = pytest.mark.skipif(
+pytestmark = [pytest.mark.skipif(
     sys.platform.startswith("win"),
     reason="POSIX mode bits not enforced on Windows",
-)
+), pytest.mark.integration]
 
 
 # ---------------------------------------------------------------------------

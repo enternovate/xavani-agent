@@ -9,6 +9,9 @@ import os
 from unittest.mock import patch
 
 from tools.debug_helpers import DebugSession
+import pytest
+
+pytestmark = pytest.mark.integration
 
 
 class TestDebugSessionDisabled:

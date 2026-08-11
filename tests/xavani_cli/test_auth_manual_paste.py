@@ -35,6 +35,8 @@ import pytest
 
 from xavani_cli import auth as auth_mod
 
+pytestmark = pytest.mark.integration
+
 
 # ---------------------------------------------------------------------------
 # _is_remote_session — broadened detection (#26923)

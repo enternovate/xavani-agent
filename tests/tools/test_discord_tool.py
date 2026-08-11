@@ -34,6 +34,8 @@ from tools.discord_tool import (
     get_dynamic_schema_core,
 )
 
+pytestmark = pytest.mark.integration
+
 
 # ---------------------------------------------------------------------------
 # Helpers

@@ -21,6 +21,8 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
+pytestmark = pytest.mark.integration
+
 
 # ---------------------------------------------------------------------------
 # _is_session_expired_error — unit coverage

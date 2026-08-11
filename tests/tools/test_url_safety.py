@@ -18,6 +18,8 @@ from tools.url_safety import (
 import ipaddress
 import pytest
 
+pytestmark = pytest.mark.integration
+
 
 class TestIsSafeUrl:
     def test_public_url_allowed(self):

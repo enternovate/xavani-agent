@@ -11,6 +11,8 @@ from pathlib import Path
 
 import pytest
 
+pytestmark = pytest.mark.integration
+
 
 def _bump_view_many(xavani_home: str, skill_name: str, iterations: int) -> None:
     os.environ["XAVANI_HOME"] = xavani_home

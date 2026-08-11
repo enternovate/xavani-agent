@@ -17,6 +17,8 @@ from tools.osv_check import (
     _query_osv,
 )
 
+pytestmark = pytest.mark.integration
+
 
 class TestInferEcosystem:
     def test_npx(self):

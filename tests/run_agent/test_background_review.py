@@ -8,6 +8,9 @@ from __future__ import annotations
 
 import run_agent as run_agent_module
 from run_agent import AIAgent
+import pytest
+
+pytestmark = pytest.mark.e2e
 
 
 def _bare_agent() -> AIAgent:

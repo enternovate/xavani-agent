@@ -21,6 +21,8 @@ from xavani_cli.main import (
     _update_lock_path,
 )
 
+pytestmark = pytest.mark.integration
+
 
 @pytest.fixture
 def locked_home(tmp_path: Path, monkeypatch) -> Path:

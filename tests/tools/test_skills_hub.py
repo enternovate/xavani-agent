@@ -14,9 +14,9 @@ import pytest
 # The full Skills Hub implementation was stripped from this fork; only stubs
 # remain. The tests below exercise the stripped logic, so skip them here
 # rather than fail. Restore the real `tools/skills_hub.py` to re-enable.
-pytestmark = pytest.mark.skip(
+pytestmark = [pytest.mark.skip(
     reason="tools.skills_hub stripped to stubs in this fork"
-)
+), pytest.mark.integration]
 
 from tools.skills_hub import (
     GitHubAuth,

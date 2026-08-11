@@ -52,6 +52,8 @@ from tools.code_execution_tool import (
     _execute_remote,
 )
 
+pytestmark = pytest.mark.integration
+
 
 def _mock_handle_function_call(function_name, function_args, task_id=None, user_task=None):
     """Mock dispatcher that returns canned responses for each tool."""

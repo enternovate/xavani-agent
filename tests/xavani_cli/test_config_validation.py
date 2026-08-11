@@ -8,6 +8,8 @@ import pytest
 
 from xavani_cli.config import validate_config_structure, ConfigIssue
 
+pytestmark = pytest.mark.unit
+
 
 class TestCustomProvidersValidation:
     """custom_providers must be a YAML list, not a dict."""

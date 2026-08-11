@@ -7,6 +7,9 @@
 import json
 
 from tools.nvim_plugin import generate_nvim_plugin, validate_plugin
+import pytest
+
+pytestmark = pytest.mark.unit
 
 
 def test_generation_contains_required_files():

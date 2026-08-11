@@ -20,6 +20,8 @@ from types import SimpleNamespace
 
 import pytest
 
+pytestmark = pytest.mark.integration
+
 
 class _FakeRunResult:
     def __init__(self, output: str | bytes = "", exit_code: int = 0):

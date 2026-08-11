@@ -15,6 +15,9 @@ from __future__ import annotations
 from unittest.mock import MagicMock
 
 from run_agent import AIAgent
+import pytest
+
+pytestmark = pytest.mark.unit
 
 
 def _make_agent(

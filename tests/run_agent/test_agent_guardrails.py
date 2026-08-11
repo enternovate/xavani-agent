@@ -14,6 +14,9 @@ import types
 
 from run_agent import AIAgent
 from tools.delegate_tool import _get_max_concurrent_children
+import pytest
+
+pytestmark = pytest.mark.unit
 
 MAX_CONCURRENT_CHILDREN = _get_max_concurrent_children()
 

@@ -26,6 +26,8 @@ from xavani_cli.main import (
     _save_aux_choice,
 )
 
+pytestmark = pytest.mark.integration
+
 
 # ── Default config ──────────────────────────────────────────────────────────
 

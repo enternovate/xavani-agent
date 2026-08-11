@@ -15,6 +15,8 @@ from xavani_cli.config import load_config, save_config
 from xavani_cli import setup as setup_mod
 from xavani_cli.setup import setup_model_provider
 
+pytestmark = pytest.mark.integration
+
 
 def _maybe_keep_current_tts(question, choices):
     if question != "Select TTS provider:":

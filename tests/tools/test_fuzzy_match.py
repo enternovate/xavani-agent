@@ -5,6 +5,9 @@
 """Tests for the fuzzy matching module."""
 
 from tools.fuzzy_match import fuzzy_find_and_replace
+import pytest
+
+pytestmark = pytest.mark.unit
 
 
 class TestExactMatch:

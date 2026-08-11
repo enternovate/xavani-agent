@@ -264,12 +264,21 @@ include = ["agent", "agent.*", "xavani_memory", "xavani_memory.*", "tools", "too
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 markers = [
-    "integration: marks tests requiring external services (API keys, Modal, etc.)",
+    "unit: fast tests with no I/O beyond pure logic",
+    "integration: marks tests requiring external services (API keys, Modal, etc.) or real subsystems (network, filesystem, sqlite, subprocess)",
+    "e2e: full CLI/agent loop tests",
     "ssh: marks tests requiring SSH access to a remote host",
     "flaky: quarantined tests in tests/flaky/ — inherently timing-sensitive (network, real processes); they run but never block CI (A17)",
     "long_running: tests that legitimately exceed the 30s global test timeout (bounded subprocess runners with their own internal timeouts)",
+    "forked: tests that run in a forked subprocess via pytest-forked",
+    "live_system_guard_bypass: tests that bypass the live-system guard deliberately",
+    "anyio: anyio async backend marker",
+    "asyncio: asyncio test marker",
 ]
 addopts = "-m 'not integration' -n auto --timeout=60 --timeout-method=thread"
+filterwarnings = [
+    "error::pytest.PytestUnknownMarkWarning",
+]
 
 [tool.ty.environment]
 python-version = "3.13"

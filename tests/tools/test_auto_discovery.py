@@ -16,6 +16,8 @@ from tools.auto_discovery import (
 )
 from tools.registry import ToolRegistry
 
+pytestmark = pytest.mark.integration
+
 
 @pytest.fixture
 def registry():

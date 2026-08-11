@@ -32,6 +32,8 @@ from xavani_cli.models import (
     provider_model_ids,
 )
 
+pytestmark = pytest.mark.unit
+
 
 class TestMergeHelper:
     def test_merge_empty_mdev_returns_curated(self):

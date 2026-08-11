@@ -14,6 +14,8 @@ from unittest.mock import patch
 import pytest
 import yaml
 
+pytestmark = pytest.mark.integration
+
 
 def _write_auth_store(tmp_path, payload: dict) -> None:
     xavani_home = tmp_path / "xavani"

@@ -20,6 +20,8 @@ import pytest
 
 import tools.browser_tool as browser_tool
 
+pytestmark = pytest.mark.unit
+
 
 @pytest.fixture(autouse=True)
 def _reset_resolver_state(monkeypatch):

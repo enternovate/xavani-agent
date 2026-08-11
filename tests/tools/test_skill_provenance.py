@@ -8,6 +8,8 @@ import contextvars
 
 import pytest
 
+pytestmark = pytest.mark.unit
+
 
 
 

@@ -16,6 +16,9 @@ import sys
 import threading
 import time
 import unittest
+import pytest
+
+pytestmark = pytest.mark.unit
 
 
 class TestRedirectStdoutIsProcessWide(unittest.TestCase):

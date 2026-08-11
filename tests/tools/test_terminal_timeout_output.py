@@ -4,6 +4,9 @@
 
 """Verify that terminal command timeouts preserve partial output."""
 from tools.environments.local import LocalEnvironment
+import pytest
+
+pytestmark = pytest.mark.unit
 
 
 class TestTimeoutPreservesPartialOutput:

@@ -15,6 +15,8 @@ from xavani_cli.config import (
 from xavani_cli.main import cmd_update
 from tools.skills_hub import OptionalSkillSource
 
+pytestmark = pytest.mark.integration
+
 # Managed-install detection and the skills-hub stub contract. The real
 # OptionalSkillSource crawler was stripped from this fork; the managed-update
 # logic below does not need it and runs in full.

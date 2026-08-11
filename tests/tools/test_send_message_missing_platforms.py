@@ -15,6 +15,9 @@ from tools.send_message_tool import (
     _send_mattermost,
     _send_matrix,
 )
+import pytest
+
+pytestmark = pytest.mark.integration
 
 
 # ---------------------------------------------------------------------------

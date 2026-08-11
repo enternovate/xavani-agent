@@ -9,6 +9,9 @@ from __future__ import annotations
 from unittest.mock import patch
 
 from xavani_cli.config import load_config, save_config, save_env_value, get_env_value
+import pytest
+
+pytestmark = pytest.mark.unit
 
 
 def _write_provider(provider: str, model: str = "test-model"):

@@ -12,6 +12,8 @@ from tools.egress_enforcement import (
 )
 from tools.egress_policy import EgressBlocked, EgressPolicy
 
+pytestmark = pytest.mark.integration
+
 
 @pytest.fixture(autouse=True)
 def _clear_egress_env(monkeypatch):

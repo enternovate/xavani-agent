@@ -28,6 +28,8 @@ import pytest
 
 from run_agent import AIAgent
 
+pytestmark = pytest.mark.unit
+
 
 # A plausible-looking OAuth token (``sk-ant-`` without the ``-api`` suffix).
 _OAUTH_LIKE_TOKEN = "sk-ant-oauth-example-1234567890abcdef"

@@ -8,6 +8,8 @@ import pytest
 
 from tools.pattern_consolidation import consolidate_patterns
 
+pytestmark = pytest.mark.unit
+
 
 # ── prefix merging ─────────────────────────────────────────────────
 

@@ -31,6 +31,9 @@ from tools.file_tools import (
     _read_tracker,
     notify_other_tool_call,
 )
+import pytest
+
+pytestmark = pytest.mark.integration
 
 
 # ---------------------------------------------------------------------------

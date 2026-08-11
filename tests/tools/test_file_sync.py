@@ -13,6 +13,8 @@ import pytest
 
 from tools.environments.file_sync import FileSyncManager, _FORCE_SYNC_ENV
 
+pytestmark = pytest.mark.integration
+
 
 @pytest.fixture
 def tmp_files(tmp_path):

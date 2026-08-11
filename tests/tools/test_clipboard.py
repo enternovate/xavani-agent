@@ -41,6 +41,8 @@ from xavani_cli.clipboard import (
 )
 from cli import _should_auto_attach_clipboard_image_on_paste
 
+pytestmark = pytest.mark.integration
+
 FAKE_PNG = b"\x89PNG\r\n\x1a\n" + b"\x00" * 100
 FAKE_BMP = b"BM" + b"\x00" * 100
 FAKE_JPEG = b"\xff\xd8\xff\xe0" + b"\x00" * 100

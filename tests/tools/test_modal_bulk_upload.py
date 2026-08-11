@@ -15,6 +15,8 @@ import pytest
 
 from tools.environments import modal as modal_env
 
+pytestmark = pytest.mark.integration
+
 
 def _make_mock_modal_env(monkeypatch, tmp_path):
     """Create a minimal mock ModalEnvironment for testing upload methods.

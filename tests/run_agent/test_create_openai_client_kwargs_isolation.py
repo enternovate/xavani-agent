@@ -17,6 +17,9 @@ function must treat its input dict as read-only.
 from unittest.mock import MagicMock, patch
 
 from run_agent import AIAgent
+import pytest
+
+pytestmark = pytest.mark.integration
 
 
 @patch("run_agent.OpenAI")

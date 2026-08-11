@@ -20,6 +20,8 @@ from xavani_cli import doctor as doctor_mod
 from xavani_cli.doctor import _has_provider_env_config
 import urllib.parse
 
+pytestmark = pytest.mark.integration
+
 
 class TestDoctorPlatformHints:
     def test_termux_package_hint(self, monkeypatch):

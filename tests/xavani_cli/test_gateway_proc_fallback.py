@@ -14,6 +14,9 @@ import os
 from unittest.mock import MagicMock, patch
 
 import xavani_cli.gateway as gateway_mod
+import pytest
+
+pytestmark = pytest.mark.integration
 
 
 # ---------------------------------------------------------------------------

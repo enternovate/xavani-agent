@@ -15,6 +15,8 @@ from unittest.mock import MagicMock, patch, PropertyMock
 
 import pytest
 
+pytestmark = pytest.mark.integration
+
 
 # ── Helpers ──────────────────────────────────────────────────────────────
 

@@ -25,6 +25,8 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
+pytestmark = pytest.mark.unit
+
 
 async def _noop_initialize():
     return None

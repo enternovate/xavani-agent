@@ -5,6 +5,9 @@
 """Tests for agent-settings copy in the interactive setup wizard."""
 
 from xavani_cli.setup import setup_agent_settings
+import pytest
+
+pytestmark = pytest.mark.integration
 
 
 def test_setup_agent_settings_uses_displayed_max_iterations_value(tmp_path, monkeypatch, capsys):

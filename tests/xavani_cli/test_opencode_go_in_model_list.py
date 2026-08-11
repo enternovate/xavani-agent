@@ -8,6 +8,9 @@ import os
 from unittest.mock import patch
 
 from xavani_cli.model_switch import list_authenticated_providers
+import pytest
+
+pytestmark = pytest.mark.unit
 
 
 # Minimum set of models that must be present for opencode-go no matter

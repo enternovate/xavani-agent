@@ -7,6 +7,8 @@
 import pytest
 from xavani_cli.tips import TIPS, get_random_tip
 
+pytestmark = pytest.mark.unit
+
 
 class TestTipsCorpus:
     """Validate the tip corpus itself."""

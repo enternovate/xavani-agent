@@ -26,6 +26,9 @@ real builder, mirroring ``test_argparse_flag_propagation.py`` and
 """
 
 import argparse
+import pytest
+
+pytestmark = pytest.mark.unit
 
 
 def _build_parser():

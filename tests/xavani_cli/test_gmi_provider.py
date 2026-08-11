@@ -32,6 +32,8 @@ from xavani_cli.models import (
 from agent.auxiliary_client import resolve_provider_client
 from agent.model_metadata import get_model_context_length
 
+pytestmark = pytest.mark.integration
+
 
 @pytest.fixture(autouse=True)
 def _clear_provider_env(monkeypatch):

@@ -17,6 +17,8 @@ from unittest.mock import MagicMock, patch, mock_open
 
 import pytest
 
+pytestmark = pytest.mark.integration
+
 
 def _fake_faster_whisper_module(mock_model):
     return SimpleNamespace(WhisperModel=MagicMock(return_value=mock_model))

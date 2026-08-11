@@ -18,6 +18,9 @@ This test pins the hydration behavior added at the top of run_conversation().
 """
 
 from __future__ import annotations
+import pytest
+
+pytestmark = pytest.mark.e2e
 
 
 def _make_minimal_agent():

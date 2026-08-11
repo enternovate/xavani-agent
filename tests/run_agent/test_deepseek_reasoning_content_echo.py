@@ -39,6 +39,8 @@ import pytest
 
 from run_agent import AIAgent
 
+pytestmark = pytest.mark.unit
+
 
 def _make_agent(provider: str = "", model: str = "", base_url: str = "") -> AIAgent:
     agent = object.__new__(AIAgent)

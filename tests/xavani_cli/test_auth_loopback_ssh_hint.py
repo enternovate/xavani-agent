@@ -19,6 +19,8 @@ import pytest
 
 from xavani_cli import auth as auth_mod
 
+pytestmark = pytest.mark.integration
+
 
 def _cap(fn):
     buf = io.StringIO()

@@ -13,6 +13,8 @@ import pytest
 from xavani_cli.config import config_command, show_config
 from xavani_cli.setup import _print_setup_summary
 
+pytestmark = pytest.mark.integration
+
 
 def test_config_set_usage_marks_placeholders(capsys):
     args = Namespace(config_command="set", key=None, value=None)

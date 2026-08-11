@@ -29,6 +29,8 @@ from tools.tts_tool import (
     text_to_speech_tool,
 )
 
+pytestmark = pytest.mark.integration
+
 
 # ---------------------------------------------------------------------------
 # Registry / constants

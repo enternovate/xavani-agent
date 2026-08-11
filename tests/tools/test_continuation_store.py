@@ -8,6 +8,8 @@ import pytest
 
 from tools.continuation_store import ContinuationStore
 
+pytestmark = pytest.mark.integration
+
 
 @pytest.fixture
 def store(tmp_path):

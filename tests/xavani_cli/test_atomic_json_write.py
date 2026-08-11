@@ -13,6 +13,8 @@ import pytest
 
 from utils import atomic_json_write
 
+pytestmark = pytest.mark.integration
+
 
 class TestAtomicJsonWrite:
     """Core atomic write behavior."""

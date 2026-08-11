@@ -5,6 +5,9 @@
 from unittest.mock import MagicMock, patch
 
 from run_agent import AIAgent
+import pytest
+
+pytestmark = pytest.mark.unit
 
 
 def _make_copilot_agent():

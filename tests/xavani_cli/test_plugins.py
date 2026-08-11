@@ -31,6 +31,8 @@ from xavani_cli.plugins import (
     invoke_hook,
 )
 
+pytestmark = pytest.mark.integration
+
 
 # ── Helpers ────────────────────────────────────────────────────────────────
 

@@ -14,6 +14,8 @@ import pytest
 
 from cli import _strip_reasoning_tags
 
+pytestmark = pytest.mark.unit
+
 
 class TestToolCallStripping:
     def test_tool_call_block_stripped(self):

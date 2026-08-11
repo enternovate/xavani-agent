@@ -15,6 +15,9 @@ import unittest
 from unittest.mock import MagicMock, patch, PropertyMock
 
 from tools.interrupt import set_interrupt, is_interrupted, _interrupt_event
+import pytest
+
+pytestmark = pytest.mark.unit
 
 
 class TestInterruptPropagationToChild(unittest.TestCase):

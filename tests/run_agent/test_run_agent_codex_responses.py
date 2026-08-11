@@ -15,6 +15,8 @@ sys.modules.setdefault("fal_client", types.SimpleNamespace())
 
 import run_agent
 
+pytestmark = pytest.mark.e2e
+
 
 @pytest.fixture(autouse=True)
 def _no_codex_backoff(monkeypatch):

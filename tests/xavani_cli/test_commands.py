@@ -1400,6 +1400,9 @@ class TestDiscordSkillCommands:
 # ---------------------------------------------------------------------------
 
 from xavani_cli.commands import discord_skill_commands_by_category  # noqa: E402
+import pytest
+
+pytestmark = pytest.mark.integration
 
 
 class TestDiscordSkillCommandsByCategory:

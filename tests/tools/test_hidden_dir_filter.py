@@ -13,6 +13,9 @@ Now uses Path.parts which is platform-independent.
 
 import os
 from pathlib import Path, PurePosixPath, PureWindowsPath
+import pytest
+
+pytestmark = pytest.mark.integration
 
 
 def _old_filter_matches(path_str: str) -> bool:

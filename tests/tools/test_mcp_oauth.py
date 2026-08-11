@@ -29,6 +29,8 @@ from tools.mcp_oauth import (
     _redirect_handler,
 )
 
+pytestmark = pytest.mark.integration
+
 
 # ---------------------------------------------------------------------------
 # XavaniTokenStorage

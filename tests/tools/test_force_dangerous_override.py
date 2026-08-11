@@ -10,6 +10,10 @@ non-builtin sources.
 """
 
 
+import pytest
+
+pytestmark = pytest.mark.unit
+
 def _old_should_allow(verdict, trust_level, force):
     """Simulate the BROKEN old logic."""
     INSTALL_POLICY = {

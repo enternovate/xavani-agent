@@ -21,6 +21,8 @@ from pathlib import Path
 
 import pytest
 
+pytestmark = pytest.mark.integration
+
 
 @pytest.fixture
 def curator_env(tmp_path, monkeypatch, capsys):

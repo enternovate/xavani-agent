@@ -20,6 +20,8 @@ import pytest
 
 import xavani_cli.security_advisories as adv
 
+pytestmark = pytest.mark.integration
+
 
 # ---------------------------------------------------------------------------
 # Fixtures

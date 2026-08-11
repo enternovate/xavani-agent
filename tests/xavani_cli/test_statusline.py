@@ -9,6 +9,9 @@ from xavani_cli.statusline import (
     context_tier_for,
     render_statusline,
 )
+import pytest
+
+pytestmark = pytest.mark.unit
 
 
 def test_empty_state_produces_placeholder():

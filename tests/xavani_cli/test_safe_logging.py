@@ -31,6 +31,8 @@ from xavani_cli.safe_logging import (
     remove_pattern,
 )
 
+pytestmark = pytest.mark.unit
+
 
 # ---------------------------------------------------------------------------
 # Helpers

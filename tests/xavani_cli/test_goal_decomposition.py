@@ -8,6 +8,8 @@ import pytest
 
 from xavani_cli.goals import GoalManager, GoalState, decompose_goal
 
+pytestmark = pytest.mark.integration
+
 
 @pytest.fixture
 def manager(tmp_path, monkeypatch):

@@ -34,6 +34,9 @@ from tools.file_tools import (
     write_file_tool,
     patch_tool,
 )
+import pytest
+
+pytestmark = pytest.mark.integration
 
 
 def _tmp_file(content: str = "initial\n") -> str:

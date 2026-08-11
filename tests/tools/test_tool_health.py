@@ -5,6 +5,9 @@
 """E08: tool-level health checks — registry health_fn aggregation."""
 
 from tools.registry import ToolRegistry, ToolEntry
+import pytest
+
+pytestmark = pytest.mark.unit
 
 
 def _make_registry():

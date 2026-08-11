@@ -24,6 +24,9 @@ from tools.approval import (
     prompt_dangerous_approval,
     submit_pending,
 )
+import pytest
+
+pytestmark = pytest.mark.integration
 
 
 class TestApprovalModeParsing:

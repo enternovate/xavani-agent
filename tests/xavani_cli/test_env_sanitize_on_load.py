@@ -7,6 +7,9 @@
 import tempfile
 from pathlib import Path
 from unittest.mock import patch
+import pytest
+
+pytestmark = pytest.mark.integration
 
 
 def test_load_env_sanitizes_concatenated_lines():

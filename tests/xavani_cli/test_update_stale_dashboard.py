@@ -30,6 +30,8 @@ from xavani_cli.main import (
     _warn_stale_dashboard_processes,  # back-compat alias
 )
 
+pytestmark = pytest.mark.integration
+
 
 @pytest.fixture(autouse=True)
 def _refresh_bindings_against_live_module():

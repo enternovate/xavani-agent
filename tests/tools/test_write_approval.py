@@ -18,6 +18,8 @@ from unittest.mock import patch
 
 import pytest
 
+pytestmark = pytest.mark.integration
+
 
 @pytest.fixture
 def xavani_home(tmp_path, monkeypatch):

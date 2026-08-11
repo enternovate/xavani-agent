@@ -11,6 +11,8 @@ from rich.console import Console
 from cli import ChatConsole
 from xavani_cli.skills_hub import do_check, do_install, do_list, do_update, handle_skills_slash
 
+pytestmark = pytest.mark.integration
+
 
 class _DummyLockFile:
     def __init__(self, installed):

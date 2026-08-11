@@ -15,6 +15,8 @@ from tools.privilege_recheck import (
     snapshot,
 )
 
+pytestmark = pytest.mark.unit
+
 
 @pytest.fixture(autouse=True)
 def _clean():

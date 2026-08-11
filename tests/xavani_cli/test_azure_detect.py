@@ -13,6 +13,8 @@ import pytest
 
 from xavani_cli import azure_detect
 
+pytestmark = pytest.mark.integration
+
 
 # ----------------------------------------------------------------------
 # Helpers

@@ -13,9 +13,9 @@ import pytest
 from tools.skills_hub import ClawHubSource, SkillMeta
 
 # The ClawHub source adapter was stripped from this fork; only a stub remains.
-pytestmark = pytest.mark.skip(
+pytestmark = [pytest.mark.skip(
     reason="tools.skills_hub.ClawHubSource stripped to a stub in this fork"
-)
+), pytest.mark.integration]
 
 
 class _MockResponse:

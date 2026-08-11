@@ -17,6 +17,8 @@ import pytest
 from argparse import Namespace
 from pathlib import Path
 
+pytestmark = pytest.mark.integration
+
 
 @pytest.fixture
 def memory_env(tmp_path, monkeypatch):

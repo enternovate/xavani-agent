@@ -22,6 +22,8 @@ import pytest
 
 import tools.lazy_deps as ld
 
+pytestmark = pytest.mark.unit
+
 
 # ---------------------------------------------------------------------------
 # Spec safety

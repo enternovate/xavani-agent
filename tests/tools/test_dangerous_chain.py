@@ -8,6 +8,8 @@ from tools.approval import (
     split_command_segments,
 )
 
+pytestmark = pytest.mark.unit
+
 
 class TestClassifyCommandRisk:
     def test_safe_command(self):

@@ -3,6 +3,9 @@
 # Built by Enternovate -- Open source. Private. Local.
 
 from unittest.mock import MagicMock, patch
+import pytest
+
+pytestmark = pytest.mark.integration
 
 
 def test_format_banner_version_label_without_git_state():

@@ -14,6 +14,9 @@ from unittest.mock import MagicMock, patch
 from types import SimpleNamespace
 
 from tools.delegate_tool import _strip_blocked_tools
+import pytest
+
+pytestmark = pytest.mark.integration
 
 
 class TestToolsetIntersection:

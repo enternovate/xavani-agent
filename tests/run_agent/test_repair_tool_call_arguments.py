@@ -9,6 +9,8 @@ import pytest
 
 from run_agent import _repair_tool_call_arguments
 
+pytestmark = pytest.mark.unit
+
 
 class TestRepairToolCallArguments:
     """Verify each repair stage in the pipeline."""

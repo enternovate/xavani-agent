@@ -29,6 +29,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 from tools.environments.local import LocalEnvironment
 from tools.file_operations import ShellFileOperations
 
+pytestmark = pytest.mark.integration
+
 
 # ── Shared noise detection ───────────────────────────────────────────────
 # Known shell noise patterns that should never appear in command output.

@@ -18,6 +18,8 @@ from run_agent import (
     _sanitize_messages_surrogates,
 )
 
+pytestmark = pytest.mark.integration
+
 
 class TestStripNonAscii:
     """Tests for _strip_non_ascii helper."""

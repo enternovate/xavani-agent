@@ -41,6 +41,8 @@ from xavani_cli.auth import (
     _xai_oauth_exchange_code_for_tokens,
 )
 
+pytestmark = pytest.mark.integration
+
 
 # ---------------------------------------------------------------------------
 # httpx.post recorder

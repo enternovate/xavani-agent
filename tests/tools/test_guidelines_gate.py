@@ -10,6 +10,8 @@ import pytest
 
 from tools.guidelines_gate_tool import run_guidelines_gate
 
+pytestmark = pytest.mark.unit
+
 
 class TestGuidelinesGate:
     """Test the guidelines gate checks."""

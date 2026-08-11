@@ -8,6 +8,8 @@ import pytest
 
 from tools.complementarity import MIN_PAIR_OCCURRENCES, ComplementarityMatrix
 
+pytestmark = pytest.mark.integration
+
 
 @pytest.fixture
 def matrix(tmp_path):

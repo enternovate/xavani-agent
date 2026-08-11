@@ -22,6 +22,8 @@ import subprocess
 
 import pytest
 
+pytestmark = pytest.mark.integration
+
 
 @pytest.fixture
 def searchable_tree(tmp_path):

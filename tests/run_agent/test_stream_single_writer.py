@@ -23,6 +23,8 @@ from agent.stream_single_writer import (
 )
 from run_agent import AIAgent
 
+pytestmark = pytest.mark.unit
+
 
 @pytest.fixture()
 def agent():

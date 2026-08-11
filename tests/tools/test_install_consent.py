@@ -15,6 +15,8 @@ from tools.install_consent import (
     revoke_consent,
 )
 
+pytestmark = pytest.mark.integration
+
 
 @pytest.fixture(autouse=True)
 def _isolated(tmp_path, monkeypatch):
