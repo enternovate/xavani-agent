@@ -1,0 +1,105 @@
+name: Nightly
+
+on:
+  schedule:
+    # 02:00 UTC daily. The suite runs with a 45-minute budget.
+    - cron: "0 2 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: nightly
+  cancel-in-progress: false
+
+jobs:
+  suite:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0  # v7.0.0
+        with:
+          persist-credentials: false
+
+      - name: Install system dependencies
+        run: sudo apt-get update && sudo apt-get install -y ripgrep
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39  # v8.2.0
+
+      - name: Set up Python 3.11
+        run: uv python install 3.11
+
+      - name: Install dependencies
+        run: |
+          uv venv .venv --python 3.11
+          source .venv/bin/activate
+          uv pip install -e ".[all,dev]"
+
+      - name: Run full suite
+        # Nightly reports a red run without blocking the channel: the promote
+        # gate reads the summary artifact and refuses to promote on failures.
+        continue-on-error: true
+        run: |
+          source .venv/bin/activate
+          mkdir -p artifacts
+          python -m pytest tests/ -q --ignore=tests/integration --ignore=tests/e2e --tb=short \
+            -n auto --dist=loadscope --max-worker-restart=12 -p no:cacheprovider \
+            --junitxml=artifacts/suite.xml
+        env:
+          OPENROUTER_API_KEY: ""
+          OPENAI_API_KEY: ""
+          NOUS_API_KEY: ""
+
+      - name: Build suite summary
+        if: always()
+        run: |
+          python3 - <<'EOF'
+          import xml.etree.ElementTree as ET
+          from pathlib import Path
+          import json
+          root = ET.parse("artifacts/suite.xml").getroot()
+          tests = int(root.get("tests", 0))
+          failed = int(root.get("failures", 0)) + int(root.get("errors", 0))
+          Path("artifacts/summary.json").write_text(
+              json.dumps({"passed": tests - failed, "failed": failed}),
+              encoding="utf-8",
+          )
+          print(f"passed={tests - failed} failed={failed}")
+          EOF
+
+      - name: Upload suite summary
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4.6.2
+        with:
+          name: suite-summary
+          path: artifacts/summary.json
+          retention-days: 7
+
+  promote:
+    needs: suite
+    if: github.event_name == 'schedule'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0  # v7.0.0
+
+      - name: Download suite summary
+        uses: actions/download-artifact@95815c38cf2dd216e527b88d0aacd260984f1241  # v4.2.1
+        with:
+          name: suite-summary
+          path: artifacts
+
+      - name: Promote on green
+        run: |
+          python3 scripts/promote_nightly.py --summary artifacts/summary.json --execute \
+            | tee /tmp/promote.log
+          TAG=$(sed -n 's/^OK: created tag //p' /tmp/promote.log)
+          if [ -n "$TAG" ]; then
+            git push origin "refs/tags/$TAG"
+          else
+            echo "no tag created; channel unchanged"
+          fi
