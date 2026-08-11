@@ -34,6 +34,8 @@ if str(_WORKTREE) not in sys.path:
 
 from xavani_cli import kanban_db as kb
 
+pytestmark = pytest.mark.integration
+
 
 # ---------------------------------------------------------------------------
 # Fixture

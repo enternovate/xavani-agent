@@ -24,6 +24,8 @@ from xavani_cli.tools_config import (
     tools_command,
 )
 
+pytestmark = pytest.mark.integration
+
 
 def test_agent_disabled_toolsets_suppresses_across_platforms():
     """agent.disabled_toolsets in config.yaml should remove those toolsets

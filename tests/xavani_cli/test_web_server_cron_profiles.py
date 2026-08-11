@@ -7,6 +7,8 @@
 import pytest
 from fastapi import HTTPException
 
+pytestmark = pytest.mark.integration
+
 
 @pytest.fixture()
 def isolated_profiles(tmp_path, monkeypatch):

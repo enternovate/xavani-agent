@@ -12,6 +12,8 @@ import yaml
 
 from utils import atomic_yaml_write
 
+pytestmark = pytest.mark.integration
+
 
 class TestAtomicYamlWrite:
     def test_writes_valid_yaml(self, tmp_path):

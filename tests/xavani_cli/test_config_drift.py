@@ -10,6 +10,9 @@ Future dead-config regressions can accumulate here.
 """
 
 import inspect
+import pytest
+
+pytestmark = pytest.mark.unit
 
 
 def test_delegation_default_toolsets_removed_from_cli_config():

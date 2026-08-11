@@ -19,6 +19,8 @@ import pytest
 
 from tools import browser_tool
 
+pytestmark = pytest.mark.unit
+
 
 def _make_browser_result(url="https://example.com"):
     """Return a mock successful browser command result."""

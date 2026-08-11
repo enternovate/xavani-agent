@@ -23,6 +23,8 @@ from tools.skill_manager_tool import (
     skill_manage,
 )
 
+pytestmark = pytest.mark.integration
+
 
 @pytest.fixture(autouse=True)
 def isolate_skills(tmp_path, monkeypatch):

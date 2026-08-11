@@ -19,6 +19,8 @@ from xavani_cli.config import (
     get_container_exec_info,
 )
 
+pytestmark = pytest.mark.integration
+
 
 # =============================================================================
 # get_container_exec_info

@@ -16,6 +16,8 @@ from tools.plugin_sandbox import (
     sandbox_env_snapshot,
 )
 
+pytestmark = pytest.mark.integration
+
 
 def _write_plugin(tmp_path, code: str) -> Path:
     plugin_dir = tmp_path / "test-plugin"

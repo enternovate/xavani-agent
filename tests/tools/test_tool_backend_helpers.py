@@ -31,6 +31,8 @@ from tools.tool_backend_helpers import (
     resolve_openai_audio_api_key,
 )
 
+pytestmark = pytest.mark.integration
+
 
 def _raise_import():
     raise ImportError("simulated missing module")

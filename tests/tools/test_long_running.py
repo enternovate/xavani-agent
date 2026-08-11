@@ -19,6 +19,8 @@ from tools.long_running import (
     raise_if_problems,
 )
 
+pytestmark = pytest.mark.integration
+
 
 # ── writable ────────────────────────────────────────────────────────
 

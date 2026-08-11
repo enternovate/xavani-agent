@@ -26,6 +26,8 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
+pytestmark = pytest.mark.unit
+
 
 def _install_telegram_mock_with_request(
     monkeypatch: pytest.MonkeyPatch,

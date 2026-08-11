@@ -14,6 +14,9 @@ from __future__ import annotations
 from xavani_cli.config import load_config, save_config, save_env_value
 from xavani_cli.nous_subscription import NousFeatureState, NousSubscriptionFeatures
 from xavani_cli.setup import _print_setup_summary, setup_model_provider
+import pytest
+
+pytestmark = pytest.mark.integration
 
 
 def _maybe_keep_current_tts(question, choices):

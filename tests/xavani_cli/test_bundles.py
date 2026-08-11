@@ -15,6 +15,8 @@ from xavani_cli.bundles import (
     register_cli,
 )
 
+pytestmark = pytest.mark.integration
+
 
 @pytest.fixture
 def bundles_env(tmp_path, monkeypatch):

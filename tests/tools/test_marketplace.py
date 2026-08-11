@@ -12,6 +12,8 @@ import pytest
 
 from tools.marketplace import Marketplace, PluginIndexEntry, _sha256, _verify_checksum
 
+pytestmark = pytest.mark.integration
+
 
 def _tar_bytes() -> bytes:
     """A small tar.gz containing one file."""

@@ -10,6 +10,8 @@ import pytest
 
 from xavani_cli.model_cost_guard import model_cost_guard
 
+pytestmark = pytest.mark.unit
+
 
 class TestModelCostGuard:
     def test_cheap_model_no_warning(self):

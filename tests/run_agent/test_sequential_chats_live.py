@@ -53,6 +53,7 @@ OR_KEY = os.environ.get("OPENROUTER_API_KEY", "")
 pytestmark = [
     pytest.mark.skipif(not LIVE, reason="live-only — set XAVANI_LIVE_TESTS=1"),
     pytest.mark.skipif(not OR_KEY, reason="OPENROUTER_API_KEY not configured"),
+    pytest.mark.e2e,
 ]
 
 # Cheap, fast, tool-capable. Swap if it ever goes dark.

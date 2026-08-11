@@ -16,6 +16,8 @@ import pytest
 from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
+pytestmark = pytest.mark.unit
+
 
 # ---------------------------------------------------------------------------
 # Test 1: Agent heuristic — generic 400 with large session → compression

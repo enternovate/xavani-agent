@@ -27,6 +27,8 @@ from tools.approval import (
     set_current_session_key,
 )
 
+pytestmark = pytest.mark.integration
+
 
 # -------------------------------------------------------------------------
 # Pattern detection

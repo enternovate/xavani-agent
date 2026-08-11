@@ -23,6 +23,8 @@ from tools.egress_enforcement import (
 )
 from tools.egress_policy import EgressBlocked, EgressPolicy
 
+pytestmark = pytest.mark.integration
+
 
 def _deny_policy(*allow):
     return EgressPolicy.create(allow=allow, default_deny=True)

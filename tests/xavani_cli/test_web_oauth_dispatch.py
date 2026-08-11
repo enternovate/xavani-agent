@@ -32,6 +32,9 @@ import httpx
 from fastapi.testclient import TestClient
 
 from xavani_cli.web_server import _SESSION_TOKEN, app
+import pytest
+
+pytestmark = pytest.mark.integration
 
 client = TestClient(app)
 HEADERS = {"X-Xavani-Session-Token": _SESSION_TOKEN}

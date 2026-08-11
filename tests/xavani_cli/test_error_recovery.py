@@ -12,6 +12,8 @@ from xavani_cli.error_recovery import (
     suggest_recovery,
 )
 
+pytestmark = pytest.mark.unit
+
 
 def test_config_error_matches():
     s = suggest_recovery("Failed to parse config.yaml: mapping values not allowed")

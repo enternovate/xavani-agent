@@ -11,6 +11,8 @@ import pytest
 from xavani_cli import config as xavani_config
 from xavani_cli import main as xavani_main
 
+pytestmark = pytest.mark.integration
+
 
 def test_stash_local_changes_if_needed_returns_none_when_tree_clean(monkeypatch, tmp_path):
     calls = []

@@ -8,6 +8,8 @@ import pytest
 
 from xavani_cli.config import diff_config
 
+pytestmark = pytest.mark.integration
+
 
 @pytest.fixture
 def hermetic_home(tmp_path, monkeypatch):

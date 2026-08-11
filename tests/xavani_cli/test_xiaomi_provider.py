@@ -16,6 +16,8 @@ from xavani_cli.auth import (
     AuthError,
 )
 
+pytestmark = pytest.mark.unit
+
 
 # =============================================================================
 # Provider Registry

@@ -14,6 +14,8 @@ import pytest
 
 import tools.browser_tool as browser_tool
 
+pytestmark = pytest.mark.unit
+
 
 def _reset_session_state(monkeypatch):
     """Clear caches so each test starts fresh."""

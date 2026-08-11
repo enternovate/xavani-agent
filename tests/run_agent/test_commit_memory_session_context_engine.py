@@ -15,6 +15,9 @@ from __future__ import annotations
 
 from types import SimpleNamespace
 from unittest.mock import MagicMock
+import pytest
+
+pytestmark = pytest.mark.unit
 
 
 def _make_minimal_agent(memory_manager, context_compressor, session_id="abc"):

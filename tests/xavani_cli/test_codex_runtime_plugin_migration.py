@@ -24,6 +24,8 @@ from xavani_cli.codex_runtime_plugin_migration import (
     render_codex_toml_section,
 )
 
+pytestmark = pytest.mark.integration
+
 
 # ---- per-server translation ----
 

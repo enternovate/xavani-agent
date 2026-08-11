@@ -18,6 +18,9 @@ from tools.schema_sanitizer import (
     strip_pattern_and_format,
     strip_slash_enum,
 )
+import pytest
+
+pytestmark = pytest.mark.unit
 
 
 def _tool(name: str, parameters: dict) -> dict:

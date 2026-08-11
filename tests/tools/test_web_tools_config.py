@@ -20,6 +20,8 @@ import types
 import pytest
 from unittest.mock import patch, MagicMock, AsyncMock
 
+pytestmark = pytest.mark.integration
+
 
 class TestFirecrawlClientConfig:
     """Test suite for Firecrawl client initialization."""

@@ -15,6 +15,8 @@ import pytest
 
 from xavani_cli.config import _normalize_custom_provider_entry
 
+pytestmark = pytest.mark.unit
+
 
 class TestNormalizeCustomProviderEntry:
     """Tests for _normalize_custom_provider_entry validation."""

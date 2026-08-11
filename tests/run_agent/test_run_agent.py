@@ -27,6 +27,8 @@ from run_agent import AIAgent
 from agent.error_classifier import FailoverReason
 from agent.prompt_builder import DEFAULT_AGENT_IDENTITY
 
+pytestmark = pytest.mark.e2e
+
 
 # ---------------------------------------------------------------------------
 # Fixtures

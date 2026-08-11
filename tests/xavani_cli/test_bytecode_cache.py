@@ -1,5 +1,8 @@
 # Tests for the update-time bytecode cache clearing.
 from xavani_cli.main import _clear_bytecode_cache
+import pytest
+
+pytestmark = pytest.mark.integration
 
 
 def _make_pycache(root, rel_path):

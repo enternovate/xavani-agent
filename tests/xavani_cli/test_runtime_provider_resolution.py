@@ -6,6 +6,8 @@ import pytest
 
 from xavani_cli import runtime_provider as rp
 
+pytestmark = pytest.mark.integration
+
 
 def test_resolve_runtime_provider_uses_credential_pool(monkeypatch):
     class _Entry:

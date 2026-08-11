@@ -35,6 +35,8 @@ from xavani_cli.auth import (
     resolve_xai_oauth_runtime_credentials,
 )
 
+pytestmark = pytest.mark.integration
+
 
 # ---------------------------------------------------------------------------
 # Helpers

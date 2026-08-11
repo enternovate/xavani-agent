@@ -32,6 +32,8 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
+pytestmark = pytest.mark.integration
+
 
 @pytest.fixture(autouse=True)
 def _reset_credential_cache():

@@ -15,6 +15,8 @@ from agent.model_metadata import _URL_TO_PROVIDER, _PROVIDER_PREFIXES
 from agent.models_dev import PROVIDER_TO_MODELS_DEV, list_agentic_models
 import urllib.parse
 
+pytestmark = pytest.mark.integration
+
 
 # ── Provider Registry ──
 

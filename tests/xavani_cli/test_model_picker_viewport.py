@@ -11,6 +11,9 @@ The viewport helper now caps visible items and slides the offset to keep
 the cursor on screen.
 """
 from cli import XavaniCLI
+import pytest
+
+pytestmark = pytest.mark.unit
 
 
 _compute = XavaniCLI._compute_model_picker_viewport

@@ -9,6 +9,9 @@ from importlib.util import module_from_spec, spec_from_file_location
 from pathlib import Path
 import sys
 from unittest.mock import patch
+import pytest
+
+pytestmark = pytest.mark.integration
 
 MODULE_PATH = Path(__file__).resolve().parents[2] / "tools" / "managed_tool_gateway.py"
 MODULE_SPEC = spec_from_file_location("managed_tool_gateway_test_module", MODULE_PATH)

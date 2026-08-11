@@ -9,6 +9,9 @@ from __future__ import annotations
 import inspect
 
 from tools.tool_prefilter import filter_definitions, select_tools
+import pytest
+
+pytestmark = pytest.mark.unit
 
 ALL_TOOLS = [
     "read_file", "write_file", "edit_file", "terminal_tool", "todo_tool",

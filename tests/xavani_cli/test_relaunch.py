@@ -10,6 +10,8 @@ import pytest
 
 from xavani_cli import relaunch as relaunch_mod
 
+pytestmark = pytest.mark.integration
+
 
 class TestResolveXavaniBin:
     def test_prefers_absolute_argv0_when_executable(self, monkeypatch):

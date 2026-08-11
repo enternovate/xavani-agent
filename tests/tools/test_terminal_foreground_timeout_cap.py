@@ -10,6 +10,9 @@ are rejected with an error suggesting background=true.
 import json
 import os
 from unittest.mock import patch, MagicMock
+import pytest
+
+pytestmark = pytest.mark.integration
 
 
 # ---------------------------------------------------------------------------

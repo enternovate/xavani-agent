@@ -19,6 +19,9 @@ snapshot the full prompt text (change-detector).
 """
 
 from run_agent import AIAgent
+import pytest
+
+pytestmark = pytest.mark.unit
 
 
 # ---------------------------------------------------------------------------

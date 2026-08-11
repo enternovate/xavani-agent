@@ -34,6 +34,8 @@ from tools.environments.local import (
     _resolve_safe_cwd,
 )
 
+pytestmark = pytest.mark.integration
+
 
 # ---------------------------------------------------------------------------
 # _msys_to_windows_path — pure-function unit tests

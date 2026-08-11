@@ -10,6 +10,8 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
+pytestmark = pytest.mark.integration
+
 
 @pytest.fixture(autouse=True)
 def clean_env(monkeypatch):

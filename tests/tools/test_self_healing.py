@@ -11,6 +11,8 @@ import pytest
 import tools.self_healing as sh
 from tools.self_healing import _HEAL_WINDOW_SECONDS, SelfHealer
 
+pytestmark = pytest.mark.integration
+
 
 @pytest.fixture
 def healer():

@@ -18,6 +18,8 @@ import pytest
 
 from tools import browser_supervisor as bs
 
+pytestmark = pytest.mark.unit
+
 
 class _FakeLoop:
     def __init__(self, running: bool) -> None:

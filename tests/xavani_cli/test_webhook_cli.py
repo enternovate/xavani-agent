@@ -18,6 +18,8 @@ from xavani_cli.webhook import (
     _is_webhook_enabled,
 )
 
+pytestmark = pytest.mark.integration
+
 
 @pytest.fixture(autouse=True)
 def _isolate(tmp_path, monkeypatch):

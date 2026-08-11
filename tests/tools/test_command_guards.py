@@ -21,6 +21,8 @@ from tools.approval import (
 # Ensure the module is importable so we can patch it
 import tools.tirith_security
 
+pytestmark = pytest.mark.unit
+
 
 # ---------------------------------------------------------------------------
 # Helpers

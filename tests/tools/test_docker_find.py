@@ -11,6 +11,8 @@ import pytest
 
 from tools.environments import docker as docker_mod
 
+pytestmark = pytest.mark.integration
+
 
 @pytest.fixture(autouse=True)
 def _reset_cache():

@@ -18,6 +18,8 @@ from tools.skill_manager_tool import (
     skill_manage,
 )
 
+pytestmark = pytest.mark.integration
+
 
 SKILL_CONTENT = """\
 ---

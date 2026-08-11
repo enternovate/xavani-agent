@@ -19,6 +19,9 @@ These tests cover the catalog-fallback path: when ``fetch_api_models`` returns
 from unittest.mock import patch
 
 from xavani_cli.models import validate_requested_model
+import pytest
+
+pytestmark = pytest.mark.unit
 
 
 _UNREACHABLE_PROBE = {

@@ -28,6 +28,8 @@ import pytest
 
 from agent.error_classifier import FailoverReason, classify_api_error
 
+pytestmark = pytest.mark.unit
+
 
 class _FakeApiError(Exception):
     """Stand-in for an openai.BadRequestError with status_code + body."""

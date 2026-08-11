@@ -26,6 +26,8 @@ from unittest.mock import patch
 
 import pytest
 
+pytestmark = pytest.mark.integration
+
 
 def _png_bytes():
     """Return a minimal valid PNG byte sequence.

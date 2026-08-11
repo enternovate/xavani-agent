@@ -8,6 +8,9 @@ from unittest.mock import MagicMock, patch
 
 from run_agent import AIAgent
 from agent.context_compressor import ContextCompressor
+import pytest
+
+pytestmark = pytest.mark.unit
 
 
 def _make_agent_with_compressor(config_context_length=None) -> AIAgent:

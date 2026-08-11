@@ -25,6 +25,8 @@ from unittest.mock import patch
 
 import pytest
 
+pytestmark = pytest.mark.integration
+
 
 def _make_fake_jwt(expiry_offset: int = 3600) -> str:
     """Build a fake JWT with a future expiry."""

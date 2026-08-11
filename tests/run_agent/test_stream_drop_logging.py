@@ -30,6 +30,8 @@ import pytest
 import run_agent
 from run_agent import AIAgent
 
+pytestmark = pytest.mark.integration
+
 
 def _make_agent() -> AIAgent:
     return AIAgent(

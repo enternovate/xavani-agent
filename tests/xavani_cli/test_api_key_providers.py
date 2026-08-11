@@ -25,6 +25,8 @@ from xavani_cli.auth import (
 )
 from xavani_cli.copilot_auth import _try_gh_cli_token
 
+pytestmark = pytest.mark.integration
+
 
 # =============================================================================
 # Provider Registry tests

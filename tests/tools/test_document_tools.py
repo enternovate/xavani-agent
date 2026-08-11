@@ -11,6 +11,9 @@ import inspect
 import json
 
 import tools.document_tools as dt
+import pytest
+
+pytestmark = pytest.mark.integration
 
 
 def test_tool_is_registered():

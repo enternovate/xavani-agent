@@ -8,6 +8,9 @@ import unittest
 from unittest.mock import patch
 
 from tools.delegate_tool import _expand_parent_toolsets
+import pytest
+
+pytestmark = pytest.mark.unit
 
 
 class TestExpandParentToolsets(unittest.TestCase):

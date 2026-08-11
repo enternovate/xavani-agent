@@ -21,6 +21,8 @@ from pathlib import Path
 
 import pytest
 
+pytestmark = pytest.mark.integration
+
 
 def _run_apply_profile_override(
     tmp_path, monkeypatch, *, xavani_home: str | None, active_profile: str | None,

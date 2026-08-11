@@ -7,6 +7,9 @@ from argparse import Namespace
 from unittest.mock import patch
 
 from xavani_cli.tools_config import tools_disable_enable_command
+import pytest
+
+pytestmark = pytest.mark.unit
 
 
 # ── Built-in toolset disable ────────────────────────────────────────────────

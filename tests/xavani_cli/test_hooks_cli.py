@@ -19,6 +19,8 @@ import pytest
 from agent import shell_hooks
 from xavani_cli import hooks as hooks_cli
 
+pytestmark = pytest.mark.integration
+
 
 @pytest.fixture(autouse=True)
 def _isolated_home(tmp_path, monkeypatch):

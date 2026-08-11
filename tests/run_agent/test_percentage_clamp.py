@@ -11,6 +11,10 @@ compression fires), users see >100% in /stats, gateway status, and
 memory tool output.
 """
 
+import pytest
+
+pytestmark = pytest.mark.unit
+
 class TestMemoryToolPercentClamp:
     """tools/memory_tool.py — _success_response and _render_block pct"""
 

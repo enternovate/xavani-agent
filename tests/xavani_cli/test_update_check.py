@@ -13,6 +13,8 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
+pytestmark = pytest.mark.integration
+
 
 def test_version_string_no_v_prefix():
     """__version__ should be bare semver without a 'v' prefix."""

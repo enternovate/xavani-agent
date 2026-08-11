@@ -10,6 +10,8 @@ import yaml
 
 from tools.website_policy import WebsitePolicyError, check_website_access, load_website_blocklist
 
+pytestmark = pytest.mark.integration
+
 
 def test_load_website_blocklist_merges_config_and_shared_file(tmp_path):
     shared = tmp_path / "community-blocklist.txt"

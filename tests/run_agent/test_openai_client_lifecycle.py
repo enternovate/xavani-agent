@@ -17,6 +17,8 @@ sys.modules.setdefault("fal_client", types.SimpleNamespace())
 
 import run_agent
 
+pytestmark = pytest.mark.integration
+
 
 class FakeRequestClient:
     def __init__(self, responder):

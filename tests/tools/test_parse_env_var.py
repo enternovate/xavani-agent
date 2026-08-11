@@ -15,6 +15,8 @@ import tools.terminal_tool  # noqa: F401 -- ensure module is loaded
 _tt_mod = sys.modules["tools.terminal_tool"]
 from tools.terminal_tool import _parse_env_var
 
+pytestmark = pytest.mark.unit
+
 
 class TestParseEnvVar:
     """Unit tests for _parse_env_var."""

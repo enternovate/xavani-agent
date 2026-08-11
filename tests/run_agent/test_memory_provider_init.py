@@ -6,6 +6,9 @@
 
 from types import SimpleNamespace
 from unittest.mock import patch
+import pytest
+
+pytestmark = pytest.mark.unit
 
 
 def test_blank_memory_provider_does_not_auto_enable_honcho():

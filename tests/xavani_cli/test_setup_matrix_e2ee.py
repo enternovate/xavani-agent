@@ -7,6 +7,8 @@ import ast
 
 import pytest
 
+pytestmark = pytest.mark.unit
+
 
 def _parse_setup_imports():
     """Parse setup.py and return top-level import names."""

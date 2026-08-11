@@ -15,6 +15,8 @@ from xavani_cli.output_mode import (
     resolve_output_mode,
 )
 
+pytestmark = pytest.mark.unit
+
 
 # ── resolution ──────────────────────────────────────────────────────
 

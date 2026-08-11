@@ -20,6 +20,8 @@ from model_tools import (
     _coerce_boolean,
 )
 
+pytestmark = pytest.mark.unit
+
 
 # ── Low-level coercion helpers ────────────────────────────────────────────
 

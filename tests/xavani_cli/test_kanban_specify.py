@@ -22,6 +22,8 @@ from xavani_cli import kanban as kanban_cli
 from xavani_cli import kanban_db as kb
 from xavani_cli import kanban_specify as spec
 
+pytestmark = pytest.mark.integration
+
 
 @pytest.fixture
 def kanban_home(tmp_path, monkeypatch):

@@ -17,6 +17,8 @@ from xavani_cli.model_normalize import (
     detect_vendor,
 )
 
+pytestmark = pytest.mark.unit
+
 
 # ── Regression: issue #5211 ────────────────────────────────────────────
 

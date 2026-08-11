@@ -26,6 +26,8 @@ from tools.homeassistant_tool import (
     _SERVICE_NAME_RE,
 )
 
+pytestmark = pytest.mark.unit
+
 
 # ---------------------------------------------------------------------------
 # Sample HA state data (matches real HA /api/states response shape)

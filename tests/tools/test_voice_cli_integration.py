@@ -49,6 +49,8 @@ def _make_voice_cli(**overrides):
 
 from tools.tts_tool import _strip_markdown_for_tts
 
+pytestmark = pytest.mark.unit
+
 
 class TestMarkdownStripping:
     def test_strips_bold(self):

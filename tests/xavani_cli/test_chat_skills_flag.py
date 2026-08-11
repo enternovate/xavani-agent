@@ -3,6 +3,9 @@
 # Built by Enternovate -- Open source. Private. Local.
 
 import sys
+import pytest
+
+pytestmark = pytest.mark.unit
 
 
 def test_top_level_skills_flag_defaults_to_chat(monkeypatch):

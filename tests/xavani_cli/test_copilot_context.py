@@ -13,6 +13,8 @@ import pytest
 
 from xavani_cli.models import get_copilot_model_context
 
+pytestmark = pytest.mark.unit
+
 
 # Sample catalog items mimicking the Copilot /models API response
 _SAMPLE_CATALOG = [

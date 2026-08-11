@@ -20,6 +20,8 @@ from gateway.restart import (
     GATEWAY_SERVICE_RESTART_EXIT_CODE,
 )
 
+pytestmark = pytest.mark.integration
+
 
 class TestUserSystemdPrivateSocketPreflight:
     def test_preflight_accepts_private_socket_without_dbus_bus(self, monkeypatch):

@@ -10,6 +10,8 @@ from unittest.mock import MagicMock, patch, PropertyMock
 
 import pytest
 
+pytestmark = pytest.mark.unit
+
 
 # ---------------------------------------------------------------------------
 # Helpers to build mock Daytona SDK objects

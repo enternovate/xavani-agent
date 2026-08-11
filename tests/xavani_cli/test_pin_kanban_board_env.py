@@ -16,6 +16,8 @@ import os
 
 import pytest
 
+pytestmark = pytest.mark.integration
+
 
 @pytest.fixture(autouse=True)
 def _isolate_kanban_board_env():

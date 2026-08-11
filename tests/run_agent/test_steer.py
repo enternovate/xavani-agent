@@ -17,6 +17,8 @@ import pytest
 
 from run_agent import AIAgent
 
+pytestmark = pytest.mark.unit
+
 
 def _bare_agent() -> AIAgent:
     """Build an AIAgent without running __init__, then install the steer

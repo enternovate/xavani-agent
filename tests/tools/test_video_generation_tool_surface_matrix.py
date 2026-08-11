@@ -25,6 +25,8 @@ from typing import Any, Dict, List, Optional
 import pytest
 import yaml
 
+pytestmark = pytest.mark.integration
+
 
 @pytest.fixture(autouse=True)
 def _reset_registry():

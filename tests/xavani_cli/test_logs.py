@@ -22,6 +22,8 @@ from xavani_cli.logs import (
     _read_tail,
 )
 
+pytestmark = pytest.mark.integration
+
 
 # ---------------------------------------------------------------------------
 # Timestamp parsing

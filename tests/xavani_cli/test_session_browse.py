@@ -18,6 +18,8 @@ import pytest
 
 from xavani_cli.main import _session_browse_picker
 
+pytestmark = pytest.mark.unit
+
 
 # ─── Sample session data ──────────────────────────────────────────────────────
 

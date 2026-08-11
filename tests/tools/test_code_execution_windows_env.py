@@ -40,6 +40,8 @@ from tools.code_execution_tool import (
     _scrub_child_env,
 )
 
+pytestmark = pytest.mark.integration
+
 
 def _no_passthrough(_name):
     return False

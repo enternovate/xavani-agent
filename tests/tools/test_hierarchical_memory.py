@@ -14,6 +14,8 @@ from tools.hierarchical_memory import (
     HierarchicalMemory,
 )
 
+pytestmark = pytest.mark.integration
+
 
 @pytest.fixture
 def hm(tmp_path):

@@ -9,6 +9,8 @@ import pytest
 from xavani_cli import guidelines_cmd as gc
 from xavani_cli.research_guidelines import list_guideline_names
 
+pytestmark = pytest.mark.unit
+
 
 class TestGuidelinesCmd:
     """Test the guidelines CLI command."""

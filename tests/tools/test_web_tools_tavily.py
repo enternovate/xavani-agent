@@ -17,6 +17,8 @@ import asyncio
 import pytest
 from unittest.mock import patch, MagicMock
 
+pytestmark = pytest.mark.integration
+
 
 # ─── _tavily_request ─────────────────────────────────────────────────────────
 

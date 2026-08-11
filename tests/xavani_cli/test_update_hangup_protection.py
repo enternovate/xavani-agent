@@ -27,6 +27,8 @@ from xavani_cli.main import (
     _install_hangup_protection,
 )
 
+pytestmark = pytest.mark.integration
+
 
 # -----------------------------------------------------------------------------
 # _UpdateOutputStream

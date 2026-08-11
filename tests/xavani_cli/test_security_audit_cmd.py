@@ -18,6 +18,8 @@ import pytest
 
 import xavani_cli.security_audit as audit
 
+pytestmark = pytest.mark.integration
+
 
 @pytest.fixture
 def audit_home(tmp_path: Path, monkeypatch) -> Path:

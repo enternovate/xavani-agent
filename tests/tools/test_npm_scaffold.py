@@ -11,6 +11,9 @@ from tools.npm_scaffold import (
     generate_npm_scaffold,
     validate_scaffold,
 )
+import pytest
+
+pytestmark = pytest.mark.unit
 
 
 def test_scaffold_contains_required_files():

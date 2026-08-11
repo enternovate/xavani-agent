@@ -14,6 +14,8 @@ import pytest
 
 import xavani_cli.doctor as doctor_mod
 
+pytestmark = pytest.mark.integration
+
 
 def _setup_doctor_env(monkeypatch, tmp_path, venv_name="venv"):
     """Create a minimal XAVANI_HOME + PROJECT_ROOT for doctor tests."""

@@ -14,6 +14,9 @@ recovery every turn.
 """
 
 from run_agent import AIAgent
+import pytest
+
+pytestmark = pytest.mark.unit
 
 
 def _bare_agent():

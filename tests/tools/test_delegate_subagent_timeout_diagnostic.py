@@ -29,6 +29,8 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
+pytestmark = pytest.mark.e2e
+
 
 @pytest.fixture
 def xavani_home(tmp_path, monkeypatch):

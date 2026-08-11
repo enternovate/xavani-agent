@@ -12,6 +12,8 @@ from tools.calendar_activation import (
     _parse_iso,
 )
 
+pytestmark = pytest.mark.integration
+
 
 @pytest.fixture
 def scheduler(tmp_path):

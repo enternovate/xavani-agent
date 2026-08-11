@@ -38,6 +38,8 @@ from xavani_cli.main import (
     _plugin_cli_discovery_needed,
 )
 
+pytestmark = pytest.mark.integration
+
 
 # ── helper: grab the live set of top-level subcommands from argparse ───────
 

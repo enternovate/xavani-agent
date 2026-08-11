@@ -17,6 +17,9 @@ Currently:
 """
 
 import sys
+import pytest
+
+pytestmark = pytest.mark.unit
 
 
 class TestMatrixHiddenOnWindows:

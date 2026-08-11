@@ -15,6 +15,8 @@ from tools.mixture_of_agents_tool import (
     MIXTURE_OF_AGENTS_SCHEMA,
 )
 
+pytestmark = pytest.mark.unit
+
 
 def _fake_call_model(model, prompt, system="", provider=None, base_url=None, api_key=None, timeout=60):
     """Canned model response for testing."""

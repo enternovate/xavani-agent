@@ -24,6 +24,8 @@ from tools.session_search_tool import (
     session_search,
 )
 
+pytestmark = pytest.mark.integration
+
 
 @pytest.fixture
 def db(tmp_path):

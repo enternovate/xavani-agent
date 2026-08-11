@@ -38,6 +38,8 @@ from xavani_cli.profile_distribution import (
     write_manifest,
 )
 
+pytestmark = pytest.mark.integration
+
 
 # ---------------------------------------------------------------------------
 # Isolated profile env (matches tests/xavani_cli/test_profiles.py)

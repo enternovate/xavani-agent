@@ -14,6 +14,8 @@ import pytest
 from agent import video_gen_registry
 from agent.video_gen_provider import VideoGenProvider
 
+pytestmark = pytest.mark.unit
+
 
 @pytest.fixture(autouse=True)
 def _reset_registry():

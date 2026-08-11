@@ -14,6 +14,8 @@ import pytest
 
 from gateway.config import Platform
 
+pytestmark = pytest.mark.integration
+
 
 def _make_httpx_mock():
     """Create a mock httpx module with proper sync json()."""

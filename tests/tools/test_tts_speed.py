@@ -10,6 +10,8 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 import urllib.parse
 
+pytestmark = pytest.mark.integration
+
 
 @pytest.fixture(autouse=True)
 def clean_env(monkeypatch):

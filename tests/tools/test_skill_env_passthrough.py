@@ -14,6 +14,8 @@ import pytest
 import tools.env_passthrough as _ep_mod
 from tools.env_passthrough import clear_env_passthrough, is_env_passthrough
 
+pytestmark = pytest.mark.integration
+
 
 @pytest.fixture(autouse=True)
 def _clean_passthrough():

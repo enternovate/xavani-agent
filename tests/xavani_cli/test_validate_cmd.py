@@ -13,6 +13,8 @@ import pytest
 from xavani_cli import validate
 from xavani_constants import get_xavani_home
 
+pytestmark = pytest.mark.integration
+
 GOOD_CONFIG = """\
 model:
   default: anthropic/claude-sonnet-4

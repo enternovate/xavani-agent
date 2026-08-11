@@ -21,6 +21,8 @@ import pytest
 
 from run_agent import AIAgent
 
+pytestmark = pytest.mark.e2e
+
 
 def _make_tool_defs(*names: str) -> list:
     return [

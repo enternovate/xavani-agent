@@ -38,6 +38,9 @@ from tools.delegate_tool import (
     _resolve_child_credential_pool,
     _resolve_delegation_credentials,
 )
+import pytest
+
+pytestmark = pytest.mark.unit
 
 
 def _make_mock_parent(depth=0):

@@ -16,6 +16,8 @@ from tools.environments import modal as modal_env
 from tools.environments import daytona as daytona_env
 from tools.environments.ssh import SSHEnvironment
 
+pytestmark = pytest.mark.integration
+
 
 # ── SSH helpers ──────────────────────────────────────────────────────
 

@@ -3,6 +3,9 @@
 # Built by Enternovate -- Open source. Private. Local.
 
 from unittest.mock import patch
+import pytest
+
+pytestmark = pytest.mark.unit
 
 
 def testcheck_via_pypi_detects_update():

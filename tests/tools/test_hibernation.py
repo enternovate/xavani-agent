@@ -12,6 +12,8 @@ import pytest
 
 from tools.environments.hibernation import HibernationMixin
 
+pytestmark = pytest.mark.integration
+
 
 class FakeEnvironment(HibernationMixin):
     """A fake environment backend for testing."""

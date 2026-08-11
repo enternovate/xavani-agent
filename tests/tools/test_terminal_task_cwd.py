@@ -7,6 +7,9 @@
 import json
 
 import tools.terminal_tool as terminal_tool
+import pytest
+
+pytestmark = pytest.mark.unit
 
 
 def _minimal_terminal_config(cwd="/default"):

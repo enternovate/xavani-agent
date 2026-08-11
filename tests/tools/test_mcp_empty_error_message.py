@@ -19,6 +19,8 @@ import pytest
 
 from tools.mcp_tool import _exc_str, _sanitize_error
 
+pytestmark = pytest.mark.unit
+
 
 # ---------------------------------------------------------------------------
 # _exc_str unit tests

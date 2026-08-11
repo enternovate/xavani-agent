@@ -21,6 +21,9 @@ from tools.environments.local import (
     _XAVANI_PROVIDER_ENV_BLOCKLIST,
     _XAVANI_PROVIDER_ENV_FORCE_PREFIX,
 )
+import pytest
+
+pytestmark = pytest.mark.integration
 
 
 def _make_fake_popen(captured: dict):

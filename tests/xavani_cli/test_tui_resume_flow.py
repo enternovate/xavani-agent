@@ -9,6 +9,8 @@ import types
 
 import pytest
 
+pytestmark = pytest.mark.integration
+
 
 def _args(**overrides):
     base = {

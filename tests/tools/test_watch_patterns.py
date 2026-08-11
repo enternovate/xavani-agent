@@ -30,6 +30,8 @@ from tools.process_registry import (
     WATCH_GLOBAL_COOLDOWN_SECONDS,
 )
 
+pytestmark = pytest.mark.integration
+
 
 @pytest.fixture()
 def registry():

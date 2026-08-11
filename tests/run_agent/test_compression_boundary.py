@@ -13,6 +13,8 @@ from unittest.mock import patch, MagicMock
 
 from agent.context_compressor import ContextCompressor
 
+pytestmark = pytest.mark.unit
+
 
 # ---------------------------------------------------------------------------
 # Helpers

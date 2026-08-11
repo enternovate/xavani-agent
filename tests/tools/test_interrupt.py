@@ -12,6 +12,8 @@ import threading
 import time
 import pytest
 
+pytestmark = pytest.mark.unit
+
 
 # ---------------------------------------------------------------------------
 # Unit tests: shared interrupt module

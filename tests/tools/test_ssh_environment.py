@@ -14,6 +14,8 @@ import pytest
 from tools.environments.ssh import SSHEnvironment
 from tools.environments import ssh as ssh_env
 
+pytestmark = pytest.mark.integration
+
 _SSH_HOST = os.getenv("TERMINAL_SSH_HOST", "")
 _SSH_USER = os.getenv("TERMINAL_SSH_USER", "")
 _SSH_PORT = int(os.getenv("TERMINAL_SSH_PORT", "22"))

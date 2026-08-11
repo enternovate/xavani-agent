@@ -27,6 +27,8 @@ from tools.tool_result_storage import (
     maybe_persist_tool_result,
 )
 
+pytestmark = pytest.mark.unit
+
 
 # ── generate_preview ──────────────────────────────────────────────────
 

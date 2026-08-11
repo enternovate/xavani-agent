@@ -5,6 +5,9 @@
 """Regression tests for browser session cleanup and screenshot recovery."""
 
 from unittest.mock import patch
+import pytest
+
+pytestmark = pytest.mark.unit
 
 
 class TestScreenshotPathRecovery:

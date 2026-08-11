@@ -23,6 +23,8 @@ import pytest
 
 from tools import terminal_tool
 
+pytestmark = pytest.mark.unit
+
 
 @pytest.fixture(autouse=True)
 def _clean_overrides():

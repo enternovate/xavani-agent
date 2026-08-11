@@ -16,6 +16,9 @@ See: enternovate/xavani-agent#22346
 """
 
 from __future__ import annotations
+import pytest
+
+pytestmark = pytest.mark.unit
 
 
 def test_build_apikey_providers_list_skips_dedicated_check_providers():

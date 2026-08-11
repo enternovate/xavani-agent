@@ -6,6 +6,8 @@
 import pytest
 from unittest.mock import patch, MagicMock
 
+pytestmark = pytest.mark.integration
+
 
 # ---------------------------------------------------------------------------
 # get_disabled_skills

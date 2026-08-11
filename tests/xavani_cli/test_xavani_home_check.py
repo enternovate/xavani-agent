@@ -23,6 +23,8 @@ from xavani_home_check import (
     report_home_problems,
 )
 
+pytestmark = pytest.mark.integration
+
 
 @pytest.fixture(autouse=True)
 def _clean_cache():

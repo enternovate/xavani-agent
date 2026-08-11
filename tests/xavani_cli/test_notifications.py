@@ -14,6 +14,8 @@ import pytest
 from xavani_cli import notifications
 from xavani_constants import get_xavani_home
 
+pytestmark = pytest.mark.unit
+
 
 class TestSmartNotify:
     def test_prints_to_console_always(self, capsys):

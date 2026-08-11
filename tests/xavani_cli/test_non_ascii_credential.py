@@ -17,6 +17,8 @@ import pytest
 
 from xavani_cli.config import _check_non_ascii_credential
 
+pytestmark = pytest.mark.integration
+
 
 class TestCheckNonAsciiCredential:
     """Tests for _check_non_ascii_credential()."""

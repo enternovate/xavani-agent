@@ -12,6 +12,8 @@ from tools.plugin_api_gate import (
     gate_plugin_load,
 )
 
+pytestmark = pytest.mark.integration
+
 
 # ── verdicts ────────────────────────────────────────────────────────
 

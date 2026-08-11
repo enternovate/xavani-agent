@@ -12,6 +12,8 @@ from tools.consensus import (
     normalize_verdict,
 )
 
+pytestmark = pytest.mark.unit
+
 
 # ── normalization ──────────────────────────────────────────────────
 

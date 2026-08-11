@@ -10,6 +10,9 @@ It must strip ALL terminal escape sequences while preserving legitimate text.
 """
 
 from tools.ansi_strip import strip_ansi
+import pytest
+
+pytestmark = pytest.mark.unit
 
 
 class TestStripAnsiBasicSGR:

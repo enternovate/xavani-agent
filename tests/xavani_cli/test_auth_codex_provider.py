@@ -28,6 +28,8 @@ from xavani_cli.auth import (
     resolve_provider,
 )
 
+pytestmark = pytest.mark.integration
+
 
 def _setup_xavani_auth(xavani_home: Path, *, access_token: str = "access", refresh_token: str = "refresh"):
     """Write Codex tokens into the Xavani auth store."""

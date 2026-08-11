@@ -15,6 +15,8 @@ from xavani_cli.auth import (
     resolve_api_key_provider_credentials,
 )
 
+pytestmark = pytest.mark.unit
+
 
 _OTHER_PROVIDER_KEYS = (
     "OPENAI_API_KEY", "ANTHROPIC_API_KEY", "DEEPSEEK_API_KEY",

@@ -16,6 +16,9 @@ sneak back in.
 """
 
 from __future__ import annotations
+import pytest
+
+pytestmark = pytest.mark.integration
 
 
 class TestPostSetupGate:

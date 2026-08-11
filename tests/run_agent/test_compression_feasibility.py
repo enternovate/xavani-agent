@@ -19,6 +19,8 @@ import pytest
 from run_agent import AIAgent
 from agent.context_compressor import ContextCompressor
 
+pytestmark = pytest.mark.unit
+
 
 @pytest.fixture(autouse=True)
 def _stable_aux_provider_config():

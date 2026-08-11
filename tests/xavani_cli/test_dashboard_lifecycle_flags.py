@@ -21,6 +21,8 @@ import pytest
 
 from xavani_cli.main import cmd_dashboard, _report_dashboard_status
 
+pytestmark = pytest.mark.integration
+
 
 @pytest.fixture(autouse=True)
 def _refresh_bindings_against_live_module():

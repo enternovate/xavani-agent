@@ -31,6 +31,8 @@ from xavani_cli.auth import (
     get_qwen_auth_status,
 )
 
+pytestmark = pytest.mark.integration
+
 
 # ---------------------------------------------------------------------------
 # Helpers

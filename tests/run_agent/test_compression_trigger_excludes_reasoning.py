@@ -13,6 +13,8 @@ import types
 import pytest
 from unittest.mock import MagicMock, patch
 
+pytestmark = pytest.mark.unit
+
 
 def _make_agent_stub(prompt_tokens, completion_tokens, threshold_tokens):
     """Create a minimal stub that exercises the compression check path."""

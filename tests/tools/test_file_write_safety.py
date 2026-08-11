@@ -14,6 +14,8 @@ import pytest
 
 from tools.file_operations import _is_write_denied
 
+pytestmark = pytest.mark.integration
+
 
 class TestStaticDenyList:
     """Basic sanity checks for the static write deny list."""

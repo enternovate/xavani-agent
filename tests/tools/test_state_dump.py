@@ -14,6 +14,8 @@ import pytest
 
 from tools.state_dump import redact, state_dump
 
+pytestmark = pytest.mark.integration
+
 
 def _write_config(home, content: str):
     home.mkdir(parents=True, exist_ok=True)

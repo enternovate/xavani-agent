@@ -20,6 +20,8 @@ from tools.environments.singularity import (
     _ensure_singularity_available,
 )
 
+pytestmark = pytest.mark.integration
+
 
 class TestFindSingularityExecutable:
     """_find_singularity_executable resolution tests."""

@@ -7,6 +7,9 @@
 from types import SimpleNamespace
 
 import xavani_cli.gateway as gateway
+import pytest
+
+pytestmark = pytest.mark.integration
 
 
 class TestEnsureLingerEnabled:

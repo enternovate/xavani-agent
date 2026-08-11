@@ -20,6 +20,8 @@ from tools.microsoft_graph_auth import (
     MicrosoftGraphTokenProvider,
 )
 
+pytestmark = pytest.mark.integration
+
 
 class TestGraphCredentials:
     def test_from_env_raises_for_missing_required_values(self):

@@ -17,6 +17,9 @@ from __future__ import annotations
 from copy import deepcopy
 
 from xavani_cli.config import DEFAULT_CONFIG
+import pytest
+
+pytestmark = pytest.mark.integration
 
 
 class TestMcpReloadConfirmDefault:

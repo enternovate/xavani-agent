@@ -11,6 +11,8 @@ import pytest
 from plugins.spotify import client as spotify_mod
 from plugins.spotify import tools as spotify_tool
 
+pytestmark = pytest.mark.integration
+
 
 class _FakeResponse:
     def __init__(self, status_code: int, payload: dict | None = None, *, text: str = "", headers: dict | None = None):

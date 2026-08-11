@@ -29,6 +29,9 @@ from tools.file_tools import (
     _check_file_staleness,
     _read_tracker,
 )
+import pytest
+
+pytestmark = pytest.mark.integration
 
 
 # ---------------------------------------------------------------------------

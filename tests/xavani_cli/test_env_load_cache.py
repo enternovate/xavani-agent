@@ -17,6 +17,9 @@ import os
 import tempfile
 from pathlib import Path
 from unittest.mock import patch
+import pytest
+
+pytestmark = pytest.mark.integration
 
 
 def _write_env(path: Path, contents: str) -> None:

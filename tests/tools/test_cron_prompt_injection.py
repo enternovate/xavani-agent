@@ -12,6 +12,9 @@ Fix: allow optional extra words with `(?:\\w+\\s+)*` groups.
 """
 
 from tools.cronjob_tools import _scan_cron_prompt
+import pytest
+
+pytestmark = pytest.mark.unit
 
 
 class TestMultiWordInjectionBypass:

@@ -19,6 +19,8 @@ import pytest
 
 from xavani_cli import send_cmd
 
+pytestmark = pytest.mark.integration
+
 
 # ---------------------------------------------------------------------------
 # Helpers

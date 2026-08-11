@@ -27,6 +27,8 @@ from tools.vision_tools import (
     _vision_analyze_native,
 )
 
+pytestmark = pytest.mark.integration
+
 
 # Minimal valid 1x1 PNG bytes.
 _TINY_PNG = base64.b64decode(

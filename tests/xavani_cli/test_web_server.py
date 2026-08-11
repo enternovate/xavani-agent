@@ -2066,6 +2066,8 @@ class TestDashboardPluginManifestExtensions:
 
 import sys
 
+pytestmark = pytest.mark.integration
+
 
 skip_on_windows = pytest.mark.skipif(
     sys.platform.startswith("win"), reason="PTY bridge is POSIX-only"

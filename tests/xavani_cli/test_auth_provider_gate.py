@@ -8,6 +8,8 @@ import json
 import os
 import pytest
 
+pytestmark = pytest.mark.integration
+
 
 def _write_config(tmp_path, config: dict) -> None:
     xavani_home = tmp_path / "xavani"

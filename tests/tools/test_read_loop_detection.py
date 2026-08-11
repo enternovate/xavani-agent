@@ -30,6 +30,9 @@ from tools.file_tools import (
     notify_other_tool_call,
     _read_tracker,
 )
+import pytest
+
+pytestmark = pytest.mark.unit
 
 
 class _FakeReadResult:

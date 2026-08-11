@@ -20,6 +20,8 @@ from pathlib import Path
 
 import pytest
 
+pytestmark = pytest.mark.integration
+
 
 def _make_auth_store(pool: dict | None = None, providers: dict | None = None) -> dict:
     store: dict = {"version": 1}

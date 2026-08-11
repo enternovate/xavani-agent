@@ -33,6 +33,8 @@ from xavani_cli.inventory import (
     load_picker_context,
 )
 
+pytestmark = pytest.mark.unit
+
 
 # ─── load_picker_context ───────────────────────────────────────────────
 

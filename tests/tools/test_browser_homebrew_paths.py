@@ -21,6 +21,8 @@ from tools.browser_tool import (
 )
 import tools.browser_tool as _bt
 
+pytestmark = pytest.mark.integration
+
 
 @pytest.fixture(autouse=True)
 def _clear_browser_caches():

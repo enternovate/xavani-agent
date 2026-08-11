@@ -8,6 +8,8 @@ import pytest
 
 from tools.terminal_tool import _interpret_exit_code
 
+pytestmark = pytest.mark.unit
+
 
 class TestInterpretExitCode:
     """Test _interpret_exit_code returns correct notes for known command semantics."""

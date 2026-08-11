@@ -11,6 +11,9 @@ context_length, causing the CLI status bar to show 'ctx --'.
 from unittest.mock import MagicMock, patch
 
 from agent.context_engine import ContextEngine
+import pytest
+
+pytestmark = pytest.mark.unit
 
 
 class _StubEngine(ContextEngine):

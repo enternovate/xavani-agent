@@ -5,6 +5,9 @@
 """Regression tests for empty-response recovery transcript persistence."""
 
 from run_agent import AIAgent
+import pytest
+
+pytestmark = pytest.mark.unit
 
 
 def _agent_with_stubbed_persistence():

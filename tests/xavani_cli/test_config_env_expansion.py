@@ -9,6 +9,8 @@ import pytest
 from xavani_cli.config import _expand_env_vars, load_config
 from unittest.mock import patch as mock_patch
 
+pytestmark = pytest.mark.integration
+
 
 class TestExpandEnvVars:
     def test_simple_substitution(self):

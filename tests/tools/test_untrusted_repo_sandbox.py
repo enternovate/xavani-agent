@@ -8,6 +8,9 @@
 from __future__ import annotations
 
 from tools.terminal_tool import _maybe_sandbox_untrusted_repo, _repo_has_no_owner
+import pytest
+
+pytestmark = pytest.mark.integration
 
 
 class _FakeGit:

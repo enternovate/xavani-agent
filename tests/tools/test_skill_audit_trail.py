@@ -21,6 +21,8 @@ from xavani_skill_audit import (
     skill_audit_enabled,
 )
 
+pytestmark = pytest.mark.integration
+
 
 @pytest.fixture(autouse=True)
 def _isolated_home(tmp_path, monkeypatch):

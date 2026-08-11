@@ -29,6 +29,8 @@ import pytest
 from xavani_cli import kanban_db as kb
 from xavani_cli.kanban import run_slash
 
+pytestmark = pytest.mark.integration
+
 
 # ---------------------------------------------------------------------------
 # Fixtures

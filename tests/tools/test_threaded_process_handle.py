@@ -8,6 +8,9 @@ import threading
 import time
 
 from tools.environments.base import _ThreadedProcessHandle
+import pytest
+
+pytestmark = pytest.mark.unit
 
 
 class TestBasicExecution:

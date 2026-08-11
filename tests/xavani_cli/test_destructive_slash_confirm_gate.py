@@ -16,6 +16,9 @@ cli.py::_confirm_destructive_slash for the runtime gate.
 from __future__ import annotations
 
 from xavani_cli.config import DEFAULT_CONFIG
+import pytest
+
+pytestmark = pytest.mark.integration
 
 
 class TestDestructiveSlashConfirmDefault:

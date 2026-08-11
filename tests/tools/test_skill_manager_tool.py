@@ -30,6 +30,8 @@ from tools.skill_manager_tool import (
     MAX_NAME_LENGTH,
 )
 
+pytestmark = pytest.mark.integration
+
 
 @contextmanager
 def _skill_dir(tmp_path):

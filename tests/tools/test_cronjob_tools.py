@@ -14,6 +14,8 @@ from tools.cronjob_tools import (
     cronjob,
 )
 
+pytestmark = pytest.mark.integration
+
 
 # =========================================================================
 # Cron prompt scanning

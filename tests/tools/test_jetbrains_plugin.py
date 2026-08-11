@@ -13,6 +13,9 @@ from tools.jetbrains_plugin import (
     generate_jetbrains_plugin,
     validate_plugin,
 )
+import pytest
+
+pytestmark = pytest.mark.integration
 
 
 def test_generation_contains_required_files():

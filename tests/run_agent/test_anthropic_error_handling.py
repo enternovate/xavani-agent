@@ -30,6 +30,8 @@ import run_agent
 from gateway.config import Platform
 from gateway.session import SessionSource
 
+pytestmark = pytest.mark.e2e
+
 
 # ---------------------------------------------------------------------------
 # Fast backoff for tests that exercise the retry loop

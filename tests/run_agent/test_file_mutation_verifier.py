@@ -34,6 +34,8 @@ from run_agent import (
     _extract_file_mutation_targets,
 )
 
+pytestmark = pytest.mark.unit
+
 
 # ---------------------------------------------------------------------------
 # _extract_file_mutation_targets

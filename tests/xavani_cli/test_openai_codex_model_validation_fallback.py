@@ -23,6 +23,9 @@ from unittest.mock import patch
 
 from xavani_cli.model_switch import switch_model
 from xavani_cli.models import validate_requested_model
+import pytest
+
+pytestmark = pytest.mark.unit
 
 
 def test_openai_codex_unknown_but_plausible_model_is_accepted_with_warning():

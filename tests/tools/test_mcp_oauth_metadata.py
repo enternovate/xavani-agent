@@ -33,6 +33,8 @@ from mcp.shared.auth import OAuthMetadata
 from tools.mcp_oauth import XavaniTokenStorage
 from tools.mcp_oauth_manager import _XAVANI_PROVIDER_CLS
 
+pytestmark = pytest.mark.integration
+
 
 def _make_metadata(token_endpoint: str = "https://auth.example.com/oauth/token") -> OAuthMetadata:
     return OAuthMetadata.model_validate(

@@ -10,6 +10,8 @@ from types import SimpleNamespace
 from xavani_cli import kanban_db as kb
 from unittest.mock import AsyncMock, MagicMock, patch
 
+pytestmark = pytest.mark.integration
+
 
 # ---------------------------------------------------------------------------
 # Fixtures

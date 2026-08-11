@@ -19,6 +19,9 @@ from __future__ import annotations
 from unittest.mock import patch
 
 from xavani_cli.model_switch import resolve_display_context_length
+import pytest
+
+pytestmark = pytest.mark.unit
 
 
 class _FakeModelInfo:

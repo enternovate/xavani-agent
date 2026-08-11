@@ -22,6 +22,9 @@ from tools.environments.local import (
     LocalEnvironment,
     _resolve_safe_cwd,
 )
+import pytest
+
+pytestmark = pytest.mark.integration
 
 
 class TestResolveSafeCwd:

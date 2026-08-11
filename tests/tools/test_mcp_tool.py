@@ -2252,6 +2252,8 @@ from tools.mcp_tool import (
     _safe_numeric,
 )
 
+pytestmark = pytest.mark.integration
+
 
 # ---------------------------------------------------------------------------
 # Helpers for sampling tests

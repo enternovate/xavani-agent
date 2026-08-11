@@ -14,6 +14,8 @@ from xavani_cli.proactive_disclosure import (
     format_disclosure,
 )
 
+pytestmark = pytest.mark.unit
+
 
 def test_force_push_disclosure():
     d = disclosure_for("git push --force origin main")

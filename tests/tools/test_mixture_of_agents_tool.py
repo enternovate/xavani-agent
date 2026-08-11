@@ -20,6 +20,8 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
+pytestmark = pytest.mark.unit
+
 moa = importlib.import_module("tools.mixture_of_agents_tool")
 
 

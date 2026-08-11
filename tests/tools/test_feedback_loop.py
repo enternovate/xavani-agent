@@ -12,6 +12,8 @@ from tools.feedback_loop import (
     VALID_SIGNALS,
 )
 
+pytestmark = pytest.mark.integration
+
 
 @pytest.fixture
 def loop(tmp_path):

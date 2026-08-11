@@ -22,6 +22,8 @@ from tools.credential_files import (
     register_credential_files,
 )
 
+pytestmark = pytest.mark.integration
+
 
 @pytest.fixture(autouse=True)
 def _clean_state():

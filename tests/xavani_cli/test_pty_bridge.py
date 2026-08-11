@@ -20,6 +20,8 @@ pytest.importorskip("ptyprocess", reason="ptyprocess not installed")
 
 from xavani_cli.pty_bridge import PtyBridge, PtyUnavailableError
 
+pytestmark = pytest.mark.integration
+
 
 skip_on_windows = pytest.mark.skipif(
     sys.platform.startswith("win"), reason="PTY bridge is POSIX-only"

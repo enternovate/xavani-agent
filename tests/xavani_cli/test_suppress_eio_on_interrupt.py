@@ -22,6 +22,8 @@ from unittest.mock import MagicMock
 
 import pytest
 
+pytestmark = pytest.mark.integration
+
 
 # ---------------------------------------------------------------------------
 # _suppress_closed_loop_errors – asyncio exception handler

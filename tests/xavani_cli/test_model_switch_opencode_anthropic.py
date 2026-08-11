@@ -25,6 +25,8 @@ import pytest
 
 from xavani_cli.model_switch import switch_model
 
+pytestmark = pytest.mark.integration
+
 
 _MOCK_VALIDATION = {
     "accepted": True,

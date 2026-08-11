@@ -19,6 +19,9 @@ sys.modules.setdefault("firecrawl", types.SimpleNamespace(Firecrawl=object))
 sys.modules.setdefault("fal_client", types.SimpleNamespace())
 
 import run_agent
+import pytest
+
+pytestmark = pytest.mark.e2e
 
 
 def _patch_bootstrap(monkeypatch):

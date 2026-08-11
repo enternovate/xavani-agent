@@ -12,6 +12,9 @@ advancement through multiple providers.
 from unittest.mock import MagicMock, patch
 
 from run_agent import AIAgent, _pool_may_recover_from_rate_limit
+import pytest
+
+pytestmark = pytest.mark.unit
 
 
 def _make_agent(fallback_model=None):

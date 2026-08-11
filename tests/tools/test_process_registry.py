@@ -884,6 +884,8 @@ class TestProcessToolHandler:
 
 from tools.process_registry import format_process_notification
 
+pytestmark = pytest.mark.integration
+
 
 def test_format_completion_event():
     evt = {

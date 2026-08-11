@@ -16,6 +16,8 @@ import pytest
 
 from xavani_cli import codex_runtime_switch as crs
 
+pytestmark = pytest.mark.integration
+
 
 class TestParseArgs:
     @pytest.mark.parametrize("arg,expected", [

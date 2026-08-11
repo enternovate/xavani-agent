@@ -27,6 +27,8 @@ from tools.vision_tools import (
     check_vision_requirements,
 )
 
+pytestmark = pytest.mark.integration
+
 
 # ---------------------------------------------------------------------------
 # _validate_image_url — urlparse-based validation

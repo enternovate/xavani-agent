@@ -37,6 +37,8 @@ from tools.send_message_tool import (
     send_message_tool,
 )
 
+pytestmark = pytest.mark.integration
+
 
 def _run_async_immediately(coro):
     return asyncio.run(coro)

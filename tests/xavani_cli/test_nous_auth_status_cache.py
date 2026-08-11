@@ -16,6 +16,9 @@ from __future__ import annotations
 import json
 import os
 from unittest.mock import patch
+import pytest
+
+pytestmark = pytest.mark.integration
 
 
 def _seed_auth_file(tmp_path):

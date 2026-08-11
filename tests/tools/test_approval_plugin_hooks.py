@@ -24,6 +24,8 @@ from tools.approval import (
     clear_session,
 )
 
+pytestmark = pytest.mark.unit
+
 
 @pytest.fixture
 def isolated_session(monkeypatch):

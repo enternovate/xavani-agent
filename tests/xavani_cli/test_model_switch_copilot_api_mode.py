@@ -14,6 +14,9 @@ requests went through the Responses API and failed with
 from unittest.mock import patch
 
 from xavani_cli.model_switch import switch_model
+import pytest
+
+pytestmark = pytest.mark.integration
 
 
 _MOCK_VALIDATION = {

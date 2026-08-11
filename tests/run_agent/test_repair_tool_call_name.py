@@ -19,6 +19,8 @@ from types import SimpleNamespace
 
 import pytest
 
+pytestmark = pytest.mark.unit
+
 
 VALID = {
     "todo",

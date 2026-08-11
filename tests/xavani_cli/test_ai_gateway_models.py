@@ -19,6 +19,9 @@ from xavani_cli.models import (
     fetch_ai_gateway_models,
     fetch_ai_gateway_pricing,
 )
+import pytest
+
+pytestmark = pytest.mark.integration
 
 
 def _mock_urlopen(payload):

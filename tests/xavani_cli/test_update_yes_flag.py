@@ -17,6 +17,9 @@ from types import SimpleNamespace
 from unittest.mock import patch
 
 from xavani_cli.main import cmd_update
+import pytest
+
+pytestmark = pytest.mark.integration
 
 
 def _make_run_side_effect(

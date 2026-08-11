@@ -16,6 +16,8 @@ from unittest.mock import MagicMock, patch, call
 
 import pytest
 
+pytestmark = pytest.mark.integration
+
 
 @pytest.fixture(autouse=True)
 def _mock_runtime_provider(monkeypatch):

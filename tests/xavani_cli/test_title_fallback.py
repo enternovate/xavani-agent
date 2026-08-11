@@ -11,6 +11,8 @@ import pytest
 import cli
 from xavani_state import SessionDB
 
+pytestmark = pytest.mark.unit
+
 
 class TestDeriveSessionTitleFromMessage:
     def test_single_line_normalization(self):

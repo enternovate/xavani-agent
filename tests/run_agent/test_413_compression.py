@@ -25,6 +25,8 @@ from agent.context_compressor import SUMMARY_PREFIX
 from run_agent import AIAgent
 import run_agent
 
+pytestmark = pytest.mark.e2e
+
 
 # ---------------------------------------------------------------------------
 # Fast backoff for compression retry tests

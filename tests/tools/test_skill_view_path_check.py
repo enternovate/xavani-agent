@@ -13,6 +13,8 @@ import os
 import pytest
 from pathlib import Path
 
+pytestmark = pytest.mark.integration
+
 
 def _path_escapes_skill_dir(resolved: Path, skill_dir_resolved: Path) -> bool:
     """Reproduce the boundary check from tools/skills_tool.py.

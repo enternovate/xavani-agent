@@ -9,6 +9,9 @@ from pathlib import Path
 
 from tools import skills_tool
 from tools.skill_manager_tool import _validate_frontmatter
+import pytest
+
+pytestmark = pytest.mark.integration
 
 
 REPO_ROOT = Path(__file__).resolve().parents[2]

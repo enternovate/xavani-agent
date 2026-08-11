@@ -7,6 +7,8 @@
 import os
 import pytest
 
+pytestmark = pytest.mark.unit
+
 
 class TestDeprecatedCwdWarning:
     """Warn when MESSAGING_CWD or TERMINAL_CWD is set in .env."""

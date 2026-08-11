@@ -19,6 +19,8 @@ import sys
 from pathlib import Path
 import pytest
 
+pytestmark = pytest.mark.integration
+
 # Ensure repo root is importable
 _repo_root = Path(__file__).resolve().parent.parent.parent
 if str(_repo_root) not in sys.path:

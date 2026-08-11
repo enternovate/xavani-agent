@@ -16,6 +16,8 @@ from tools.computer_use_tool import (
     COMPUTER_USE_SCHEMA,
 )
 
+pytestmark = pytest.mark.unit
+
 
 class TestComputerUseGuard:
     """Test the availability check."""

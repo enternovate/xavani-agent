@@ -13,6 +13,8 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), "../.."))
 
 from run_agent import AIAgent
 
+pytestmark = pytest.mark.unit
+
 
 @pytest.fixture(autouse=True)
 def _cleanup_env():

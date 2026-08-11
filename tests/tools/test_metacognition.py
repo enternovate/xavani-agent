@@ -8,6 +8,8 @@ import pytest
 
 from tools.metacognition import CalibrationTracker
 
+pytestmark = pytest.mark.integration
+
 
 @pytest.fixture
 def tracker(tmp_path):

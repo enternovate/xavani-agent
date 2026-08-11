@@ -26,6 +26,8 @@ from xavani_cli.plugins import (
     PluginManifest,
 )
 
+pytestmark = pytest.mark.integration
+
 
 # ── PluginContext.register_cli_command ─────────────────────────────────────
 

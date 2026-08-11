@@ -34,6 +34,8 @@ from xavani_cli.research_guidelines import (
     load_mandatory_guidelines,
 )
 
+pytestmark = pytest.mark.integration
+
 
 EXPECTED_THINKERS = (
     "karpathy-guidelines",

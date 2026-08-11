@@ -18,6 +18,8 @@ import pytest
 from unittest.mock import patch, MagicMock
 import urllib.parse
 
+pytestmark = pytest.mark.integration
+
 
 # ---------------------------------------------------------------------------
 # OLLAMA_API_KEY credential resolution

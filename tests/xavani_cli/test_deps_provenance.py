@@ -11,6 +11,9 @@ from xavani_cli.deps_provenance import (
     cmd_deps_provenance,
     render_report,
 )
+import pytest
+
+pytestmark = pytest.mark.integration
 
 
 def test_report_covers_direct_dependencies():

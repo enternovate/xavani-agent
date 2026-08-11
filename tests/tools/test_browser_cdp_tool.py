@@ -23,6 +23,8 @@ from websockets.asyncio.server import serve
 
 from tools import browser_cdp_tool
 
+pytestmark = pytest.mark.integration
+
 
 # ---------------------------------------------------------------------------
 # In-process CDP mock server

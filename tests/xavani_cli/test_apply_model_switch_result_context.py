@@ -20,6 +20,9 @@ from __future__ import annotations
 from unittest.mock import patch
 
 from xavani_cli.model_switch import ModelSwitchResult
+import pytest
+
+pytestmark = pytest.mark.unit
 
 
 class _FakeModelInfo:

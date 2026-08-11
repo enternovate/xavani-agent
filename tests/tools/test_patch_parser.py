@@ -11,6 +11,9 @@ from tools.patch_parser import (
     apply_v4a_operations,
     parse_v4a_patch,
 )
+import pytest
+
+pytestmark = pytest.mark.unit
 
 
 class TestParseUpdateFile:

@@ -16,6 +16,8 @@ from tools.clarify_tool import (
     CLARIFY_SCHEMA,
 )
 
+pytestmark = pytest.mark.unit
+
 
 class TestClarifyToolBasics:
     """Basic functionality tests for clarify_tool."""

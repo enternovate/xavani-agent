@@ -8,6 +8,9 @@ import copy
 import logging
 
 from run_agent import AIAgent
+import pytest
+
+pytestmark = pytest.mark.unit
 
 
 _MISSING = object()

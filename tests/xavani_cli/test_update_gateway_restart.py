@@ -21,6 +21,8 @@ import xavani_cli.gateway as gateway_cli
 import xavani_cli.main as cli_main
 from xavani_cli.main import cmd_update
 
+pytestmark = pytest.mark.integration
+
 
 # ---------------------------------------------------------------------------
 # Skip the real-time sleeps inside cmd_update's restart-verification path

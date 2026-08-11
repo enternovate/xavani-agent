@@ -14,6 +14,8 @@ from tools.preference_learning import (
     preferences_for,
 )
 
+pytestmark = pytest.mark.integration
+
 
 @pytest.fixture(autouse=True)
 def _isolated(tmp_path, monkeypatch):

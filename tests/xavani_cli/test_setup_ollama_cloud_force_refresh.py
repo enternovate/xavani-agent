@@ -10,6 +10,9 @@ serving a stale cache (models.dev only, no live API probe) for up to an hour.
 from __future__ import annotations
 
 from unittest.mock import patch
+import pytest
+
+pytestmark = pytest.mark.unit
 
 
 def test_setup_ollama_cloud_passes_force_refresh(monkeypatch):

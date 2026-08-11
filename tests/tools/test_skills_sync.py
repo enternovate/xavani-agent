@@ -20,6 +20,9 @@ from tools.skills_sync import (
     MANIFEST_FILE,
     SKILLS_DIR,
 )
+import pytest
+
+pytestmark = pytest.mark.integration
 
 
 class TestReadWriteManifest:

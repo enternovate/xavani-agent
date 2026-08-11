@@ -43,6 +43,8 @@ from tools.skills_guard import (
     MAX_SINGLE_FILE_KB,
 )
 
+pytestmark = pytest.mark.integration
+
 
 # ---------------------------------------------------------------------------
 # _resolve_trust_level

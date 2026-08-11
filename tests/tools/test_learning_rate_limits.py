@@ -15,6 +15,8 @@ from tools.learning_rate_limits import (
     reset_limiter,
 )
 
+pytestmark = pytest.mark.unit
+
 
 @pytest.fixture(autouse=True)
 def _clean():

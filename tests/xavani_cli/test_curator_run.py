@@ -7,6 +7,9 @@
 from __future__ import annotations
 
 from types import SimpleNamespace
+import pytest
+
+pytestmark = pytest.mark.unit
 
 
 def _args(**kwargs):

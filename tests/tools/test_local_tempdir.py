@@ -5,6 +5,9 @@
 from unittest.mock import patch
 
 from tools.environments.local import LocalEnvironment
+import pytest
+
+pytestmark = pytest.mark.integration
 
 
 class TestLocalTempDir:

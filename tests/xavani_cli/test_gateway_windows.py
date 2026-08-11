@@ -8,6 +8,8 @@ import pytest
 
 import xavani_cli.gateway_windows as gateway_windows
 
+pytestmark = pytest.mark.integration
+
 
 @pytest.mark.parametrize(
     "detail",

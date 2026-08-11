@@ -18,6 +18,8 @@ from tools.microsoft_graph_client import (
     MicrosoftGraphClientError,
 )
 
+pytestmark = pytest.mark.integration
+
 
 def _make_provider() -> MicrosoftGraphTokenProvider:
     provider = MicrosoftGraphTokenProvider(GraphCredentials("tenant", "client", "secret"))

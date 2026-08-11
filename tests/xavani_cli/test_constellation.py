@@ -17,6 +17,9 @@ from xavani_cli.constellation import (
     build_constellation_parser,
     cmd_constellation,
 )
+import pytest
+
+pytestmark = pytest.mark.integration
 
 
 def test_parser_registers_constellation() -> None:

@@ -13,6 +13,9 @@ from __future__ import annotations
 from unittest.mock import patch
 
 from xavani_cli.config import get_custom_provider_context_length
+import pytest
+
+pytestmark = pytest.mark.unit
 
 
 class TestGetCustomProviderContextLength:

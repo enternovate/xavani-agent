@@ -11,6 +11,9 @@ from rich.console import Console
 import xavani_cli.banner as banner
 import model_tools
 import tools.mcp_tool
+import pytest
+
+pytestmark = pytest.mark.unit
 
 
 def test_display_toolset_name_strips_legacy_suffix():

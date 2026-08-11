@@ -22,6 +22,8 @@ from tools.environments.local import (
     _resolve_shell_init_files,
 )
 
+pytestmark = pytest.mark.integration
+
 
 class TestResolveShellInitFiles:
     def test_auto_sources_bashrc_when_present(self, tmp_path, monkeypatch):

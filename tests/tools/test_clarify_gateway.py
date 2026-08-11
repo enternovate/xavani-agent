@@ -18,6 +18,8 @@ from concurrent.futures import ThreadPoolExecutor
 
 import pytest
 
+pytestmark = pytest.mark.unit
+
 
 def _clear_clarify_state():
     """Reset module-level state between tests."""

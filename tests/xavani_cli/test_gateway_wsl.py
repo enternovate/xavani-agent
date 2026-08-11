@@ -15,6 +15,8 @@ import pytest
 import xavani_cli.gateway as gateway
 import xavani_constants
 
+pytestmark = pytest.mark.integration
+
 
 # =============================================================================
 # is_wsl() in xavani_constants

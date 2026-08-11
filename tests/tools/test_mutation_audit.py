@@ -12,6 +12,8 @@ from tools import memory_tool
 from tools import mutation_audit
 from tools import skill_manager_tool
 
+pytestmark = pytest.mark.integration
+
 
 @pytest.fixture(autouse=True)
 def _isolated_home(monkeypatch, tmp_path):

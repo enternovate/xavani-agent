@@ -13,6 +13,8 @@ import pytest
 
 from tools.egress_policy import EgressBlocked, EgressPolicy, from_env
 
+pytestmark = pytest.mark.unit
+
 
 def test_allowlist_matches_host_and_subdomain():
     p = EgressPolicy.create(allow=["example.com", "openai.com"], default_deny=True)

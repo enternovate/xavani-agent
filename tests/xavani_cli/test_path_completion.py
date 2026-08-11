@@ -13,6 +13,8 @@ from prompt_toolkit.formatted_text import to_plain_text
 
 from xavani_cli.commands import SlashCommandCompleter, _file_size_label
 
+pytestmark = pytest.mark.integration
+
 
 def _display_names(completions):
     """Extract plain-text display names from a list of Completion objects."""

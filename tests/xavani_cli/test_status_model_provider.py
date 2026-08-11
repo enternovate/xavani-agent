@@ -7,6 +7,9 @@
 from types import SimpleNamespace
 
 from xavani_cli.nous_subscription import NousFeatureState, NousSubscriptionFeatures
+import pytest
+
+pytestmark = pytest.mark.integration
 
 
 def _patch_common_status_deps(monkeypatch, status_mod, tmp_path, *, openai_base_url=""):

@@ -8,6 +8,9 @@ import os
 from unittest.mock import patch
 
 from xavani_cli.model_switch import list_authenticated_providers
+import pytest
+
+pytestmark = pytest.mark.unit
 
 
 @patch.dict(os.environ, {"GH_TOKEN": "test-key"}, clear=False)

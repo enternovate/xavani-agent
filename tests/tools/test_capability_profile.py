@@ -8,6 +8,8 @@ import pytest
 
 from tools.capability_profile import MIN_OUTCOMES, CapabilityTracker
 
+pytestmark = pytest.mark.integration
+
 
 @pytest.fixture
 def tracker(tmp_path):

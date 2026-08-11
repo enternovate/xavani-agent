@@ -3,6 +3,9 @@
 # Built by Enternovate -- Open source. Private. Local.
 
 import sys
+import pytest
+
+pytestmark = pytest.mark.unit
 
 
 def test_sessions_delete_accepts_unique_id_prefix(monkeypatch, capsys):

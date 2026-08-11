@@ -13,6 +13,9 @@ import tarfile
 from pathlib import Path
 
 from xavani_cli.profiles import export_profile, _DEFAULT_EXPORT_EXCLUDE_ROOT
+import pytest
+
+pytestmark = pytest.mark.integration
 
 
 class TestCredentialExclusion:

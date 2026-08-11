@@ -26,6 +26,8 @@ from tools.browser_camofox import (
 )
 from tools.browser_camofox_state import get_camofox_identity
 
+pytestmark = pytest.mark.integration
+
 
 def _mock_response(status=200, json_data=None):
     resp = MagicMock()

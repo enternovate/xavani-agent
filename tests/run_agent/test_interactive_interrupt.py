@@ -33,6 +33,9 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspa
 from unittest.mock import MagicMock, patch
 from run_agent import AIAgent, IterationBudget
 from tools.interrupt import set_interrupt, is_interrupted
+import pytest
+
+pytestmark = pytest.mark.unit
 
 def make_slow_response(delay=2.0):
     """API response that takes a while."""

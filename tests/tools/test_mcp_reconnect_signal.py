@@ -14,6 +14,8 @@ import asyncio
 
 import pytest
 
+pytestmark = pytest.mark.unit
+
 
 @pytest.mark.asyncio
 async def test_reconnect_event_attribute_exists():

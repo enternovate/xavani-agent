@@ -27,6 +27,8 @@ sys.modules.setdefault("fal_client", types.SimpleNamespace())
 from run_agent import AIAgent
 from agent.context_compressor import ContextCompressor
 
+pytestmark = pytest.mark.unit
+
 
 def _make_minimal_agent() -> AIAgent:
     """Return an AIAgent constructed with the absolute minimum args.

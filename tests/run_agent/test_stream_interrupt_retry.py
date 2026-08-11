@@ -19,6 +19,8 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
+pytestmark = pytest.mark.integration
+
 
 def _make_agent(**kwargs):
     """Create a minimal AIAgent for streaming tests."""

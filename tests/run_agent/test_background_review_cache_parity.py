@@ -16,6 +16,9 @@ Sonnet 4.5 per the contributor's measurement).
 """
 
 from unittest.mock import patch
+import pytest
+
+pytestmark = pytest.mark.e2e
 
 
 def _make_agent_stub(agent_cls):

@@ -12,6 +12,8 @@ import pytest
 
 from tools.mcp_tool import MCPServerTask, _format_connect_error, _resolve_stdio_command, _MCP_AVAILABLE
 
+pytestmark = pytest.mark.integration
+
 # Ensure the mcp module symbols exist for patching even when the SDK isn't installed
 if not _MCP_AVAILABLE:
     import tools.mcp_tool as _mcp_mod

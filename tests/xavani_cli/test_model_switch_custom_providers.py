@@ -12,6 +12,9 @@ only looked at `providers:`.
 import xavani_cli.providers as providers_mod
 from xavani_cli.model_switch import list_authenticated_providers, switch_model
 from xavani_cli.providers import resolve_provider_full
+import pytest
+
+pytestmark = pytest.mark.unit
 
 
 _MOCK_VALIDATION = {

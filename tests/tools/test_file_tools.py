@@ -18,6 +18,9 @@ from tools.file_tools import (
     PATCH_SCHEMA,
     SEARCH_FILES_SCHEMA,
 )
+import pytest
+
+pytestmark = pytest.mark.unit
 
 
 class TestReadFileHandler:

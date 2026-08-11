@@ -19,6 +19,9 @@ that caused the prefix-cache miss.
 
 import threading
 from unittest.mock import patch
+import pytest
+
+pytestmark = pytest.mark.unit
 
 
 def _make_agent_stub(agent_cls):

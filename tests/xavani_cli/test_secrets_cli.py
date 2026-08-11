@@ -17,6 +17,8 @@ import pytest
 import xavani_cli.secrets_cli as sec
 from xavani_cli.config import load_env
 
+pytestmark = pytest.mark.integration
+
 
 @pytest.fixture
 def vault_home(tmp_path: Path, monkeypatch) -> Path:

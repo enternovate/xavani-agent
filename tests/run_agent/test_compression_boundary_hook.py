@@ -22,6 +22,8 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
+pytestmark = pytest.mark.integration
+
 
 class TestCompressionBoundaryHook:
     def _make_agent(self, session_db):

@@ -13,6 +13,8 @@ from unittest.mock import patch
 import pytest
 import yaml
 
+pytestmark = pytest.mark.integration
+
 
 # ---------------------------------------------------------------------------
 # Shared fixture — isolate XAVANI_HOME so save_config writes to tmp_path

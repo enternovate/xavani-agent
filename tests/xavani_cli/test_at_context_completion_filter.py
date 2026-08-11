@@ -19,6 +19,9 @@ from pathlib import Path
 from typing import Iterable
 
 from xavani_cli.commands import SlashCommandCompleter
+import pytest
+
+pytestmark = pytest.mark.integration
 
 
 def _run(tmp_path: Path, word: str) -> list[tuple[str, str]]:

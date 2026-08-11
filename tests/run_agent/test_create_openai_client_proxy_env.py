@@ -27,6 +27,9 @@ from unittest.mock import patch
 import httpx
 
 from run_agent import AIAgent, _get_proxy_from_env, _get_proxy_for_base_url
+import pytest
+
+pytestmark = pytest.mark.integration
 
 
 def _make_agent():

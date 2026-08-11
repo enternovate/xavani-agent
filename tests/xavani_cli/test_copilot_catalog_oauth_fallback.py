@@ -17,6 +17,9 @@ credential pool.
 from unittest.mock import patch
 
 from xavani_cli.models import _resolve_copilot_catalog_api_key
+import pytest
+
+pytestmark = pytest.mark.unit
 
 
 class TestCopilotCatalogApiKeyResolution:

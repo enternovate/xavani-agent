@@ -29,6 +29,9 @@ mirrors the pattern used in tests/xavani_cli/test_config_drift.py.
 
 import ast
 import inspect
+import pytest
+
+pytestmark = pytest.mark.unit
 
 
 def _extract_dict_values(source: str, dict_name: str) -> set[str]:

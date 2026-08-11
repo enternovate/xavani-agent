@@ -4,6 +4,9 @@
 
 """Static dashboard tests for the Profiles navigation copy."""
 from pathlib import Path
+import pytest
+
+pytestmark = pytest.mark.unit
 
 
 def test_profiles_nav_label_uses_short_copy():

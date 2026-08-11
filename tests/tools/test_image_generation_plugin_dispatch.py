@@ -10,6 +10,8 @@ import pytest
 from agent import image_gen_registry
 from agent.image_gen_provider import ImageGenProvider
 
+pytestmark = pytest.mark.integration
+
 
 @pytest.fixture(autouse=True)
 def _reset_registry():

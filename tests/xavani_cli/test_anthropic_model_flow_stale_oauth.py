@@ -16,6 +16,8 @@ from unittest.mock import patch, MagicMock
 
 from xavani_cli.config import load_env, save_env_value
 
+pytestmark = pytest.mark.integration
+
 
 class TestStaleOAuthTokenDetection:
     """Bug 3: stale OAuth token must trigger needs_auth=True in _model_flow_anthropic."""

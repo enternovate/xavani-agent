@@ -5,6 +5,9 @@
 """Tests for Anthropic credential persistence helpers."""
 
 from xavani_cli.config import load_env
+import pytest
+
+pytestmark = pytest.mark.integration
 
 
 def test_save_anthropic_oauth_token_uses_token_slot_and_clears_api_key(tmp_path, monkeypatch):

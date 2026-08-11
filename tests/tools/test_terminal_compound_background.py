@@ -20,6 +20,8 @@ import pytest
 
 from tools.terminal_tool import _rewrite_compound_background as rewrite
 
+pytestmark = pytest.mark.integration
+
 
 class TestRewrites:
     """Commands that trigger the subshell-wait bug MUST be rewritten."""

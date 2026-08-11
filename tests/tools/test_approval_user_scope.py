@@ -18,6 +18,8 @@ from tools.approval import (
     is_approved_for_user,
 )
 
+pytestmark = pytest.mark.unit
+
 
 @pytest.fixture(autouse=True)
 def _clean_state():

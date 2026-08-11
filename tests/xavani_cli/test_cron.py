@@ -11,6 +11,8 @@ import pytest
 from cron.jobs import create_job, get_job, list_jobs
 from xavani_cli.cron import cron_command
 
+pytestmark = pytest.mark.integration
+
 
 @pytest.fixture()
 def tmp_cron_dir(tmp_path, monkeypatch):

@@ -26,6 +26,8 @@ from tools.browser_camofox import (
     is_camofox_mode,
 )
 
+pytestmark = pytest.mark.integration
+
 
 # ---------------------------------------------------------------------------
 # Configuration detection

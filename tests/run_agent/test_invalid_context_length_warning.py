@@ -5,6 +5,9 @@
 """Tests that invalid context_length values in config produce visible warnings."""
 
 from unittest.mock import patch, MagicMock, call
+import pytest
+
+pytestmark = pytest.mark.unit
 
 
 def _build_agent(model_cfg, custom_providers=None, model="anthropic/claude-opus-4.6"):

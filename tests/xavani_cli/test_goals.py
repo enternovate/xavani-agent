@@ -11,6 +11,8 @@ from unittest.mock import patch, MagicMock
 
 import pytest
 
+pytestmark = pytest.mark.integration
+
 
 # ──────────────────────────────────────────────────────────────────────
 # Fixtures

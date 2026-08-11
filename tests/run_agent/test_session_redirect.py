@@ -21,6 +21,8 @@ import pytest
 
 from run_agent import AIAgent
 
+pytestmark = pytest.mark.unit
+
 
 @pytest.fixture()
 def agent():

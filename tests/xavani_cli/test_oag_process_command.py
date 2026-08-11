@@ -17,6 +17,9 @@ import inspect
 from unittest.mock import patch
 
 import xavani
+import pytest
+
+pytestmark = pytest.mark.unit
 
 
 class TestSplitOagCommand:

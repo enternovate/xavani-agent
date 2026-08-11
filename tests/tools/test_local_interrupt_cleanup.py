@@ -26,6 +26,8 @@ import pytest
 
 from tools.environments.local import LocalEnvironment
 
+pytestmark = pytest.mark.integration
+
 
 @pytest.fixture(autouse=True)
 def _isolate_xavani_home(tmp_path, monkeypatch):

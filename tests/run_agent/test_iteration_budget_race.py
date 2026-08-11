@@ -13,6 +13,8 @@ from concurrent.futures import ThreadPoolExecutor
 
 import pytest
 
+pytestmark = pytest.mark.unit
+
 
 def test_iteration_budget_used_is_thread_safe():
     """Iterating `used` while other threads consume/refund must not crash.
