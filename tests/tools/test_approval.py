@@ -1316,3 +1316,51 @@ class TestEtcPatternsUnaffectedByRefactor:
     def test_grep_etc_passwd_is_safe(self):
         dangerous, _, _ = detect_dangerous_command("grep root /etc/passwd")
         assert dangerous is False
+
+
+class TestApprovalReasoning:
+    def test_prompt_passes_explicit_reason_to_callback(self):
+        received = {}
+
+        def cb(command, description, *, allow_permanent=True, reason=""):
+            received["reason"] = reason
+            return "deny"
+
+        result = prompt_dangerous_approval(
+            "rm -rf /tmp/x", "recursive delete",
+            approval_callback=cb, reason="model rationale",
+        )
+
+        assert result == "deny"
+        assert received["reason"] == "model rationale"
+
+    def test_prompt_falls_back_to_context_reason(self):
+        from tools.approval import reset_current_approval_reason, set_current_approval_reason
+
+        token = set_current_approval_reason("context rationale")
+        received = {}
+        try:
+
+            def cb(command, description, *, allow_permanent=True, reason=""):
+                received["reason"] = reason
+                return "deny"
+
+            prompt_dangerous_approval("ls /tmp", "list", approval_callback=cb)
+        finally:
+            reset_current_approval_reason(token)
+
+        assert received["reason"] == "context rationale"
+
+    def test_prompt_retries_legacy_callback_without_reason(self):
+        received = {}
+
+        def legacy_cb(command, description, *, allow_permanent=True):
+            received["called"] = True
+            return "once"
+
+        result = prompt_dangerous_approval(
+            "ls /tmp", "list", approval_callback=legacy_cb, reason="x",
+        )
+
+        assert result == "once"
+        assert received["called"] is True

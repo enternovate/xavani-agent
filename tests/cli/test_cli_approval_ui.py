@@ -182,6 +182,38 @@ class TestCliApprovalUi:
         assert "keyring.gpg" in rendered
         assert "status=progress" in rendered
 
+    def test_approval_display_renders_reason_when_present(self):
+        cli = _make_cli_stub()
+        cli._approval_state = {
+            "command": "rm -rf /tmp/build",
+            "description": "recursive delete",
+            "reason": "The model needs to remove the stale build directory.",
+            "choices": ["once", "session", "always", "deny"],
+            "selected": 0,
+            "response_queue": queue.Queue(),
+        }
+
+        fragments = cli._get_approval_display_fragments()
+        rendered = "".join(text for _style, text in fragments)
+
+        assert "Reason: The model needs to remove" in rendered
+        assert "recursive delete" in rendered
+
+    def test_approval_display_omits_reason_when_absent(self):
+        cli = _make_cli_stub()
+        cli._approval_state = {
+            "command": "rm -rf /tmp/build",
+            "description": "recursive delete",
+            "choices": ["once", "session", "always", "deny"],
+            "selected": 0,
+            "response_queue": queue.Queue(),
+        }
+
+        fragments = cli._get_approval_display_fragments()
+        rendered = "".join(text for _style, text in fragments)
+
+        assert "Reason:" not in rendered
+
     def test_approval_display_preserves_command_and_choices_with_long_description(self):
         """Regression: long tirith descriptions used to push approve/deny off-screen.
 
