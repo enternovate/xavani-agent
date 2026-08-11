@@ -1786,6 +1786,24 @@ def cmd_postinstall(args):
         print("✓ Post-install complete.")
 
 
+def _maybe_first_run_setup() -> bool:
+    """Run the first-time wizard when no provider is configured.
+
+    Returns True when the wizard ran. Skips non-interactive environments so
+    one-shot and scripted invocations keep their current behavior.
+    """
+    if _has_any_provider_configured():
+        return False
+    from xavani_cli.setup import is_interactive_stdin, run_setup_wizard
+
+    if not is_interactive_stdin():
+        return False
+    print()
+    print("⚕ First run detected — let's configure Xavani.")
+    run_setup_wizard(None)
+    return True
+
+
 def cmd_model(args):
     """Select default model — starts with provider selection, then model picker."""
     route_task = getattr(args, "route", None)
@@ -13464,6 +13482,8 @@ Examples:
         ]:
             if not hasattr(args, attr):
                 setattr(args, attr, default)
+        if not getattr(args, "query", None):
+            _maybe_first_run_setup()
         cmd_chat(args)
         return
 
