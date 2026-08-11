@@ -11138,7 +11138,7 @@ class XavaniCLI:
         return ""
 
     def _approval_callback(self, command: str, description: str,
-                           *, allow_permanent: bool = True) -> str:
+                           *, allow_permanent: bool = True, reason: str = "") -> str:
         """
         Prompt for dangerous command approval through the prompt_toolkit UI.
 
@@ -11161,6 +11161,7 @@ class XavaniCLI:
             self._approval_state = {
                 "command": command,
                 "description": description,
+                "reason": reason,
                 "choices": self._approval_choices(command, allow_permanent=allow_permanent),
                 "selected": 0,
                 "response_queue": response_queue,
@@ -11287,6 +11288,7 @@ class XavaniCLI:
 
         command = state["command"]
         description = state["description"]
+        reason = state.get("reason", "") or ""
         choices = state["choices"]
         selected = state.get("selected", 0)
         show_full = state.get("show_full", False)
@@ -11375,6 +11377,16 @@ class XavaniCLI:
         # Even on huge terminals, cap description height so the panel stays compact.
         available_for_desc = max(0, min(available_for_desc, 10))
 
+        # The reason (model's stated rationale, J232) renders right after the
+        # command. It takes precedence over the description when rows are tight.
+        reason_wrapped = _wrap_panel_text(f"Reason: {reason}", inner_text_width) if reason else []
+        if reason_wrapped:
+            reason_rows = min(len(reason_wrapped), 4)
+            if reason_rows > available_for_desc:
+                reason_wrapped = []
+            else:
+                available_for_desc -= reason_rows
+
         desc_wrapped = _wrap_panel_text(description, inner_text_width) if description else []
         if available_for_desc < 1 or not desc_wrapped:
             desc_wrapped = []
@@ -11394,6 +11406,8 @@ class XavaniCLI:
 
         for wrapped in cmd_wrapped:
             _append_panel_line(lines, 'class:approval-border', 'class:approval-cmd', wrapped, box_width)
+        for wrapped in reason_wrapped:
+            _append_panel_line(lines, 'class:approval-border', 'class:approval-desc', wrapped, box_width)
         if not use_compact_chrome:
             _append_blank_panel_line(lines, 'class:approval-border', box_width)
 

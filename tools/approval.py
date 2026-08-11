@@ -60,6 +60,11 @@ _approval_session_key: contextvars.ContextVar[str] = contextvars.ContextVar(
     default="",
 )
 
+_approval_reason: contextvars.ContextVar[str] = contextvars.ContextVar(
+    "approval_reason",
+    default="",
+)
+
 
 def _fire_approval_hook(hook_name: str, **kwargs) -> None:
     """Invoke a plugin lifecycle hook for the approval system.
@@ -140,6 +145,25 @@ def get_current_session_key(default: str = "default") -> str:
     if session_key:
         return session_key
     return get_session_env("XAVANI_SESSION_KEY", default)
+
+
+def set_current_approval_reason(reason: str) -> contextvars.Token[str]:
+    """Bind the current approval reason to the active context.
+
+    The agent loop sets the model's reasoning for the current turn here so
+    every approval prompt in that turn shows the rationale (J232).
+    """
+    return _approval_reason.set(reason or "")
+
+
+def reset_current_approval_reason(token: contextvars.Token[str]) -> None:
+    """Restore the prior approval reason context."""
+    _approval_reason.reset(token)
+
+
+def get_current_approval_reason() -> str:
+    """Return the active approval reason (empty when unset)."""
+    return _approval_reason.get()
 
 
 def _get_session_platform() -> str:
@@ -927,7 +951,8 @@ def save_permanent_allowlist(patterns: set):
 def prompt_dangerous_approval(command: str, description: str,
                               timeout_seconds: int | None = None,
                               allow_permanent: bool = True,
-                              approval_callback=None) -> str:
+                              approval_callback=None,
+                              reason: str = "") -> str:
     """Prompt the user to approve a dangerous command (CLI only).
 
     Args:
@@ -936,15 +961,25 @@ def prompt_dangerous_approval(command: str, description: str,
             is inappropriate for content-level security findings).
         approval_callback: Optional callback registered by the CLI for
             prompt_toolkit integration. Signature:
-            (command, description, *, allow_permanent=True) -> str.
-
-    Returns: 'once', 'session', 'always', or 'deny'
+            (command, description, *, allow_permanent=True, reason="") -> str.
+        reason: The model's stated rationale for the command. When empty,
+            falls back to the current context's approval reason (J232).
     """
     if timeout_seconds is None:
         timeout_seconds = _get_approval_timeout()
 
+    if not reason:
+        reason = get_current_approval_reason()
+
     if approval_callback is not None:
         try:
+            return approval_callback(command, description,
+                                     allow_permanent=allow_permanent,
+                                     reason=reason)
+        except TypeError:
+            # Pre-J232 callbacks accept (command, description, *,
+            # allow_permanent=True) only. Retry without the reason kwarg so
+            # third-party callbacks never hit the deny-on-exception path.
             return approval_callback(command, description,
                                      allow_permanent=allow_permanent)
         except Exception as e:
@@ -987,6 +1022,8 @@ def prompt_dangerous_approval(command: str, description: str,
             print()
             print(f"  {t('approval.dangerous_header', description=description)}")
             print(f"      {command}")
+            if reason:
+                print(f"      Reason: {reason}")
             print()
             if allow_permanent:
                 print(t("approval.choose_long"))
