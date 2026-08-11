@@ -51,6 +51,7 @@ _NEVER_PARALLEL_TOOLS = frozenset({"clarify"})
 
 # Read-only tools with no shared mutable session state.
 _PARALLEL_SAFE_TOOLS = frozenset({
+    "bfl_flux3_prompting_guide",
     "ha_get_state",
     "ha_list_entities",
     "ha_list_services",
@@ -59,6 +60,8 @@ _PARALLEL_SAFE_TOOLS = frozenset({
     "session_search",
     "skill_view",
     "skills_list",
+    "tool_describe",
+    "tool_search",
     "vision_analyze",
     "web_extract",
     "web_search",
@@ -110,7 +113,13 @@ def _is_mcp_tool_parallel_safe(tool_name: str) -> bool:
 
 
 def _should_parallelize_tool_batch(tool_calls) -> bool:
-    """Return True when a tool-call batch is safe to run concurrently."""
+    """Return True when a tool-call batch is safe to run concurrently.
+
+    Decision rule (backlog D79): independent read-only batches run in
+    parallel; file tools run in parallel only on disjoint paths; any batch
+    containing an unknown or mutating tool runs sequentially (fail-closed).
+    Interactive tools (_NEVER_PARALLEL_TOOLS) always serialize.
+    """
     if len(tool_calls) <= 1:
         return False
 
