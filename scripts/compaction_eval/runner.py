@@ -78,7 +78,7 @@ def make_facts(n: int = N_FACTS) -> List[str]:
     """
     return [
         f"Shipment q-{1000 + i} carried {220 + i} crates of item "
-        f"{i * 7 + 3:04d} and docked at {_CITIES[i]} on day {i + 1}."
+        f"{i * 7 + 3:04d} and docked at {_CITIES[i % len(_CITIES)]} on day {i + 1}."
         for i in range(n)
     ]
 
@@ -177,10 +177,10 @@ def run_eval(n_facts: int = N_FACTS) -> Dict[str, Any]:
         "facts_total": total,
         "faithful_seen": faithful["seen"],
         "faithful_retained": faithful_retained,
-        "faithful_retention": faithful_retained / total,
+        "faithful_retention": faithful_retained / total if total else 0.0,
         "degraded_seen": degraded["seen"],
         "degraded_retained": degraded_retained,
-        "degraded_retention": degraded_retained / total,
+        "degraded_retention": degraded_retained / total if total else 0.0,
     }
 
 
@@ -199,6 +199,8 @@ def main(argv: Optional[List[str]] = None) -> int:
         help=f"number of seeded facts (default: {N_FACTS})",
     )
     args = parser.parse_args(argv)
+    if args.facts < 1:
+        parser.error("--facts must be at least 1")
 
     result = run_eval(args.facts)
     total = result["facts_total"]
