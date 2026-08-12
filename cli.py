@@ -5715,6 +5715,49 @@ class XavaniCLI:
             return self._fast_command_available()
         return True
 
+    def _context_help_blocks(self) -> list[tuple[str, list[tuple[str, str]]]]:
+        """State-aware command blocks shown above the full /help list (F146)."""
+        from tools.registry import is_plan_mode
+
+        blocks: list[tuple[str, list[tuple[str, str]]]] = []
+        if getattr(self, "_agent_running", False):
+            blocks.append(
+                ("Agent is running", [
+                    ("/stop", "Kill all running background processes"),
+                    ("/steer", "Inject a message after the next tool call without interrupting"),
+                    ("/queue", "Queue a prompt for the next turn (doesn't interrupt)"),
+                ])
+            )
+        else:
+            blocks.append(
+                ("Idle — chat normally", [
+                    ("/new", "Start a new session (fresh session ID + history)"),
+                    ("/model", "Switch model for this session"),
+                    ("/resume", "Resume a previously-named session"),
+                ])
+            )
+        if is_plan_mode():
+            blocks.append(
+                ("Plan mode is ON — read-only tools only", [
+                    ("/plan off", "Turn off read-only plan mode"),
+                ])
+            )
+        if getattr(self, "_approval_state", None):
+            blocks.append(
+                ("Approval pending", [
+                    ("/approve", "Approve a pending dangerous command"),
+                    ("/deny", "Deny a pending dangerous command"),
+                ])
+            )
+        if getattr(self, "_background_tasks", None):
+            blocks.append(
+                ("Background tasks running", [
+                    ("/agents", "Show active agents and running tasks"),
+                    ("/background", "Run a prompt in the background"),
+                ])
+            )
+        return blocks
+
     def show_help(self):
         """Display help information with categorized commands."""
         from xavani_cli.commands import COMMANDS_BY_CATEGORY
@@ -5731,6 +5774,11 @@ class XavaniCLI:
         _cprint(f"\n{_BOLD}+{'-' * inner_width}+{_RST}")
         _cprint(f"{_BOLD}|{header:^{inner_width}}|{_RST}")
         _cprint(f"{_BOLD}+{'-' * inner_width}+{_RST}")
+
+        for title, commands in self._context_help_blocks():
+            _cprint(f"\n  {_BOLD}── {title} ──{_RST}")
+            for cmd, desc in commands:
+                ChatConsole().print(f"    [bold {_accent_hex()}]{cmd:<15}[/] [dim]-[/] {_escape(desc)}")
 
         for category, commands in COMMANDS_BY_CATEGORY.items():
             _cprint(f"\n  {_BOLD}── {category} ──{_RST}")
