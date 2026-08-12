@@ -973,15 +973,18 @@ def prompt_dangerous_approval(command: str, description: str,
 
     if approval_callback is not None:
         try:
-            return approval_callback(command, description,
-                                     allow_permanent=allow_permanent,
-                                     reason=reason)
-        except TypeError:
-            # Pre-J232 callbacks accept (command, description, *,
-            # allow_permanent=True) only. Retry without the reason kwarg so
-            # third-party callbacks never hit the deny-on-exception path.
-            return approval_callback(command, description,
-                                     allow_permanent=allow_permanent)
+            try:
+                return approval_callback(command, description,
+                                         allow_permanent=allow_permanent,
+                                         reason=reason)
+            except TypeError:
+                # Retry older callbacks that do not accept the reason kwarg or
+                # the optional allow_permanent kwarg.
+                try:
+                    return approval_callback(command, description,
+                                             allow_permanent=allow_permanent)
+                except TypeError:
+                    return approval_callback(command, description)
         except Exception as e:
             logger.error("Approval callback failed: %s", e, exc_info=True)
             return "deny"

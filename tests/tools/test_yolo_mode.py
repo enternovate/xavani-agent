@@ -42,6 +42,28 @@ def _clear_approval_state():
 class TestYoloMode:
     """When XAVANI_YOLO_MODE is set, all dangerous commands are auto-approved."""
 
+    def test_positional_only_approval_callback_is_supported(self, monkeypatch):
+        """Approval callbacks with only command and description remain compatible."""
+        monkeypatch.setenv("XAVANI_INTERACTIVE", "1")
+        received = {}
+
+        def callback(command, description):
+            received["command"] = command
+            received["description"] = description
+            return "deny"
+
+        result = check_dangerous_command(
+            "rm -rf /tmp/stuff",
+            "local",
+            approval_callback=callback,
+        )
+
+        assert result["approved"] is False
+        assert received == {
+            "command": "rm -rf /tmp/stuff",
+            "description": "delete in root path",
+        }
+
     def test_dangerous_command_blocked_normally(self, monkeypatch):
         """Without yolo mode, dangerous commands in interactive mode require approval."""
         monkeypatch.setenv("XAVANI_INTERACTIVE", "1")
