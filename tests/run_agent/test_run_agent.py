@@ -5487,18 +5487,32 @@ class TestMemoryProviderTurnStart:
     fires both context refresh and dialectic, ignoring the configured cadence.
     """
 
-    def test_on_turn_start_called_before_prefetch(self):
-        """Source-level check: on_turn_start appears before prefetch_all in run_conversation."""
-        import inspect
-        from agent.conversation_loop import run_conversation as _rc
-        src = inspect.getsource(_rc)
-        # Find the actual method calls, not comments
-        idx_turn_start = src.index(".on_turn_start(")
-        idx_prefetch = src.index(".prefetch_all(")
-        assert idx_turn_start < idx_prefetch, (
-            "on_turn_start() must be called before prefetch_all() in run_conversation "
-            "so that memory providers have the correct turn count for cadence checks"
+    def test_on_turn_start_called_before_prefetch(self, agent):
+        """The extracted prefetch helper still runs after the turn hook."""
+        agent._cached_system_prompt = "You are helpful."
+        agent._use_prompt_caching = False
+        agent.tool_delay = 0
+        agent.compression_enabled = False
+        agent.save_trajectories = False
+
+        events = []
+        memory_manager = MagicMock()
+        memory_manager.on_turn_start.side_effect = lambda *args: events.append("turn_start")
+        memory_manager.prefetch_all.side_effect = lambda *args: events.append("prefetch") or ""
+        agent._memory_manager = memory_manager
+        agent.client.chat.completions.create.return_value = _mock_response(
+            content="Done", finish_reason="stop"
         )
+
+        with (
+            patch.object(agent, "_persist_session"),
+            patch.object(agent, "_save_trajectory"),
+            patch.object(agent, "_cleanup_task_resources"),
+        ):
+            result = agent.run_conversation("hello")
+
+        assert result["final_response"] == "Done"
+        assert events == ["turn_start", "prefetch"]
 
     def test_on_turn_start_uses_user_turn_count(self):
         """Source-level check: on_turn_start receives the user_turn_count."""
