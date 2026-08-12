@@ -16,7 +16,7 @@ import sys
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Set, Tuple
 
-from xavani_constants import get_config_path, get_skills_dir
+from xavani_constants import get_config_path, get_skills_dir, get_xavani_home
 
 logger = logging.getLogger(__name__)
 try:
@@ -310,14 +310,49 @@ def get_external_skills_dirs() -> List[Path]:
     return result
 
 
-def get_all_skills_dirs() -> List[Path]:
-    """Return all skill directories: local ``~/.xavani/skills/`` first, then external.
+def get_cwd_skills_dir(
+    start: Path | str | None = None,
+    home: Path | str | None = None,
+) -> Path | None:
+    """Find the nearest project-scoped ``.xavani/skills`` directory.
 
-    The local dir is always first (and always included even if it doesn't exist
-    yet — callers handle that).  External dirs follow in config order.
+    Search starts at the current working directory by default and walks toward
+    the filesystem root.  When the start directory is inside ``home``, the
+    ``home`` directory itself is not considered because it owns the local
+    Xavani skills catalog.
     """
+    current = Path(start if start is not None else os.getcwd()).resolve()
+    boundary = Path(home).resolve() if home is not None else None
+
+    inside_boundary = False
+    if boundary is not None:
+        try:
+            current.relative_to(boundary)
+            inside_boundary = True
+        except ValueError:
+            pass
+
+    while True:
+        if inside_boundary and current == boundary:
+            return None
+        candidate = current / ".xavani" / "skills"
+        if candidate.is_dir():
+            return candidate.resolve()
+        parent = current.parent
+        if parent == current:
+            return None
+        current = parent
+
+
+def get_all_skills_dirs() -> List[Path]:
+    """Return local, external, and nearest project-scoped skill directories."""
     dirs = [get_skills_dir()]
     dirs.extend(get_external_skills_dirs())
+    cwd_skills = get_cwd_skills_dir(home=get_xavani_home())
+    if cwd_skills is not None:
+        resolved_dirs = {path.resolve() for path in dirs}
+        if cwd_skills.resolve() not in resolved_dirs:
+            dirs.append(cwd_skills)
     return dirs
 
 
