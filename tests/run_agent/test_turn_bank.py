@@ -207,3 +207,61 @@ def test_successful_large_content_fallback_is_not_duplicated_after_restart():
 
     assert restarted._turn_bank_completed_count == 2
     assert restarted._turn_bank_pending == []
+
+
+def test_partial_large_content_fallback_retries_only_unpersisted_suffix_after_restart(
+    tmp_path,
+):
+    class _LargeContentStore:
+        memory_char_limit = 1
+
+        def __init__(self):
+            self.memory_entries = []
+
+        def _char_count(self, target):
+            return len("\n§\n".join(self.memory_entries))
+
+    store = _LargeContentStore()
+    agent = SimpleNamespace(
+        _turn_bank_interval=2,
+        _turn_bank_completed_count=0,
+        _turn_bank_pending=[],
+        _turn_bank_state_path=tmp_path / "turn-bank.json",
+        _memory_store=store,
+    )
+    successful = json.dumps({"success": True, "staged": False})
+
+    def persist(**kwargs):
+        if kwargs["content"].startswith("User: first"):
+            kwargs["store"].memory_entries.append(kwargs["content"])
+            return successful
+        raise RuntimeError("memory write failed")
+
+    with patch("tools.memory_tool.memory_tool", side_effect=persist):
+        assert add_completed_turn(agent, "first", "answer one") is False
+        assert add_completed_turn(agent, "second", "answer two") is False
+
+    state = json.loads(agent._turn_bank_state_path.read_text(encoding="utf-8"))
+    assert state["persisted_count"] == 1
+
+    restarted_store = _LargeContentStore()
+    restarted_store.memory_entries = list(store.memory_entries)
+    restarted = SimpleNamespace(
+        _turn_bank_interval=2,
+        _turn_bank_completed_count=0,
+        _turn_bank_pending=[],
+        _turn_bank_state_path=agent._turn_bank_state_path,
+        _memory_store=restarted_store,
+    )
+    hydrate_turn_bank(
+        restarted,
+        [
+            {"role": "user", "content": "first"},
+            {"role": "assistant", "content": "answer one"},
+            {"role": "user", "content": "second"},
+            {"role": "assistant", "content": "answer two"},
+        ],
+    )
+
+    assert restarted._turn_bank_completed_count == 1
+    assert restarted._turn_bank_pending == [("second", "answer two")]
