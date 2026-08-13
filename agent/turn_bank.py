@@ -93,11 +93,18 @@ def _read_state(agent: Any) -> Dict[str, int] | None:
             return None
         completed_count = int(state["completed_count"])
         pending_count = int(state["pending_count"])
-        if completed_count < 0 or pending_count < 0:
+        persisted_count = int(state.get("persisted_count", 0))
+        if (
+            completed_count < 0
+            or pending_count < 0
+            or persisted_count < 0
+            or persisted_count > pending_count
+        ):
             return None
         return {
             "completed_count": completed_count,
             "pending_count": pending_count,
+            "persisted_count": persisted_count,
         }
     except (OSError, TypeError, ValueError, KeyError, AttributeError):
         return None
@@ -142,7 +149,12 @@ def _persisted_prefix_length(
     return persisted_end
 
 
-def _write_state(agent: Any, completed_count: int, pending_count: int) -> None:
+def _write_state(
+    agent: Any,
+    completed_count: int,
+    pending_count: int,
+    persisted_count: int = 0,
+) -> None:
     path = _state_path(agent)
     if path is None:
         return
@@ -151,6 +163,7 @@ def _write_state(agent: Any, completed_count: int, pending_count: int) -> None:
         "version": _STATE_VERSION,
         "completed_count": max(0, int(completed_count)),
         "pending_count": max(0, int(pending_count)),
+        "persisted_count": max(0, int(persisted_count)),
     }
     tmp_path: str | None = None
     try:
@@ -188,7 +201,9 @@ def hydrate_turn_bank(agent: Any, messages: Iterable[Dict[str, Any]]) -> None:
     if state is not None:
         agent._turn_bank_completed_count = state["completed_count"]
         pending_count = min(state["pending_count"], len(turns))
-        agent._turn_bank_pending = list(turns[-pending_count:]) if pending_count else []
+        pending_turns = list(turns[-pending_count:]) if pending_count else []
+        persisted_count = min(state["persisted_count"], pending_count)
+        agent._turn_bank_pending = pending_turns[persisted_count:]
         return
 
     agent._turn_bank_completed_count = len(turns)
@@ -228,7 +243,12 @@ def _available_memory_chars(store: Any) -> int | None:
     return max(0, limit - current)
 
 
-def _write_pending_turns(agent: Any, pending: List[Tuple[str, str]], completed_count: int) -> bool:
+def _write_pending_turns(
+    agent: Any,
+    pending: List[Tuple[str, str]],
+    completed_count: int,
+    on_turn_persisted: Any = None,
+) -> bool:
     from tools.memory_tool import memory_tool
 
     store = agent._memory_store
@@ -247,7 +267,7 @@ def _write_pending_turns(agent: Any, pending: List[Tuple[str, str]], completed_c
         except Exception:
             return False
 
-    for user_text, assistant_text in pending:
+    for persisted_count, (user_text, assistant_text) in enumerate(pending, 1):
         try:
             if not _memory_write_succeeded(
                 memory_tool(
@@ -260,6 +280,8 @@ def _write_pending_turns(agent: Any, pending: List[Tuple[str, str]], completed_c
                 return False
         except Exception:
             return False
+        if on_turn_persisted is not None:
+            on_turn_persisted(persisted_count)
     return True
 
 
@@ -280,7 +302,17 @@ def add_completed_turn(agent: Any, user_text: str, assistant_text: str) -> bool:
 
     agent._turn_bank_pending = pending
     _write_state(agent, completed_count - 1, len(pending))
-    if not _write_pending_turns(agent, pending, completed_count):
+    if not _write_pending_turns(
+        agent,
+        pending,
+        completed_count,
+        lambda persisted_count: _write_state(
+            agent,
+            completed_count - 1,
+            len(pending),
+            persisted_count,
+        ),
+    ):
         return False
 
     agent._turn_bank_completed_count = completed_count
