@@ -60,6 +60,131 @@ import httpx
 
 OUTPUT_PATH = os.path.join(REPO_ROOT, "website", "static", "api", "skills-index.json")
 INDEX_VERSION = 1
+OAG_SKILLS_DIR = os.path.join(REPO_ROOT, "oag_skills")
+OAG_MANIFEST_PATH = os.path.join(OAG_SKILLS_DIR, "MANIFEST.json")
+LOCAL_SOURCE = "oag-skills"
+
+
+def _parse_frontmatter(skill_md_path: str) -> dict:
+    """Parse SKILL.md YAML frontmatter into a dict (empty on any failure)."""
+    try:
+        with open(skill_md_path, "r", encoding="utf-8") as fh:
+            text = fh.read()
+    except OSError:
+        return {}
+    if not text.startswith("---"):
+        return {}
+    end = text.find("\n---", 3)
+    if end == -1:
+        return {}
+    frontmatter = text[4:end]
+    try:
+        import yaml
+
+        meta = yaml.safe_load(frontmatter)
+        return meta if isinstance(meta, dict) else {}
+    except ImportError:
+        pass
+    except Exception:
+        return {}
+    meta = {}
+    for line in frontmatter.splitlines():
+        if ":" in line and not line.startswith((" ", "-", "\t")):
+            key, _, value = line.partition(":")
+            meta[key.strip()] = value.strip().strip("\"'")
+    return meta
+
+
+def scan_local_oag_skills() -> list:
+    """Scan oag_skills/ for built-in skills (depth-1 and depth-2 SKILL.md).
+
+    Depth-1 (oag_skills/<skill>/SKILL.md) and depth-2
+    (oag_skills/<category>/<skill>/SKILL.md) layouts are both supported; the
+    category is the top-level directory name.
+    """
+    if not os.path.isdir(OAG_SKILLS_DIR):
+        return []
+    skills = []
+    seen_dirs = set()
+    for dirpath, dirnames, filenames in os.walk(OAG_SKILLS_DIR):
+        dirnames[:] = [d for d in dirnames if d not in ("__pycache__",)]
+        if "SKILL.md" not in filenames:
+            continue
+        rel = os.path.relpath(dirpath, OAG_SKILLS_DIR)
+        if rel in seen_dirs:
+            continue
+        seen_dirs.add(rel)
+        parts = rel.split(os.sep)
+        category = parts[0]
+        meta = _parse_frontmatter(os.path.join(dirpath, "SKILL.md"))
+        name = str(meta.get("name") or parts[-1]).strip()
+        if not name:
+            continue
+        description = " ".join(str(meta.get("description") or "").split())
+        tags = []
+        xavani_meta = (meta.get("metadata") or {}).get("xavani") or {}
+        if isinstance(xavani_meta.get("tags"), list):
+            tags = [str(t) for t in xavani_meta["tags"]]
+        skills.append({
+            "name": name,
+            "description": description,
+            "source": LOCAL_SOURCE,
+            "identifier": f"{LOCAL_SOURCE}/{category}/{name}",
+            "trust_level": "built-in",
+            "repo": "DietrichGebert/ponytail" if category == "ponytail" else "",
+            "path": os.path.relpath(dirpath, REPO_ROOT),
+            "tags": tags,
+            "extra": {"category": category},
+        })
+    return skills
+
+
+def regenerate_oag_manifest(local_skills: list) -> None:
+    """Regenerate oag_skills/MANIFEST.json as an append-only journal.
+
+    Existing entries are preserved verbatim (the manifest is consumed by
+    xavani_learner/ and guarded by tests/test_manifest_journal.py); only
+    skills found on disk that are not yet listed get appended.
+    """
+    existing: dict = {"schema_version": "1.0", "total_skills": 0, "skills": []}
+    if os.path.exists(OAG_MANIFEST_PATH):
+        try:
+            with open(OAG_MANIFEST_PATH, "r", encoding="utf-8") as fh:
+                loaded = json.load(fh)
+            if isinstance(loaded, dict):
+                existing = loaded
+        except (OSError, ValueError) as exc:
+            print(f"  Warning: could not read {OAG_MANIFEST_PATH}: {exc}",
+                  file=sys.stderr)
+    by_name = {entry["name"]: entry for entry in existing.get("skills", [])}
+    added = 0
+    for skill in local_skills:
+        if skill["name"] not in by_name:
+            by_name[skill["name"]] = {
+                "name": skill["name"],
+                "description": skill["description"],
+                "category": skill["extra"].get("category", ""),
+            }
+            added += 1
+    skills = sorted(by_name.values(),
+                    key=lambda e: (e.get("category", ""), e["name"]))
+    manifest = {
+        "schema_version": existing.get("schema_version", "1.0"),
+        "total_skills": len(skills),
+        "skills": skills,
+    }
+    had_trailing_newline = False
+    if os.path.exists(OAG_MANIFEST_PATH):
+        with open(OAG_MANIFEST_PATH, "rb") as fh:
+            head = fh.read(1)
+            fh.seek(-1, 2)
+            had_trailing_newline = head == b"" or fh.read(1) == b"\n"
+    with open(OAG_MANIFEST_PATH, "w", encoding="utf-8") as fh:
+        json.dump(manifest, fh, indent=2, ensure_ascii=False)
+        if had_trailing_newline:
+            fh.write("\n")
+    print(f"Regenerated {OAG_MANIFEST_PATH}: {len(skills)} skills "
+          f"({added} newly appended)", flush=True)
 
 
 def _meta_to_dict(meta: SkillMeta) -> dict:
@@ -300,6 +425,11 @@ def main():
     # Crawl skills.sh
     all_skills.extend(crawl_skills_sh(skills_sh_source))
 
+    # Built-in oag_skills/ entries (local, no network)
+    local_skills = scan_local_oag_skills()
+    print(f"  oag-skills: {len(local_skills)} built-in skills", flush=True)
+    all_skills.extend(local_skills)
+
     # Crawl other sources in parallel
     with ThreadPoolExecutor(max_workers=4) as pool:
         futures = {}
@@ -323,10 +453,12 @@ def main():
     deduped = list(seen.values())
 
     # Sort
-    source_order = {"official": 0, "skills-sh": 1, "skills.sh": 1,
+    source_order = {"oag-skills": 0, "official": 0, "skills-sh": 1, "skills.sh": 1,
                     "github": 2, "well-known": 3, "clawhub": 4,
                     "claude-marketplace": 5, "lobehub": 6}
     deduped.sort(key=lambda s: (source_order.get(s["source"], 99), s["name"]))
+
+    regenerate_oag_manifest(local_skills)
 
     # Build index
     index = {

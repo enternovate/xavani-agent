@@ -447,6 +447,13 @@ Xavani stores everything in `~/.xavani/`:
 
 ## What's New
 
+### v0.1.2 — "Durability & Capability" (2026-08-21)
+- **Durable turn-bank state** — version-2 checkpoints bind counts and pending turns with SHA-256 proof across restarts, compression, branches, and stale state.
+- **Strict memory proof** — malformed results, duplicate content, unmatched requests, and invalid legacy history no longer clear pending turns.
+- **Faster task harness** — records median time, p90 time, tokens, success rate, and cost per successful task.
+- **Assistant capability packs** — business operations, personal productivity, game theory, mental models, AI-native UI, Ponytail, and anti-slop TypeScript/JavaScript guidance.
+- **181 built-in skills** — local skill indexing and append-only manifest generation now include every new pack.
+
 ### v0.1.1 — "Reliability & Steer" (2026-08-05)
 - **/steer reliability** — end-to-end verified steer pipeline (TUI → gateway → AIAgent → drain into the next tool result), with idle fallback to queue and leftover-steer delivery at turn end.
 - **Python 3.14 compatibility** — memory-manager thread pool fixed against the 3.14 stdlib refactor.

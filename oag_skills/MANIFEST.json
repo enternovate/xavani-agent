@@ -1,6 +1,6 @@
 {
   "schema_version": "1.0",
-  "total_skills": 169,
+  "total_skills": 181,
   "skills": [
     {
       "name": "apple-notes",
@@ -43,11 +43,6 @@
       "category": "autonomous-ai-agents"
     },
     {
-      "name": "xavani-agent",
-      "description": "Configure, extend, or contribute to Xavani Agent.",
-      "category": "autonomous-ai-agents"
-    },
-    {
       "name": "honcho",
       "description": "Configure and use Honcho memory with Xavani -- cross-session user modeling, multi-profile peer isolation, observation config, dialectic reasoning, session summaries, and context budget enforcement. Use when setting up Honcho, troubleshooting memory, managing profiles with Honcho peers, or tuning observation, recall, and dialectic settings.",
       "category": "autonomous-ai-agents"
@@ -60,6 +55,11 @@
     {
       "name": "opencode",
       "description": "Delegate coding to OpenCode CLI (features, PR review).",
+      "category": "autonomous-ai-agents"
+    },
+    {
+      "name": "xavani-agent",
+      "description": "Configure, extend, or contribute to Xavani Agent.",
       "category": "autonomous-ai-agents"
     },
     {
@@ -76,6 +76,16 @@
       "name": "solana",
       "description": "Query Solana blockchain data with USD pricing — wallet balances, token portfolios with values, transaction details, NFTs, whale detection, and live network stats. Uses Solana RPC + CoinGecko. No API key required.",
       "category": "blockchain"
+    },
+    {
+      "name": "business-assistant",
+      "description": "Practical business operations skill: weekly operations reviews, finance snapshots with core ratio checks, meeting notes to action tables, one-page decision memos, 4-category inbox triage, and leading vs lagging KPI cadences. Use when the user asks for a business review, financial health check, meeting summary with owners and deadlines, a recommendation memo, help triaging email, or defining and tracking KPIs.",
+      "category": "business"
+    },
+    {
+      "name": "mental-models",
+      "description": "Decision-quality toolkit applied when advising: seven thinking disciplines (first principles, opportunity cost, second-order thinking, compounding, incentives, probabilistic thinking, inversion) plus a game theory toolkit (dominant strategies, Nash equilibrium, minimax, repeated games, mechanism design, BATNA). Use whenever giving a recommendation, judging a strategy, analyzing a negotiation, designing incentives, or evaluating a decision with interacting parties.",
+      "category": "business"
     },
     {
       "name": "one-three-one-rule",
@@ -211,6 +221,11 @@
       "name": "jupyter-live-kernel",
       "description": "Iterative Python via live Jupyter kernel (hamelnb).",
       "category": "data-science"
+    },
+    {
+      "name": "design-craft",
+      "description": "Design at a high level — layout, type, colour, hierarchy, motion, accessibility — in the user's learned taste, never generic.",
+      "category": "design-craft"
     },
     {
       "name": "docker-management",
@@ -588,6 +603,41 @@
       "category": "note-taking"
     },
     {
+      "name": "personal-assistant",
+      "description": "Personal assistant skill: a people register consulted before every message, commitment capture with owners and dates, a fixed 5-question weekly review, rules for when and how to nudge on open threads, meeting prep and debrief checklists, a warm-brief tone protocol, deep-work protection, and a 12-point eval rubric. Use when the user wants help remembering people and commitments, running a weekly review, preparing for a meeting, deciding who to follow up with, or protecting focus time.",
+      "category": "personal"
+    },
+    {
+      "name": "ponytail",
+      "description": "Forces the laziest solution that actually works, simplest, shortest, most minimal. Channels a senior dev who has seen everything: question whether the task needs to exist at all (YAGNI), reach for the standard library before custom code, native platform features before dependencies, one line before fifty. Supports intensity levels: lite, full (default), ultra. Use on ANY coding task: writing, adding, refactoring, fixing, reviewing, or designing code, and choosing libraries or dependencies. Also use whenever the user says \"ponytail\", \"be lazy\", \"lazy mode\", \"simplest solution\", \"minimal solution\", \"yagni\", \"do less\", or \"shortest path\", or complains about over-engineering, bloat, boilerplate, or unnecessary dependencies. Do NOT use for non-coding requests (general knowledge, prose, translation, summaries, recipes).",
+      "category": "ponytail"
+    },
+    {
+      "name": "ponytail-audit",
+      "description": "Whole-repo audit for over-engineering. Like ponytail-review, but scans the entire codebase instead of a diff: a ranked list of what to delete, simplify, or replace with stdlib/native equivalents. Use when the user says \"audit this codebase\", \"audit for over-engineering\", \"what can I delete from this repo\", \"find bloat\", \"ponytail-audit\", or \"/ponytail-audit\". One-shot report, does not apply fixes.",
+      "category": "ponytail"
+    },
+    {
+      "name": "ponytail-debt",
+      "description": "Harvest every `ponytail:` comment in the codebase into a debt ledger, so the deliberate shortcuts and deferrals ponytail leaves behind get tracked instead of rotting into \"later means never\". Use when the user says \"ponytail debt\", \"/ponytail-debt\", \"what did ponytail defer\", \"list the shortcuts\", \"ponytail ledger\", or \"what did we mark to do later\". One-shot report, changes nothing.",
+      "category": "ponytail"
+    },
+    {
+      "name": "ponytail-gain",
+      "description": "Show ponytail's measured impact as a compact scoreboard: less code, less cost, more speed, from the benchmark medians. One-shot display, not a persistent mode, and not a per-repo number. Trigger: /ponytail-gain, \"ponytail gain\", \"what does ponytail save\", \"show ponytail impact\", \"ponytail scoreboard\".",
+      "category": "ponytail"
+    },
+    {
+      "name": "ponytail-help",
+      "description": "Quick-reference card for all ponytail modes, skills, and commands. One-shot display, not a persistent mode. Trigger: /ponytail-help, \"ponytail help\", \"what ponytail commands\", \"how do I use ponytail\".",
+      "category": "ponytail"
+    },
+    {
+      "name": "ponytail-review",
+      "description": "Code review focused exclusively on over-engineering. Finds what to delete: reinvented standard library, unneeded dependencies, speculative abstractions, dead flexibility. One line per finding: location, what to cut, what replaces it. Use when the user says \"review for over-engineering\", \"what can we delete\", \"is this over-engineered\", \"simplify review\", or invokes /ponytail-review. Complements correctness-focused review, this one only hunts complexity.",
+      "category": "ponytail"
+    },
+    {
       "name": "airtable",
       "description": "Airtable REST API via curl. Records CRUD, filters, upserts.",
       "category": "productivity"
@@ -783,11 +833,6 @@
       "category": "software-development"
     },
     {
-      "name": "xavani-agent-skill-authoring",
-      "description": "Author in-repo SKILL.md: frontmatter, validator, structure.",
-      "category": "software-development"
-    },
-    {
       "name": "node-inspect-debugger",
       "description": "Debug Node.js via --inspect + Chrome DevTools Protocol CLI.",
       "category": "software-development"
@@ -836,6 +881,21 @@
       "name": "writing-plans",
       "description": "Write implementation plans: bite-sized tasks, paths, code.",
       "category": "software-development"
+    },
+    {
+      "name": "xavani-agent-skill-authoring",
+      "description": "Author in-repo SKILL.md: frontmatter, validator, structure.",
+      "category": "software-development"
+    },
+    {
+      "name": "ai-native-ui",
+      "description": "AI-native UI skill: a catalog of agent-chat interface primitives from beautifului.dev (Loading State, Thinking, Streaming Text, Approval Card, Tool Chips, Task Rows, Chat, Prompt Bar, Recommendation Card, Context Cards, tables, and more) with transcript composition rules, trust and safety requirements for state-mutating agent actions, Xavani surface mappings, and dark-mode-first design token guidance. Use when building or reviewing any agent chat surface, TUI web view, or dashboard that renders AI agent activity.",
+      "category": "ui"
+    },
+    {
+      "name": "anti-slop",
+      "description": "Anti-slop TS/JS authoring discipline derived from dmmulroy/anti-slop (MIT): opinionated Oxlint rules that reject low-evidence TypeScript and JavaScript patterns — chained type assertions, unknown/object leakage, widen-then-assert flows, module mocking, Reflect escapes, shape-suffixed symbols, and more. Includes bad-vs-good examples for each rule, wiring instructions for oxlint config in a JS project, a CI gate recipe, and judgment rules for justified exceptions. Use when writing or reviewing any TypeScript/JavaScript code; never applies to Python.",
+      "category": "web-development"
     },
     {
       "name": "page-agent",
