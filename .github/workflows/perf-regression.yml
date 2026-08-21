@@ -58,9 +58,11 @@ jobs:
 
       - name: Measure startup and fail if over 5.0s
         run: |
-          python3 scripts/perf_baseline.py --quick | python3 -c '
+          python3 scripts/perf_baseline.py --quick > /tmp/perf-baseline.json
+          python3 - /tmp/perf-baseline.json <<'PY'
           import json, sys
-          data = json.load(sys.stdin)
+          with open(sys.argv[1], encoding="utf-8") as handle:
+              data = json.load(handle)
           startup = data["startup_seconds"]
           limit = 5.0
           if startup is None:
@@ -70,4 +72,4 @@ jobs:
           if startup > limit:
               print(f"::error::Startup time {startup:.2f}s exceeds the {limit:.1f}s gate")
               sys.exit(1)
-          '
+          PY

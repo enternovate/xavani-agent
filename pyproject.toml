@@ -245,6 +245,12 @@ xavani-acp = "acp_adapter.entry:main"
 # Memory CLI — inspect/search/clear the on-disk memory stores.
 xavani-memory = "xavani_memory.cli:main"
 
+[tool.uv.sources]
+constellation-mcp = { git = "https://github.com/enternovate/constellation-mcp.git" }
+nyarhi = { git = "https://github.com/enternovate/nyarhi.git" }
+gavaza = { git = "https://github.com/enternovate/gavaza.git" }
+mhangani = { git = "https://github.com/enternovate/mhangani.git" }
+
 [tool.setuptools]
 py-modules = ["run_agent", "model_tools", "toolsets", "batch_runner", "trajectory_compressor", "toolset_distributions", "cli", "xavani_bootstrap", "xavani_constants", "xavani_state", "xavani_state_integrity", "xavani_home_check", "xavani_skill_audit", "xavani_approval_reasoning", "xavani_time", "xavani_logging", "utils", "xavani", "tools.plugin_api_gate"]
 

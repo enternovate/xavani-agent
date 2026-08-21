@@ -39,36 +39,45 @@ jobs:
 
       - name: Benchmark hashline mode (fake)
         run: |
-          python3 scripts/edit_benchmark/runner.py --mode hashline --model fake 2>/dev/null | tee /tmp/edit-benchmark-hashline.json | python3 -c '
+          python3 scripts/edit_benchmark/runner.py --mode hashline --model fake 2>/dev/null | tee /tmp/edit-benchmark-hashline.json
+          python3 - /tmp/edit-benchmark-hashline.json hashline <<'PY'
           import json, sys
-          data = json.load(sys.stdin)
-          print(f'mode={data["mode"]} passed={data["passed"]}/{data["tasks_total"]}')
+          with open(sys.argv[1], encoding="utf-8") as handle:
+              data = json.load(handle)
+          mode = sys.argv[2]
+          print(f"mode={data['mode']} passed={data['passed']}/{data['tasks_total']}")
           if data["passed"] != data["tasks_total"]:
-              print(f'::error::hashline edit benchmark: {data["passed"]}/{data["tasks_total"]} tasks passed')
+              print(f"::error::{mode} edit benchmark: {data['passed']}/{data['tasks_total']} tasks passed")
               sys.exit(1)
-          '
+          PY
 
       - name: Benchmark patch mode (fake)
         run: |
-          python3 scripts/edit_benchmark/runner.py --mode patch --model fake 2>/dev/null | python3 -c '
+          python3 scripts/edit_benchmark/runner.py --mode patch --model fake 2>/dev/null > /tmp/edit-benchmark-patch.json
+          python3 - /tmp/edit-benchmark-patch.json patch <<'PY'
           import json, sys
-          data = json.load(sys.stdin)
-          print(f'mode={data["mode"]} passed={data["passed"]}/{data["tasks_total"]}')
+          with open(sys.argv[1], encoding="utf-8") as handle:
+              data = json.load(handle)
+          mode = sys.argv[2]
+          print(f"mode={data['mode']} passed={data['passed']}/{data['tasks_total']}")
           if data["passed"] != data["tasks_total"]:
-              print(f'::error::patch edit benchmark: {data["passed"]}/{data["tasks_total"]} tasks passed')
+              print(f"::error::{mode} edit benchmark: {data['passed']}/{data['tasks_total']} tasks passed")
               sys.exit(1)
-          '
+          PY
 
       - name: Benchmark replace mode (fake)
         run: |
-          python3 scripts/edit_benchmark/runner.py --mode replace --model fake 2>/dev/null | python3 -c '
+          python3 scripts/edit_benchmark/runner.py --mode replace --model fake 2>/dev/null > /tmp/edit-benchmark-replace.json
+          python3 - /tmp/edit-benchmark-replace.json replace <<'PY'
           import json, sys
-          data = json.load(sys.stdin)
-          print(f'mode={data["mode"]} passed={data["passed"]}/{data["tasks_total"]}')
+          with open(sys.argv[1], encoding="utf-8") as handle:
+              data = json.load(handle)
+          mode = sys.argv[2]
+          print(f"mode={data['mode']} passed={data['passed']}/{data['tasks_total']}")
           if data["passed"] != data["tasks_total"]:
-              print(f'::error::replace edit benchmark: {data["passed"]}/{data["tasks_total"]} tasks passed')
+              print(f"::error::{mode} edit benchmark: {data['passed']}/{data['tasks_total']} tasks passed")
               sys.exit(1)
-          '
+          PY
 
       - name: Upload hashline summary
         uses: actions/upload-artifact@v4
