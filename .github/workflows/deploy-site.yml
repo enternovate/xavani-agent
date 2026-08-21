@@ -57,7 +57,7 @@ jobs:
         with:
           persist-credentials: false
 
-      - uses: actions/setup-node@04be95cf3511ea51ebf9f224ddfb99cc7ab87cd4  #v4  # v4
+      - uses: actions/setup-node@e51e5fe84fc33b4c73ebe40526b2694712b5b858  #v4  # v4
         with:
           node-version: 22
           cache: npm
