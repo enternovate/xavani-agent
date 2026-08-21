@@ -5,6 +5,43 @@ All notable changes to Xavani Agent are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.2] - 2026-08-21 — "Durability & Capability"
+
+Minor release with durable turn-bank recovery, a faster task harness, and
+new business, personal, design, and code-quality skill packs. No breaking
+changes.
+
+### Added
+- Durable version-2 turn-bank state with count-bound SHA-256 checkpoints,
+  pending-sequence proof, compression lineage, and branch isolation.
+- Strict restart recovery for stale, malformed, future, and legacy state.
+- Canonical transcript selection that stores raw persisted output instead
+  of transformed display output.
+- Synthetic control-message filters for compression, continuation, kanban,
+  empty-response, MCP reload, and maximum-iteration paths.
+- Task benchmark harness with median time, p90 time, token use, success rate,
+  and cost-per-successful-task metrics.
+- Ponytail minimal-code pack with 6 skills and MIT attribution.
+- Business assistant, personal assistant, game theory, mental models,
+  AI-native UI, and anti-slop TypeScript/JavaScript skills.
+
+### Changed
+- Built-in skill indexing now includes local `oag_skills` entries and keeps
+  the skills manifest append-only.
+- Built-in skill count increased to 181.
+- Memory-write results now require `success=true` and `staged` absent or
+  exactly `false`.
+
+### Fixed
+- Legacy state no longer writes memory when history cannot prove its
+  checkpoint.
+- Repeated identical turns now use occurrence-aware persistence proof.
+- Session changes clear pending state unless a valid compression lineage
+  proves continuity.
+- Failed due writes retry on each later completed turn.
+- Whole-bank proof now binds the header count to the pending base and end.
+- An unmatched latest request cannot reuse an older identical response.
+
 ## [0.1.1.5] - 2026-08-06 — "Harness & Tokens"
 
 Release with the research-backed harness upgrade, the token vault, and the
