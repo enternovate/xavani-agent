@@ -383,14 +383,14 @@ class TestBuildApiKwargsNousPortal:
 
 class TestBuildApiKwargsCustomEndpoint:
     def test_uses_chat_completions_format(self, monkeypatch):
-        agent = _make_agent(monkeypatch, "custom", base_url="http://localhost:1234/v1")
+        agent = _make_agent(monkeypatch, "custom", base_url="http://localhost:1234/v1", model="test-model")
         messages = [{"role": "user", "content": "hi"}]
         kwargs = agent._build_api_kwargs(messages)
         assert "messages" in kwargs
         assert "input" not in kwargs
 
     def test_no_openrouter_extra_body(self, monkeypatch):
-        agent = _make_agent(monkeypatch, "custom", base_url="http://localhost:1234/v1")
+        agent = _make_agent(monkeypatch, "custom", base_url="http://localhost:1234/v1", model="test-model")
         messages = [{"role": "user", "content": "hi"}]
         kwargs = agent._build_api_kwargs(messages)
         extra = kwargs.get("extra_body", {})
