@@ -117,9 +117,9 @@ json.dump(sorted(leaf_paths(DEFAULT_CONFIG)), sys.stdout, indent=2)
           echo "=== Checking xavani --help ==="
           help_output=$(mktemp)
           ${xavani-agent}/bin/xavani --help > "$help_output" 2>&1
-          grep -q "gateway" "$help_output" || (echo "FAIL: gateway subcommand missing"; exit 1)
-          grep -q "config" "$help_output" || (echo "FAIL: config subcommand missing"; exit 1)
-          echo "PASS: All subcommands accessible"
+          grep -q "gateway" "$help_output" || (echo "FAIL: gateway option missing"; exit 1)
+          ${xavani-agent}/bin/xavani config --help > /dev/null 2>&1 || (echo "FAIL: config subcommand missing"; exit 1)
+          echo "PASS: All commands accessible"
 
           echo "=== All CLI checks passed ==="
           mkdir -p $out
