@@ -14,7 +14,7 @@ Also regenerates:
 - website/docs/reference/optional-skills-catalog.md
 (so their table rows link to the new dedicated pages)
 
-Sidebar is updated to nest all per-skill pages under Skills → Bundled / Optional.
+The generator preserves the flat skills-catalog link when the site uses flat navigation.
 """
 
 from __future__ import annotations
@@ -711,6 +711,10 @@ def write_sidebar(entries):
     old_block_start = "        {\n          type: 'category',\n          label: 'Skills',\n"
     i = text.find(old_block_start)
     if i == -1:
+        flat_link = "'reference/skills-catalog'"
+        if flat_link in text:
+            print(f"Preserved flat skills sidebar: {sidebar_path}")
+            return
         raise RuntimeError("Could not find Skills sidebar block to replace")
     # Find matching closing of this block -- walk brace depth
     depth = 0

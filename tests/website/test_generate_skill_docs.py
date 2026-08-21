@@ -118,3 +118,16 @@ def test_bundled_catalog_explains_missing_local_skills(gen_module):
     result = gen_module.build_catalog_md_bundled([])
     assert "respects local deletions and user edits" in result
     assert "xavani skills reset <name> --restore" in result
+
+
+def test_write_sidebar_preserves_flat_skills_catalog(gen_module, tmp_path, monkeypatch):
+    website = tmp_path / "website"
+    website.mkdir()
+    sidebar = website / "sidebars.ts"
+    original = "const sidebars = { docs: [\n    'reference/skills-catalog',\n] };\n"
+    sidebar.write_text(original, encoding="utf-8")
+    monkeypatch.setattr(gen_module, "REPO", tmp_path)
+
+    gen_module.write_sidebar([])
+
+    assert sidebar.read_text(encoding="utf-8") == original
