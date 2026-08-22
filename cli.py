@@ -10443,6 +10443,9 @@ class XavaniCLI:
                 "  [yellow]Real-mode eval runs every task through the live "
                 "model — this costs tokens and takes minutes.[/]"
             )
+        from xavani_cli.activity import activity
+
+        self._console_print(activity("eval", "task suite", running=True))
         try:
             code = run_bench.main(argv)
         except Exception as exc:
@@ -10510,10 +10513,10 @@ class XavaniCLI:
                 return f"(pass error: {exc})"
 
         spec = loop_runner.new_loop(prompt, **kwargs)
-        self._console_print(
-            f"  Eval loop {spec['id']} started: {len(checks)} rubric checks, "
-            f"threshold {threshold}."
-        )
+        from xavani_cli.activity import activity, detail
+
+        self._console_print(activity("eval", "rubric loop", running=True))
+        self._console_print(detail(f"{len(checks)} rubric checks, threshold {threshold}"))
         try:
             result = loop_runner.run_loop_eval(
                 spec, runner,
