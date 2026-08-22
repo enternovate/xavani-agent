@@ -50,7 +50,68 @@ if str(_REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT))
 
 DEFAULT_TASKS_PATH = Path(__file__).resolve().parent / "tasks" / "baseline_tasks.json"
-_VERIFIER_RE = re.compile(r"^(contains|regex|jsonschema|pytest|exit_code):(.+)$", re.DOTALL)
+RESULTS_DIR = Path(__file__).resolve().parent / "results"
+_VERIFIER_RE = re.compile(
+    r"^(contains|regex|jsonschema|pytest|exit_code|llm_judge):(.+)$", re.DOTALL
+)
+_DEFAULT_VERIFIER_TIMEOUT_S = 120
+
+
+def _verifier_llm_judge(payload: str, task_id: str) -> Callable[[str], bool]:
+    """Judge a response against a rubric file of verifier lines.
+
+    Default judge is deterministic: every ``contains:``/``regex:`` line in
+    the rubric must pass. Set ``XAVANI_BENCH_JUDGE_MODEL`` to also require
+    a model yes/no verdict through the auxiliary client.
+    """
+    rubric_path = Path(payload)
+    if not rubric_path.is_file():
+        raise BenchError(f"task {task_id!r} llm_judge rubric not found: {payload}")
+    try:
+        lines = [
+            line.strip()
+            for line in rubric_path.read_text(encoding="utf-8").splitlines()
+            if line.strip() and not line.strip().startswith("#")
+        ]
+    except OSError as exc:
+        raise BenchError(
+            f"task {task_id!r} llm_judge rubric unreadable: {exc}"
+        ) from exc
+    if not lines:
+        raise BenchError(f"task {task_id!r} llm_judge rubric has no verifier lines")
+    checks = [parse_verifier(line, task_id) for line in lines]
+
+    model_judge: Optional[Callable[[str], bool]] = None
+    judge_model = os.getenv("XAVANI_BENCH_JUDGE_MODEL", "").strip()
+    if judge_model:
+
+        def _model_verdict(response: str, model: str = judge_model) -> bool:
+            from agent.auxiliary_client import call_llm
+
+            verdict = call_llm(
+                provider=None,
+                model=model,
+                messages=[
+                    {"role": "system", "content": (
+                        "You are a strict grader. Answer with exactly YES or "
+                        "NO: does the response satisfy the request? "
+                    )},
+                    {"role": "user", "content": response[:8000]},
+                ],
+                temperature=0.0,
+                max_tokens=5,
+            )
+            text = str(getattr(verdict, "content", "") or verdict).strip().upper()
+            return text.startswith("YES")
+
+        model_judge = _model_verdict
+
+    def check(response: str) -> bool:
+        if not all(check_(response) for check_ in checks):
+            return False
+        return model_judge(response) if model_judge else True
+
+    return check
 
 
 def _verifier_jsonschema(payload: str, task_id: str) -> Callable[[str], bool]:
@@ -78,14 +139,16 @@ def _verifier_jsonschema(payload: str, task_id: str) -> Callable[[str], bool]:
     return check
 
 
-def _verifier_pytest(payload: str, task_id: str) -> Callable[[str], bool]:
+def _verifier_pytest(
+    payload: str, task_id: str, timeout_s: float = _DEFAULT_VERIFIER_TIMEOUT_S
+) -> Callable[[str], bool]:
     def check(response: str) -> bool:
         with tempfile.TemporaryDirectory() as td:
             node_file = Path(td) / "response.txt"
             node_file.write_text(response, encoding="utf-8")
             result = subprocess.run(
                 [sys.executable, "-m", "pytest", payload, "-q", "--no-header", "-x"],
-                capture_output=True, text=True, timeout=120,
+                capture_output=True, text=True, timeout=timeout_s,
                 env={**os.environ, "BENCH_RESPONSE_FILE": str(node_file)},
             )
             return result.returncode == 0
@@ -93,7 +156,9 @@ def _verifier_pytest(payload: str, task_id: str) -> Callable[[str], bool]:
     return check
 
 
-def _verifier_exit_code(payload: str, task_id: str) -> Callable[[str], bool]:
+def _verifier_exit_code(
+    payload: str, task_id: str, timeout_s: float = _DEFAULT_VERIFIER_TIMEOUT_S
+) -> Callable[[str], bool]:
     expected_str, sep, command = payload.partition(":")
     if not sep or not command.strip():
         raise BenchError(
@@ -110,7 +175,7 @@ def _verifier_exit_code(payload: str, task_id: str) -> Callable[[str], bool]:
     def check(response: str) -> bool:
         result = subprocess.run(
             command, input=response, capture_output=True, text=True,
-            timeout=120, shell=True,
+            timeout=timeout_s, shell=True,
         )
         return result.returncode == expected
 
@@ -145,25 +210,39 @@ def load_tasks(path: Path) -> List[Dict[str, Any]]:
             raise BenchError(f"task {task_id!r} needs a non-empty string 'prompt'")
         verifier = entry.get("verifier")
         parse_verifier(verifier if isinstance(verifier, str) else None, task_id)
+        timeout = entry.get("timeout_seconds")
+        if timeout is not None and (
+            not isinstance(timeout, (int, float)) or timeout <= 0
+        ):
+            raise BenchError(
+                f"task {task_id!r} timeout_seconds must be a positive number"
+            )
     return raw
 
 
-def parse_verifier(verifier: Optional[str], task_id: str = "?") -> Callable[[str], bool]:
+def parse_verifier(
+    verifier: Optional[str],
+    task_id: str = "?",
+    timeout_s: float = _DEFAULT_VERIFIER_TIMEOUT_S,
+) -> Callable[[str], bool]:
     if not isinstance(verifier, str):
         raise BenchError(f"task {task_id!r} needs a string 'verifier'")
     match = _VERIFIER_RE.match(verifier)
     if not match:
         raise BenchError(
             f"task {task_id!r} verifier must start with one of "
-            f"contains:, regex:, jsonschema:, pytest:, exit_code: — got {verifier!r}"
+            "contains:, regex:, jsonschema:, pytest:, exit_code:, "
+            f"llm_judge: — got {verifier!r}"
         )
     kind, payload = match.group(1), match.group(2)
     if kind == "jsonschema":
         return _verifier_jsonschema(payload, task_id)
     if kind == "pytest":
-        return _verifier_pytest(payload, task_id)
+        return _verifier_pytest(payload, task_id, timeout_s=timeout_s)
     if kind == "exit_code":
-        return _verifier_exit_code(payload, task_id)
+        return _verifier_exit_code(payload, task_id, timeout_s=timeout_s)
+    if kind == "llm_judge":
+        return _verifier_llm_judge(payload, task_id)
     if kind == "contains":
         needle = payload
         return lambda response: needle in response
@@ -263,9 +342,14 @@ def run_task(
             error = f"{type(exc).__name__}: {exc}"
         wall_seconds = time.perf_counter() - start
 
-        success = error is None and parse_verifier(task["verifier"], task["id"])(response)
+        success = error is None and parse_verifier(
+            task["verifier"],
+            task["id"],
+            timeout_s=float(task.get("timeout_seconds") or _DEFAULT_VERIFIER_TIMEOUT_S),
+        )(response)
         return {
             "id": task["id"],
+            "category": task.get("category", "general"),
             "success": bool(success),
             "wall_seconds": round(wall_seconds, 4),
             "total_tokens": int(getattr(agent, "session_total_tokens", 0) or 0),
@@ -301,12 +385,22 @@ def summarize_results(results: List[Dict[str, Any]]) -> Dict[str, Any]:
     tokens = [r["total_tokens"] for r in results]
     total_cost = sum(r["estimated_cost_usd"] for r in results)
     successful = [r for r in results if r["success"]]
+    categories: Dict[str, List[float]] = {}
+    for result in results:
+        categories.setdefault(result.get("category", "general"), []).append(
+            result["wall_seconds"]
+        )
     return {
         "task_count": len(results),
         "success_count": len(successful),
         "success_rate": (len(successful) / len(results)) if results else 0.0,
         "median_wall_seconds": percentile(walls, 0.5),
         "p90_wall_seconds": percentile(walls, 0.9),
+        "p95_wall_seconds": percentile(walls, 0.95),
+        "per_category_median_wall_seconds": {
+            cat: percentile(cat_walls, 0.5)
+            for cat, cat_walls in sorted(categories.items())
+        },
         "mean_total_tokens": (sum(tokens) / len(tokens)) if tokens else 0.0,
         "total_cost_usd": total_cost,
         "cost_per_successful_task_usd": (
@@ -333,8 +427,12 @@ def render_summary(results: List[Dict[str, Any]], summary: Dict[str, Any]) -> st
     )
     lines.append(
         f"median_wall_s={summary['median_wall_seconds']:.4f}  "
-        f"p90_wall_s={summary['p90_wall_seconds']:.4f}"
+        f"p90_wall_s={summary['p90_wall_seconds']:.4f}  "
+        f"p95_wall_s={summary['p95_wall_seconds']:.4f}"
     )
+    per_category = summary.get("per_category_median_wall_seconds") or {}
+    for cat, median in per_category.items():
+        lines.append(f"  median[{cat}]={median:.4f}")
     lines.append(
         f"mean_total_tokens={summary['mean_total_tokens']:.1f}  "
         f"total_cost_usd={summary['total_cost_usd']:.6f}"
@@ -351,11 +449,37 @@ def run_benchmark(
     provider: Optional[str] = None,
     model: str = "",
     faux: bool = False,
+    runs: int = 1,
 ) -> Dict[str, Any]:
-    results = [
+    """Run the suite ``runs`` times; flag tasks unstable across runs.
+
+    With ``runs > 1`` a task is a flake when its success flag differs
+    between runs; flakes are dropped from the returned results and
+    listed under ``unstable_ids``.
+    """
+    all_results = [
         run_task(task, provider=provider, model=model, faux=faux) for task in tasks
     ]
-    return {"results": results, "summary": summarize_results(results)}
+    if runs <= 1:
+        return {"results": all_results, "summary": summarize_results(all_results)}
+
+    repeat_results = [
+        run_task(task, provider=provider, model=model, faux=faux)
+        for task in tasks
+        for _ in range(runs - 1)
+    ]
+    merged: Dict[str, list] = {}
+    for result in [*all_results, *repeat_results]:
+        merged.setdefault(result["id"], []).append(result["success"])
+    unstable_ids = sorted(
+        task_id for task_id, successes in merged.items() if len(set(successes)) > 1
+    )
+    stable = [r for r in all_results if r["id"] not in set(unstable_ids)]
+    return {
+        "results": stable,
+        "summary": summarize_results(stable),
+        "unstable_ids": unstable_ids,
+    }
 
 
 def main(argv: Optional[List[str]] = None) -> int:
@@ -377,6 +501,22 @@ def main(argv: Optional[List[str]] = None) -> int:
         action="store_true",
         help="scripted offline provider via the faux transport seam (no network)",
     )
+    parser.add_argument(
+        "--category",
+        default=None,
+        help="run only tasks whose category matches this string",
+    )
+    parser.add_argument(
+        "--runs",
+        type=int,
+        default=1,
+        help="run the suite N times and drop tasks unstable across runs (flake check)",
+    )
+    parser.add_argument(
+        "--save",
+        action="store_true",
+        help=f"write results under {RESULTS_DIR} with a config fingerprint name",
+    )
     args = parser.parse_args(argv)
 
     tasks_path = Path(args.tasks_file) if args.tasks_file else DEFAULT_TASKS_PATH
@@ -385,25 +525,58 @@ def main(argv: Optional[List[str]] = None) -> int:
     except BenchError as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 2
+    if args.category:
+        tasks = [t for t in tasks if t.get("category") == args.category]
+        if not tasks:
+            print(f"error: no tasks in category {args.category!r}", file=sys.stderr)
+            return 2
 
-    bench = run_benchmark(tasks, provider=args.provider, model=args.model, faux=args.faux)
+    bench = run_benchmark(
+        tasks, provider=args.provider, model=args.model, faux=args.faux,
+        runs=max(1, args.runs),
+    )
     payload = {
         "tasks_file": str(tasks_path),
         "mode": "faux" if args.faux else "live",
         "provider": args.provider,
         "model": args.model or None,
+        "runs": max(1, args.runs),
         **bench,
     }
 
+    out_path: Optional[Path] = None
     if args.out:
         out_path = Path(args.out)
+    elif args.save:
+        fingerprint = config_fingerprint(payload)
+        RESULTS_DIR.mkdir(parents=True, exist_ok=True)
+        stamp = time.strftime("%Y%m%d_%H%M%S")
+        out_path = RESULTS_DIR / f"{stamp}_{fingerprint}.json"
+    if out_path is not None:
         out_path.parent.mkdir(parents=True, exist_ok=True)
         out_path.write_text(
             json.dumps(payload, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
         )
         print(f"results written to {out_path}")
     print(render_summary(bench["results"], bench["summary"]))
+    unstable = payload.get("unstable_ids") or []
+    if unstable:
+        print(f"unstable (dropped as flakes): {', '.join(unstable)}")
     return 0
+
+
+def config_fingerprint(payload: Dict[str, Any]) -> str:
+    """Stable short hash of the run's config for result-file naming."""
+    import hashlib
+
+    material = json.dumps(
+        {
+            k: payload.get(k)
+            for k in ("tasks_file", "mode", "provider", "model", "runs")
+        },
+        sort_keys=True,
+    )
+    return hashlib.sha256(material.encode("utf-8")).hexdigest()[:8]
 
 
 if __name__ == "__main__":

@@ -1,0 +1,4 @@
+# Rubric: refund reply quality
+contains:refund
+regex:(?i)apolog|
+contains:replacement

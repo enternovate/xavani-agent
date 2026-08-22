@@ -3,120 +3,147 @@
     "id": "explain-list-comprehension",
     "prompt": "Explain what this Python function does: def flatten(nested): return [x for sub in nested for x in sub]",
     "verifier": "contains:flatten",
-    "faux_response": "The function flattens a list of lists one level deep: it iterates over each sublist and yields every element, producing a single flat list."
+    "faux_response": "The function flattens a list of lists one level deep: it iterates over each sublist and yields every element, producing a single flat list.",
+    "category": "coding"
   },
   {
     "id": "summarize-passage",
     "prompt": "Summarize in one sentence: 'The buffalo migrated across the floodplain each dry season, following the receding water to fresh grazing grounds.'",
     "verifier": "regex:(?i)summar|one sentence",
-    "faux_response": "Summary: the buffalo track the retreating floodwater each dry season to reach fresh grazing land."
+    "faux_response": "Summary: the buffalo track the retreating floodwater each dry season to reach fresh grazing land.",
+    "category": "summarization"
   },
   {
     "id": "uppercase-transform",
     "prompt": "Convert to uppercase: hello bench world",
     "verifier": "contains:HELLO BENCH WORLD",
-    "faux_response": "HELLO BENCH WORLD"
+    "faux_response": "HELLO BENCH WORLD",
+    "category": "file"
   },
   {
     "id": "plan-db-migration",
     "prompt": "Plan the high-level steps to migrate a SQLite database to Postgres with zero downtime.",
     "verifier": "contains:step",
-    "faux_response": "Here are the steps: 1) provision Postgres and mirror the schema, 2) backfill historical rows, 3) enable dual writes, 4) verify parity, 5) cut over reads, 6) retire SQLite."
+    "faux_response": "Here are the steps: 1) provision Postgres and mirror the schema, 2) backfill historical rows, 3) enable dual writes, 4) verify parity, 5) cut over reads, 6) retire SQLite.",
+    "category": "planning"
   },
   {
     "id": "extract-invoice-total",
     "prompt": "Extract the total amount from this invoice text: 'Subtotal $40.00, Tax $3.20, Total $43.20'",
     "verifier": "regex:\\$43\\.20",
-    "faux_response": "The invoice total is $43.20."
+    "faux_response": "The invoice total is $43.20.",
+    "category": "extraction"
   },
   {
     "id": "qa-binary-search",
     "prompt": "What is the average-case time complexity of binary search on a sorted array?",
     "verifier": "contains:O(log n)",
-    "faux_response": "Binary search runs in O(log n) time because the search space halves on every comparison."
+    "faux_response": "Binary search runs in O(log n) time because the search space halves on every comparison.",
+    "category": "coding"
   },
   {
     "id": "code-fix-off-by-one",
     "prompt": "Fix the off-by-one bug: def last(items): return items[len(items)]. Answer with the corrected function only.",
     "verifier": "contains:len(items) - 1",
-    "faux_response": "def last(items): return items[len(items) - 1]"
+    "faux_response": "def last(items): return items[len(items) - 1]",
+    "category": "coding"
   },
   {
     "id": "code-explain-mutation",
     "prompt": "Why is `for x in lst: lst.remove(x)` a bug in Python? Answer in two sentences.",
     "verifier": "regex:(?i)mutat|skip|index",
-    "faux_response": "Removing items while iterating mutates the list and skips elements because indices shift. Iterate over a copy instead."
+    "faux_response": "Removing items while iterating mutates the list and skips elements because indices shift. Iterate over a copy instead.",
+    "category": "coding"
   },
   {
     "id": "extract-meeting-actions",
     "prompt": "Extract action items as JSON with keys owner and task from: 'Alice will draft the brief. Bob books the venue.'",
     "verifier": "jsonschema:{\"type\":\"array\",\"minItems\":2,\"items\":{\"type\":\"object\",\"required\":[\"owner\",\"task\"]}}",
-    "faux_response": "[{\"owner\": \"Alice\", \"task\": \"draft the brief\"}, {\"owner\": \"Bob\", \"task\": \"books the venue\"}]"
+    "faux_response": "[{\"owner\": \"Alice\", \"task\": \"draft the brief\"}, {\"owner\": \"Bob\", \"task\": \"books the venue\"}]",
+    "category": "extraction"
   },
   {
     "id": "extract-expense-csv",
     "prompt": "Return only the numeric value in dollars for: 'Team lunch 12 May, R450 at 18.20 ZAR/USD'",
     "verifier": "regex:24\\.7|24\\.73|\\$?24",
-    "faux_response": "$24.73"
+    "faux_response": "$24.73",
+    "category": "extraction"
   },
   {
     "id": "summarize-meeting-notes",
     "prompt": "Summarize in one sentence: 'Q3 revenue grew 12 percent. Churn held flat. Hiring pauses in Q4.'",
     "verifier": "regex:(?i)revenue|churn|hiring",
-    "faux_response": "Revenue grew 12 percent while churn stayed flat, but hiring pauses in Q4."
+    "faux_response": "Revenue grew 12 percent while churn stayed flat, but hiring pauses in Q4.",
+    "category": "summarization"
   },
   {
     "id": "summarize-contract-clause",
     "prompt": "One-sentence plain-language summary: 'The Licensor grants a non-exclusive, non-transferable licence to use the Software for internal business purposes only.'",
     "verifier": "regex:(?i)licen[cs]e|internal|non-exclusive",
-    "faux_response": "The licence is non-exclusive and limited to internal business use."
+    "faux_response": "The licence is non-exclusive and limited to internal business use.",
+    "category": "summarization"
   },
   {
     "id": "plan-product-launch",
     "prompt": "List the planning steps for launching a small paid add-on to an existing CLI product.",
     "verifier": "contains:pricing",
-    "faux_response": "Steps: define scope, set pricing, add licence checks, write docs, announce to users, monitor support load."
+    "faux_response": "Steps: define scope, set pricing, add licence checks, write docs, announce to users, monitor support load.",
+    "category": "planning"
   },
   {
     "id": "plan-weekly-review",
     "prompt": "Draft a 3-item agenda for a personal weekly review session.",
     "verifier": "regex:(?i)(1[.)]|agenda|review)",
-    "faux_response": "Agenda: 1) review last week's commitments, 2) clear stalled work, 3) set next week's top three priorities."
+    "faux_response": "Agenda: 1) review last week's commitments, 2) clear stalled work, 3) set next week's top three priorities.",
+    "category": "planning"
   },
   {
     "id": "file-count-words",
     "prompt": "Respond with the word count of this text as a bare number: 'the quick brown fox jumps'",
     "verifier": "exit_code:0:python3 -c \"import sys; data=sys.stdin.read().strip(); sys.exit(0 if data=='5' else 1)\"",
-    "faux_response": "5"
+    "faux_response": "5",
+    "category": "file"
   },
   {
     "id": "file-sort-lines",
     "prompt": "Sort these lines alphabetically and output one per line: cherry, apple, banana",
     "verifier": "exit_code:0:python3 -c \"import sys; lines=[l.strip() for l in sys.stdin.read().splitlines() if l.strip()]; sys.exit(0 if lines==['apple','banana','cherry'] else 1)\"",
-    "faux_response": "apple\nbanana\ncherry"
+    "faux_response": "apple\nbanana\ncherry",
+    "category": "file"
   },
   {
     "id": "biz-draft-refund-reply",
     "prompt": "Draft a two-sentence refund approval reply to a customer named Thabo. Include the word refund.",
     "verifier": "contains:refund",
-    "faux_response": "Hi Thabo, we have approved your refund in full. The amount returns to your card within 5 business days."
+    "faux_response": "Hi Thabo, we have approved your refund in full. The amount returns to your card within 5 business days.",
+    "category": "business"
   },
   {
     "id": "biz-meeting-agenda-json",
     "prompt": "Return a JSON object with key agenda whose value is a list of at least 2 strings for a 30-minute team standup.",
     "verifier": "jsonschema:{\"type\":\"object\",\"required\":[\"agenda\"],\"properties\":{\"agenda\":{\"type\":\"array\",\"minItems\":2,\"items\":{\"type\":\"string\"}}}}",
-    "faux_response": "{\"agenda\": [\"blockers\", \"today's priorities\"]}"
+    "faux_response": "{\"agenda\": [\"blockers\", \"today's priorities\"]}",
+    "category": "business"
   },
   {
     "id": "code-write-fizzbuzz-single",
     "prompt": "Write a one-line Python expression that returns 'Fizz' for multiples of 3 else the number, for variable n. Answer with code only.",
     "verifier": "contains:Fizz",
-    "faux_response": "'Fizz' if n % 3 == 0 else n"
+    "faux_response": "'Fizz' if n % 3 == 0 else n",
+    "category": "coding"
   },
   {
     "id": "qa-explain-idempotency",
     "prompt": "What does idempotent mean for an HTTP API method? One sentence.",
     "verifier": "regex:(?i)same result|idempot|repeat",
-    "faux_response": "An idempotent method produces the same result no matter how many times the same request repeats."
+    "faux_response": "An idempotent method produces the same result no matter how many times the same request repeats.",
+    "category": "coding"
+  },
+  {
+    "id": "judge-refund-reply",
+    "category": "business",
+    "prompt": "A customer received a damaged unit. Write a two-sentence reply: apologize, confirm their refund is processed, and mention the free replacement unit already shipped.",
+    "verifier": "llm_judge:scripts/task_bench/rubrics/refund-reply.txt",
+    "faux_response": "We apologize for the damaged unit. Your refund is processed, and a free replacement is on its way."
   }
 ]
