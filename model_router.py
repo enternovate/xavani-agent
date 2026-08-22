@@ -28,6 +28,18 @@ import yaml
 
 DEFAULT_TASK_CLASS = "judgment"
 
+# Named roles map to task classes; config key model_roles.<role> overrides
+# with an explicit "provider/model" pair.
+MODEL_ROLES = ("default", "smol", "slow", "plan", "advisor")
+
+_ROLE_TASK_CLASS = {
+    "default": "judgment",
+    "smol": "bulk",
+    "slow": "long_context",
+    "plan": "code",
+    "advisor": "judgment",
+}
+
 # provider -> the env vars whose presence means "this provider is available".
 # Add a row when you start using a new provider (mirror the names in .env.example).
 _PROVIDER_ENV: dict[str, list[str]] = {
@@ -188,3 +200,50 @@ def explain(
             f"(e.g. ANTHROPIC_API_KEY / OPENAI_API_KEY) and try again."
         )
     return f"{choice.task_class} → {choice.model} ({choice.provider})  ·  {choice.reason}"
+
+
+def resolve_role(
+    role: str,
+    *,
+    env: dict | None = None,
+    capabilities: dict | None = None,
+    role_config: dict | None = None,
+) -> ModelChoice | None:
+    """Resolve a named role to a model choice.
+
+    ``role_config`` maps role names to explicit "provider/model" pairs; an
+    explicit pair wins over the role's task-class mapping. Unknown roles
+    raise ValueError; a configured provider missing from the capability map
+    returns None like route_detailed.
+    """
+    if role not in MODEL_ROLES:
+        raise ValueError(f"unknown model role '{role}': expected one of {', '.join(MODEL_ROLES)}")
+    caps = capabilities if capabilities is not None else load_capabilities()
+    known_ids = {str(m.get("id")): m for m in caps.get("models", [])}
+    override = (role_config or {}).get(role)
+    if override:
+        provider, _, model_id = str(override).partition("/")
+        entry = known_ids.get(model_id, {})
+        return ModelChoice(
+            model=model_id or str(override),
+            provider=provider or str(entry.get("provider", "")),
+            score=float("inf"),
+            task_class=f"role:{role}",
+            reason=f"explicit model_roles.{role} config override",
+            effort=suggest_reasoning_effort(_ROLE_TASK_CLASS[role], capabilities=caps),
+        )
+    return route_detailed(_ROLE_TASK_CLASS[role], env=env, capabilities=caps)
+
+
+def resolve_role_model(
+    role: str,
+    *,
+    env: dict | None = None,
+    capabilities: dict | None = None,
+    role_config: dict | None = None,
+) -> str | None:
+    """The best model id for ``role``, or None when nothing is available."""
+    choice = resolve_role(
+        role, env=env, capabilities=capabilities, role_config=role_config,
+    )
+    return choice.model if choice else None

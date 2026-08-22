@@ -28,6 +28,22 @@ CONFIG_SCHEMA: Dict[str, Any] = {
                 "default": {"type": "string", "minLength": 1},
                 "provider": {"type": "string", "minLength": 1},
                 "base_url": {"type": "string"},
+                "roles": {
+                    "type": "object",
+                    "description": (
+                        "Per-role overrides for named routing roles "
+                        "(default, smol, slow, plan, advisor) as "
+                        "'provider/model' pairs."
+                    ),
+                    "properties": {
+                        "default": {"type": "string", "minLength": 1},
+                        "smol": {"type": "string", "minLength": 1},
+                        "slow": {"type": "string", "minLength": 1},
+                        "plan": {"type": "string", "minLength": 1},
+                        "advisor": {"type": "string", "minLength": 1},
+                    },
+                    "additionalProperties": False,
+                },
                 "api_mode": {
                     "type": "string",
                     "enum": [
