@@ -3,6 +3,28 @@
 Date: 2026-08-22. Author: ox-alpha session for Andile.
 Plan of record: planning/0.2.0-plan.md (500 items, 10 workstreams).
 
+## HOW TO RESUME (next session)
+
+1. Repo: /Users/andilemushwana/xavani-agent
+   (remote: https://github.com/enternovate/xavani-agent.git)
+2. Open this file and planning/0.2.0-plan.md first.
+3. Opening prompt that works: "continue 0.2.0 plan from handoff".
+4. Verify baseline before coding:
+   python3 -m pytest tests/xavani_cli/test_loop_runner.py -q
+   python3 -m scripts.task_bench.run_bench --faux
+5. Work order: llm_judge verifier → watchdog loops via cron/jobs.py →
+   gateway parity for /loop → advisor role → agent hub roster → atomic
+   commit splitter → config importer → RPC mode → activity-formatter
+   rollout across remaining commands → W6 packs → W7-W9 polish →
+   version bump 0.2.0 + CHANGELOG LAST.
+6. Rules that must survive every session: audit before building (much of
+   W4/W5 already exists), filtered-hunk staging for shared files
+   (cli.py, run_agent.py, agent/tool_executor.py carry other sessions'
+   edits), ruff + targeted pytest + faux bench gates before every commit,
+   extend _GATEWAY_EXCLUDED_COMMANDS when registry growth breaks Slack
+   parity, conventional commits, never git add -A.
+
+
 ## State
 
 10 commits on main (all gates green: ruff clean, targeted pytest, faux bench
