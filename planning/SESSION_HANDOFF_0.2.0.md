@@ -53,8 +53,9 @@ Plan of record: planning/0.2.0-plan.md (500 items, 10 workstreams).
 - DONE since first handoff: /eval command (commit after 5704a0d) runs
   scripts/task_bench.run_bench.main in-session; supports --faux and
   --tasks <path>.
-- /eval-loop slash command wrapping loop_runner.run_loop_eval with a
-  score_fn (design needed: rubric file or llm_judge wiring).
+- /eval-loop SHIPPED: rubric-scored iterative refinement. Rubric file =
+  contains:/regex: lines; load_rubric/rubric_score in loop_runner;
+  /eval-loop <rubric-file> [threshold F] [passes N] <prompt>.
 - llm_judge: verifier (needs model wiring; deferred deliberately).
 - Watchdog loops via cron/jobs.py; gateway parity for /loop.
 - W5 ports (checkpoint/rewind, memory tools retain/recall/reflect/learn,
