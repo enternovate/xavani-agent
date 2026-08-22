@@ -4205,8 +4205,19 @@ class AIAgent:
         Returns:
             str: Final assistant response
         """
+        message = self._apply_magic_keywords(message)
         result = self.run_conversation(message, stream_callback=stream_callback)
         return result["final_response"]
+
+    def _apply_magic_keywords(self, message: str) -> str:
+        """Expand magic keywords (ultrathink/orchestrate/workflowz) in prose."""
+        try:
+            from xavani_cli.magic_keywords import apply_magic_keywords
+
+            augmented, _detected = apply_magic_keywords(message)
+            return augmented
+        except Exception:
+            return message
 
     def _run_codex_app_server_turn(
         self,
