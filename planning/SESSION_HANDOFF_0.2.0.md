@@ -50,8 +50,11 @@ Plan of record: planning/0.2.0-plan.md (500 items, 10 workstreams).
 
 ## Next steps after this handoff
 
-- /eval slash command wrapping run_bench in-session; /eval-loop wrapping
-  loop_runner.run_loop_eval with the bench scorecard as score_fn.
+- DONE since first handoff: /eval command (commit after 5704a0d) runs
+  scripts/task_bench.run_bench.main in-session; supports --faux and
+  --tasks <path>.
+- /eval-loop slash command wrapping loop_runner.run_loop_eval with a
+  score_fn (design needed: rubric file or llm_judge wiring).
 - llm_judge: verifier (needs model wiring; deferred deliberately).
 - Watchdog loops via cron/jobs.py; gateway parity for /loop.
 - W5 ports (checkpoint/rewind, memory tools retain/recall/reflect/learn,
