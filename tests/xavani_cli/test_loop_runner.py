@@ -4,6 +4,8 @@
 
 """Tests for xavani_cli/loop_runner.py."""
 
+import json
+
 import pytest
 
 from xavani_cli import loop_runner as lr
@@ -228,3 +230,35 @@ def test_rubric_score_fraction():
     assert lr.rubric_score("hello world 42", checks) == pytest.approx(2 / 3)
     assert lr.rubric_score("nothing here", checks) == 0.0
     assert lr.rubric_score("hello 7 missing-token", checks) == 1.0
+
+
+def test_prune_removes_old_finished_loops_only(ldir):
+    import time as _time
+
+    old_done = lr.new_loop("old done", max_passes=1, directory=ldir)
+    lr.run_loop(old_done, lambda **kw: "out", directory=ldir)
+    old_done_path = ldir / f"{old_done['id']}.json"
+    spec = json.loads(old_done_path.read_text(encoding="utf-8"))
+    spec["created_ts"] = _time.time() - 30 * 86400
+    old_done_path.write_text(json.dumps(spec), encoding="utf-8")
+
+    old_active = lr.new_loop("old active", directory=ldir)
+    active_path = ldir / f"{old_active['id']}.json"
+    spec = json.loads(active_path.read_text(encoding="utf-8"))
+    spec["created_ts"] = _time.time() - 30 * 86400
+    active_path.write_text(json.dumps(spec), encoding="utf-8")
+
+    fresh_done = lr.new_loop("fresh done", max_passes=1, directory=ldir)
+    lr.run_loop(fresh_done, lambda **kw: "out", directory=ldir)
+
+    removed = lr.prune(max_age_days=7, directory=ldir)
+
+    assert removed == [old_done["id"]]
+    assert not old_done_path.exists()
+    assert (ldir / f"{old_active['id']}.json").exists()
+    assert (ldir / f"{fresh_done['id']}.json").exists()
+
+
+def test_prune_rejects_negative_age(ldir):
+    with pytest.raises(lr.LoopError):
+        lr.prune(max_age_days=-1, directory=ldir)

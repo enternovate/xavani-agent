@@ -296,6 +296,26 @@ def rubric_score(response: str, checks: List[str]) -> float:
     return passed / len(checks)
 
 
+def prune(max_age_days: int = 7, directory: Optional[Path] = None) -> List[str]:
+    """Delete completed or stopped loop specs older than ``max_age_days``."""
+    if max_age_days < 0:
+        raise LoopError("max_age_days must be >= 0")
+    cutoff = time.time() - max_age_days * 86400
+    removed = []
+    for spec in list_loops(directory):
+        done = spec.get("status") in ("completed", "stopped")
+        old = float(spec.get("created_ts", 0)) < cutoff
+        if not (done and old):
+            continue
+        path = (directory or loops_dir()) / f"{spec['id']}.json"
+        try:
+            path.unlink()
+            removed.append(spec["id"])
+        except OSError:
+            continue
+    return removed
+
+
 def summary(spec: Dict[str, Any]) -> str:
     passes = spec.get("passes", [])
     total_cost = sum(p.get("cost_usd", 0.0) for p in passes)

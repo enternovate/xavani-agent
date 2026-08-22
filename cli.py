@@ -8416,7 +8416,7 @@ class XavaniCLI:
         elif canonical == "loop":
             self._handle_loop_command(cmd_original)
         elif canonical == "loops":
-            self._handle_loops_list()
+            self._handle_loops_list(cmd_original)
         elif canonical == "eval":
             self._handle_eval_command(cmd_original)
         elif canonical == "eval-loop":
@@ -10388,9 +10388,24 @@ class XavaniCLI:
             self._console_print("\n  Loop interrupted by user.")
         self._console_print("  " + loop_runner.summary(result))
 
-    def _handle_loops_list(self) -> None:
-        """Handle /loops — list saved loops."""
+    def _handle_loops_list(self, cmd_original: str = "") -> None:
+        """Handle /loops [prune [days]] — list saved loops or prune old ones."""
         from xavani_cli import loop_runner
+
+        parts = cmd_original.split()
+        if len(parts) > 1 and parts[1] == "prune":
+            days = 7
+            if len(parts) > 2:
+                try:
+                    days = int(parts[2])
+                except ValueError:
+                    self._console_print("  Usage: /loops prune [days]")
+                    return
+            removed = loop_runner.prune(max_age_days=days)
+            self._console_print(
+                f"  Pruned {len(removed)} finished loop(s) older than {days} day(s)."
+            )
+            return
 
         specs = loop_runner.list_loops()
         if not specs:
