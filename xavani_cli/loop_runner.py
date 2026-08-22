@@ -268,6 +268,34 @@ def run_loop_eval(
     return result
 
 
+def load_rubric(path: str) -> List[str]:
+    """Load verifier lines (contains:/regex:) from a rubric file."""
+    lines = []
+    for raw in Path(path).read_text(encoding="utf-8").splitlines():
+        line = raw.strip()
+        if line and not line.startswith("#"):
+            lines.append(line)
+    if not lines:
+        raise LoopError(f"rubric file has no verifier lines: {path}")
+    return lines
+
+
+def rubric_score(response: str, checks: List[str]) -> float:
+    """Fraction of rubric verifier lines the response satisfies."""
+    from scripts.task_bench.run_bench import parse_verifier
+
+    if not checks:
+        return 0.0
+    passed = 0
+    for line in checks:
+        try:
+            if parse_verifier(line)(response):
+                passed += 1
+        except Exception:
+            continue
+    return passed / len(checks)
+
+
 def summary(spec: Dict[str, Any]) -> str:
     passes = spec.get("passes", [])
     total_cost = sum(p.get("cost_usd", 0.0) for p in passes)
