@@ -8417,6 +8417,8 @@ class XavaniCLI:
             self._handle_loop_command(cmd_original)
         elif canonical == "loops":
             self._handle_loops_list(cmd_original)
+        elif canonical == "advisor":
+            self._handle_advisor_command(cmd_original)
         elif canonical == "eval":
             self._handle_eval_command(cmd_original)
         elif canonical == "eval-loop":
@@ -10532,6 +10534,40 @@ class XavaniCLI:
                 f"finish via {channel}. Stop with /loop stop {spec['id']}"
             )
         )
+
+    def _handle_advisor_command(self, cmd_original: str = "") -> None:
+        """Handle /advisor [status|enable|disable] — second-model reviewer."""
+        from xavani_cli import advisor
+
+        parts = cmd_original.split()
+        sub = parts[1].lower() if len(parts) > 1 else "status"
+        if not self.agent:
+            self._console_print("  (._.) No active agent — send a message first.")
+            return
+        if sub == "enable":
+            resolved = advisor.resolve_advisor_model()
+            if not resolved or not resolved.get("model"):
+                self._console_print(
+                    "  [yellow]No advisor model available. Set "
+                    "model.roles.advisor to \"provider/model\" in the "
+                    "config, or map the judgment task class.[/]"
+                )
+                return
+            self.agent.advisor_enabled = True
+            self._console_print(
+                f"  Advisor enabled — every reply is reviewed by "
+                f"{resolved['model']} on its own context."
+            )
+            return
+        if sub == "disable":
+            self.agent.advisor_enabled = False
+            self._console_print("  Advisor disabled.")
+            return
+        enabled = getattr(self.agent, "advisor_enabled", False)
+        resolved = advisor.resolve_advisor_model()
+        model_text = resolved["model"] if resolved else "(none)"
+        state = "enabled" if enabled else "disabled"
+        self._console_print(f"  Advisor: {state} · reviewer model: {model_text}")
 
     def _handle_eval_command(self, cmd_original: str) -> None:
         """Handle /eval [--faux] [--tasks <path>] — run the bench suite."""

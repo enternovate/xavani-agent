@@ -97,6 +97,9 @@ COMMAND_REGISTRY: list[CommandDef] = [
                subcommands=("stop", "watch"),
                args_hint="[passes N] [every S] [budget USD] <prompt> | watch [every S] [passes N] [budget USD] [alert C] <prompt> | stop <id>"),
     CommandDef("loops", "List saved loops", "Session"),
+    CommandDef("advisor", "Second-model reviewer that flags each reply", "Configuration",
+               subcommands=("status", "enable", "disable"),
+               args_hint="[status|enable|disable]"),
     CommandDef("eval", "Run the task benchmark suite in-session", "Configuration",
                args_hint="[--faux] [--tasks <path>]"),
     CommandDef("eval-loop", "Iterate a prompt until a rubric score threshold is met", "Session",
@@ -1008,7 +1011,7 @@ _SLACK_RESERVED_COMMANDS = frozenset({
 _GATEWAY_EXCLUDED_COMMANDS = frozenset({
     "gquota", "footer", "profile", "insights",
     "reload-mcp", "reload-skills", "voice",
-    "curator",
+    "curator", "advisor",
 })
 
 
