@@ -2495,6 +2495,13 @@ class TestVoiceReception:
         receiver._decoders[ssrc] = mock_decoder
         return mock_decoder
 
+    def _run_on_packet_with_davey_stub(self, receiver, packet):
+        stub = MagicMock()
+        with patch.dict(sys.modules, {"davey": stub}):
+            with patch("nacl.secret.Aead") as mock_aead:
+                mock_aead.return_value.decrypt.return_value = b"\xf8\xff\xfe"
+                receiver._on_packet(packet)
+
     def test_on_packet_dave_known_user_decrypt_ok(self):
         """Known SSRC + DAVE decrypt success → audio buffered."""
         dave = MagicMock()
@@ -2504,9 +2511,9 @@ class TestVoiceReception:
         )
         self._inject_mock_decoder(receiver, 100)
 
-        with patch("nacl.secret.Aead") as mock_aead:
-            mock_aead.return_value.decrypt.return_value = b"\xf8\xff\xfe"
-            receiver._on_packet(self._build_rtp_packet(ssrc=100))
+        self._run_on_packet_with_davey_stub(
+            receiver, self._build_rtp_packet(ssrc=100)
+        )
 
         assert 100 in receiver._buffers
         assert len(receiver._buffers[100]) > 0
@@ -2537,9 +2544,9 @@ class TestVoiceReception:
         )
         self._inject_mock_decoder(receiver, 100)
 
-        with patch("nacl.secret.Aead") as mock_aead:
-            mock_aead.return_value.decrypt.return_value = b"\xf8\xff\xfe"
-            receiver._on_packet(self._build_rtp_packet(ssrc=100))
+        self._run_on_packet_with_davey_stub(
+            receiver, self._build_rtp_packet(ssrc=100)
+        )
 
         assert 100 in receiver._buffers
         assert len(receiver._buffers[100]) > 0
@@ -2552,9 +2559,9 @@ class TestVoiceReception:
             dave_session=dave, mapped_ssrcs={100: 42}
         )
 
-        with patch("nacl.secret.Aead") as mock_aead:
-            mock_aead.return_value.decrypt.return_value = b"\xf8\xff\xfe"
-            receiver._on_packet(self._build_rtp_packet(ssrc=100))
+        self._run_on_packet_with_davey_stub(
+            receiver, self._build_rtp_packet(ssrc=100)
+        )
 
         assert len(receiver._buffers.get(100, b"")) == 0
 
