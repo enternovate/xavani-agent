@@ -112,20 +112,26 @@ git apply --cached the filtered patch. Never git add -A.
 
 ## Next steps (in order)
 
-DONE in session 2: watchdog loops + gateway parity verified + advisor
-role + agent hub roster.
+DONE in session 3: 16 commits — watchdog loops, advisor, hub roster,
+2 skins + strict validation, doctor checks, config importer, commit
+splitter, RPC mode, bench cluster (llm_judge/categories/p95/flake/
+leaderboard/README), memory bank, handoff writer, /macro, W8 packs,
+version bump 0.2.0 + CHANGELOG + README. All gates green at close:
+155 session tests, 143/143 parity, faux bench 21/21 median 0.1093s.
 
-Next up: atomic commit splitter (266-268), config importer (271-272),
-RPC mode NDJSON over stdio (276-277), llm_judge verifier (111 — the
-advisor module shows the call_llm pattern to copy), checkpoint/rewind
-(245-246) and memory tools retain/recall/reflect/learn (247-251),
-activity-formatter rollout across remaining commands, W6 packs (331+),
-W7-W9 polish/docs/release. Version bump 0.2.0 + CHANGELOG LAST.
+Next up (open items in plan Progress log "PARTIAL/OPEN"): read schemes
+273-275, rewind 246, /fresh 264, director mode 265, branching turn
+index 278-279, diff-review 337-339, cost dashboard 344, skill triggers
+345-346, help-text sweep 401-430, website docs 475-478, install checks
+479-480, release notes 481-500.
 
-Session-2 pitfalls: cli.py hunk positions SHIFT after every commit of
-mine — always regenerate git diff and re-locate hunks by content before
-git apply --cached. tools/delegate_tool.py carries another session's
-edits — hub was built WITHOUT touching it (registry access only).
+Session-3 pitfalls: DELEGATION BACKEND UNRELIABLE — all 3 children hit
+1196s API timeouts mid-task; one wrote a file with dead code. Build
+serially as parent; verify any child artifact line-by-line before use.
+cli.py hunk positions SHIFT after every commit of mine — regenerate
+git diff and locate hunks by content before git apply --cached.
+tools/delegate_tool.py and xavani.py/pyproject carry other sessions'
+edits — filtered-hunk staging mandatory.
 
 ## Pitfalls learned today
 
