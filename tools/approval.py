@@ -1357,6 +1357,77 @@ def check_dangerous_command(command: str, env_type: str,
     return {"approved": True, "message": None}
 
 
+def preview_batch(commands: list) -> dict:
+    """Classify a batch of commands without prompting.
+
+    Returns {"pending": [...], "blocked": [...]}: pending entries would
+    trigger an individual approval prompt; blocked entries are hardline
+    denials handled by the normal per-command path.
+    """
+    pending = []
+    blocked = []
+    session_key = get_current_session_key()
+    for command in commands:
+        is_hardline, hardline_desc = detect_hardline_command(command)
+        if is_hardline:
+            blocked.append({"command": command, "description": hardline_desc})
+            continue
+        is_dangerous, pattern_key, description = detect_dangerous_command(command)
+        if not is_dangerous:
+            continue
+        if is_approved(session_key, pattern_key):
+            continue
+        is_chain, _hits, chain_description = detect_dangerous_chain(command)
+        if is_chain:
+            description = chain_description
+        pending.append({
+            "command": command,
+            "pattern_key": pattern_key,
+            "description": description,
+        })
+    return {"pending": pending, "blocked": blocked}
+
+
+def approve_batch(pending: list, approval_callback=None) -> bool:
+    """One approval covering every pending command in the batch.
+
+    Mirrors check_dangerous_command's session/always bookkeeping so the
+    per-command checks pass silently after the single prompt.
+    """
+    if not pending:
+        return True
+    session_key = get_current_session_key()
+    listing = "\n".join(
+        f"  {i + 1}. {p['command'][:120]} — {p['description']}"
+        for i, p in enumerate(pending)
+    )
+    choice = prompt_dangerous_approval(
+        listing, f"{len(pending)} commands require approval",
+        approval_callback=approval_callback,
+    )
+    if choice == "deny":
+        for p in pending:
+            _log_approval_decision(
+                "deny", "user", command=p["command"],
+                pattern_key=p["pattern_key"], description=p["description"],
+                session_key=session_key, extra={"batch": True},
+            )
+        return False
+    for p in pending:
+        if choice in ("session", "always"):
+            approve_session(session_key, p["pattern_key"])
+        if choice == "always":
+            approve_permanent(p["pattern_key"])
+            save_permanent_allowlist(_permanent_approved)
+        _log_approval_decision(
+            "allow", "user", command=p["command"],
+            pattern_key=p["pattern_key"], description=p["description"],
+            session_key=session_key,
+            extra={"choice": choice or "once", "batch": True},
+        )
+    return True
+
+
 # =========================================================================
 # Combined pre-exec guard (tirith + dangerous command detection)
 # =========================================================================

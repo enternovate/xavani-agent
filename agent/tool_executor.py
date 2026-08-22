@@ -90,6 +90,40 @@ def _record_tool_metric(agent, function_name, started_at, duration, is_error, er
         pass
 
 
+def _run_batch_approval_preview(parsed_calls: list) -> None:
+    """One approval prompt covers all dangerous terminal commands in a turn.
+
+    Single dangerous commands keep their normal individual prompt; only
+    multi-command turns collapse into one batch card.
+    """
+    try:
+        from tools import approval
+    except Exception:
+        return
+    commands = [
+        args.get("command", "")
+        for (_tc, name, args, blocked, _g) in parsed_calls
+        if name == "terminal" and not blocked and isinstance(args.get("command"), str)
+    ]
+    if len(commands) < 2:
+        return
+    try:
+        preview = approval.preview_batch(commands)
+    except Exception:
+        return
+    if preview["blocked"] or len(preview["pending"]) < 2:
+        return
+    try:
+        from tools.terminal_tool import _get_approval_callback
+        callback = _get_approval_callback()
+    except Exception:
+        callback = None
+    try:
+        approval.approve_batch(preview["pending"], approval_callback=callback)
+    except Exception:
+        return
+
+
 def execute_tool_calls_concurrent(agent, assistant_message, messages: list, effective_task_id: str, api_call_count: int = 0) -> None:
     """Execute multiple tool calls concurrently using a thread pool.
 
@@ -170,6 +204,8 @@ def execute_tool_calls_concurrent(agent, assistant_message, messages: list, effe
                 blocked_by_guardrail = True
 
         parsed_calls.append((tool_call, function_name, function_args, block_result, blocked_by_guardrail))
+
+    _run_batch_approval_preview(parsed_calls)
 
     # ── Logging / callbacks ──────────────────────────────────────────
     tool_names_str = ", ".join(name for _, name, _, _, _ in parsed_calls)
@@ -505,6 +541,18 @@ def execute_tool_calls_concurrent(agent, assistant_message, messages: list, effe
 
 def execute_tool_calls_sequential(agent, assistant_message, messages: list, effective_task_id: str, api_call_count: int = 0) -> None:
     """Execute tool calls sequentially (original behavior). Used for single calls or interactive tools."""
+    _seq_terminal_commands = []
+    for tc in assistant_message.tool_calls:
+        try:
+            _tc_args = json.loads(tc.function.arguments)
+        except (json.JSONDecodeError, TypeError):
+            continue
+        if tc.function.name == "terminal" and isinstance(_tc_args, dict) and isinstance(_tc_args.get("command"), str):
+            _seq_terminal_commands.append(_tc_args["command"])
+    if len(_seq_terminal_commands) >= 2:
+        _run_batch_approval_preview(
+            [(None, "terminal", {"command": c}, None, None) for c in _seq_terminal_commands]
+        )
     for i, tool_call in enumerate(assistant_message.tool_calls, 1):
         # SAFETY: check interrupt BEFORE starting each tool.
         # If the user sent "stop" during a previous tool's execution,
