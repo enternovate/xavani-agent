@@ -1277,7 +1277,24 @@ def _handle_write_file(args, **kw):
             f"write_file: 'content' must be a string, got "
             f"{type(args['content']).__name__}."
         )
-    return write_file_tool(path=args["path"], content=args["content"], task_id=tid)
+    # Journal prior content so /revert can restore or delete after a write.
+    from tools import write_journal
+
+    entry = write_journal.capture(args["path"])
+    try:
+        result = write_file_tool(path=args["path"], content=args["content"], task_id=tid)
+    except BaseException:
+        write_journal.discard(entry)
+        raise
+    try:
+        errored = bool(json.loads(result).get("error"))
+    except (json.JSONDecodeError, AttributeError):
+        errored = False
+    if errored:
+        write_journal.discard(entry)
+    else:
+        write_journal.commit(entry)
+    return result
 
 
 def _handle_patch(args, **kw):
