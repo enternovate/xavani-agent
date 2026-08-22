@@ -121,9 +121,11 @@ jobs:
   # surfaced in the run output for visibility.
   test-windows:
     runs-on: windows-latest
-    # The full suite needs >45 min on Windows runners under load — the
-    # previous 45-minute cap killed non-blocking visibility runs mid-suite.
-    timeout-minutes: 90
+    # Full suite needs >45 min normally, and >90 min when shared Windows
+    # runners are oversubscribed. 150 gives headroom; the job stays
+    # non-blocking regardless — this only stops the runner killing it
+    # mid-suite.
+    timeout-minutes: 150
     steps:
       - name: Checkout code
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0  # v7.0.0
