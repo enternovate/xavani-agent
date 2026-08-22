@@ -316,6 +316,11 @@ def prune(max_age_days: int = 7, directory: Optional[Path] = None) -> List[str]:
     return removed
 
 
+def save(spec: Dict[str, Any], directory: Optional[Path] = None) -> None:
+    """Persist a loop spec update (public wrapper around _write)."""
+    _write(spec, directory)
+
+
 def summary(spec: Dict[str, Any]) -> str:
     passes = spec.get("passes", [])
     total_cost = sum(p.get("cost_usd", 0.0) for p in passes)
