@@ -10359,7 +10359,10 @@ class XavaniCLI:
         except loop_runner.LoopError as exc:
             self._console_print(f"  [red]{exc}[/]")
             return
-        self._console_print(f"  Loop {spec['id']} started. Ctrl+C interrupts a pass.")
+        from xavani_cli.activity import activity, detail
+
+        self._console_print(activity("loop", spec["id"], running=True))
+        self._console_print(detail(f"prompt: {prompt[:70]}"))
 
         agent = self.agent
 
