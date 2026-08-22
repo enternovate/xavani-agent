@@ -58,6 +58,10 @@ Plan of record: planning/0.2.0-plan.md (500 items, 10 workstreams).
   /eval-loop <rubric-file> [threshold F] [passes N] <prompt>.
 - /loops prune [days] SHIPPED: removes finished loop specs older than
   N days (default 7). loop_runner.prune + tests.
+- Magic keywords SHIPPED: xavani_cli/magic_keywords.py detects
+  ultrathink/orchestrate/workflowz in prose only (code spans, fences,
+  tags, and path tokens excluded); AIAgent.chat expands them into turn
+  directive notes. Items 260-263 done.
 - llm_judge: verifier (needs model wiring; deferred deliberately).
 - Watchdog loops via cron/jobs.py; gateway parity for /loop.
 - W5 ports (checkpoint/rewind, memory tools retain/recall/reflect/learn,
