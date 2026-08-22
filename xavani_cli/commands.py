@@ -93,6 +93,10 @@ COMMAND_REGISTRY: list[CommandDef] = [
                subcommands=("list", "add", "remove", "clear"),
                args_hint="[list|add|remove|clear] [pattern]"),
     CommandDef("dryrun", "Toggle dry-run mode — mutating tools report instead of execute", "Configuration"),
+    CommandDef("loop", "Run a task repeatedly until a stop condition fires", "Session",
+               subcommands=("stop",),
+               args_hint="[passes N] [every S] [budget USD] <prompt> | stop <id>"),
+    CommandDef("loops", "List saved loops", "Session"),
     CommandDef("title", "Set a title for the current session", "Session",
                args_hint="[name]"),
     CommandDef("handoff", "Hand off this session to a messaging platform (Telegram, Discord, etc.)", "Session",
@@ -997,7 +1001,10 @@ _SLACK_RESERVED_COMMANDS = frozenset({
 
 # Curated out of messaging-platform slash menus: local-desktop commands
 # with no messaging use case. Still reachable via /xavani <command>.
-_GATEWAY_EXCLUDED_COMMANDS = frozenset({"gquota", "footer", "profile", "insights"})
+_GATEWAY_EXCLUDED_COMMANDS = frozenset({
+    "gquota", "footer", "profile", "insights",
+    "reload-mcp", "reload-skills", "voice",
+})
 
 
 def _sanitize_slack_name(raw: str) -> str:
