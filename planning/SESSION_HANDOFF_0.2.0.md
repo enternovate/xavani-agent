@@ -62,6 +62,9 @@ Plan of record: planning/0.2.0-plan.md (500 items, 10 workstreams).
   ultrathink/orchestrate/workflowz in prose only (code spans, fences,
   tags, and path tokens excluded); AIAgent.chat expands them into turn
   directive notes. Items 260-263 done.
+- Activity formatter SHIPPED (W7): xavani_cli/activity.py renders
+  Hermes-style gutter lines (icon + verb + target + duration). Wired into
+  /loop, /eval, /eval-loop. Remaining commands adopt it incrementally.
 - Conflict resolver SHIPPED: xavani_cli/conflict_resolver.py parses
   conflict blocks incl. diff3 base sections; resolve_conflicts with
   ours/theirs/base; count_conflicts. Items 269-270 core done (CLI sugar
