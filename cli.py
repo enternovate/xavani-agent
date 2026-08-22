@@ -8421,6 +8421,8 @@ class XavaniCLI:
             self._handle_advisor_command(cmd_original)
         elif canonical == "hub":
             self._handle_hub_command(cmd_original)
+        elif canonical == "macro":
+            self._handle_macro_command(cmd_original)
         elif canonical == "eval":
             self._handle_eval_command(cmd_original)
         elif canonical == "eval-loop":
@@ -10664,6 +10666,67 @@ class XavaniCLI:
         self._console_print(
             "  Usage: /hub [steer <id> <text> | kill <id> | revive <id> | parked]"
         )
+
+    def _handle_macro_command(self, cmd_original: str = "") -> None:
+        """Handle /macro define|run|list|remove — deterministic step macros."""
+        from xavani_cli import macros
+
+        parts = cmd_original.split()
+        sub = parts[1].lower() if len(parts) > 1 else "list"
+
+        if sub == "list" or len(parts) < 3:
+            listed = macros.list_macros()
+            if not listed:
+                self._console_print(
+                    '  No macros. Define one: /macro define weekly "step one; step two"'
+                )
+                return
+            for macro in listed:
+                self._console_print(f"  {macro['name']} ({macro['steps']} steps)")
+            return
+
+        name = parts[2]
+        if sub == "define":
+            rest = cmd_original.split(None, 3)[3] if len(cmd_original.split(None, 3)) > 3 else ""
+            steps = [s.strip() for s in rest.split(";") if s.strip()]
+            try:
+                record = macros.define_macro(name, steps)
+            except macros.MacroError as exc:
+                self._console_print(f"  [red]{exc}[/]")
+                return
+            self._console_print(
+                f"  Macro {record['name']} saved with {len(record['steps'])} steps."
+            )
+            return
+
+        if sub == "run":
+            if not self.agent:
+                self._console_print("  (._.) No active agent — send a message first.")
+                return
+            try:
+                rendered = macros.render_macro(name)
+            except macros.MacroError as exc:
+                self._console_print(f"  [red]{exc}[/]")
+                return
+            for line in rendered.splitlines():
+                step_text = line.split(". ", 1)[1]
+                self._console_print(f"  {line}")
+                try:
+                    reply = self.agent.chat(step_text) or "(empty)"
+                except Exception as exc:
+                    reply = f"(error: {exc})"
+                self._console_print(f"      -> {str(reply)[:100]}")
+            return
+
+        if sub == "remove":
+            removed = macros.remove_macro(name)
+            if removed:
+                self._console_print(f"  Removed {name}.")
+            else:
+                self._console_print(f"  No macro {name!r}.")
+            return
+
+        self._console_print("  Usage: /macro define <name> <steps> | run <name> | list | remove <name>")
 
     def _handle_eval_command(self, cmd_original: str) -> None:
         """Handle /eval [--faux] [--tasks <path>] — run the bench suite."""
