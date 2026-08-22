@@ -1288,6 +1288,22 @@ def _handle_write_file(args, **kw):
             f"{args['path']}\n[dry-run] nothing written. Toggle off with /dryrun."
         )
 
+    try:
+        from xavani_cli.staged_changes import (
+            get_change_set,
+            staging_enabled,
+        )
+
+        if staging_enabled():
+            seq = get_change_set().stage(args["path"], args["content"])
+            return (
+                f"[staged] write #{seq} queued for {args['path']} "
+                f"({len(args['content'])} bytes). Review with /diff, "
+                f"commit with /apply, discard with /reject."
+            )
+    except Exception:
+        pass
+
     entry = write_journal.capture(args["path"])
     try:
         result = write_file_tool(path=args["path"], content=args["content"], task_id=tid)

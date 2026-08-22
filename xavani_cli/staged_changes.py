@@ -12,9 +12,27 @@ disk. /diff renders the pending set, /apply executes it in order,
 from __future__ import annotations
 
 import threading
+from contextvars import ContextVar
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Dict, List, Optional
+
+_write_staging: ContextVar[bool] = ContextVar(
+    "xavani_write_staging", default=False
+)
+
+
+def staging_enabled() -> bool:
+    """True when writes should queue for review instead of touching disk."""
+    return _write_staging.get()
+
+
+def enable_staging() -> None:
+    _write_staging.set(True)
+
+
+def disable_staging() -> None:
+    _write_staging.set(False)
 
 
 @dataclass
