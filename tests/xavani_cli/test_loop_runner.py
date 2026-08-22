@@ -140,3 +140,64 @@ def test_summary_reports_cost_and_status(ldir):
     text = lr.summary(result)
     assert "$0.2500" in text
     assert "max passes reached" in text
+
+
+def test_run_loop_detects_runaway_identical_passes(ldir):
+    spec = lr.new_loop("stuck task", max_passes=10, directory=ldir)
+    result = lr.run_loop(spec, lambda **kw: "same output", directory=ldir)
+    assert result["status"] == "completed"
+    assert "runaway detected" in result["stop_reason"]
+    assert len(result["passes"]) == 3
+
+
+def test_nested_loop_creation_beyond_depth_2_rejected(ldir):
+    spec = lr.new_loop("outer", max_passes=1, directory=ldir)
+
+    def runner(prompt, last_output, failure_notes):
+        # Depth 1 inside the running outer loop: a depth-2 child is allowed.
+        inner = lr.new_loop("inner", max_passes=1, directory=ldir)
+        assert inner["prompt"] == "inner"
+        # At depth 2: creating another child is rejected.
+        token = lr._loop_depth.set(lr._loop_depth.get() + 1)
+        try:
+            with pytest.raises(lr.LoopError):
+                lr.new_loop("grandchild", directory=ldir)
+        finally:
+            lr._loop_depth.reset(token)
+        return "ok"
+
+    lr.run_loop(spec, runner, directory=ldir)
+
+
+def test_run_loop_eval_scores_and_threshold(ldir):
+    spec = lr.new_loop("improve answer", max_passes=5, directory=ldir)
+
+    def runner(prompt, last_output, failure_notes):
+        n = len(spec["passes"]) + 1
+        return "answer quality " + ("x" * n)
+
+    def score_fn(out):
+        return len(out) / 20.0
+
+    result = lr.run_loop_eval(
+        spec, runner, score_fn, threshold=0.8, directory=ldir,
+    )
+    assert result["status"] == "completed"
+    assert "success predicate met" in result["stop_reason"]
+    scores = [p["score"] for p in result["passes"]]
+    assert scores[-1] >= 0.8
+    assert all(s is not None for s in scores)
+    reloaded = lr.load(spec["id"], directory=ldir)
+    assert reloaded["passes"][-1]["score"] == scores[-1]
+
+
+def test_run_loop_eval_tolerates_scoring_error(ldir):
+    spec = lr.new_loop("y", max_passes=1, directory=ldir)
+
+    def bad_score(out):
+        raise ValueError("no rubric")
+
+    result = lr.run_loop_eval(
+        spec, lambda **kw: "out", bad_score, threshold=0.5, directory=ldir,
+    )
+    assert result["passes"][0]["score"] is None
