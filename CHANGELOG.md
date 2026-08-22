@@ -5,6 +5,50 @@ All notable changes to Xavani Agent are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.0] - 2026-08-22 — "The Big Bang"
+
+Minor release across ten workstreams: approval-gate hardening, the loop
+engine, an expanded eval harness, harness cost hardening, oh-my-pi ports,
+an overlooked-feature pack, CLI polish, workflow packs, and release
+engineering. No breaking changes.
+
+### Added
+- Pre-flight approval gate: write journal with inverse-patch rollback,
+  /revert, /permissions manager, batch approval preview, dry-run mode.
+- Loop engine: /loop and /loop watch (cron-scheduled watchdog passes via
+  `xavani -z`), stop conditions, reflexion failure notes, runaway and
+  nested-loop guards, eval loops with rubric scoring, /loops prune.
+- Eval harness: 21 categorized tasks, jsonschema/pytest/exit_code/
+  llm_judge verifiers, per-task verifier timeouts, --category filter,
+  p95 and per-category medians, --runs flake detection, fingerprinted
+  --save results, config leaderboard, regression gate.
+- Harness hardening: model roles (default/smol/slow/plan/advisor) with
+  config overrides; fallback chains, parallel tool execution, cache-hit
+  telemetry, budget governor audited as already present in 0.1.x.
+- Ports from oh-my-pi, implemented better: advisor reviewer role with
+  inline severity notes (/advisor), agent hub roster with steer/kill/
+  revive (/hub), atomic commit splitter with cycle rejection, conflict
+  resolver, magic keywords (ultrathink/orchestrate/workflowz), NDJSON
+  RPC mode with answerable tool cards, cross-agent config importer,
+  memory bank tools (retain/recall/reflect/learn/edit).
+- Overlooked-feature pack: SESSION_HANDOFF.md generator, deterministic
+  /macro steps, activity formatter across loop/eval commands.
+- CLI polish: xavani-terminal and xavani-ember skins, strict skin
+  validation with clear errors, doctor checks for permissions.json,
+  loops dir, and bench results dir.
+- Workflow packs: inbox-triage, meeting-notes, invoice-extraction,
+  weekly-review, research-monitor, document-draft, expense-log,
+  crm-lite (skills index grows to 189).
+
+### Migration notes from 0.1.x
+- No config keys are removed. New optional keys: model.roles.<role>,
+  cron.script_timeout_seconds, display.skin accepts the two new skins.
+- New data directories appear on first use: ~/.xavani/loops/,
+  ~/.xavani/macros/, ~/.xavani/memories/bank/, ~/.xavani/scripts/.
+- New slash commands are desktop-only where noted; messaging-platform
+  menus stay under Slack's 50-slash cap via curation.
+- Python 3.11+ remains the floor; no new mandatory dependencies.
+
 ## [0.1.2] - 2026-08-21 — "Durability & Capability"
 
 Minor release with durable turn-bank recovery, a faster task harness, and
