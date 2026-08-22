@@ -8413,6 +8413,10 @@ class XavaniCLI:
             self._handle_permissions_command(cmd_original)
         elif canonical == "dryrun":
             self._handle_dryrun_command()
+        elif canonical == "loop":
+            self._handle_loop_command(cmd_original)
+        elif canonical == "loops":
+            self._handle_loops_list()
         elif canonical == "branch":
             self._handle_branch_command(cmd_original)
         elif canonical == "save":
@@ -10303,6 +10307,95 @@ class XavaniCLI:
             )
         else:
             self._console_print("  Dry-run OFF. Tools execute normally.")
+
+    def _handle_loop_command(self, cmd_original: str) -> None:
+        """Handle /loop [passes N] [every S] [budget USD] <prompt> | stop <id>."""
+        from xavani_cli import loop_runner
+
+        parts = cmd_original.split(None, 1)
+        rest = parts[1].strip() if len(parts) > 1 else ""
+
+        if not self.agent:
+            self._console_print("  (._.) No active agent — send a message first.")
+            return
+
+        if rest.startswith("stop"):
+            loop_id = rest.split()[1] if len(rest.split()) > 1 else ""
+            if not loop_id:
+                self._console_print("  Usage: /loop stop <loop-id>")
+                return
+            try:
+                stopped = loop_runner.stop(loop_id)
+            except loop_runner.LoopError as exc:
+                self._console_print(f"  [red]{exc}[/]")
+                return
+            self._console_print(f"  Stopped {stopped['id']}.")
+            return
+
+        kwargs: dict = {}
+        tokens = rest.split()
+        i = 0
+        while i < len(tokens) - 1 and tokens[i] in ("passes", "every", "budget"):
+            key, raw = tokens[i], tokens[i + 1]
+            try:
+                value = float(raw) if key == "budget" else int(raw)
+            except ValueError:
+                break
+            kwargs[key] = value
+            i += 2
+        prompt = " ".join(tokens[i:]).strip()
+        if not prompt:
+            self._console_print(
+                "  Usage: /loop [passes N] [every S] [budget USD] <prompt>"
+            )
+            return
+
+        try:
+            spec = loop_runner.new_loop(prompt, **kwargs)
+        except loop_runner.LoopError as exc:
+            self._console_print(f"  [red]{exc}[/]")
+            return
+        self._console_print(f"  Loop {spec['id']} started. Ctrl+C interrupts a pass.")
+
+        agent = self.agent
+
+        def runner(prompt: str, last_output, failure_notes) -> str:
+            pass_prompt = prompt
+            if failure_notes:
+                notes = "\n".join(f"- {n}" for n in failure_notes)
+                pass_prompt += (
+                    f"\n\nFailure notes from earlier passes (avoid repeating "
+                    f"these mistakes):\n{notes}"
+                )
+            if last_output:
+                pass_prompt += (
+                    f"\n\nPrevious pass output:\n<previous_output>\n"
+                    f"{last_output[:4000]}\n</previous_output>"
+                )
+            try:
+                return agent.chat(pass_prompt) or "(empty response)"
+            except Exception as exc:
+                return f"(pass error: {exc})"
+
+        try:
+            result = loop_runner.run_loop(spec, runner)
+        except KeyboardInterrupt:
+            result = loop_runner.stop(spec["id"])
+            self._console_print("\n  Loop interrupted by user.")
+        self._console_print("  " + loop_runner.summary(result))
+
+    def _handle_loops_list(self) -> None:
+        """Handle /loops — list saved loops."""
+        from xavani_cli import loop_runner
+
+        specs = loop_runner.list_loops()
+        if not specs:
+            self._console_print("  No saved loops. Start one with /loop <prompt>.")
+            return
+        for spec in specs:
+            for line in loop_runner.summary(spec).splitlines():
+                self._console_print(f"  {line}")
+            self._console_print("")
 
     def _confirm_destructive_slash(self, command: str, detail: str) -> Optional[str]:
         """Prompt the user to confirm a destructive session slash command.
