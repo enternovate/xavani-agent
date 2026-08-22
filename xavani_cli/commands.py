@@ -106,6 +106,7 @@ COMMAND_REGISTRY: list[CommandDef] = [
     CommandDef("macro", "Deterministic macro steps: define once, run verbatim", "Configuration",
                subcommands=("define", "run", "list", "remove"),
                args_hint="define <name> <step>; <step> | run <name> | list | remove <name>"),
+    CommandDef("fresh", "Rebuild provider stream state, keep the transcript", "Session"),
     CommandDef("eval", "Run the task benchmark suite in-session", "Configuration",
                args_hint="[--faux] [--tasks <path>]"),
     CommandDef("eval-loop", "Iterate a prompt until a rubric score threshold is met", "Session",
@@ -1017,7 +1018,7 @@ _SLACK_RESERVED_COMMANDS = frozenset({
 _GATEWAY_EXCLUDED_COMMANDS = frozenset({
     "gquota", "footer", "profile", "insights",
     "reload-mcp", "reload-skills", "voice",
-    "curator", "advisor", "hub", "macro",
+    "curator", "advisor", "hub", "macro", "fresh",
 })
 
 

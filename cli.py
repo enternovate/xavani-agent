@@ -8423,6 +8423,8 @@ class XavaniCLI:
             self._handle_hub_command(cmd_original)
         elif canonical == "macro":
             self._handle_macro_command(cmd_original)
+        elif canonical == "fresh":
+            self._handle_fresh_command()
         elif canonical == "eval":
             self._handle_eval_command(cmd_original)
         elif canonical == "eval-loop":
@@ -10727,6 +10729,30 @@ class XavaniCLI:
             return
 
         self._console_print("  Usage: /macro define <name> <steps> | run <name> | list | remove <name>")
+
+    def _handle_fresh_command(self) -> None:
+        """Handle /fresh — rebuild provider stream state, keep transcript."""
+        if not self.agent:
+            self._console_print("  (._.) No active agent — send a message first.")
+            return
+        agent = self.agent
+        lock = getattr(agent, "_pending_steer_lock", None)
+        try:
+            if lock is not None:
+                with lock:
+                    agent._pending_steer = None
+            else:
+                agent._pending_steer = None
+        except Exception:
+            pass
+        rebuilt = "client kept"
+        try:
+            client = agent._ensure_primary_openai_client(reason="fresh command")
+            if client is not None:
+                rebuilt = "provider client rebuilt"
+        except Exception as exc:
+            rebuilt = f"client rebuild skipped ({exc})"
+        self._console_print(f"  Fresh: stream state reset, {rebuilt}. Transcript kept.")
 
     def _handle_eval_command(self, cmd_original: str) -> None:
         """Handle /eval [--faux] [--tasks <path>] — run the bench suite."""
