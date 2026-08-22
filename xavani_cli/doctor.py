@@ -980,6 +980,43 @@ def run_doctor(args):
             check_ok(f"Created {_DHH}/memories/")
             fixed_count += 1
     
+    # Check 0.2.0 data surfaces
+    permissions_file = xavani_home / "permissions.json"
+    if permissions_file.exists():
+        try:
+            import json as _json
+
+            entries = _json.loads(permissions_file.read_text(encoding="utf-8"))
+            count = len(entries) if isinstance(entries, (list, dict)) else 0
+            check_ok(f"permissions.json valid ({count} patterns)")
+        except Exception as e:
+            check_warn(f"permissions.json unreadable: {e}", "delete it to reset the allowlist")
+    else:
+        check_info("permissions.json not created yet (created on first approval)")
+
+    loops_dir = xavani_home / "loops"
+    if loops_dir.is_dir():
+        specs = list(loops_dir.glob("loop-*.json"))
+        active = 0
+        for spec_path in specs:
+            try:
+                import json as _json
+
+                if _json.loads(spec_path.read_text(encoding="utf-8")).get("status") == "active":
+                    active += 1
+            except Exception:
+                continue
+        check_ok(f"{_DHH}/loops/ exists ({len(specs)} specs, {active} active)")
+    else:
+        check_info(f"{_DHH}/loops/ not created yet (created by /loop)")
+
+    bench_results = get_project_root() / "scripts" / "task_bench" / "results"
+    if bench_results.is_dir() and any(bench_results.iterdir()):
+        count = sum(1 for p in bench_results.iterdir() if p.suffix == ".json")
+        check_ok(f"bench results dir has {count} result file(s)")
+    else:
+        check_info("bench results dir empty (run /eval --faux or xavani bench)")
+
     # Check SQLite session store
     state_db_path = xavani_home / "state.db"
     if state_db_path.exists():
