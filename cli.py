@@ -8407,6 +8407,10 @@ class XavaniCLI:
             ) is None:
                 return
             self.undo_last()
+        elif canonical == "revert":
+            self._handle_revert_command(cmd_original)
+        elif canonical == "permissions":
+            self._handle_permissions_command(cmd_original)
         elif canonical == "branch":
             self._handle_branch_command(cmd_original)
         elif canonical == "save":
@@ -10206,6 +10210,84 @@ class XavaniCLI:
         _reload_thread.join(timeout=30)
         if _reload_thread.is_alive():
             print("  ⚠️  MCP reload timed out (30s). Some servers may not have reconnected.")
+
+    def _handle_revert_command(self, cmd_original: str) -> None:
+        """Handle /revert [N] — roll back the last N journaled file writes."""
+        from tools import write_journal
+
+        parts = cmd_original.split()
+        count = 1
+        if len(parts) > 1:
+            try:
+                count = int(parts[1])
+            except ValueError:
+                self._console_print("  [red]/revert: N must be a number.[/]")
+                return
+        if count < 1:
+            self._console_print("  [red]/revert: N must be >= 1.[/]")
+            return
+
+        total = write_journal.count_entries()
+        if total == 0:
+            self._console_print("  Write journal is empty — nothing to revert.")
+            return
+        applied = min(count, total)
+        detail = (
+            f"This restores or deletes the last {applied} journaled file write(s)."
+        )
+        if self._confirm_destructive_slash("revert", detail) is None:
+            return
+        restored = write_journal.rollback_last(applied)
+        self._console_print(f"  Reverted {len(restored)} write(s):")
+        for line in restored:
+            self._console_print(f"   - {line}")
+
+    def _handle_permissions_command(self, cmd_original: str) -> None:
+        """Handle /permissions [list|add|remove|clear] — manage the allowlist."""
+        from tools import approval
+
+        parts = cmd_original.split(None, 2)
+        sub = parts[1].strip().lower() if len(parts) > 1 else "list"
+        patterns = approval.load_permanent_allowlist()
+
+        if sub == "add":
+            pattern = parts[2].strip() if len(parts) > 2 else ""
+            if not pattern:
+                self._console_print("  Usage: /permissions add <pattern>")
+                return
+            patterns.add(pattern)
+            approval.save_permanent_allowlist(patterns)
+            self._console_print(f"  [green]Added pattern:[/] {pattern}")
+        elif sub == "remove":
+            pattern = parts[2].strip() if len(parts) > 2 else ""
+            if not pattern:
+                self._console_print("  Usage: /permissions remove <pattern>")
+                return
+            if pattern not in patterns:
+                self._console_print(f"  Pattern not in allowlist: {pattern}")
+                return
+            patterns.discard(pattern)
+            approval.save_permanent_allowlist(patterns)
+            self._console_print(f"  Removed pattern: {pattern}")
+        elif sub == "clear":
+            if self._confirm_destructive_slash(
+                "permissions clear",
+                "This removes every permanently allowed command pattern.",
+            ) is None:
+                return
+            approval.save_permanent_allowlist(set())
+            self._console_print("  Allowlist cleared.")
+        elif sub == "list":
+            if not patterns:
+                self._console_print("  Allowlist is empty.")
+                return
+            self._console_print("  Permanently allowed patterns:")
+            for pattern in sorted(patterns):
+                self._console_print(f"   - {pattern}")
+        else:
+            self._console_print(
+                "  Usage: /permissions [list|add <pattern>|remove <pattern>|clear]"
+            )
 
     def _confirm_destructive_slash(self, command: str, detail: str) -> Optional[str]:
         """Prompt the user to confirm a destructive session slash command.

@@ -87,6 +87,11 @@ COMMAND_REGISTRY: list[CommandDef] = [
                cli_only=True),
     CommandDef("retry", "Retry the last message (resend to agent)", "Session"),
     CommandDef("undo", "Remove the last user/assistant exchange", "Session"),
+    CommandDef("revert", "Undo recent file writes via the write journal", "Session",
+               args_hint="[N]"),
+    CommandDef("permissions", "View or edit the command approval allowlist", "Configuration",
+               subcommands=("list", "add", "remove", "clear"),
+               args_hint="[list|add|remove|clear] [pattern]"),
     CommandDef("title", "Set a title for the current session", "Session",
                args_hint="[name]"),
     CommandDef("handoff", "Hand off this session to a messaging platform (Telegram, Discord, etc.)", "Session",
@@ -528,6 +533,8 @@ def telegram_bot_commands() -> list[tuple[str, str]]:
     result: list[tuple[str, str]] = []
     for cmd in COMMAND_REGISTRY:
         if not _is_gateway_available(cmd, overrides):
+            continue
+        if cmd.name in _GATEWAY_EXCLUDED_COMMANDS:
             continue
         # Built-in arg-taking commands are included — their handlers show
         # usage text when invoked without arguments, and hiding them from
@@ -987,6 +994,10 @@ _SLACK_RESERVED_COMMANDS = frozenset({
     "topic", "mute", "pro", "shortcuts",
 })
 
+# Curated out of messaging-platform slash menus: local-desktop commands
+# with no messaging use case. Still reachable via /xavani <command>.
+_GATEWAY_EXCLUDED_COMMANDS = frozenset({"gquota", "footer", "profile", "insights"})
+
 
 def _sanitize_slack_name(raw: str) -> str:
     """Convert a command name to a valid Slack slash command name.
@@ -1057,6 +1068,8 @@ def slack_native_slashes() -> list[tuple[str, str, str]]:
     # First pass: canonical names (so they win slots if we hit the cap).
     for cmd in COMMAND_REGISTRY:
         if not _is_gateway_available(cmd, overrides):
+            continue
+        if cmd.name in _GATEWAY_EXCLUDED_COMMANDS:
             continue
         _add(cmd.name, cmd.description, cmd.args_hint or "")
 
