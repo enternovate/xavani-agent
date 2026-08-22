@@ -12,16 +12,21 @@ resumes from its last recorded pass.
 """
 
 import json
+import os
 import time
 import uuid
+from contextvars import ContextVar
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional
 
 MAX_FAILURE_NOTES = 10
+RUNAWAY_IDENTICAL_PASSES = 3
+
+_loop_depth: ContextVar[int] = ContextVar("xavani_loop_depth", default=0)
 
 
 def loops_dir() -> Path:
-    override = __import__("os").environ.get("XAVANI_LOOPS_DIR")
+    override = os.environ.get("XAVANI_LOOPS_DIR")
     if override:
         return Path(override)
     return Path.home() / ".xavani" / "loops"
@@ -48,6 +53,8 @@ def new_loop(
         raise LoopError("max_passes must be >= 1")
     if every_seconds is not None and every_seconds < 1:
         raise LoopError("every_seconds must be >= 1")
+    if _loop_depth.get() >= 2:
+        raise LoopError("nested loops beyond depth 2 are not allowed")
     spec = {
         "id": f"loop-{time.strftime('%Y%m%d_%H%M%S')}-{uuid.uuid4().hex[:6]}",
         "prompt": prompt,
@@ -141,6 +148,28 @@ def run_loop(
     it to disk immediately so a crash resumes at the next pass.
     """
     started = time.time()
+    token = _loop_depth.set(_loop_depth.get() + 1)
+    try:
+        return _run_loop_inner(
+            spec, runner,
+            success_predicate=success_predicate,
+            cost_per_pass_usd=cost_per_pass_usd,
+            directory=directory, sleep_fn=sleep_fn, started=started,
+        )
+    finally:
+        _loop_depth.reset(token)
+
+
+def _run_loop_inner(
+    spec: Dict[str, Any],
+    runner: Callable[..., str],
+    *,
+    success_predicate: Optional[Callable[[str], bool]] = None,
+    cost_per_pass_usd: float = 0.0,
+    directory: Optional[Path] = None,
+    sleep_fn: Callable[[float], None] = time.sleep,
+    started: float,
+) -> Dict[str, Any]:
     while True:
         stop_reason = check_stop_conditions(
             spec,
@@ -177,6 +206,18 @@ def run_loop(
         if output:
             spec["best_output"] = output
 
+        recent = [p["output"] for p in spec["passes"][-RUNAWAY_IDENTICAL_PASSES:]]
+        if (
+            len(recent) == RUNAWAY_IDENTICAL_PASSES
+            and len(set(recent)) == 1
+        ):
+            spec["status"] = "completed"
+            spec["stop_reason"] = (
+                f"runaway detected: {RUNAWAY_IDENTICAL_PASSES} identical passes"
+            )
+            _write(spec, directory)
+            return spec
+
         stop_reason = check_stop_conditions(
             spec, elapsed_seconds=time.time() - started,
             spent_usd=sum(p.get("cost_usd", 0.0) for p in spec.get("passes", [])),
@@ -190,6 +231,41 @@ def run_loop(
         gap = spec.get("every_seconds")
         if gap:
             sleep_fn(float(gap))
+
+
+def _safe_score_at_least(score_fn: Callable[[str], float], output: str,
+                         threshold: float) -> bool:
+    try:
+        return float(score_fn(output)) >= threshold
+    except Exception:
+        return False
+
+
+def run_loop_eval(
+    spec: Dict[str, Any],
+    runner: Callable[..., str],
+    score_fn: Callable[[str], float],
+    threshold: float,
+    **kwargs: Any,
+) -> Dict[str, Any]:
+    """Eval loop: iterate until ``score_fn(output) >= threshold``.
+
+    Each pass record gains a ``score`` field; scoring runs once per pass on
+    the recorded output so scores stay reproducible.
+    """
+    result = run_loop(
+        spec, runner,
+        success_predicate=lambda out: _safe_score_at_least(score_fn, out, threshold),
+        **kwargs,
+    )
+    directory = kwargs.get("directory")
+    for entry in result.get("passes", []):
+        try:
+            entry["score"] = float(score_fn(entry["output"]))
+        except Exception:
+            entry["score"] = None
+    _write(result, directory)
+    return result
 
 
 def summary(spec: Dict[str, Any]) -> str:
