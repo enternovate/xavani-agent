@@ -8417,6 +8417,8 @@ class XavaniCLI:
             self._handle_loop_command(cmd_original)
         elif canonical == "loops":
             self._handle_loops_list()
+        elif canonical == "eval":
+            self._handle_eval_command(cmd_original)
         elif canonical == "branch":
             self._handle_branch_command(cmd_original)
         elif canonical == "save":
@@ -10396,6 +10398,38 @@ class XavaniCLI:
             for line in loop_runner.summary(spec).splitlines():
                 self._console_print(f"  {line}")
             self._console_print("")
+
+    def _handle_eval_command(self, cmd_original: str) -> None:
+        """Handle /eval [--faux] [--tasks <path>] — run the bench suite."""
+        try:
+            from scripts.task_bench import run_bench
+        except ImportError as exc:
+            self._console_print(f"  [red]Bench harness unavailable: {exc}[/]")
+            return
+
+        parts = cmd_original.split()
+        argv = []
+        if "--faux" in parts:
+            argv.append("--faux")
+        if "--tasks" in parts:
+            idx = parts.index("--tasks")
+            if idx + 1 < len(parts):
+                argv += ["--tasks", parts[idx + 1]]
+            else:
+                self._console_print("  Usage: /eval [--faux] [--tasks <path>]")
+                return
+        if "--faux" not in argv:
+            self._console_print(
+                "  [yellow]Real-mode eval runs every task through the live "
+                "model — this costs tokens and takes minutes.[/]"
+            )
+        try:
+            code = run_bench.main(argv)
+        except Exception as exc:
+            self._console_print(f"  [red]Eval failed: {exc}[/]")
+            return
+        if code != 0:
+            self._console_print(f"  [red]Eval exited with {code}.[/]")
 
     def _confirm_destructive_slash(self, command: str, detail: str) -> Optional[str]:
         """Prompt the user to confirm a destructive session slash command.

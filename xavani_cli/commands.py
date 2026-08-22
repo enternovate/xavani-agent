@@ -97,6 +97,8 @@ COMMAND_REGISTRY: list[CommandDef] = [
                subcommands=("stop",),
                args_hint="[passes N] [every S] [budget USD] <prompt> | stop <id>"),
     CommandDef("loops", "List saved loops", "Session"),
+    CommandDef("eval", "Run the task benchmark suite in-session", "Configuration",
+               args_hint="[--faux] [--tasks <path>]"),
     CommandDef("title", "Set a title for the current session", "Session",
                args_hint="[name]"),
     CommandDef("handoff", "Hand off this session to a messaging platform (Telegram, Discord, etc.)", "Session",
