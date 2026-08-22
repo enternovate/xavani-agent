@@ -2440,6 +2440,13 @@ TERMINAL_SCHEMA = {
 
 
 def _handle_terminal(args, **kw):
+    from tools import dry_run
+
+    if dry_run.enabled() and args.get("command"):
+        return (
+            f"[dry-run] would execute: {args.get('command')}\n"
+            "[dry-run] nothing executed. Toggle off with /dryrun."
+        )
     return terminal_tool(
         command=args.get("command"),
         background=args.get("background", False),

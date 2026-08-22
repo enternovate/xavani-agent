@@ -8411,6 +8411,8 @@ class XavaniCLI:
             self._handle_revert_command(cmd_original)
         elif canonical == "permissions":
             self._handle_permissions_command(cmd_original)
+        elif canonical == "dryrun":
+            self._handle_dryrun_command()
         elif canonical == "branch":
             self._handle_branch_command(cmd_original)
         elif canonical == "save":
@@ -10288,6 +10290,19 @@ class XavaniCLI:
             self._console_print(
                 "  Usage: /permissions [list|add <pattern>|remove <pattern>|clear]"
             )
+
+    def _handle_dryrun_command(self) -> None:
+        """Handle /dryrun — toggle dry-run mode for mutating tools."""
+        from tools import dry_run
+
+        state = dry_run.toggle()
+        if state:
+            self._console_print(
+                "  [yellow]Dry-run ON.[/] terminal, write_file, and patch "
+                "report actions without executing. Toggle off with /dryrun."
+            )
+        else:
+            self._console_print("  Dry-run OFF. Tools execute normally.")
 
     def _confirm_destructive_slash(self, command: str, detail: str) -> Optional[str]:
         """Prompt the user to confirm a destructive session slash command.

@@ -92,6 +92,7 @@ COMMAND_REGISTRY: list[CommandDef] = [
     CommandDef("permissions", "View or edit the command approval allowlist", "Configuration",
                subcommands=("list", "add", "remove", "clear"),
                args_hint="[list|add|remove|clear] [pattern]"),
+    CommandDef("dryrun", "Toggle dry-run mode — mutating tools report instead of execute", "Configuration"),
     CommandDef("title", "Set a title for the current session", "Session",
                args_hint="[name]"),
     CommandDef("handoff", "Hand off this session to a messaging platform (Telegram, Discord, etc.)", "Session",

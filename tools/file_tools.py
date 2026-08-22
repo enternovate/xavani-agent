@@ -1280,6 +1280,14 @@ def _handle_write_file(args, **kw):
     # Journal prior content so /revert can restore or delete after a write.
     from tools import write_journal
 
+    from tools import dry_run
+
+    if dry_run.enabled():
+        return (
+            f"[dry-run] would write {len(args['content'])} bytes to "
+            f"{args['path']}\n[dry-run] nothing written. Toggle off with /dryrun."
+        )
+
     entry = write_journal.capture(args["path"])
     try:
         result = write_file_tool(path=args["path"], content=args["content"], task_id=tid)
@@ -1299,6 +1307,14 @@ def _handle_write_file(args, **kw):
 
 def _handle_patch(args, **kw):
     tid = kw.get("task_id") or "default"
+    from tools import dry_run
+
+    if dry_run.enabled():
+        target = args.get("path") or ("inline patch" if args.get("patch") else "unknown")
+        return (
+            f"[dry-run] would patch {target}\n"
+            "[dry-run] nothing written. Toggle off with /dryrun."
+        )
     return patch_tool(
         mode=args.get("mode", "replace"), path=args.get("path"),
         old_string=args.get("old_string"), new_string=args.get("new_string"),
