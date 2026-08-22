@@ -8425,6 +8425,8 @@ class XavaniCLI:
             self._handle_macro_command(cmd_original)
         elif canonical == "fresh":
             self._handle_fresh_command()
+        elif canonical == "rewind":
+            self._handle_rewind_command(cmd_original)
         elif canonical == "eval":
             self._handle_eval_command(cmd_original)
         elif canonical == "eval-loop":
@@ -10753,6 +10755,59 @@ class XavaniCLI:
         except Exception as exc:
             rebuilt = f"client rebuild skipped ({exc})"
         self._console_print(f"  Fresh: stream state reset, {rebuilt}. Transcript kept.")
+
+    def _handle_rewind_command(self, cmd_original: str = "") -> None:
+        """Handle /rewind [N | hash] — restore files to a checkpoint."""
+        from tools.checkpoint_manager import CheckpointManager
+
+        manager = CheckpointManager()
+        working_dir = os.getcwd()
+        checkpoints = manager.list_checkpoints(working_dir)
+        if not checkpoints:
+            self._console_print("  No checkpoints exist for this directory.")
+            return
+
+        parts = cmd_original.split()
+        arg = parts[1] if len(parts) > 1 else ""
+
+        if not arg or not arg.isdigit():
+            self._console_print("  Recent checkpoints (newest first):")
+            for i, cp in enumerate(checkpoints[:8], start=1):
+                self._console_print(
+                    f"  {i}. {cp['short_hash']}  {cp['timestamp'][:16]}  "
+                    f"{cp['reason'][:40]}"
+                )
+            if not arg:
+                self._console_print(
+                    "  Restore with: /rewind <N> (or /rewind <hash>)"
+                )
+                return
+            target = next(
+                (c for c in checkpoints if c["hash"].startswith(arg)),
+                None,
+            )
+            if target is None:
+                self._console_print(f"  No checkpoint matches {arg!r}.")
+                return
+            hash_value = target["hash"]
+        else:
+            index = int(arg)
+            if index < 1 or index > len(checkpoints):
+                self._console_print(
+                    f"  Checkpoint {index} out of range (1-{len(checkpoints)})."
+                )
+                return
+            hash_value = checkpoints[index - 1]["hash"]
+
+        result = manager.restore(working_dir, hash_value)
+        if result.get("success"):
+            self._console_print(
+                f"  Rewound to {result.get('restored_to')} "
+                f"({result.get('reason', '')[:50]}). A pre-rollback snapshot "
+                "was taken."
+            )
+        else:
+            self._console_print(f"  [red]{result.get('error')}[/]")
 
     def _handle_eval_command(self, cmd_original: str) -> None:
         """Handle /eval [--faux] [--tasks <path>] — run the bench suite."""
