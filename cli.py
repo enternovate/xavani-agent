@@ -8429,6 +8429,12 @@ class XavaniCLI:
             self._handle_rewind_command(cmd_original)
         elif canonical == "director":
             self._handle_director_command(cmd_original)
+        elif canonical == "diff":
+            self._handle_diff_command(cmd_original)
+        elif canonical == "apply":
+            self._handle_apply_command()
+        elif canonical == "reject":
+            self._handle_reject_staged_command(cmd_original)
         elif canonical == "eval":
             self._handle_eval_command(cmd_original)
         elif canonical == "eval-loop":
@@ -10826,6 +10832,55 @@ class XavaniCLI:
             f"  Director mode: {state} — spawned children limited to "
             f"read-only toolsets: {', '.join(sorted(director.DIRECTOR_TOOLSETS))}"
         )
+
+    def _handle_diff_command(self, cmd_original: str = "") -> None:
+        """Handle /diff [on|off] — show staged writes, toggle staging."""
+        from xavani_cli.staged_changes import (
+            disable_staging,
+            enable_staging,
+            get_change_set,
+        )
+
+        parts = cmd_original.split()
+        arg = parts[1].lower() if len(parts) > 1 else ""
+        if arg == "on":
+            enable_staging()
+            self._console_print(
+                "  Write staging ON — write_file queues instead of writing. "
+                "Commit with /apply."
+            )
+            return
+        if arg == "off":
+            disable_staging()
+            self._console_print("  Write staging OFF.")
+            return
+        self._console_print("  " + get_change_set().render_diff_summary())
+
+    def _handle_apply_command(self) -> None:
+        """Handle /apply — write all staged changes in order."""
+        from pathlib import Path as _Path
+
+        from xavani_cli.staged_changes import get_change_set
+
+        applied = get_change_set().apply(base_dir=_Path.cwd())
+        if not applied:
+            self._console_print("  Nothing staged.")
+            return
+        for path in applied:
+            self._console_print(f"  wrote {path}")
+        self._console_print(f"  {len(applied)} file(s) written.")
+
+    def _handle_reject_staged_command(self, cmd_original: str = "") -> None:
+        """Handle /reject [seq] — discard staged changes."""
+        from xavani_cli.staged_changes import get_change_set
+
+        parts = cmd_original.split()
+        seq = None
+        if len(parts) > 1 and parts[1].isdigit():
+            seq = int(parts[1])
+        dropped = get_change_set().reject(seq)
+        scope = f"#{seq}" if seq is not None else "all"
+        self._console_print(f"  Rejected {dropped} staged change(s): {scope}.")
 
     def _handle_eval_command(self, cmd_original: str) -> None:
         """Handle /eval [--faux] [--tasks <path>] — run the bench suite."""

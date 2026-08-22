@@ -111,6 +111,11 @@ COMMAND_REGISTRY: list[CommandDef] = [
                args_hint="[N | <hash>] — no argument lists checkpoints"),
     CommandDef("director", "Restrict spawned subagents to read-only toolsets", "Session",
                args_hint="[on|off]"),
+    CommandDef("diff", "Show staged writes; toggle write staging", "Session",
+               args_hint="[on|off]"),
+    CommandDef("apply", "Write all staged changes to disk", "Session"),
+    CommandDef("reject", "Discard staged changes (all, or one by sequence)", "Session",
+               args_hint="[seq]"),
     CommandDef("eval", "Run the task benchmark suite in-session", "Configuration",
                args_hint="[--faux] [--tasks <path>]"),
     CommandDef("eval-loop", "Iterate a prompt until a rubric score threshold is met", "Session",
@@ -1024,6 +1029,7 @@ _GATEWAY_EXCLUDED_COMMANDS = frozenset({
     "gquota", "footer", "profile", "insights",
     "reload-mcp", "reload-skills", "voice",
     "curator", "advisor", "hub", "macro", "fresh", "rewind", "director",
+    "diff", "apply", "reject",
 })
 
 
