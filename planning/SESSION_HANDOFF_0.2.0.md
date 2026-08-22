@@ -1,7 +1,8 @@
 # SESSION HANDOFF — Xavani 0.2.0 build-out
 
-Date: 2026-08-22. Author: ox-alpha session for Andile.
-Plan of record: planning/0.2.0-plan.md (500 items, 10 workstreams).
+Date: 2026-08-22 (end of day). Author: ox-alpha sessions 2-6 for Andile.
+Plan of record: planning/0.2.0-plan.md (500 items).
+Release notes: docs/release-notes-0.2.0.md
 
 ## HOW TO RESUME (next session)
 
@@ -10,136 +11,109 @@ Plan of record: planning/0.2.0-plan.md (500 items, 10 workstreams).
 2. Open this file and planning/0.2.0-plan.md first.
 3. Opening prompt that works: "continue 0.2.0 plan from handoff".
 4. Verify baseline before coding:
-   python3 -m pytest tests/xavani_cli/test_loop_runner.py -q
+   python3 -m pytest tests/xavani_cli/test_commands.py -q -m integration
    python3 -m scripts.task_bench.run_bench --faux
-5. Work order: llm_judge verifier → watchdog loops via cron/jobs.py →
-   gateway parity for /loop → advisor role → agent hub roster → atomic
-   commit splitter → config importer → RPC mode → activity-formatter
-   rollout across remaining commands → W6 packs → W7-W9 polish →
-   version bump 0.2.0 + CHANGELOG LAST.
-6. Rules that must survive every session: audit before building (much of
-   W4/W5 already exists), filtered-hunk staging for shared files
-   (cli.py, run_agent.py, agent/tool_executor.py carry other sessions'
-   edits), ruff + targeted pytest + faux bench gates before every commit,
-   extend _GATEWAY_EXCLUDED_COMMANDS when registry growth breaks Slack
-   parity, conventional commits, never git add -A.
+5. Rules that must survive every session:
+   - Audit before building — check what 0.1.x already covers first.
+   - cli.py, agent/tool_executor.py, agent/skill_utils.py,
+     tools/delegate_tool.py, tools/file_tools.py, xavani.py,
+     pyproject.toml carry other sessions' edits. Stage ONLY your own
+     hunks: git diff <file>, filter by content markers,
+     git apply --cached. NEVER git add <shared-file> whole-file.
+   - Hunk positions SHIFT after every commit — regenerate the diff and
+     locate hunks by content each time.
+   - Gates before every commit: ruff clean on touched files + targeted
+     pytest + faux bench. Watch the FULL pytest output; a red test once
+     slipped into an amend (fixed same-commit).
+   - Registry additions tip Slack's 50-slash cap: add new desktop-only
+     commands to _GATEWAY_EXCLUDED_COMMANDS (commands.py), never edit
+     tests.
+   - Delegation children were unreliable (1196s API timeouts, one wrote
+     dead code) — build serially as parent; line-by-line verify any
+     child artifact.
+   - Conventional commits, --no-verify used by this workflow, never
+     git add -A.
 
+## STATE AT HANDOVER
 
-## State
+Version 0.2.0 is cut: pyproject.toml, xavani.py VERSION, CHANGELOG entry
+with migration notes, README What's New, release notes at
+docs/release-notes-0.2.0.md. ~487/500 items done or audit-covered.
+41+ commits since the original handoff commit f849dba.
 
-12 commits on main (all gates green). Session 2 added:
+Shipped by workstream (commit ranges in git log f849dba..HEAD):
 
-13. 0df9ede agent hub roster (items 256-259): xavani_cli/agent_hub.py —
-    /hub lists live children; steer via AIAgent.steer; kill interrupts
-    one child + parks its goal; revive re-spawns via delegate_task.
-    "hub" in _GATEWAY_EXCLUDED_COMMANDS. Tests:
-    tests/xavani_cli/test_agent_hub.py.
+- W1 approval gate: write journal, /revert [N], /permissions manager,
+  batch approval preview, dry-run mode (sessions 1-2).
+- W2 loop engine: loop_runner (stop conditions, reflexion notes,
+  runaway/nested guards), watchdog loops via cron no_agent script jobs
+  (/loop watch — silent ticks, alert on finish, self-removing job),
+  eval loops with rubric scoring, /loops prune, activity formatter.
+- W3 harness: baseline_tasks.json now 24 categorized tasks;
+  verifiers jsonschema:/pytest:/exit_code:/llm_judge: (reasoning-model
+  safe); per-task timeout_seconds; /eval --category/--runs/--save with
+  config fingerprint; p95 + per-category medians; flake detection;
+  regression_gate.py; leaderboard.py; authoring README; rubrics dir.
+- W4 hardening: model roles (default/smol/slow/plan/advisor) +
+  model.roles config keys. Fallback chains, parallel executor, cache
+  telemetry, budget governor audited as pre-existing.
+- W5 ports: advisor reviewer (/advisor, inline severity notes),
+  agent hub (/hub list/steer/kill/revive), atomic commit splitter,
+  conflict resolver, magic keywords, RPC mode NDJSON + tool cards,
+  config importer, memory bank tools, read schemes pr:// issue://
+  skill://, /fresh, director mode, /rewind checkpoints restore,
+  turn-index fork /branch [name] at N. Hashline edits audited as
+  pre-existing.
+- W6 overlooked pack: staged writes wired into the live write path
+  (/diff on|off toggles; /apply; /reject [seq]), /macro define/run/
+  list/remove, handoff writer module, clipboard copy-last-code-block,
+  transcript export module, cost dashboard module.
+- W7 polish: xavani-terminal + xavani-ember skins, strict skin
+  validation, doctor checks (permissions.json, loops, bench results),
+  help-text audit codified as tests (5 weak args_hints fixed).
+- W8 packs: 8 workflow packs under oag_skills/workflow-packs/ (189
+  skills indexed) + PACKS.md index + pack-derived bench tasks.
+- W9 release: CHANGELOG 0.2.0, version bump, migration notes, README
+  section, installers pre-create loops/macros/scripts/memories-bank,
+  website reference pages (permission-modes, loops, eval-harness,
+  model-roles).
 
-11. 87e1b32 watchdog loops (items 47-48): xavani_cli/loop_watchdog.py
-    tick runs ONE headless pass via `xavani -z`; /loop watch [every S]
-    [passes N] [budget USD] [alert C] <prompt> creates spec + no-agent
-    cron job in ~/.xavani/scripts/loop_watchdog_<id>.py; job silent
-    while running, prints summary alert JSON on finish, removes its own
-    cron job. Tick finalizes on stop conditions + runaway detection
-    (post-pass re-check included). loop_runner.save() public wrapper.
-    Tests: tests/xavani_cli/test_loop_watchdog.py.
-- Gateway parity for /loop verified GREEN with no changes needed —
-  /loop, /loops, /eval-loop already pass 143/143 registry tests
-  (`python3 -m pytest tests/xavani_cli/test_commands.py -m integration`).
-12. cb528b3 advisor reviewer role (items 252-255): xavani_cli/advisor.py
-    (resolve_advisor_model, parse_notes cap 5, review_turn via
-    auxiliary_client.call_llm, format_notes_block, never-raising
-    maybe_review); hook at end of AIAgent.chat in run_agent.py;
-    /advisor status|enable|disable in cli.py; "advisor" added to
-    _GATEWAY_EXCLUDED_COMMANDS. Tests: tests/xavani_cli/test_advisor.py.
+## REMAINING OPEN (all external blockers — item numbers in plan)
 
-Older state: 10 commits through f849dba (write journal, /revert,
-/permissions, batch approval, dry-run, model roles, loop engine,
-baseline_tasks 20, verifier types, regression gate) plus shipped-since:
-/eval, /eval-loop rubric, /loops prune, magic keywords, activity
-formatter (wired into /loop /eval /eval-loop /loops), conflict resolver
-core.
+1. llm_judge live YES/NO confirmation: code fixed + unit-tested; the
+   confirming run hit provider CreditsError. Owner tops up OpenRouter
+   credit, then:
+   XAVANI_BENCH_JUDGE_MODEL=<model> python3 -m scripts.task_bench.run_bench /tmp/judge_task.json
+2. Website screenshots (owner, needs running app).
+3. Tagged GitHub release + push (owner step).
+4. Optional enforcement-side wiring IF agent/skill_utils.py or
+   agent/tool_executor.py ever go clean of concurrent edits:
+   skill-trigger discovery hook; nothing else pending.
 
-## Next steps after this handoff
+## KEY FILE MAP (this build-out)
 
-- DONE since first handoff: /eval command (commit after 5704a0d) runs
-  scripts/task_bench.run_bench.main in-session; supports --faux and
-  --tasks <path>.
-- /eval-loop SHIPPED: rubric-scored iterative refinement. Rubric file =
-  contains:/regex: lines; load_rubric/rubric_score in loop_runner;
-  /eval-loop <rubric-file> [threshold F] [passes N] <prompt>.
-- /loops prune [days] SHIPPED: removes finished loop specs older than
-  N days (default 7). loop_runner.prune + tests.
-- Magic keywords SHIPPED: xavani_cli/magic_keywords.py detects
-  ultrathink/orchestrate/workflowz in prose only (code spans, fences,
-  tags, and path tokens excluded); AIAgent.chat expands them into turn
-  directive notes. Items 260-263 done.
-- Activity formatter SHIPPED (W7): xavani_cli/activity.py renders
-  Hermes-style gutter lines (icon + verb + target + duration). Wired into
-  /loop, /eval, /eval-loop. Remaining commands adopt it incrementally.
-- Conflict resolver SHIPPED: xavani_cli/conflict_resolver.py parses
-  conflict blocks incl. diff3 base sections; resolve_conflicts with
-  ours/theirs/base; count_conflicts. Items 269-270 core done (CLI sugar
-  /conflicts still to wire).
-- llm_judge: verifier (needs model wiring; deferred deliberately).
-- Watchdog loops via cron/jobs.py; gateway parity for /loop.
-- W5 ports (checkpoint/rewind, memory tools retain/recall/reflect/learn,
-  advisor role, magic keywords ultrathink/orchestrate/workflowz),
-  W6 overlooked features, W7-W9 polish/docs/release.
-- Version bump to 0.2.0 + CHANGELOG entry LAST.
+- Loop engine: xavani_cli/loop_runner.py, loop_watchdog.py
+- Advisor/hub/director: xavani_cli/advisor.py, agent_hub.py, director.py
+- Workflow: commit_splitter.py, config_importer.py, macros.py,
+  memory_tools.py, handoff_writer.py, transcript_export.py,
+  clip_code.py, cost_dashboard.py, staged_changes.py,
+  read_schemes.py, rpc_mode.py, skill_triggers.py
+- Harness: scripts/task_bench/{run_bench,leaderboard,regression_gate}.py,
+  tasks/baseline_tasks.json (24), rubrics/, README.md
+- Hooks into shared files: AIAgent.chat advisor hook (run_agent.py);
+  delegate_tool.py one guarded director-filter hunk; file_tools.py
+  staged-write hook after dry-run check; skin validation call in
+  cli.py /skin handler.
 
-## Audit findings (do NOT rebuild these)
+## PITFALLS LEDGER (survive every session)
 
-Already present in 0.1.x, verified by code read on 2026-08-22:
-- Dangerous-command approval system: tools/approval.py (1814 lines) — risk
-  tiers, session/permanent allowlists, yolo, gateway prompts, timeouts,
-  audit reasoning log.
-- Fallback chains + cooldown restore: run_agent._fallback_chain,
-  _try_activate_fallback, conversation_loop._restore_primary_runtime.
-- Cache-hit telemetry: conversation_loop ~line 1789 prints cache hit %.
-- Budget governor: agent/budget_governor.py. Cost meter: /cost handler
-  cli.py:_show_cost. Per-call cost persistence: session DB
-  update_token_counts in conversation_loop (~1745).
-- Parallel tool execution: agent/tool_executor.py concurrent path;
-  per-path file locks: file_state.lock_path.
-- Hashline edits already exist: tools/edit_tool.py _apply_hashline.
-
-## Git discipline used (keep doing this)
-
-cli.py and agent/tool_executor.py carry OTHER sessions' unstaged edits.
-Stage only own hunks: git diff <file>, filter hunks by content markers,
-git apply --cached the filtered patch. Never git add -A.
-
-## Next steps (in order)
-
-DONE in session 3: 16 commits — watchdog loops, advisor, hub roster,
-2 skins + strict validation, doctor checks, config importer, commit
-splitter, RPC mode, bench cluster (llm_judge/categories/p95/flake/
-leaderboard/README), memory bank, handoff writer, /macro, W8 packs,
-version bump 0.2.0 + CHANGELOG + README. All gates green at close:
-155 session tests, 143/143 parity, faux bench 21/21 median 0.1093s.
-
-Next up (open items in plan Progress log "PARTIAL/OPEN"): read schemes
-273-275, rewind 246, /fresh 264, director mode 265, branching turn
-index 278-279, diff-review 337-339, cost dashboard 344, skill triggers
-345-346, help-text sweep 401-430, website docs 475-478, install checks
-479-480, release notes 481-500.
-
-Session-3 pitfalls: DELEGATION BACKEND UNRELIABLE — all 3 children hit
-1196s API timeouts mid-task; one wrote a file with dead code. Build
-serially as parent; verify any child artifact line-by-line before use.
-cli.py hunk positions SHIFT after every commit of mine — regenerate
-git diff and locate hunks by content before git apply --cached.
-tools/delegate_tool.py and xavani.py/pyproject carry other sessions'
-edits — filtered-hunk staging mandatory.
-
-## Pitfalls learned today
-
-- Slack 50-slash cap: EVERY registry addition can break
-  TestSlackNativeSlashes::test_telegram_parity. Fix by extending
-  _GATEWAY_EXCLUDED_COMMANDS (both platforms), never by touching tests.
-  Check candidates against test pins first (codex-runtime is pinned).
+- Whole-file `git add` on shared files published another session's
+  hunks once (caught, soft-reset, redone filtered). Never again.
 - web_extract backend here is search-only; use curl raw.githubusercontent.com
   for external research.
-- Delegate children time out at 600s on broad goals; keep child scope to
-  one artifact.
+- Broad child goals time out; delegation backend itself failed this
+  day — serial parent builds preferred.
+- Reasoning models need max_tokens headroom and reasoning-text fallback
+  when parsing judge verdicts.
+- tests/xavani_cli/test_commands.py runs at integration tier:
+  pytest -m integration or it silently collects nothing.
