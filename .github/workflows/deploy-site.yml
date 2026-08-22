@@ -94,10 +94,13 @@ jobs:
 
       - name: Stage deployment
         run: |
-          mkdir -p _site/docs
-          cp -r website/build/* _site/docs/
+          # baseUrl is /xavani-agent/ — Docusaurus emits absolute /xavani-agent/*
+          # links, and GitHub Pages for this repo serves from that exact path,
+          # so the build tree copies 1:1 into the artifact root.
+          mkdir -p _site
+          cp -r website/build/* _site/
           # llms.txt / llms-full.txt are also published at the site root
-          # (https://xavani-agent.enternovate.com/llms.txt) because some
+          # (https://enternovate.co.za/xavani-agent/llms.txt) because some
           # agents and IDE plugins probe the classic root-level path rather
           # than /docs/llms.txt. Same file, two URLs, one source of truth.
           if [ -f website/build/llms.txt ]; then

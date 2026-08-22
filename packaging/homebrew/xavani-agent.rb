@@ -2,7 +2,7 @@ class XavaniAgent < Formula
   include Language::Python::Virtualenv
 
   desc "Self-improving AI agent that creates skills from experience"
-  homepage "https://xavani.enternovate.com"
+  homepage "https://enternovate.co.za/xavani-agent"
   # Stable source should point at the semver-named sdist asset attached by
   # scripts/release.py, not the CalVer tag tarball.
   url "https://github.com/enternovate/xavani-agent/releases/download/v0.1.2/xavani_agent-0.1.2.tar.gz"

@@ -5,7 +5,7 @@
 # Xavani Agent ☤
 
 <p align="center">
-  <a href="https://xavani.enternovate.com/docs/"><img src="https://img.shields.io/badge/Docs-xavani.enternovate.com-FFD700?style=for-the-badge" alt="Documentation"></a>
+  <a href="https://enternovate.co.za/xavani-agent/docs/"><img src="https://img.shields.io/badge/Docs-enternovate.co.za-FFD700?style=for-the-badge" alt="Documentation"></a>
   <a href="https://github.com/enternovate/xavani-agent/blob/main/LICENSE"><img src="https://img.shields.io/badge/License-MIT-green?style=for-the-badge" alt="License: MIT"></a>
   <a href="README.md"><img src="https://img.shields.io/badge/Lang-English-lightgrey?style=for-
   <a href="README.md"><img src="https://img.shields.io/badge/Lang-English-lightgrey?style=for-the-badge" alt="English"></a>

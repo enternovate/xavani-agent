@@ -6412,7 +6412,7 @@ def _print_curator_first_run_notice() -> None:
     print("  Preview now:  xavani curator run --dry-run")
     print("  Pause it:     xavani curator pause")
     print(
-        "  Docs:         https://xavani-agent.enternovate.com/docs/user-guide/features/curator"
+        "  Docs:         https://enternovate.co.za/xavani-agent/docs/user-guide/features/curator"
     )
 
 
@@ -10440,7 +10440,7 @@ def main():
             "Manage the fallback provider chain.  Fallback providers are tried "
             "in order when the primary model fails with rate-limit, overload, or "
             "connection errors.  See: "
-            "https://xavani-agent.enternovate.com/docs/user-guide/features/fallback-providers"
+            "https://enternovate.co.za/xavani-agent/docs/user-guide/features/fallback-providers"
         ),
     )
     fallback_subparsers = fallback_parser.add_subparsers(dest="fallback_command")

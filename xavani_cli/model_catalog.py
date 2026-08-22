@@ -71,7 +71,7 @@ except Exception:
 # ---------------------------------------------------------------------------
 
 DEFAULT_CATALOG_URL = (
-    "https://xavani-agent.enternovate.com/docs/api/model-catalog.json"
+    "https://enternovate.co.za/xavani-agent/docs/api/model-catalog.json"
 )
 DEFAULT_TTL_HOURS = 24
 DEFAULT_FETCH_TIMEOUT = 8.0

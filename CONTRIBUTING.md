@@ -206,7 +206,7 @@ enternovate/xavani-agent/
 ├── skills/                   # Bundled skills (copied to ~/.xavani/skills/ on install)
 ├── optional-skills/          # Official optional skills (discoverable via hub, not activated by default)
 ├── tests/                    # Test suite
-├── website/                  # Documentation site (xavani-agent.enternovate.com)
+├── website/                  # Documentation site (enternovate.co.za/xavani-agent)
 │
 ├── cli-config.yaml.example   # Example configuration (copied to ~/.xavani/config.yaml)
 └── AGENTS.md                 # Development guide for AI coding assistants

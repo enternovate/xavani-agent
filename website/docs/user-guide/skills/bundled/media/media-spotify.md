@@ -31,7 +31,7 @@ The following is the complete skill definition that Xavani loads when this skill
 
 # Spotify
 
-Control the user's Spotify account via the Xavani Spotify toolset (7 tools). Setup guide: https://xavani-agent.enternovate.com/docs/user-guide/features/spotify
+Control the user's Spotify account via the Xavani Spotify toolset (7 tools). Setup guide: https://enternovate.co.za/xavani-agent/docs/user-guide/features/spotify
 
 ## When to use this skill
 

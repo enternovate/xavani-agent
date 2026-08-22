@@ -7,8 +7,8 @@ const config: Config = {
   tagline: 'The self-improving AI agent',
   favicon: 'img/favicon.ico',
 
-  url: 'https://xavani-agent.enternovate.com',
-  baseUrl: '/docs/',
+  url: 'https://enternovate.co.za',
+  baseUrl: '/xavani-agent/',
 
   organizationName: 'enternovate',
   projectName: 'xavani-agent',
@@ -124,7 +124,7 @@ const config: Config = {
           position: 'right',
         },
         {
-          href: 'https://xavani-agent.enternovate.com',
+          href: 'https://enternovate.co.za/xavani-agent',
           label: 'Home',
           position: 'right',
         },

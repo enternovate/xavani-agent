@@ -345,7 +345,7 @@
         tier_part: tierPart,
         name: achievement.name,
       });
-      return tmpl + "\n\n@Xavani · https://xavani-agent.enternovate.com";
+      return tmpl + "\n\n@Xavani · https://enternovate.co.za/xavani-agent";
     }
 
     function shareOnX() {

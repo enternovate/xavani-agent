@@ -14,8 +14,8 @@ Outputs:
                                     comments separating files.
 
 Both publish at:
-  https://xavani-agent.enternovate.com/docs/llms.txt
-  https://xavani-agent.enternovate.com/docs/llms-full.txt
+  https://enternovate.co.za/xavani-agent/docs/llms.txt
+  https://enternovate.co.za/xavani-agent/docs/llms-full.txt
 
 The `/docs/` prefix is not a mistake — Docusaurus serves `website/static/`
 at the `docs/` base path. Clients and IDE plugins that probe the classic
@@ -36,7 +36,7 @@ WEBSITE = SCRIPT_DIR.parent
 DOCS = WEBSITE / "docs"
 STATIC = WEBSITE / "static"
 
-SITE_BASE = "https://xavani-agent.enternovate.com/docs"
+SITE_BASE = "https://enternovate.co.za/xavani-agent/docs"
 
 # Curated sections for llms.txt — mirrors the product story, not the filesystem.
 # Each entry: (docs-relative path without .md, display title, optional short desc).
@@ -253,8 +253,8 @@ def emit_llms_full() -> str:
             "Started, Using Xavani, Features, Messaging, Integrations, Guides, "
             "Developer Guide, Reference, then everything else.\n"
         ),
-        "Canonical site: https://xavani-agent.enternovate.com/docs\n",
-        "Short index: https://xavani-agent.enternovate.com/docs/llms.txt\n",
+        "Canonical site: https://enternovate.co.za/xavani-agent/docs\n",
+        "Short index: https://enternovate.co.za/xavani-agent/docs/llms.txt\n",
         "\n---\n\n",
     ]
 

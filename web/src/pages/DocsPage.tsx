@@ -5,7 +5,7 @@ import { usePageHeader } from "@/contexts/usePageHeader";
 import { cn } from "@/lib/utils";
 import { PluginSlot } from "@/plugins";
 
-export const XAVANI_DOCS_URL = "https://xavani-agent.enternovate.com/docs/";
+export const XAVANI_DOCS_URL = "https://enternovate.co.za/xavani-agent/docs/";
 
 const DS_BUTTON_OUTLINED_LINK_CN = cn(
   "group relative inline-grid grid-cols-[auto_1fr_auto] items-center",
