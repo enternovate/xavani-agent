@@ -10336,6 +10336,10 @@ class XavaniCLI:
             self._console_print(f"  Stopped {stopped['id']}.")
             return
 
+        if rest.startswith("watch"):
+            self._handle_loop_watch(rest)
+            return
+
         kwargs: dict = {}
         tokens = rest.split()
         i = 0
@@ -10427,6 +10431,107 @@ class XavaniCLI:
             )
             self._console_print(head)
             self._console_print(f"      {spec.get('status')} · {spec['prompt'][:60]}")
+
+    def _handle_loop_watch(self, rest: str) -> None:
+        """Handle /loop watch [every S] [passes N] [budget USD] [alert C] <prompt>.
+
+        Creates a loop spec plus a no-agent cron job. Each scheduled tick
+        runs one pass headlessly; the job stays silent until the loop
+        finishes, then delivers the summary alert and removes itself.
+        """
+        from xavani_cli import loop_runner, loop_watchdog
+
+        tokens = rest.split()[1:]
+        kwargs: dict = {}
+        alert = None
+        i = 0
+        while i < len(tokens) - 1 and tokens[i] in ("every", "passes", "budget", "alert"):
+            key, raw = tokens[i], tokens[i + 1]
+            if key == "alert":
+                alert = raw
+                i += 2
+                continue
+            try:
+                value = float(raw) if key == "budget" else int(raw)
+            except ValueError:
+                break
+            kwargs["every" if key == "every" else key] = value
+            i += 2
+        prompt = " ".join(tokens[i:]).strip()
+        every_raw = kwargs.pop("every", None)
+        if not prompt:
+            self._console_print(
+                "  Usage: /loop watch [every S] [passes N] [budget USD] "
+                "[alert C] <prompt>"
+            )
+            return
+        minutes = None
+        if every_raw is not None:
+            try:
+                from cron.jobs import parse_duration
+
+                minutes = parse_duration(f"{int(every_raw)}m")
+            except (ValueError, TypeError):
+                self._console_print(
+                    "  [red]Invalid --every duration. Use m/h/d units, "
+                    "e.g. every 5m.[/]"
+                )
+                return
+
+        schedule = f"every {minutes}m" if minutes else "every 5m"
+        try:
+            spec = loop_runner.new_loop(prompt, **kwargs)
+        except loop_runner.LoopError as exc:
+            self._console_print(f"  [red]{exc}[/]")
+            return
+
+        scripts_dir = Path.home() / ".xavani" / "scripts"
+        script_name = f"loop_watchdog_{spec['id']}.py"
+        try:
+            scripts_dir.mkdir(parents=True, exist_ok=True)
+            script_path = scripts_dir / script_name
+            script_path.write_text(
+                loop_watchdog.wrapper_script_source(spec["id"]), encoding="utf-8"
+            )
+        except OSError as exc:
+            loop_runner.stop(spec["id"])
+            self._console_print(f"  [red]Cannot write watchdog script: {exc}[/]")
+            return
+
+        try:
+            from cron.jobs import create_job
+
+            job = create_job(
+                None,
+                schedule,
+                name=f"watchdog {spec['id']}",
+                deliver=alert,
+                script=script_name,
+                no_agent=True,
+            )
+        except ValueError as exc:
+            loop_runner.stop(spec["id"])
+            self._console_print(f"  [red]Watchdog job rejected: {exc}[/]")
+            return
+
+        spec["cron_job_id"] = job["id"]
+        spec["schedule"] = schedule
+        loop_runner.save(spec)
+
+        from xavani_cli.activity import activity, detail
+
+        self._console_print(activity("watch", spec["id"], running=True))
+        self._console_print(detail(f"prompt: {prompt[:70]}"))
+        self._console_print(
+            detail(f"tick: {schedule}, passes cap {spec['max_passes']}")
+        )
+        channel = alert or ("origin" if job.get("origin") else "local")
+        self._console_print(
+            detail(
+                f"job {job['id']} — silent while running, alerts on "
+                f"finish via {channel}. Stop with /loop stop {spec['id']}"
+            )
+        )
 
     def _handle_eval_command(self, cmd_original: str) -> None:
         """Handle /eval [--faux] [--tasks <path>] — run the bench suite."""
