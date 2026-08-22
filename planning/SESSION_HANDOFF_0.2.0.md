@@ -5,8 +5,8 @@ Plan of record: planning/0.2.0-plan.md (500 items, 10 workstreams).
 
 ## State
 
-6 commits on main (all gates green: ruff clean, targeted pytest, faux bench
-6/6 median_wall_s=0.18):
+10 commits on main (all gates green: ruff clean, targeted pytest, faux bench
+20/20 median_wall_s=0.15):
 
 1. 0202cfa tools/write_journal.py + hook in _handle_write_file +
    tests/tools/test_write_journal.py. JSONL journal at
@@ -32,10 +32,32 @@ Plan of record: planning/0.2.0-plan.md (500 items, 10 workstreams).
    model.roles.<role>. Tests: tests/test_model_router_roles.py.
 6. 3bb9c41 loop engine: xavani_cli/loop_runner.py (new_loop/load/
    list_loops/stop/record_failure_note/check_stop_conditions/run_loop/
-   summary); /loop [passes N] [every S] [budget USD] <prompt> | stop <id>;
-   /loops. Runner closure calls self.agent.chat() per pass with failure
-   notes + previous output injected. Crash-safe: spec written after every
-   pass. Tests: tests/xavani_cli/test_loop_runner.py.
+   run_loop_eval/summary); /loop [passes N] [every S] [budget USD] <prompt>
+   | stop <id>; /loops. Runner closure calls self.agent.chat() per pass
+   with failure notes + previous output injected. Crash-safe: spec written
+   after every pass. Runaway detection (3 identical passes), nested-loop
+   depth guard (max 2), eval loop with score threshold + per-pass scores.
+   Tests: tests/xavani_cli/test_loop_runner.py.
+7. (task suite) baseline_tasks.json grown 6 -> 20 tasks across coding,
+   extraction, summarization, planning, file, business categories.
+8. (verifiers) jsonschema:, pytest:, exit_code:N:cmd verifier types in
+   scripts/task_bench/run_bench.py. Tests:
+   tests/xavani_cli/test_task_bench_verifiers.py.
+9. regression_gate.py — compares two bench results, fails when median wall
+   time or cost-per-success worsens >10%. Wire into CI as:
+   python3 -m scripts.task_bench.regression_gate baseline.json current.json
+   Tests: tests/xavani_cli/test_regression_gate.py.
+
+## Next steps after this handoff
+
+- /eval slash command wrapping run_bench in-session; /eval-loop wrapping
+  loop_runner.run_loop_eval with the bench scorecard as score_fn.
+- llm_judge: verifier (needs model wiring; deferred deliberately).
+- Watchdog loops via cron/jobs.py; gateway parity for /loop.
+- W5 ports (checkpoint/rewind, memory tools retain/recall/reflect/learn,
+  advisor role, magic keywords ultrathink/orchestrate/workflowz),
+  W6 overlooked features, W7-W9 polish/docs/release.
+- Version bump to 0.2.0 + CHANGELOG entry LAST.
 
 ## Audit findings (do NOT rebuild these)
 
