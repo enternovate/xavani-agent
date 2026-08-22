@@ -1,0 +1,82 @@
+name: xavani-ember
+description: Xavani Agent — dark charcoal and ember orange theme by Enternovate
+
+colors:
+  banner_border: "#4a2c1a"
+  banner_title: "#fb923c"
+  banner_accent: "#f97316"
+  banner_dim: "#8a7466"
+  banner_text: "#ffe4cc"
+  ui_accent: "#fb923c"
+  ui_label: "#fdba74"
+  ui_ok: "#a3e635"
+  ui_error: "#ef4444"
+  ui_warn: "#eab308"
+  prompt: "#ffe4cc"
+  input_rule: "#4a2c1a"
+  response_border: "#f97316"
+  status_bar_bg: "#160d07"
+  status_bar_text: "#d9b394"
+  status_bar_strong: "#fb923c"
+  status_bar_dim: "#5e4530"
+  status_bar_good: "#a3e635"
+  status_bar_warn: "#eab308"
+  status_bar_bad: "#f97316"
+  status_bar_critical: "#ef4444"
+  session_label: "#fdba74"
+  session_border: "#5e4530"
+  voice_status_bg: "#160d07"
+  selection_bg: "#33200f"
+  completion_menu_bg: "#160d07"
+  completion_menu_current_bg: "#33200f"
+  completion_menu_meta_bg: "#241508"
+  completion_menu_meta_current_bg: "#33200f"
+
+spinner:
+  waiting_faces:
+    - "(·)"
+    - "(*)"
+    - "(o)"
+    - "(O)"
+    - "(0)"
+  thinking_faces:
+    - "(˘)"
+    - "(˘⌢˘)"
+    - "(ˉ⌢ˉ)"
+    - "(•⌢•)"
+    - "(◉⌢◉)"
+    - "(◎⌣◎)"
+  thinking_verbs:
+    - "kindling"
+    - "stoking"
+    - "forging"
+    - "tempering"
+    - "smelting"
+    - "annealing"
+  wings:
+    - ["~*", "~*"]
+    - ["**", "**"]
+    - ["~~", "~~"]
+
+branding:
+  agent_name: "Xavani Agent"
+  welcome: "Xavani Agent — built by Enternovate. Open source. Private. Local."
+  goodbye: "Banking the coals. EMBER out."
+  response_label: " ~* Xavani "
+  prompt_symbol: "‣"
+  help_header: "(*) Xavani Commands"
+
+tool_prefix: "│"
+
+tool_emojis:
+  terminal: "*"
+  web_search: "~"
+  read_file: "="
+  write_file: "+"
+  browser_navigate: "@"
+  memory: "M"
+  skill_view: "^"
+  patch: "&"
+  bash: "*"
+  python: "~"
+  execute_code: "!"

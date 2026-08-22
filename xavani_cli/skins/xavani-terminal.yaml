@@ -1,0 +1,82 @@
+name: xavani-terminal
+description: Xavani Agent — classic green phosphor CRT theme by Enternovate
+
+colors:
+  banner_border: "#1e4620"
+  banner_title: "#4ade80"
+  banner_accent: "#22c55e"
+  banner_dim: "#5a8a5e"
+  banner_text: "#d2ffd6"
+  ui_accent: "#4ade80"
+  ui_label: "#6ee7a0"
+  ui_ok: "#4ade80"
+  ui_error: "#ef4444"
+  ui_warn: "#eab308"
+  prompt: "#d2ffd6"
+  input_rule: "#1e4620"
+  response_border: "#22c55e"
+  status_bar_bg: "#071408"
+  status_bar_text: "#93d8a0"
+  status_bar_strong: "#4ade80"
+  status_bar_dim: "#35603c"
+  status_bar_good: "#4ade80"
+  status_bar_warn: "#eab308"
+  status_bar_bad: "#f97316"
+  status_bar_critical: "#ef4444"
+  session_label: "#6ee7a0"
+  session_border: "#35603c"
+  voice_status_bg: "#071408"
+  selection_bg: "#12331a"
+  completion_menu_bg: "#071408"
+  completion_menu_current_bg: "#12331a"
+  completion_menu_meta_bg: "#0c2410"
+  completion_menu_meta_current_bg: "#12331a"
+
+spinner:
+  waiting_faces:
+    - "[·]"
+    - "[:]"
+    - "[¦]"
+    - "[+]"
+    - "[x]"
+  thinking_faces:
+    - "[ ]"
+    - "[.]"
+    - "[..]"
+    - "[...]"
+    - "[#]"
+    - "[%]"
+  thinking_verbs:
+    - "booting"
+    - "scanning"
+    - "indexing"
+    - "parsing"
+    - "linking"
+    - "executing"
+  wings:
+    - [">_", ">_"]
+    - ["::", "::"]
+    - ["##", "##"]
+
+branding:
+  agent_name: "Xavani Agent"
+  welcome: "Xavani Agent — built by Enternovate. Open source. Private. Local."
+  goodbye: "Session closed. TERMINAL out."
+  response_label: " >_ Xavani "
+  prompt_symbol: ">"
+  help_header: "[::] Xavani Commands"
+
+tool_prefix: "│"
+
+tool_emojis:
+  terminal: ">"
+  web_search: "%"
+  read_file: "#"
+  write_file: "+"
+  browser_navigate: "@"
+  memory: "M"
+  skill_view: "$"
+  patch: "&"
+  bash: ">"
+  python: "%"
+  execute_code: "!"

@@ -710,6 +710,71 @@ def _load_skin_from_yaml(path: Path) -> Optional[Dict[str, Any]]:
     return None
 
 
+REQUIRED_SKIN_COLOR_KEYS = (
+    "banner_title", "ui_accent", "ui_ok", "ui_error", "ui_warn",
+)
+REQUIRED_SKIN_BRANDING_KEYS = ("agent_name",)
+
+
+class SkinValidationError(ValueError):
+    """Raised when a skin file fails strict validation."""
+
+
+def validate_skin_data(data: Any) -> list[str]:
+    """Return a list of problems; empty means the skin is valid."""
+    problems: list[str] = []
+    if not isinstance(data, dict):
+        return ["skin definition is not a mapping"]
+    if not str(data.get("name", "")).strip():
+        problems.append("missing required key: name")
+    colors = data.get("colors")
+    if not isinstance(colors, dict):
+        problems.append("missing or invalid section: colors")
+    else:
+        for key in REQUIRED_SKIN_COLOR_KEYS:
+            value = colors.get(key)
+            if not isinstance(value, str) or not value.strip():
+                problems.append(f"colors.{key} missing or not a color string")
+    branding = data.get("branding")
+    if not isinstance(branding, dict):
+        problems.append("missing or invalid section: branding")
+    else:
+        for key in REQUIRED_SKIN_BRANDING_KEYS:
+            value = branding.get(key)
+            if not isinstance(value, str) or not value.strip():
+                problems.append(f"branding.{key} missing or not a string")
+    return problems
+
+
+def load_skin_strict(name: str) -> SkinConfig:
+    """Load a user or built-in skin, raising on validation failure.
+
+    Unlike :func:`load_skin`, a broken skin file is an error with the
+    full problem list, never a silent fallback.
+    """
+    skins_path = _skins_dir()
+    user_file = skins_path / f"{name}.yaml"
+    source = user_file if user_file.is_file() else None
+    if source is None and name in _BUILTIN_SKINS:
+        return _build_skin_config(_BUILTIN_SKINS[name])
+    if source is None:
+        raise SkinValidationError(
+            f"skin '{name}' not found in {skins_path} or built-ins"
+        )
+    try:
+        import yaml
+        data = yaml.safe_load(source.read_text(encoding="utf-8"))
+    except Exception as exc:
+        raise SkinValidationError(
+            f"skin '{name}' failed to parse ({source}): {exc}"
+        ) from None
+    problems = validate_skin_data(data)
+    if problems:
+        detail = "; ".join(problems)
+        raise SkinValidationError(f"skin '{name}' is invalid ({source}): {detail}")
+    return _build_skin_config(data)
+
+
 def _mapping_or_empty(value: Any, *, section: str, skin_name: str) -> Dict[str, Any]:
     """Return a mapping value or an empty dict when the section type is invalid."""
     if isinstance(value, dict):

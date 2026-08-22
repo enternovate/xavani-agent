@@ -9450,7 +9450,12 @@ class XavaniCLI:
     def _handle_skin_command(self, cmd: str):
         """Handle /skin [name] — show or change the display skin."""
         try:
-            from xavani_cli.skin_engine import list_skins, set_active_skin, get_active_skin_name
+            from xavani_cli.skin_engine import (
+                list_skins,
+                set_active_skin,
+                get_active_skin_name,
+                load_skin_strict,
+            )
         except ImportError:
             print("Skin engine not available.")
             return
@@ -9481,6 +9486,12 @@ class XavaniCLI:
         _ACCENT.reset()  # Re-resolve ANSI color for the new skin
         # _DIM is now a fixed dim+italic ANSI escape (terminal-default fg)
         # so it doesn't need re-resolving on skin switch.
+        from xavani_cli.skin_engine import SkinValidationError
+
+        try:
+            load_skin_strict(new_skin)
+        except SkinValidationError as exc:
+            print(f"  [yellow]Skin warning: {exc}[/]")
         if save_config_value("display.skin", new_skin):
             print(f"  Skin set to: {new_skin} (saved)")
         else:
