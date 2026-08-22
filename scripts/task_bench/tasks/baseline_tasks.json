@@ -34,5 +34,89 @@
     "prompt": "What is the average-case time complexity of binary search on a sorted array?",
     "verifier": "contains:O(log n)",
     "faux_response": "Binary search runs in O(log n) time because the search space halves on every comparison."
+  },
+  {
+    "id": "code-fix-off-by-one",
+    "prompt": "Fix the off-by-one bug: def last(items): return items[len(items)]. Answer with the corrected function only.",
+    "verifier": "contains:len(items) - 1",
+    "faux_response": "def last(items): return items[len(items) - 1]"
+  },
+  {
+    "id": "code-explain-mutation",
+    "prompt": "Why is `for x in lst: lst.remove(x)` a bug in Python? Answer in two sentences.",
+    "verifier": "regex:(?i)mutat|skip|index",
+    "faux_response": "Removing items while iterating mutates the list and skips elements because indices shift. Iterate over a copy instead."
+  },
+  {
+    "id": "extract-meeting-actions",
+    "prompt": "Extract action items as JSON with keys owner and task from: 'Alice will draft the brief. Bob books the venue.'",
+    "verifier": "jsonschema:{\"type\":\"array\",\"minItems\":2,\"items\":{\"type\":\"object\",\"required\":[\"owner\",\"task\"]}}",
+    "faux_response": "[{\"owner\": \"Alice\", \"task\": \"draft the brief\"}, {\"owner\": \"Bob\", \"task\": \"books the venue\"}]"
+  },
+  {
+    "id": "extract-expense-csv",
+    "prompt": "Return only the numeric value in dollars for: 'Team lunch 12 May, R450 at 18.20 ZAR/USD'",
+    "verifier": "regex:24\\.7|24\\.73|\\$?24",
+    "faux_response": "$24.73"
+  },
+  {
+    "id": "summarize-meeting-notes",
+    "prompt": "Summarize in one sentence: 'Q3 revenue grew 12 percent. Churn held flat. Hiring pauses in Q4.'",
+    "verifier": "regex:(?i)revenue|churn|hiring",
+    "faux_response": "Revenue grew 12 percent while churn stayed flat, but hiring pauses in Q4."
+  },
+  {
+    "id": "summarize-contract-clause",
+    "prompt": "One-sentence plain-language summary: 'The Licensor grants a non-exclusive, non-transferable licence to use the Software for internal business purposes only.'",
+    "verifier": "regex:(?i)licen[cs]e|internal|non-exclusive",
+    "faux_response": "The licence is non-exclusive and limited to internal business use."
+  },
+  {
+    "id": "plan-product-launch",
+    "prompt": "List the planning steps for launching a small paid add-on to an existing CLI product.",
+    "verifier": "contains:pricing",
+    "faux_response": "Steps: define scope, set pricing, add licence checks, write docs, announce to users, monitor support load."
+  },
+  {
+    "id": "plan-weekly-review",
+    "prompt": "Draft a 3-item agenda for a personal weekly review session.",
+    "verifier": "regex:(?i)(1[.)]|agenda|review)",
+    "faux_response": "Agenda: 1) review last week's commitments, 2) clear stalled work, 3) set next week's top three priorities."
+  },
+  {
+    "id": "file-count-words",
+    "prompt": "Respond with the word count of this text as a bare number: 'the quick brown fox jumps'",
+    "verifier": "exit_code:0:python3 -c \"import sys; data=sys.stdin.read().strip(); sys.exit(0 if data=='5' else 1)\"",
+    "faux_response": "5"
+  },
+  {
+    "id": "file-sort-lines",
+    "prompt": "Sort these lines alphabetically and output one per line: cherry, apple, banana",
+    "verifier": "exit_code:0:python3 -c \"import sys; lines=[l.strip() for l in sys.stdin.read().splitlines() if l.strip()]; sys.exit(0 if lines==['apple','banana','cherry'] else 1)\"",
+    "faux_response": "apple\nbanana\ncherry"
+  },
+  {
+    "id": "biz-draft-refund-reply",
+    "prompt": "Draft a two-sentence refund approval reply to a customer named Thabo. Include the word refund.",
+    "verifier": "contains:refund",
+    "faux_response": "Hi Thabo, we have approved your refund in full. The amount returns to your card within 5 business days."
+  },
+  {
+    "id": "biz-meeting-agenda-json",
+    "prompt": "Return a JSON object with key agenda whose value is a list of at least 2 strings for a 30-minute team standup.",
+    "verifier": "jsonschema:{\"type\":\"object\",\"required\":[\"agenda\"],\"properties\":{\"agenda\":{\"type\":\"array\",\"minItems\":2,\"items\":{\"type\":\"string\"}}}}",
+    "faux_response": "{\"agenda\": [\"blockers\", \"today's priorities\"]}"
+  },
+  {
+    "id": "code-write-fizzbuzz-single",
+    "prompt": "Write a one-line Python expression that returns 'Fizz' for multiples of 3 else the number, for variable n. Answer with code only.",
+    "verifier": "contains:Fizz",
+    "faux_response": "'Fizz' if n % 3 == 0 else n"
+  },
+  {
+    "id": "qa-explain-idempotency",
+    "prompt": "What does idempotent mean for an HTTP API method? One sentence.",
+    "verifier": "regex:(?i)same result|idempot|repeat",
+    "faux_response": "An idempotent method produces the same result no matter how many times the same request repeats."
   }
 ]
