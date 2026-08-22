@@ -4207,7 +4207,14 @@ class AIAgent:
         """
         message = self._apply_magic_keywords(message)
         result = self.run_conversation(message, stream_callback=stream_callback)
-        return result["final_response"]
+        reply = result["final_response"]
+        try:
+            from xavani_cli import advisor
+
+            reply = advisor.maybe_review(self, message, reply)
+        except Exception:
+            pass
+        return reply
 
     def _apply_magic_keywords(self, message: str) -> str:
         """Expand magic keywords (ultrathink/orchestrate/workflowz) in prose."""
