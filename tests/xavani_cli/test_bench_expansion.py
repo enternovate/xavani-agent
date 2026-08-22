@@ -53,6 +53,40 @@ class TestLlmJudgeVerifier:
         assert check("alpha beta9") is True
         assert calls[0]["model"] == "judge-model"
 
+    def test_model_judge_tolerates_preamble(self, rubric, monkeypatch):
+        monkeypatch.setenv("XAVANI_BENCH_JUDGE_MODEL", "judge-model")
+        monkeypatch.setattr(
+            "agent.auxiliary_client.call_llm",
+            lambda **kwargs: "reasoning... final answer: YES",
+        )
+        check = run_bench.parse_verifier(f"llm_judge:{rubric}", "t4b")
+        assert check("alpha beta9") is True
+
+    def test_model_judge_handles_reasoning_only_response(
+        self, rubric, monkeypatch
+    ):
+        from types import SimpleNamespace
+
+        monkeypatch.setenv("XAVANI_BENCH_JUDGE_MODEL", "judge-model")
+        monkeypatch.setattr(
+            "agent.auxiliary_client.call_llm",
+            lambda **kwargs: SimpleNamespace(
+                choices=[SimpleNamespace(message=SimpleNamespace(
+                    content=None, reasoning="looks correct, so YES"))]
+            ),
+        )
+        check = run_bench.parse_verifier(f"llm_judge:{rubric}", "t4c")
+        assert check("alpha beta1") is True
+
+    def test_model_judge_no_rejects(self, rubric, monkeypatch):
+        monkeypatch.setenv("XAVANI_BENCH_JUDGE_MODEL", "judge-model")
+        monkeypatch.setattr(
+            "agent.auxiliary_client.call_llm",
+            lambda **kwargs: "after review: NO",
+        )
+        check = run_bench.parse_verifier(f"llm_judge:{rubric}", "t4d")
+        assert check("alpha beta1") is False
+
 
 class TestPerTaskTimeout:
     def test_load_tasks_accepts_positive_timeout(self, tmp_path):

@@ -57,6 +57,22 @@ _VERIFIER_RE = re.compile(
 _DEFAULT_VERIFIER_TIMEOUT_S = 120
 
 
+def _response_text(response: Any) -> str:
+    """Extract plain text from a str, .content object, or OpenAI shape."""
+    if isinstance(response, str):
+        return response
+    content = getattr(response, "content", None)
+    if isinstance(content, str):
+        return content
+    choices = getattr(response, "choices", None)
+    if choices:
+        message = getattr(choices[0], "message", None)
+        text = getattr(message, "content", None)
+        if isinstance(text, str):
+            return text
+    return ""
+
+
 def _verifier_llm_judge(payload: str, task_id: str) -> Callable[[str], bool]:
     """Judge a response against a rubric file of verifier lines.
 
@@ -93,16 +109,26 @@ def _verifier_llm_judge(payload: str, task_id: str) -> Callable[[str], bool]:
                 model=model,
                 messages=[
                     {"role": "system", "content": (
-                        "You are a strict grader. Answer with exactly YES or "
-                        "NO: does the response satisfy the request? "
+                        "You are a strict grader. First reason briefly, then "
+                        "end your reply with exactly YES or NO: does the "
+                        "response satisfy the request?"
                     )},
                     {"role": "user", "content": response[:8000]},
                 ],
                 temperature=0.0,
-                max_tokens=5,
+                max_tokens=1000,
             )
-            text = str(getattr(verdict, "content", "") or verdict).strip().upper()
-            return text.startswith("YES")
+            content = _response_text(verdict).strip()
+            text = content
+            if not text:
+                choices = getattr(verdict, "choices", None)
+                if choices:
+                    message = choices[0].message
+                    text = str(
+                        getattr(message, "reasoning", None) or ""
+                    ).strip()
+            upper = text.upper()
+            return upper.rstrip().endswith("YES") and " NO" not in upper[-8:]
 
         model_judge = _model_verdict
 
