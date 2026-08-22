@@ -10414,10 +10414,19 @@ class XavaniCLI:
         if not specs:
             self._console_print("  No saved loops. Start one with /loop <prompt>.")
             return
+        from xavani_cli.activity import activity
+
         for spec in specs:
-            for line in loop_runner.summary(spec).splitlines():
-                self._console_print(f"  {line}")
-            self._console_print("")
+            icon_verb = "loop"
+            head = activity(
+                icon_verb,
+                spec["id"],
+                seconds=None,
+                running=spec.get("status") == "active",
+                note=f"{len(spec.get('passes', []))} passes",
+            )
+            self._console_print(head)
+            self._console_print(f"      {spec.get('status')} · {spec['prompt'][:60]}")
 
     def _handle_eval_command(self, cmd_original: str) -> None:
         """Handle /eval [--faux] [--tasks <path>] — run the bench suite."""
