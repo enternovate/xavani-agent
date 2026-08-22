@@ -103,6 +103,9 @@ COMMAND_REGISTRY: list[CommandDef] = [
     CommandDef("hub", "Live subagent roster with steer, kill, and revive", "Session",
                subcommands=("steer", "kill", "revive", "parked"),
                args_hint="[steer <id> <text> | kill <id> | revive <id> | parked]"),
+    CommandDef("macro", "Deterministic macro steps: define once, run verbatim", "Configuration",
+               subcommands=("define", "run", "list", "remove"),
+               args_hint="define <name> <step>; <step> | run <name> | list | remove <name>"),
     CommandDef("eval", "Run the task benchmark suite in-session", "Configuration",
                args_hint="[--faux] [--tasks <path>]"),
     CommandDef("eval-loop", "Iterate a prompt until a rubric score threshold is met", "Session",
@@ -1014,7 +1017,7 @@ _SLACK_RESERVED_COMMANDS = frozenset({
 _GATEWAY_EXCLUDED_COMMANDS = frozenset({
     "gquota", "footer", "profile", "insights",
     "reload-mcp", "reload-skills", "voice",
-    "curator", "advisor", "hub",
+    "curator", "advisor", "hub", "macro",
 })
 
 
