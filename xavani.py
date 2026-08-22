@@ -33,7 +33,7 @@ from typing import Any, Callable, Iterable, Optional
 # Constants
 # ---------------------------------------------------------------------------
 
-VERSION: str = "0.1.1"
+VERSION: str = "0.2.0"
 PRONUNCIATION: str = "shahr-vaa-nee"
 PRODUCT_NAME: str = "Xavani Agent"
 VENDOR: str = "Enternovate"
