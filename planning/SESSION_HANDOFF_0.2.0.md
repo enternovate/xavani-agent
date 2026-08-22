@@ -29,6 +29,12 @@ Plan of record: planning/0.2.0-plan.md (500 items, 10 workstreams).
 
 12 commits on main (all gates green). Session 2 added:
 
+13. 0df9ede agent hub roster (items 256-259): xavani_cli/agent_hub.py —
+    /hub lists live children; steer via AIAgent.steer; kill interrupts
+    one child + parks its goal; revive re-spawns via delegate_task.
+    "hub" in _GATEWAY_EXCLUDED_COMMANDS. Tests:
+    tests/xavani_cli/test_agent_hub.py.
+
 11. 87e1b32 watchdog loops (items 47-48): xavani_cli/loop_watchdog.py
     tick runs ONE headless pass via `xavani -z`; /loop watch [every S]
     [passes N] [budget USD] [alert C] <prompt> creates spec + no-agent
@@ -106,15 +112,20 @@ git apply --cached the filtered patch. Never git add -A.
 
 ## Next steps (in order)
 
-DONE in session 2: watchdog loops + gateway parity verified + advisor role.
+DONE in session 2: watchdog loops + gateway parity verified + advisor
+role + agent hub roster.
 
-Next up: agent hub roster (/hub list/steer/kill/revive, items 256-259 —
-audit tools/delegate_tool.py first, some hub surface may exist), atomic
-commit splitter (266-268), config importer (271-272), RPC mode NDJSON
-over stdio (276-277), llm_judge verifier (111 — deferred: needs model
-wiring through call_llm; the advisor module now shows the pattern),
-activity-formatter rollout across remaining commands, W6 packs
-(331+), W7-W9 polish/docs/release. Version bump 0.2.0 + CHANGELOG LAST.
+Next up: atomic commit splitter (266-268), config importer (271-272),
+RPC mode NDJSON over stdio (276-277), llm_judge verifier (111 — the
+advisor module shows the call_llm pattern to copy), checkpoint/rewind
+(245-246) and memory tools retain/recall/reflect/learn (247-251),
+activity-formatter rollout across remaining commands, W6 packs (331+),
+W7-W9 polish/docs/release. Version bump 0.2.0 + CHANGELOG LAST.
+
+Session-2 pitfalls: cli.py hunk positions SHIFT after every commit of
+mine — always regenerate git diff and re-locate hunks by content before
+git apply --cached. tools/delegate_tool.py carries another session's
+edits — hub was built WITHOUT touching it (registry access only).
 
 ## Pitfalls learned today
 
