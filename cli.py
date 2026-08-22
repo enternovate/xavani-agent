@@ -8419,6 +8419,8 @@ class XavaniCLI:
             self._handle_loops_list(cmd_original)
         elif canonical == "advisor":
             self._handle_advisor_command(cmd_original)
+        elif canonical == "hub":
+            self._handle_hub_command(cmd_original)
         elif canonical == "eval":
             self._handle_eval_command(cmd_original)
         elif canonical == "eval-loop":
@@ -10568,6 +10570,89 @@ class XavaniCLI:
         model_text = resolved["model"] if resolved else "(none)"
         state = "enabled" if enabled else "disabled"
         self._console_print(f"  Advisor: {state} · reviewer model: {model_text}")
+
+    def _handle_hub_command(self, cmd_original: str = "") -> None:
+        """Handle /hub [steer|kill|revive|parked] — live subagent roster."""
+        from xavani_cli import agent_hub
+        from xavani_cli.activity import activity
+
+        parts = cmd_original.split()
+        sub = parts[1].lower() if len(parts) > 1 else "list"
+
+        if sub in ("list", ""):
+            rows = agent_hub.roster()
+            if not rows:
+                self._console_print("  No running subagents.")
+                return
+            for row in rows:
+                head = activity(
+                    "agent",
+                    str(row.get("subagent_id")),
+                    seconds=row.get("duration_s"),
+                    running=True,
+                    note=f"d{row.get('depth')} {row.get('model') or '?'}",
+                )
+                self._console_print(head)
+                self._console_print(f"      goal: {str(row.get('goal'))[:70]}")
+            return
+
+        if sub == "parked":
+            rows = agent_hub.parked()
+            if not rows:
+                self._console_print("  No parked children. Kill one with /hub kill <id>.")
+                return
+            for row in rows:
+                self._console_print(
+                    f"  {row['subagent_id']}  parked "
+                    f"{round(time.time() - float(row['parked_at']))}s ago"
+                )
+                self._console_print(f"      goal: {str(row['goal'])[:70]}")
+            return
+
+        if sub == "steer":
+            if len(parts) < 4:
+                self._console_print("  Usage: /hub steer <subagent-id> <message>")
+                return
+            ok = agent_hub.steer(parts[2], " ".join(parts[3:]))
+            if ok:
+                self._console_print(f"  Steer queued for {parts[2]}.")
+            else:
+                self._console_print(
+                    f"  [red]Cannot steer {parts[2]} — not running or empty text.[/]"
+                )
+            return
+
+        if sub == "kill":
+            if len(parts) < 3:
+                self._console_print("  Usage: /hub kill <subagent-id>")
+                return
+            result = agent_hub.kill(parts[2])
+            if result["ok"]:
+                self._console_print(
+                    f"  Interrupted {parts[2]}. Goal parked — revive with "
+                    f"/hub revive {parts[2]}"
+                )
+            else:
+                self._console_print(f"  [red]{parts[2]} is not a running subagent.[/]")
+            return
+
+        if sub == "revive":
+            if len(parts) < 3:
+                self._console_print("  Usage: /hub revive <subagent-id>")
+                return
+            if not self.agent:
+                self._console_print("  (._.) No active agent — send a message first.")
+                return
+            result = agent_hub.revive(parts[2], self.agent)
+            if result["ok"]:
+                self._console_print(f"  Revived {parts[2]} — new child spawned.")
+            else:
+                self._console_print(f"  [red]{result.get('error')}[/]")
+            return
+
+        self._console_print(
+            "  Usage: /hub [steer <id> <text> | kill <id> | revive <id> | parked]"
+        )
 
     def _handle_eval_command(self, cmd_original: str) -> None:
         """Handle /eval [--faux] [--tasks <path>] — run the bench suite."""

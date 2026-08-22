@@ -100,6 +100,9 @@ COMMAND_REGISTRY: list[CommandDef] = [
     CommandDef("advisor", "Second-model reviewer that flags each reply", "Configuration",
                subcommands=("status", "enable", "disable"),
                args_hint="[status|enable|disable]"),
+    CommandDef("hub", "Live subagent roster with steer, kill, and revive", "Session",
+               subcommands=("steer", "kill", "revive", "parked"),
+               args_hint="[steer <id> <text> | kill <id> | revive <id> | parked]"),
     CommandDef("eval", "Run the task benchmark suite in-session", "Configuration",
                args_hint="[--faux] [--tasks <path>]"),
     CommandDef("eval-loop", "Iterate a prompt until a rubric score threshold is met", "Session",
@@ -1011,7 +1014,7 @@ _SLACK_RESERVED_COMMANDS = frozenset({
 _GATEWAY_EXCLUDED_COMMANDS = frozenset({
     "gquota", "footer", "profile", "insights",
     "reload-mcp", "reload-skills", "voice",
-    "curator", "advisor",
+    "curator", "advisor", "hub",
 })
 
 
