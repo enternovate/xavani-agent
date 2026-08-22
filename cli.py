@@ -8419,6 +8419,8 @@ class XavaniCLI:
             self._handle_loops_list()
         elif canonical == "eval":
             self._handle_eval_command(cmd_original)
+        elif canonical == "eval-loop":
+            self._handle_eval_loop_command(cmd_original)
         elif canonical == "branch":
             self._handle_branch_command(cmd_original)
         elif canonical == "save":
@@ -10430,6 +10432,88 @@ class XavaniCLI:
             return
         if code != 0:
             self._console_print(f"  [red]Eval exited with {code}.[/]")
+
+    def _handle_eval_loop_command(self, cmd_original: str) -> None:
+        """Handle /eval-loop <rubric-file> [threshold F] [passes N] <prompt>."""
+        from xavani_cli import loop_runner
+
+        parts = cmd_original.split()
+        rest = parts[1:]
+        if not rest or not self.agent:
+            self._console_print("  (._.) No active agent — send a message first.")
+            self._console_print(
+                "  Usage: /eval-loop <rubric-file> [threshold F] "
+                "[passes N] <prompt>"
+            )
+            return
+
+        rubric_path = rest[0]
+        try:
+            checks = loop_runner.load_rubric(rubric_path)
+        except (OSError, loop_runner.LoopError) as exc:
+            self._console_print(f"  [red]Rubric error: {exc}[/]")
+            return
+
+        threshold = 1.0
+        kwargs: dict = {}
+        i = 1
+        while i < len(rest) - 1 and rest[i] in ("threshold", "passes"):
+            key, raw = rest[i], rest[i + 1]
+            try:
+                value = float(raw) if key == "threshold" else int(raw)
+            except ValueError:
+                break
+            if key == "threshold":
+                threshold = value
+            else:
+                kwargs["max_passes"] = value
+            i += 2
+        prompt = " ".join(rest[i:]).strip()
+        if not prompt:
+            self._console_print(
+                "  Usage: /eval-loop <rubric-file> [threshold F] "
+                "[passes N] <prompt>"
+            )
+            return
+
+        agent = self.agent
+
+        def runner(prompt: str, last_output, failure_notes) -> str:
+            pass_prompt = prompt
+            if failure_notes:
+                notes = "\n".join(f"- {n}" for n in failure_notes)
+                pass_prompt += (
+                    f"\n\nFailure notes from earlier passes (avoid repeating "
+                    f"these mistakes):\n{notes}"
+                )
+            try:
+                return agent.chat(pass_prompt) or "(empty response)"
+            except Exception as exc:
+                return f"(pass error: {exc})"
+
+        spec = loop_runner.new_loop(prompt, **kwargs)
+        self._console_print(
+            f"  Eval loop {spec['id']} started: {len(checks)} rubric checks, "
+            f"threshold {threshold}."
+        )
+        try:
+            result = loop_runner.run_loop_eval(
+                spec, runner,
+                lambda out: loop_runner.rubric_score(out, checks),
+                threshold=threshold,
+            )
+        except KeyboardInterrupt:
+            result = loop_runner.stop(spec["id"])
+            self._console_print("\n  Eval loop interrupted by user.")
+        scores = [
+            p.get("score")
+            for p in result.get("passes", [])
+            if p.get("score") is not None
+        ]
+        self._console_print("  " + loop_runner.summary(result))
+        if scores:
+            best = max(scores)
+            self._console_print(f"  Best rubric score: {best:.0%}")
 
     def _confirm_destructive_slash(self, command: str, detail: str) -> Optional[str]:
         """Prompt the user to confirm a destructive session slash command.

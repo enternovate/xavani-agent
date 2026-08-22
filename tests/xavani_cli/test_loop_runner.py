@@ -201,3 +201,30 @@ def test_run_loop_eval_tolerates_scoring_error(ldir):
         spec, lambda **kw: "out", bad_score, threshold=0.5, directory=ldir,
     )
     assert result["passes"][0]["score"] is None
+
+
+def test_load_rubric_reads_and_filters(ldir, tmp_path):
+    rubric = tmp_path / "rubric.txt"
+    rubric.write_text(
+        "# comment line\n"
+        "contains:hello\n"
+        "\n"
+        "regex:\\d+\n",
+        encoding="utf-8",
+    )
+    checks = lr.load_rubric(str(rubric))
+    assert checks == ["contains:hello", "regex:\\d+"]
+
+
+def test_load_rubric_rejects_empty(tmp_path):
+    rubric = tmp_path / "empty.txt"
+    rubric.write_text("# only comments\n", encoding="utf-8")
+    with pytest.raises(lr.LoopError):
+        lr.load_rubric(str(rubric))
+
+
+def test_rubric_score_fraction():
+    checks = ["contains:hello", "regex:\\d+", "contains:missing-token"]
+    assert lr.rubric_score("hello world 42", checks) == pytest.approx(2 / 3)
+    assert lr.rubric_score("nothing here", checks) == 0.0
+    assert lr.rubric_score("hello 7 missing-token", checks) == 1.0

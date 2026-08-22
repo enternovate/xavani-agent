@@ -99,6 +99,8 @@ COMMAND_REGISTRY: list[CommandDef] = [
     CommandDef("loops", "List saved loops", "Session"),
     CommandDef("eval", "Run the task benchmark suite in-session", "Configuration",
                args_hint="[--faux] [--tasks <path>]"),
+    CommandDef("eval-loop", "Iterate a prompt until a rubric score threshold is met", "Session",
+               args_hint="<rubric-file> [threshold F] [passes N] <prompt>"),
     CommandDef("title", "Set a title for the current session", "Session",
                args_hint="[name]"),
     CommandDef("handoff", "Hand off this session to a messaging platform (Telegram, Discord, etc.)", "Session",
@@ -1006,6 +1008,7 @@ _SLACK_RESERVED_COMMANDS = frozenset({
 _GATEWAY_EXCLUDED_COMMANDS = frozenset({
     "gquota", "footer", "profile", "insights",
     "reload-mcp", "reload-skills", "voice",
+    "curator",
 })
 
 
