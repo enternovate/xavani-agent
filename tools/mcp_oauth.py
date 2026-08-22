@@ -424,7 +424,7 @@ async def _redirect_handler(authorization_url: str) -> None:
             f"\n"
             f"    ssh -N -L {_oauth_port}:127.0.0.1:{_oauth_port} <user>@<this-host>\n"  # nosec B105 - port forwarding hint, not a secret
             f"\n"
-            f"  Then open the URL above. See: https://xavani-agent.enternovate.com/docs/guides/oauth-over-ssh\n",
+            f"  Then open the URL above. See: https://enternovate.co.za/xavani-agent/docs/guides/oauth-over-ssh\n",
             file=sys.stderr,
         )
 

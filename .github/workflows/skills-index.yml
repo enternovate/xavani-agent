@@ -91,8 +91,11 @@ jobs:
 
       - name: Stage deployment
         run: |
-          mkdir -p _site/docs
-          cp -r website/build/* _site/docs/
+          # baseUrl is /xavani-agent/ — Docusaurus emits absolute /xavani-agent/*
+          # links, and GitHub Pages for this repo serves from that exact path,
+          # so the build tree copies 1:1 into the artifact root.
+          mkdir -p _site
+          cp -r website/build/* _site/
           # llms.txt / llms-full.txt at site root for agents/IDEs
           if [ -f website/build/llms.txt ]; then
             cp website/build/llms.txt _site/llms.txt
@@ -100,7 +103,7 @@ jobs:
           if [ -f website/build/llms-full.txt ]; then
             cp website/build/llms-full.txt _site/llms-full.txt
           fi
-          echo "xavani-agent.enternovate.com" > _site/CNAME
+
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@56afc609e74202658d3ffba0e8f6dda462b719fa  # v3

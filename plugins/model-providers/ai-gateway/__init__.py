@@ -38,7 +38,7 @@ vercel = VercelAIGatewayProfile(
     env_vars=("AI_GATEWAY_API_KEY",),
     base_url="https://ai-gateway.vercel.sh/v1",
     default_headers={
-        "HTTP-Referer": "https://xavani-agent.enternovate.com",
+        "HTTP-Referer": "https://enternovate.co.za/xavani-agent",
         "X-Title": "Xavani Agent",
     },
     default_aux_model="google/gemini-3-flash",

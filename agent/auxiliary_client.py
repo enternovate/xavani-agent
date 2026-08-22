@@ -319,7 +319,7 @@ _PROVIDERS_WITHOUT_VISION: frozenset = frozenset({
 # `X-Title` is the canonical attribution header OpenRouter's dashboard
 # reads; the previous `X-OpenRouter-Title` label was not recognized there.
 _OR_HEADERS_BASE = {
-    "HTTP-Referer": "https://xavani-agent.enternovate.com",
+    "HTTP-Referer": "https://enternovate.co.za/xavani-agent",
     "X-Title": "Xavani Agent",
     "X-OpenRouter-Categories": "productivity,cli-agent",
 }
@@ -399,7 +399,7 @@ def build_nvidia_nim_headers(base_url: str | None) -> dict:
 from xavani_cli import __version__ as _XAVANI_VERSION
 
 _AI_GATEWAY_HEADERS = {
-    "HTTP-Referer": "https://xavani-agent.enternovate.com",
+    "HTTP-Referer": "https://enternovate.co.za/xavani-agent",
     "X-Title": "Xavani Agent",
     "User-Agent": f"XavaniAgent/{_XAVANI_VERSION}",
 }

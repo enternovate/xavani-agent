@@ -171,7 +171,7 @@ DEFAULT_AGENT_IDENTITY = (
 XAVANI_AGENT_HELP_GUIDANCE = (
     "If the user asks about configuring, setting up, or using Xavani Agent "
     "itself, load the `xavani-agent` skill with skill_view(name='xavani-agent') "
-    "before answering. Docs: https://xavani-agent.enternovate.com/docs"
+    "before answering. Docs: https://enternovate.co.za/xavani-agent/docs"
 )
 
 MEMORY_GUIDANCE = (

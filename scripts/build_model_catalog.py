@@ -22,7 +22,7 @@ Usage::
 Output: ``website/static/api/model-catalog.json``
 
 Live URL (after ``deploy-site.yml`` runs on merge to main):
-``https://xavani-agent.enternovate.com/docs/api/model-catalog.json``
+``https://enternovate.co.za/xavani-agent/docs/api/model-catalog.json``
 """
 
 from __future__ import annotations
@@ -50,7 +50,7 @@ def build_catalog() -> dict:
         "updated_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
         "metadata": {
             "source": "xavani-agent repo",
-            "docs": "https://xavani-agent.enternovate.com/docs/reference/model-catalog",
+            "docs": "https://enternovate.co.za/xavani-agent/docs/reference/model-catalog",
         },
         "providers": {
             "openrouter": {

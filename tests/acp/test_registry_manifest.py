@@ -37,7 +37,7 @@ def test_agent_json_matches_official_registry_required_fields():
     assert data["name"] == "Xavani Agent"
     assert data["description"]
     assert data["repository"] == "https://github.com/enternovate/xavani-agent"
-    assert data["website"].startswith("https://xavani-agent.enternovate.com/")
+    assert data["website"].startswith("https://enternovate.co.za/xavani-agent/")
     assert data["authors"] == ["Enternovate"]
     assert data["license"] == "MIT"
     assert set(data["distribution"]) <= ALLOWED_DISTRIBUTIONS

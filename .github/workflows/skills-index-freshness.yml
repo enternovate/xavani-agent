@@ -50,7 +50,7 @@ jobs:
           python3 - <<'EOF'
           import hashlib, json, urllib.request
 
-          published_url = "https://xavani-agent.enternovate.com/api/skills-index.json"
+          published_url = "https://enternovate.co.za/xavani-agent/api/skills-index.json"
           local_path = "website/static/api/skills-index.json"
 
 
