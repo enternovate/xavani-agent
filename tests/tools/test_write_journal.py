@@ -86,3 +86,15 @@ def test_rollback_rejects_invalid_count(jdir):
 def test_commit_survives_missing_journal_dir(jdir):
     entry = {"path": "/tmp/x.txt", "existed": False, "data_b64": None, "captured": True}
     assert write_journal.commit(entry, directory=jdir) is True
+
+
+def test_count_entries_tracks_commits_and_rollback(jdir, tmp_path):
+    target = tmp_path / "c.txt"
+    target.write_text("v0", encoding="utf-8")
+    assert write_journal.count_entries(directory=jdir) == 0
+    entry = write_journal.capture(str(target))
+    target.write_text("v1", encoding="utf-8")
+    write_journal.commit(entry, directory=jdir)
+    assert write_journal.count_entries(directory=jdir) == 1
+    write_journal.rollback_last(1, directory=jdir)
+    assert write_journal.count_entries(directory=jdir) == 0
