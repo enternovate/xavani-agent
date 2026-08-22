@@ -1007,6 +1007,14 @@ def _build_child_agent(
         except Exception:
             logger.debug("persona toolset merge failed for %s", persona, exc_info=True)
 
+    # Director mode restricts every child to read-only toolsets.
+    try:
+        from xavani_cli.director import director_filter_toolsets
+
+        child_toolsets = director_filter_toolsets(child_toolsets)
+    except Exception:
+        logger.debug("director filter skipped", exc_info=True)
+
     workspace_hint = _resolve_workspace_hint(parent_agent)
     child_prompt = _build_child_system_prompt(
         goal,

@@ -8427,6 +8427,8 @@ class XavaniCLI:
             self._handle_fresh_command()
         elif canonical == "rewind":
             self._handle_rewind_command(cmd_original)
+        elif canonical == "director":
+            self._handle_director_command(cmd_original)
         elif canonical == "eval":
             self._handle_eval_command(cmd_original)
         elif canonical == "eval-loop":
@@ -10808,6 +10810,22 @@ class XavaniCLI:
             )
         else:
             self._console_print(f"  [red]{result.get('error')}[/]")
+
+    def _handle_director_command(self, cmd_original: str = "") -> None:
+        """Handle /director [on|off] — read-only subagent enforcement."""
+        from xavani_cli import director
+
+        parts = cmd_original.split()
+        arg = parts[1].lower() if len(parts) > 1 else ""
+        if arg == "on":
+            director.enable()
+        elif arg == "off":
+            director.disable()
+        state = "ON" if director.is_enabled() else "OFF"
+        self._console_print(
+            f"  Director mode: {state} — spawned children limited to "
+            f"read-only toolsets: {', '.join(sorted(director.DIRECTOR_TOOLSETS))}"
+        )
 
     def _handle_eval_command(self, cmd_original: str) -> None:
         """Handle /eval [--faux] [--tasks <path>] — run the bench suite."""
