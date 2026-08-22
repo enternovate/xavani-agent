@@ -125,7 +125,7 @@ COMMAND_REGISTRY: list[CommandDef] = [
     CommandDef("handoff", "Hand off this session to a messaging platform (Telegram, Discord, etc.)", "Session",
                args_hint="<platform>", cli_only=True),
     CommandDef("branch", "Branch the current session (explore a different path)", "Session",
-               aliases=("fork",), args_hint="[name]"),
+               aliases=("fork",), args_hint="[name] [at N]"),
     CommandDef("compress", "Manually compress conversation context", "Session",
                cli_aliases=("cm",), args_hint="[focus topic]"),
     CommandDef("rollback", "List or restore filesystem checkpoints", "Session",

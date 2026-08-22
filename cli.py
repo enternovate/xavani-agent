@@ -6575,7 +6575,27 @@ class XavaniCLI:
             return
 
         parts = cmd_original.split(None, 1)
-        branch_name = parts[1].strip() if len(parts) > 1 else ""
+        rest = parts[1].strip() if len(parts) > 1 else ""
+
+        # Optional "at N": keep only the first N messages in the fork.
+        at_turn: Optional[int] = None
+        tokens = rest.split()
+        if "at" in [t.lower() for t in tokens]:
+            idx = [t.lower() for t in tokens].index("at")
+            if idx + 1 < len(tokens) and tokens[idx + 1].isdigit():
+                at_turn = max(0, int(tokens[idx + 1]))
+                tokens = tokens[:idx] + tokens[idx + 2:]
+        branch_name = " ".join(tokens).strip()
+
+        history_source = self.conversation_history
+        if at_turn is not None:
+            if at_turn <= 0 or at_turn > len(self.conversation_history):
+                _cprint(
+                    f"  Turn {at_turn} out of range "
+                    f"(1-{len(self.conversation_history)})."
+                )
+                return
+            history_source = self.conversation_history[:at_turn]
 
         # Generate the new session ID
         now = datetime.now()
@@ -6620,7 +6640,7 @@ class XavaniCLI:
             return
 
         # Copy conversation history to the new session
-        for msg in self.conversation_history:
+        for msg in history_source:
             try:
                 self._session_db.append_message(
                     session_id=new_session_id,
