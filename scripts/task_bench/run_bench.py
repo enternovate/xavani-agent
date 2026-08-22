@@ -34,8 +34,11 @@ from __future__ import annotations
 import argparse
 import json
 import math
+import os
 import re
+import subprocess
 import sys
+import tempfile
 import time
 from contextlib import ExitStack
 from pathlib import Path
@@ -47,7 +50,71 @@ if str(_REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT))
 
 DEFAULT_TASKS_PATH = Path(__file__).resolve().parent / "tasks" / "baseline_tasks.json"
-_VERIFIER_RE = re.compile(r"^(contains|regex):(.+)$", re.DOTALL)
+_VERIFIER_RE = re.compile(r"^(contains|regex|jsonschema|pytest|exit_code):(.+)$", re.DOTALL)
+
+
+def _verifier_jsonschema(payload: str, task_id: str) -> Callable[[str], bool]:
+    try:
+        import jsonschema
+    except ImportError as exc:
+        raise BenchError(
+            f"task {task_id!r} jsonschema verifier needs the jsonschema package"
+        ) from exc
+    try:
+        schema = json.loads(payload)
+    except json.JSONDecodeError as exc:
+        raise BenchError(
+            f"task {task_id!r} has invalid JSON schema verifier: {exc}"
+        ) from exc
+    validator = jsonschema.Draft7Validator(schema)
+
+    def check(response: str) -> bool:
+        try:
+            data = json.loads(response)
+        except json.JSONDecodeError:
+            return False
+        return not list(validator.iter_errors(data))
+
+    return check
+
+
+def _verifier_pytest(payload: str, task_id: str) -> Callable[[str], bool]:
+    def check(response: str) -> bool:
+        with tempfile.TemporaryDirectory() as td:
+            node_file = Path(td) / "response.txt"
+            node_file.write_text(response, encoding="utf-8")
+            result = subprocess.run(
+                [sys.executable, "-m", "pytest", payload, "-q", "--no-header", "-x"],
+                capture_output=True, text=True, timeout=120,
+                env={**os.environ, "BENCH_RESPONSE_FILE": str(node_file)},
+            )
+            return result.returncode == 0
+
+    return check
+
+
+def _verifier_exit_code(payload: str, task_id: str) -> Callable[[str], bool]:
+    expected_str, sep, command = payload.partition(":")
+    if not sep or not command.strip():
+        raise BenchError(
+            f"task {task_id!r} exit_code verifier needs 'exit_code:<N>:<command>'; "
+            "the response is piped to the command on stdin"
+        )
+    try:
+        expected = int(expected_str)
+    except ValueError as exc:
+        raise BenchError(
+            f"task {task_id!r} exit_code verifier needs an integer code, got {expected_str!r}"
+        ) from exc
+
+    def check(response: str) -> bool:
+        result = subprocess.run(
+            command, input=response, capture_output=True, text=True,
+            timeout=120, shell=True,
+        )
+        return result.returncode == expected
+
+    return check
 
 
 class BenchError(ValueError):
@@ -87,9 +154,16 @@ def parse_verifier(verifier: Optional[str], task_id: str = "?") -> Callable[[str
     match = _VERIFIER_RE.match(verifier)
     if not match:
         raise BenchError(
-            f"task {task_id!r} verifier must start with 'contains:' or 'regex:', got {verifier!r}"
+            f"task {task_id!r} verifier must start with one of "
+            f"contains:, regex:, jsonschema:, pytest:, exit_code: — got {verifier!r}"
         )
     kind, payload = match.group(1), match.group(2)
+    if kind == "jsonschema":
+        return _verifier_jsonschema(payload, task_id)
+    if kind == "pytest":
+        return _verifier_pytest(payload, task_id)
+    if kind == "exit_code":
+        return _verifier_exit_code(payload, task_id)
     if kind == "contains":
         needle = payload
         return lambda response: needle in response
