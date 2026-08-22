@@ -1422,7 +1422,8 @@ copy_config_templates() {
     log_info "Setting up configuration files..."
 
     # Create ~/.xavani directory structure (config at top level, code in subdir)
-    mkdir -p "$XAVANI_HOME"/{cron,sessions,logs,pairing,hooks,image_cache,audio_cache,memories,skills}
+    mkdir -p "$XAVANI_HOME"/{cron,sessions,logs,pairing,hooks,image_cache,audio_cache,memories,skills,loops,macros,scripts}
+    mkdir -p "$XAVANI_HOME/memories/bank"
 
     # Create .env at ~/.xavani/.env (top level, easy to find)
     if [ ! -f "$XAVANI_HOME/.env" ]; then
@@ -1837,7 +1838,7 @@ print_success() {
     echo ""
     echo -e "   ${YELLOW}Config:${NC}    $XAVANI_HOME/config.yaml"
     echo -e "   ${YELLOW}API Keys:${NC}  $XAVANI_HOME/.env"
-    echo -e "   ${YELLOW}Data:${NC}      $XAVANI_HOME/cron/, sessions/, logs/"
+    echo -e "   ${YELLOW}Data:${NC}      $XAVANI_HOME/cron/, sessions/, logs/, loops/, macros/"
     echo -e "   ${YELLOW}Code:${NC}      $INSTALL_DIR"
     echo ""
 

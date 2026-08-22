@@ -64,7 +64,7 @@ if ($userPath -notlike "*$wrapperDir*") {
 
 # Create Xavani home
 $xavaniHome = Join-Path $env:USERPROFILE ".xavani"
-@("logs", "skills", "policies", "installed", "data") | ForEach-Object {
+@("logs", "skills", "policies", "installed", "data", "loops", "macros", "scripts", "memories", "memories/bank") | ForEach-Object {
     New-Item -ItemType Directory -Force -Path (Join-Path $xavaniHome $_) | Out-Null
 }
 New-Item -ItemType File -Force -Path (Join-Path $xavaniHome ".env") | Out-Null
