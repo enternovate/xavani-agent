@@ -56,6 +56,8 @@ Plan of record: planning/0.2.0-plan.md (500 items, 10 workstreams).
 - /eval-loop SHIPPED: rubric-scored iterative refinement. Rubric file =
   contains:/regex: lines; load_rubric/rubric_score in loop_runner;
   /eval-loop <rubric-file> [threshold F] [passes N] <prompt>.
+- /loops prune [days] SHIPPED: removes finished loop specs older than
+  N days (default 7). loop_runner.prune + tests.
 - llm_judge: verifier (needs model wiring; deferred deliberately).
 - Watchdog loops via cron/jobs.py; gateway parity for /loop.
 - W5 ports (checkpoint/rewind, memory tools retain/recall/reflect/learn,
