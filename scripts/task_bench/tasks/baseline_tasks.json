@@ -145,5 +145,26 @@
     "prompt": "A customer received a damaged unit. Write a two-sentence reply: apologize, confirm their refund is processed, and mention the free replacement unit already shipped.",
     "verifier": "llm_judge:scripts/task_bench/rubrics/refund-reply.txt",
     "faux_response": "We apologize for the damaged unit. Your refund is processed, and a free replacement is on its way."
+  },
+  {
+    "id": "pack-meeting-actions",
+    "category": "extraction",
+    "prompt": "From these notes: 'Alice will send the invoice by Friday. Bob flagged the server outage; he owns the postmortem.' List each action as 'owner: action'.",
+    "verifier": "regex:(?i)alice\\s*:\\s*.*invoice",
+    "faux_response": "alice: send the invoice by Friday\nbob: own the server outage postmortem"
+  },
+  {
+    "id": "pack-expense-categorize",
+    "category": "business",
+    "prompt": "Categorize this expense: '$49/month GitHub team plan'. Answer with one word from: travel, meals, software, hardware, other.",
+    "verifier": "contains:software",
+    "faux_response": "software"
+  },
+  {
+    "id": "pack-triage-urgent",
+    "category": "business",
+    "prompt": "Triage this mail into URGENT, RESPOND, DELEGATE, or READ-LATER: 'Production is down, need the on-call now.' Answer with only the bucket name.",
+    "verifier": "contains:URGENT",
+    "faux_response": "URGENT"
   }
 ]
