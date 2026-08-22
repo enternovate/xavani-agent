@@ -109,6 +109,8 @@ COMMAND_REGISTRY: list[CommandDef] = [
     CommandDef("fresh", "Rebuild provider stream state, keep the transcript", "Session"),
     CommandDef("rewind", "Restore working files to an earlier checkpoint", "Session",
                args_hint="[N | <hash>] — no argument lists checkpoints"),
+    CommandDef("director", "Restrict spawned subagents to read-only toolsets", "Session",
+               args_hint="[on|off]"),
     CommandDef("eval", "Run the task benchmark suite in-session", "Configuration",
                args_hint="[--faux] [--tasks <path>]"),
     CommandDef("eval-loop", "Iterate a prompt until a rubric score threshold is met", "Session",
@@ -1021,7 +1023,7 @@ _SLACK_RESERVED_COMMANDS = frozenset({
 _GATEWAY_EXCLUDED_COMMANDS = frozenset({
     "gquota", "footer", "profile", "insights",
     "reload-mcp", "reload-skills", "voice",
-    "curator", "advisor", "hub", "macro", "fresh", "rewind",
+    "curator", "advisor", "hub", "macro", "fresh", "rewind", "director",
 })
 
 
