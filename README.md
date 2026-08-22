@@ -447,6 +447,17 @@ Xavani stores everything in `~/.xavani/`:
 
 ## What's New
 
+### v0.2.0 — "The Big Bang" (2026-08-22)
+- **Loop engine** — /loop with stop conditions, reflexion failure notes, runaway guards, and /loop watch: cron-scheduled watchdog passes that stay silent while running and alert on finish.
+- **Eval harness** — 21 categorized tasks with jsonschema/pytest/exit_code/llm_judge verifiers, per-category medians, p95, flake detection, fingerprinted results, and a config leaderboard.
+- **Advisor role** — a second model reviews every reply on its own context and appends [high]/[medium]/[low] notes inline (/advisor).
+- **Agent hub** — live subagent roster with steer, kill, and revive (/hub).
+- **Approval gate** — write journal with inverse-patch rollback, /revert, /permissions, batch approval preview, dry-run mode.
+- **RPC mode** — NDJSON-over-stdio protocol with answerable tool cards for embedders (`python3 -m xavani_cli.rpc_mode`).
+- **Workflow tooling** — atomic commit splitter with cycle rejection, cross-agent config importer with provenance, memory bank (retain/recall/reflect/learn), deterministic /macro steps, SESSION_HANDOFF.md generator.
+- **CLI polish** — xavani-terminal and xavani-ember skins, strict skin validation, expanded doctor checks.
+- **Eight workflow packs** — inbox-triage, meeting-notes, invoice-extraction, weekly-review, research-monitor, document-draft, expense-log, crm-lite (189 built-in skills).
+
 ### v0.1.2 — "Durability & Capability" (2026-08-21)
 - **Durable turn-bank state** — version-2 checkpoints bind counts and pending turns with SHA-256 proof across restarts, compression, branches, and stale state.
 - **Strict memory proof** — malformed results, duplicate content, unmatched requests, and invalid legacy history no longer clear pending turns.
