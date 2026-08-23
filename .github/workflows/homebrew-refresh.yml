@@ -20,6 +20,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
+          # Release events check out a detached tag; the formula bump must
+          # land on main, so always check out the branch.
+          ref: main
           persist-credentials: false
 
       - name: Bump formula to the release asset
