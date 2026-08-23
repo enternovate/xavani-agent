@@ -5,6 +5,46 @@ All notable changes to Xavani Agent are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] - 2026-08-23 — "Everyday Carry"
+
+Desktop-first minor release: the desktop app gains a persistent To-Do
+pane, cross-session reminders, an ambient activity pill, update and
+event notifications, profile switching from the sidebar, richer settings,
+expanded import sources, a skills marketplace UI, and two-way visual
+preview editing that maps on-canvas changes to source files. Engine-side:
+the skills hub is real again (GitHub, skills.sh, well-known, ClawHub,
+bundled index sources with taps and parallel search), todos persist in
+the profile home, an outstanding-work ledger tracks unfinished goals
+across sessions (/outstanding, /outstanding done), document generation
+covers pptx/xlsx/docx with quality presets, and the agent can drive the
+desktop preview dock. A Xavani-branded browser extension (MIT, derived
+from upstream with attribution) ships separately.
+
+### Added
+- Skills hub: real GitHubSource, SkillsShSource, WellKnownSkillSource,
+  ClawHubSource, and bundled OptionalSkillSource; TapsManager persistence;
+  parallel_search_sources with per-source timeout; trust-ranked dedupe in
+  unified_search. Description-based ranking across all sources.
+- Persistent todo store at ~/.xavani/todos.json (atomic writes, 0600).
+- Outstanding-work ledger at ~/.xavani/outstanding.jsonl with
+  /outstanding and /outstanding done N.
+- generate_document tool: styled .pptx/.xlsx/.docx via corporate,
+  minimal, and report presets.
+- preview_control tool: agent-driven desktop preview dock (open,
+  navigate, close, status) gated to desktop sessions.
+- Desktop: dock To-Do pane with drag prioritization; notification stack;
+  ambient activity pill; outstanding-item reminders; sidebar profile
+  switcher plus settings shortcut; Memory & data and Voice cards;
+  Gemini CLI, OpenCode, and generic-folder import sources; skills
+  marketplace search/install/uninstall UI; cron create form; two-way
+  visual editing with file-mapped edit briefs.
+
+### Fixed
+- skills browse ImportError crash (parallel_search_sources missing).
+- Stale version strings in acp manifest and fast-entry expectations.
+- Slack slash clamp collision: local-only /debug excluded from messaging
+  menus so parity tests hold when new session commands land.
+
 ## [0.2.0] - 2026-08-22 — "The Big Bang"
 
 Minor release across ten workstreams: approval-gate hardening, the loop
