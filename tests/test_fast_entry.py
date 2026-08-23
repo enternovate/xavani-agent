@@ -20,7 +20,7 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 # Mirrors xavani_main's version branch in xavani.py — kept in sync with
 # the VERSION/PRODUCT_NAME/PRONUNCIATION/VENDOR constants there.
 EXPECTED_VERSION_OUTPUT = (
-    "Xavani Agent v0.2.0\n"
+    "Xavani Agent v0.3.0\n"
     "Pronounced: shahr-vaa-nee\n"
     "Built by Enternovate — Open Source\n"
     "MIT License — Free for any use.\n"
