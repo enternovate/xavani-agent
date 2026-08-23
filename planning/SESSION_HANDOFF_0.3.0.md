@@ -43,10 +43,19 @@ Version 0.3.0 cut on BOTH repos (equal-version rule holds):
   parent-side builds were faster and safer. Red-test/green-implement split
   across two children works when children are required.
 
+## RELEASED (completed later 2026-08-23)
+
+- Both repos pushed: engine main c9296a5, desktop main 6061a22.
+- Tags v0.3.0 pushed. Desktop tag force-moved off a stale Studio-IDE-era
+  commit per the owner equal-version rule.
+- macOS dmg built from a clean git-archive export of the engine v0.3.0 tag.
+- Engine release live with dmg; desktop release live with dmg + win.zip +
+  setup.exe (windows-build CI succeeded on tag push).
+- https://github.com/enternovate/xavani-agent/releases/tag/v0.3.0
+- https://github.com/enternovate/xavani-desktop/releases/tag/v0.3.0
+
 ## NOT YET DONE (next session candidates)
 
-- git push both repos + tag v0.3.0 (needs enternovate account switch).
-- macOS dmg build from clean tag export; Windows CI attaches on tag push.
 - Website reference pages for /outstanding, /done, generate_document,
   preview_control.
 - Extension: publish repo to enternovate org, Chrome Web Store listing.
