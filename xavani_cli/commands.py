@@ -97,6 +97,9 @@ COMMAND_REGISTRY: list[CommandDef] = [
                subcommands=("stop", "watch"),
                args_hint="[passes N] [every S] [budget USD] <prompt> | watch [every S] [passes N] [budget USD] [alert C] <prompt> | stop <id>"),
     CommandDef("loops", "List saved loops", "Session"),
+    CommandDef("outstanding", "Cross-session list of unfinished work", "Session",
+               subcommands=("done", "cancel"),
+               args_hint="[done N | cancel N]"),
     CommandDef("advisor", "Second-model reviewer that flags each reply", "Configuration",
                subcommands=("status", "enable", "disable"),
                args_hint="[status|enable|disable]"),
@@ -1026,7 +1029,7 @@ _SLACK_RESERVED_COMMANDS = frozenset({
 # Curated out of messaging-platform slash menus: local-desktop commands
 # with no messaging use case. Still reachable via /xavani <command>.
 _GATEWAY_EXCLUDED_COMMANDS = frozenset({
-    "gquota", "footer", "profile", "insights",
+    "gquota", "footer", "profile", "insights", "debug",
     "reload-mcp", "reload-skills", "voice",
     "curator", "advisor", "hub", "macro", "fresh", "rewind", "director",
     "diff", "apply", "reject",
