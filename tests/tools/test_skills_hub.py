@@ -5,22 +5,26 @@
 """Tests for tools/skills_hub.py — source adapters, lock file, taps, dedup logic."""
 
 import json
+import subprocess
+from email.message import Message
 from pathlib import Path
 from unittest.mock import patch, MagicMock
+from urllib.error import HTTPError
 
 import httpx
 import pytest
 
-# The full Skills Hub implementation was stripped from this fork; only stubs
-# remain. The tests below exercise the stripped logic, so skip them here
-# rather than fail. Restore the real `tools/skills_hub.py` to re-enable.
-pytestmark = [pytest.mark.skip(
+# Most of the Skills Hub implementation remains stripped from this fork;
+# tests exercising stripped functionality are skipped per class below.
+# Tests for the implemented GitHubSource run normally.
+_LEGACY_SKIP = pytest.mark.skip(
     reason="tools.skills_hub stripped to stubs in this fork"
-), pytest.mark.integration]
+)
 
 from tools.skills_hub import (
     GitHubAuth,
     GitHubSource,
+    HubUnavailable,
     LobeHubSource,
     SkillsShSource,
     UrlSource,
@@ -43,8 +47,7 @@ from tools.skills_hub import (
 # ---------------------------------------------------------------------------
 # GitHubSource._parse_frontmatter_quick
 # ---------------------------------------------------------------------------
-
-
+@_LEGACY_SKIP
 class TestParseFrontmatterQuick:
     def test_valid_frontmatter(self):
         content = "---\nname: test-skill\ndescription: A test.\n---\n\n# Body\n"
@@ -85,8 +88,7 @@ class TestParseFrontmatterQuick:
 # ---------------------------------------------------------------------------
 # GitHubSource.trust_level_for
 # ---------------------------------------------------------------------------
-
-
+@_LEGACY_SKIP
 class TestTrustLevelFor:
     def _source(self):
         auth = MagicMock(spec=GitHubAuth)
@@ -118,8 +120,7 @@ class TestTrustLevelFor:
 # ---------------------------------------------------------------------------
 # SkillsShSource
 # ---------------------------------------------------------------------------
-
-
+@_LEGACY_SKIP
 class TestSkillsShSource:
     def _source(self):
         auth = MagicMock(spec=GitHubAuth)
@@ -482,8 +483,7 @@ class TestSkillsShSource:
         assert result == "owner/repo/product-team/product-designer"
         requested_urls = [call.args[0] for call in mock_get.call_args_list]
         assert root_url not in requested_urls
-
-
+@_LEGACY_SKIP
 class TestFindSkillInRepoTree:
     """Tests for GitHubSource._find_skill_in_repo_tree."""
 
@@ -568,8 +568,7 @@ class TestFindSkillInRepoTree:
         mock_get.return_value = MagicMock(status_code=404)
         result = self._source()._find_skill_in_repo_tree("owner/repo", "my-skill")
         assert result is None
-
-
+@_LEGACY_SKIP
 class TestWellKnownSkillSource:
     @pytest.fixture(autouse=True)
     def _allow_public_skill_fetches(self, monkeypatch):
@@ -688,8 +687,7 @@ class TestWellKnownSkillSource:
         bundle = self._source().fetch("well-known:https://example.com/.well-known/skills/code-review")
 
         assert bundle is None
-
-
+@_LEGACY_SKIP
 class TestUrlSource:
     @pytest.fixture(autouse=True)
     def _allow_public_skill_fetches(self, monkeypatch):
@@ -923,8 +921,7 @@ class TestUrlSource:
         ]
         for name in invalid:
             assert not UrlSource._is_valid_skill_name(name), f"should reject {name!r}"
-
-
+@_LEGACY_SKIP
 class TestCheckForSkillUpdates:
     def test_bundle_content_hash_matches_installed_content_hash(self, tmp_path):
         from tools.skills_guard import content_hash
@@ -1059,8 +1056,7 @@ class TestCheckForSkillUpdates:
         results = check_for_skill_updates(lock=lock, sources=[source])
 
         assert results[0]["status"] == "up_to_date"
-
-
+@_LEGACY_SKIP
 class TestCreateSourceRouter:
     def test_includes_skills_sh_source(self):
         sources = create_source_router(auth=MagicMock(spec=GitHubAuth))
@@ -1085,8 +1081,7 @@ class TestCreateSourceRouter:
 # ---------------------------------------------------------------------------
 # HubLockFile
 # ---------------------------------------------------------------------------
-
-
+@_LEGACY_SKIP
 class TestHubLockFile:
     def test_load_missing_file(self, tmp_path):
         lock = HubLockFile(path=tmp_path / "lock.json")
@@ -1184,8 +1179,7 @@ class TestHubLockFile:
 # ---------------------------------------------------------------------------
 # TapsManager
 # ---------------------------------------------------------------------------
-
-
+@_LEGACY_SKIP
 class TestTapsManager:
     def test_load_missing_file(self, tmp_path):
         mgr = TapsManager(path=tmp_path / "taps.json")
@@ -1239,8 +1233,7 @@ class TestTapsManager:
 # ---------------------------------------------------------------------------
 # LobeHubSource._convert_to_skill_md
 # ---------------------------------------------------------------------------
-
-
+@_LEGACY_SKIP
 class TestConvertToSkillMd:
     def test_basic_conversion(self):
         agent_data = {
@@ -1279,8 +1272,7 @@ class TestConvertToSkillMd:
 # ---------------------------------------------------------------------------
 # unified_search — dedup logic
 # ---------------------------------------------------------------------------
-
-
+@_LEGACY_SKIP
 class TestUnifiedSearchDedup:
     def _make_source(self, source_id, results):
         """Create a mock SkillSource that returns fixed results."""
@@ -1369,8 +1361,7 @@ class TestUnifiedSearchDedup:
 # ---------------------------------------------------------------------------
 # append_audit_log
 # ---------------------------------------------------------------------------
-
-
+@_LEGACY_SKIP
 class TestAppendAuditLog:
     def test_creates_log_entry(self, tmp_path):
         log_file = tmp_path / "audit.log"
@@ -1401,8 +1392,7 @@ class TestAppendAuditLog:
 # ---------------------------------------------------------------------------
 # _skill_meta_to_dict
 # ---------------------------------------------------------------------------
-
-
+@_LEGACY_SKIP
 class TestSkillMetaToDict:
     def test_roundtrip(self):
         meta = SkillMeta(
@@ -1422,8 +1412,7 @@ class TestSkillMetaToDict:
 # ---------------------------------------------------------------------------
 # Official skills / binary assets
 # ---------------------------------------------------------------------------
-
-
+@_LEGACY_SKIP
 class TestOptionalSkillSourceBinaryAssets:
     def test_fetch_preserves_binary_assets(self, tmp_path):
         optional_root = tmp_path / "optional-skills"
@@ -1453,8 +1442,7 @@ class TestOptionalSkillSourceBinaryAssets:
         assert bundle.files["assets/neutts-cli/samples/jo.wav"] == wav_bytes
         assert bundle.files["assets/neutts-cli/samples/jo.txt"] == b"hello\n"
         assert "assets/neutts-cli/src/neutts_cli/__pycache__/cli.cpython-312.pyc" not in bundle.files
-
-
+@_LEGACY_SKIP
 class TestQuarantineBundleBinaryAssets:
     def test_quarantine_bundle_writes_binary_files(self, tmp_path):
         import tools.skills_hub as hub
@@ -1542,8 +1530,7 @@ class TestQuarantineBundleBinaryAssets:
 # ---------------------------------------------------------------------------
 # GitHubSource._download_directory — tree API + fallback (#2940)
 # ---------------------------------------------------------------------------
-
-
+@_LEGACY_SKIP
 class TestDownloadDirectoryViaTree:
     """Tests for the Git Trees API path in _download_directory."""
 
@@ -1638,8 +1625,7 @@ class TestDownloadDirectoryViaTree:
         src._download_directory("owner/repo", "skills/my-skill")
 
         mock_fallback.assert_called_once()
-
-
+@_LEGACY_SKIP
 class TestDownloadDirectoryRecursive:
     """Tests for the Contents API fallback path."""
 
@@ -1685,3 +1671,284 @@ class TestDownloadDirectoryRecursive:
 
         assert "SKILL.md" in files
         assert "scripts/run.py" not in files  # lost due to rate limit
+
+
+# ---------------------------------------------------------------------------
+# Real GitHubSource (implemented): auth chain, search, ranking, rate limit
+# ---------------------------------------------------------------------------
+
+
+class TestGitHubAuthChain:
+    def test_explicit_token_wins_over_env(self, monkeypatch):
+        monkeypatch.setenv("GITHUB_TOKEN", "env-token")
+        auth = GitHubAuth(token="explicit-token")
+        assert auth.auth_method() == "token"
+        assert auth.headers()["Authorization"] == "Bearer explicit-token"
+
+    def test_env_token_used_when_no_explicit(self, monkeypatch):
+        monkeypatch.setenv("GITHUB_TOKEN", "env-token")
+        auth = GitHubAuth()
+        assert auth.auth_method() == "env"
+        assert auth.headers()["Authorization"] == "Bearer env-token"
+
+    def test_none_when_no_token_anywhere(self, monkeypatch):
+        monkeypatch.delenv("GITHUB_TOKEN", raising=False)
+        import tools.skills_hub as hub
+
+        monkeypatch.setattr(
+            hub.subprocess,
+            "run",
+            lambda *_a, **_k: subprocess.CompletedProcess(
+                ["gh"], returncode=1, stdout="", stderr="not logged in"
+            ),
+        )
+        auth = GitHubAuth()
+        assert auth.auth_method() == "none"
+        headers = auth.headers()
+        assert "Authorization" not in headers
+        assert headers["Accept"] == "application/vnd.github+json"
+
+    def test_gh_cli_token_used_and_cached(self, monkeypatch):
+        import tools.skills_hub as hub
+
+        monkeypatch.delenv("GITHUB_TOKEN", raising=False)
+        calls = []
+
+        def _fake_run(*_args, **_kwargs):
+            calls.append(1)
+            return subprocess.CompletedProcess(
+                ["gh"], returncode=0, stdout="  gh-cli-token  \n", stderr=""
+            )
+
+        monkeypatch.setattr(hub.subprocess, "run", _fake_run)
+        auth = GitHubAuth()
+        assert auth.auth_method() == "gh-cli"
+        assert auth.headers()["Authorization"] == "Bearer gh-cli-token"
+        assert auth.headers()["Authorization"] == "Bearer gh-cli-token"
+        assert len(calls) == 1
+
+    def test_headers_always_send_github_accept(self, monkeypatch):
+        import tools.skills_hub as hub
+
+        monkeypatch.delenv("GITHUB_TOKEN", raising=False)
+        monkeypatch.setattr(
+            hub.subprocess,
+            "run",
+            lambda *_a, **_k: subprocess.CompletedProcess(["gh"], returncode=1, stdout="", stderr=""),
+        )
+        assert GitHubAuth().headers()["Accept"] == "application/vnd.github+json"
+
+
+def _search_fixture():
+    return {
+        "items": [
+            {
+                "name": "rust-web-server",
+                "full_name": "alice/rust-web-server",
+                "description": "A fast web server written in Rust",
+                "stargazers_count": 90000,
+                "pushed_at": "2026-01-02T00:00:00Z",
+                "default_branch": "main",
+                "owner": {"login": "alice"},
+            },
+            {
+                "name": "pytest-cookbook",
+                "full_name": "bob/pytest-cookbook",
+                "description": "Python testing framework recipes with pytest fixtures",
+                "stargazers_count": 12,
+                "pushed_at": "2026-03-04T00:00:00Z",
+                "default_branch": "develop",
+                "owner": {"login": "bob"},
+            },
+            {
+                "name": "dotfiles",
+                "full_name": "carol/dotfiles",
+                "description": "",
+                "stargazers_count": 5000,
+                "default_branch": "main",
+                "owner": {"login": "carol"},
+            },
+        ]
+    }
+
+
+class TestGitHubSourceSearch:
+    def _source(self):
+        return GitHubSource(auth=GitHubAuth(token="t"))
+
+    def test_search_params_and_parsing(self, monkeypatch):
+        captured = {}
+
+        def fake_json(self, url, params=None):
+            captured["url"] = url
+            captured["params"] = params
+            return _search_fixture()
+
+        monkeypatch.setattr(GitHubSource, "_http_json", fake_json)
+        results = self._source().search("python testing framework", limit=10)
+
+        assert captured["url"] == "https://api.github.com/search/repositories"
+        q = captured["params"]["q"]
+        assert "python testing framework" in q
+        assert "SKILL.md in:path,readme" in q
+        assert captured["params"]["sort"] == "stars"
+        assert captured["params"]["per_page"] == 10
+        assert captured["params"]["per_page"] == min(10, 50)
+
+        by_id = {r.identifier: r for r in results}
+        meta = by_id["bob/pytest-cookbook"]
+        assert meta.name == "pytest-cookbook"
+        assert meta.source == "github"
+        assert meta.trust_level == "community"
+        assert meta.repo == "bob/pytest-cookbook"
+        assert meta.extra["stars"] == 12
+        assert meta.extra["pushed_at"] == "2026-03-04T00:00:00Z"
+
+    def test_per_page_capped_at_50(self, monkeypatch):
+        captured = {}
+
+        def fake_json(self, url, params=None):
+            captured["params"] = params
+            return {"items": []}
+
+        monkeypatch.setattr(GitHubSource, "_http_json", fake_json)
+        self._source().search("x", limit=200)
+        assert captured["params"]["per_page"] == 50
+
+    def test_high_overlap_low_stars_beats_high_stars_zero_overlap(self, monkeypatch):
+        monkeypatch.setattr(GitHubSource, "_http_json", lambda self, url, params=None: _search_fixture())
+        results = self._source().search("python testing framework")
+        assert results[0].identifier == "bob/pytest-cookbook"
+
+    def test_full_phrase_substring_bonus(self, monkeypatch):
+        payload = {
+            "items": [
+                {
+                    "name": "lib-http",
+                    "full_name": "a/lib-http",
+                    "description": "small helper utilities for network apps",
+                    "stargazers_count": 9999,
+                    "owner": {"login": "a"},
+                },
+                {
+                    "name": "http-client",
+                    "full_name": "b/http-client",
+                    "description": "an async http client library",
+                    "stargazers_count": 10,
+                    "owner": {"login": "b"},
+                },
+            ]
+        }
+        monkeypatch.setattr(GitHubSource, "_http_json", lambda self, url, params=None: payload)
+        results = self._source().search("http client")
+        # both contain both tokens; only the second contains the full phrase
+        assert results[0].identifier == "b/http-client"
+
+    def test_zero_overlap_results_ranked_last_but_returned(self, monkeypatch):
+        monkeypatch.setattr(GitHubSource, "_http_json", lambda self, url, params=None: _search_fixture())
+        results = self._source().search("rust web server cooking pasta")
+        # zero-overlap results keep coming back, ordered by stars, ranked last
+        assert [r.identifier for r in results][-2:] == [
+            "carol/dotfiles",
+            "bob/pytest-cookbook",
+        ]
+        assert any(r.identifier == "carol/dotfiles" for r in results)
+
+
+class TestGitHubSourceInspectFetch:
+    def _source(self):
+        return GitHubSource(auth=GitHubAuth(token="t"))
+
+    def test_inspect_parses_repo(self, monkeypatch):
+        payload = {
+            "name": "skills",
+            "description": "A collection of skills",
+            "stargazers_count": 42,
+            "pushed_at": "2026-05-06T00:00:00Z",
+            "default_branch": "trunk",
+            "owner": {"login": "anthropics"},
+        }
+        captured = {}
+
+        def fake_json(self, url, params=None):
+            captured["url"] = url
+            return payload
+
+        monkeypatch.setattr(GitHubSource, "_http_json", fake_json)
+        meta = self._source().inspect("anthropics/skills")
+        assert captured["url"] == "https://api.github.com/repos/anthropics/skills"
+        assert meta is not None
+        assert meta.identifier == "anthropics/skills"
+        assert meta.name == "skills"
+        assert meta.description == "A collection of skills"
+        assert meta.trust_level == "community"
+        assert meta.extra["stars"] == 42
+        assert meta.extra["default_branch"] == "trunk"
+
+    def test_inspect_returns_none_on_404(self, monkeypatch):
+        def fake_json(self, url, params=None):
+            raise HTTPError(url, 404, "Not Found", Message(), None)
+
+        monkeypatch.setattr(GitHubSource, "_http_json", fake_json)
+        assert self._source().inspect("nobody/nothing") is None
+
+    def test_fetch_downloads_default_branch_tarball(self, monkeypatch):
+        captured = {}
+
+        def fake_bytes(self, url):
+            captured["url"] = url
+            return b"tarball-bytes"
+
+        source = self._source()
+        monkeypatch.setattr(source, "inspect", lambda ident: SkillMeta(
+            name="skills", identifier="anthropics/skills", repo="anthropics/skills",
+            extra={"default_branch": "trunk"},
+        ))
+        monkeypatch.setattr(GitHubSource, "_http_bytes", fake_bytes)
+        data = source.fetch("anthropics/skills")
+        assert data == b"tarball-bytes"
+        assert captured["url"] == (
+            "https://codeload.github.com/anthropics/skills/tar.gz/refs/heads/trunk"
+        )
+
+    def test_fetch_returns_none_when_inspect_fails(self, monkeypatch):
+        source = self._source()
+        monkeypatch.setattr(source, "inspect", lambda ident: None)
+        assert source.fetch("nobody/nothing") is None
+
+
+class TestGitHubRateLimit:
+    def test_http_json_raises_hub_unavailable_on_rate_limit(self, monkeypatch):
+        import tools.skills_hub as hub
+
+        headers = Message()
+        headers["X-RateLimit-Remaining"] = "0"
+
+        def fake_urlopen(request, timeout=None):
+            assert timeout == 20
+            raise HTTPError("https://api.github.com/x", 403, "Forbidden", headers, None)
+
+        monkeypatch.setattr(hub, "urlopen", fake_urlopen)
+        source = GitHubSource(auth=GitHubAuth(token="t"))
+        with pytest.raises(HubUnavailable):
+            source._http_json("https://api.github.com/x")
+
+    def test_plain_403_is_not_hub_unavailable(self, monkeypatch):
+        import tools.skills_hub as hub
+
+        headers = Message()
+        headers["X-RateLimit-Remaining"] = "41"
+
+        def fake_urlopen(request, timeout=None):
+            raise HTTPError("https://api.github.com/x", 403, "Forbidden", headers, None)
+
+        monkeypatch.setattr(hub, "urlopen", fake_urlopen)
+        source = GitHubSource(auth=GitHubAuth(token="t"))
+        with pytest.raises(HTTPError):
+            source._http_json("https://api.github.com/x")
+
+
+class TestGitHubTrustLevel:
+    def test_community_for_all_identifiers(self):
+        source = GitHubSource(auth=GitHubAuth(token="t"))
+        assert source.trust_level_for("some-owner/some-repo") == "community"
