@@ -22,11 +22,13 @@ _LEGACY_SKIP = pytest.mark.skip(
 )
 
 from tools.skills_hub import (
+    ClawHubSource,
     GitHubAuth,
     GitHubSource,
     HubUnavailable,
     LobeHubSource,
     SkillsShSource,
+    TAPS_FILE,
     UrlSource,
     WellKnownSkillSource,
     OptionalSkillSource,
@@ -1952,3 +1954,459 @@ class TestGitHubTrustLevel:
     def test_community_for_all_identifiers(self):
         source = GitHubSource(auth=GitHubAuth(token="t"))
         assert source.trust_level_for("some-owner/some-repo") == "community"
+
+
+# ===========================================================================
+# Real source implementations (Task 1.2) — network mocked at _http methods
+# ===========================================================================
+
+
+class TestSkillsShSourceLive:
+    _PAYLOAD = {
+        "query": "react",
+        "searchType": "fuzzy",
+        "skills": [
+            {
+                "id": "vercel-labs/agent-skills/vercel-react-best-practices",
+                "skillId": "vercel-react-best-practices",
+                "name": "vercel-react-best-practices",
+                "installs": 654972,
+                "source": "vercel-labs/agent-skills",
+            },
+            {
+                "id": "vercel-labs/agent-skills/vercel-react-native-skills",
+                "skillId": "vercel-react-native-skills",
+                "name": "vercel-react-native-skills",
+                "installs": 192849,
+                "source": "vercel-labs/agent-skills",
+            },
+        ],
+        "count": 2,
+    }
+
+    def _source(self):
+        return SkillsShSource()
+
+    def test_search_parses_entries_and_prefixes_identifiers(self, monkeypatch):
+        captured = {}
+
+        def fake_json(src, url, params=None):
+            captured["url"] = url
+            captured["params"] = params
+            return TestSkillsShSourceLive._PAYLOAD
+
+        monkeypatch.setattr(SkillsShSource, "_http_json", fake_json)
+        results = self._source().search("react", limit=5)
+
+        assert captured["url"] == "https://www.skills.sh/api/search"
+        assert captured["params"]["q"] == "react"
+        assert captured["params"]["limit"] == 5
+        assert len(results) == 2
+        best = results[0]
+        assert best.source == "skills.sh"
+        assert best.identifier == (
+            "skills-sh/vercel-labs/agent-skills/vercel-react-best-practices"
+        )
+        assert best.name == "vercel-react-best-practices"
+        assert best.repo == "vercel-labs/agent-skills"
+        assert best.path == "vercel-react-best-practices"
+        assert best.extra["installs"] == 654972
+        assert best.trust_level == "community"
+
+    def test_search_ranks_name_overlap_then_installs(self, monkeypatch):
+        payload = {
+            "skills": [
+                {
+                    "id": "a/repo/unrelated-skill",
+                    "name": "unrelated-skill",
+                    "installs": 999999,
+                    "source": "a/repo",
+                },
+                {
+                    "id": "b/repo/react-hooks-guide",
+                    "name": "react-hooks-guide",
+                    "installs": 10,
+                    "source": "b/repo",
+                },
+                {
+                    "id": "c/repo/react-router",
+                    "name": "react-router",
+                    "installs": 5000,
+                    "source": "c/repo",
+                },
+            ]
+        }
+        monkeypatch.setattr(
+            SkillsShSource, "_http_json", lambda self, url, params=None: payload
+        )
+        results = self._source().search("react router", limit=10)
+        # c/repo matches both tokens; b/repo matches one despite fewer installs.
+        assert [r.identifier for r in results][:2] == [
+            "skills-sh/c/repo/react-router",
+            "skills-sh/b/repo/react-hooks-guide",
+        ]
+
+    def test_search_handles_unexpected_payload_shapes(self, monkeypatch):
+        monkeypatch.setattr(
+            SkillsShSource, "_http_json", lambda self, url, params=None: {}
+        )
+        assert self._source().search("x") == []
+        monkeypatch.setattr(
+            SkillsShSource, "_http_json", lambda self, url, params=None: ["nope"]
+        )
+        assert self._source().search("x") == []
+
+    def test_inspect_delegates_to_github_repo_lookup(self, monkeypatch):
+        captured = {}
+
+        def fake_inspect(self, identifier):
+            captured["identifier"] = identifier
+            return SkillMeta(name="agent-skills", identifier=identifier)
+
+        monkeypatch.setattr(GitHubSource, "inspect", fake_inspect)
+        meta = self._source().inspect(
+            "skills-sh/vercel-labs/agent-skills/vercel-react-best-practices"
+        )
+        assert captured["identifier"] == "vercel-labs/agent-skills"
+        assert meta is not None and meta.name == "agent-skills"
+
+    def test_inspect_returns_none_without_repo_part(self):
+        assert self._source().inspect("skills-sh") is None
+
+    def test_fetch_delegates_to_github_tarball(self, monkeypatch):
+        captured = {}
+
+        def fake_fetch(self, identifier):
+            captured["identifier"] = identifier
+            return b"tarball"
+
+        monkeypatch.setattr(GitHubSource, "fetch", fake_fetch)
+        data = self._source().fetch("skills-sh/anthropics/skills/pdf")
+        assert data == b"tarball"
+        assert captured["identifier"] == "anthropics/skills"
+
+
+class TestWellKnownSourceLive:
+    _MANIFEST = {
+        "skills": [
+            {"name": "git-workflow", "description": "Git rules"},
+            {"name": "code-review", "description": "Review code"},
+        ]
+    }
+
+    def _source(self):
+        return WellKnownSkillSource()
+
+    def test_search_is_not_supported(self):
+        assert self._source().search("anything") == []
+
+    def test_inspect_parses_host_identifier(self, monkeypatch):
+        captured = {}
+
+        def fake_json(src, url, params=None):
+            captured["url"] = url
+            return TestWellKnownSourceLive._MANIFEST
+
+        monkeypatch.setattr(WellKnownSkillSource, "_http_json", fake_json)
+        meta = self._source().inspect("example.com/git-workflow")
+
+        assert captured["url"] == "https://example.com/.well-known/agent-skills.json"
+        assert meta is not None
+        assert meta.name == "git-workflow"
+        assert meta.description == "Git rules"
+        assert meta.source == "well-known"
+        assert meta.trust_level == "official"
+        assert meta.identifier == "example.com/git-workflow"
+        assert (
+            meta.extra["manifest_url"]
+            == "https://example.com/.well-known/agent-skills.json"
+        )
+
+    def test_inspect_accepts_full_url_identifier(self, monkeypatch):
+        monkeypatch.setattr(
+            WellKnownSkillSource,
+            "_http_json",
+            lambda src, url, params=None: TestWellKnownSourceLive._MANIFEST,
+        )
+        meta = self._source().inspect("https://example.com/code-review")
+        assert meta is not None
+        assert meta.identifier == "example.com/code-review"
+
+    def test_inspect_unknown_skill_returns_none(self, monkeypatch):
+        monkeypatch.setattr(
+            WellKnownSkillSource,
+            "_http_json",
+            lambda src, url, params=None: TestWellKnownSourceLive._MANIFEST,
+        )
+        assert self._source().inspect("example.com/nonexistent") is None
+
+    def test_inspect_host_only_uses_single_entry_manifest(self, monkeypatch):
+        monkeypatch.setattr(
+            WellKnownSkillSource,
+            "_http_json",
+            lambda self, url, params=None: {
+                "skills": [{"name": "only-one", "description": "Solo"}]
+            },
+        )
+        meta = self._source().inspect("example.com")
+        assert meta is not None
+        assert meta.name == "only-one"
+
+    def test_inspect_host_only_ambiguous_manifest_returns_none(self, monkeypatch):
+        monkeypatch.setattr(
+            WellKnownSkillSource,
+            "_http_json",
+            lambda src, url, params=None: TestWellKnownSourceLive._MANIFEST,
+        )
+        assert self._source().inspect("example.com") is None
+
+    def test_fetch_returns_advertised_skill_md_bytes(self, monkeypatch):
+        urls = []
+
+        def fake_json(self, url, params=None):
+            return {
+                "skills": [
+                    {
+                        "name": "code-review",
+                        "description": "Review code",
+                        "url": "/skills/code-review/SKILL.md",
+                    }
+                ]
+            }
+
+        def fake_bytes(self, url):
+            urls.append(url)
+            return b"# Code Review\n"
+
+        monkeypatch.setattr(WellKnownSkillSource, "_http_json", fake_json)
+        monkeypatch.setattr(WellKnownSkillSource, "_http_bytes", fake_bytes)
+
+        data = self._source().fetch("example.com/code-review")
+        assert data == b"# Code Review\n"
+        assert urls == ["https://example.com/skills/code-review/SKILL.md"]
+
+    def test_fetch_none_when_no_skill_md_advertised(self, monkeypatch):
+        monkeypatch.setattr(
+            WellKnownSkillSource,
+            "_http_json",
+            lambda self, url, params=None: {
+                "skills": [{"name": "code-review", "description": "Review code"}]
+            },
+        )
+        assert self._source().fetch("example.com/code-review") is None
+
+
+class TestClawHubSourceLive:
+    _PAYLOAD = {
+        "results": [
+            {
+                "canonicalUrl": "/arein/test",
+                "displayName": "Test",
+                "downloads": 3494,
+                "install": {"kind": "clawhub", "reference": "arein/test"},
+                "ownerHandle": "arein",
+                "skill": {
+                    "slug": "test",
+                    "summary": "CLI for crypto portfolio tracking.",
+                    "stats": {"downloads": 3494, "installs": 110, "stars": 1},
+                },
+            },
+            {
+                "canonicalUrl": "/other/price-feed",
+                "displayName": "price-feed",
+                "downloads": 50,
+                "install": {"kind": "clawhub", "reference": "other/price-feed"},
+                "skill": {"summary": "", "stats": {}},
+            },
+        ]
+    }
+
+    def _source(self):
+        return ClawHubSource()
+
+    def test_search_parses_reference_identifiers_and_summary(self, monkeypatch):
+        captured = {}
+
+        def fake_json(src, url, params=None):
+            captured["url"] = url
+            captured["params"] = params
+            return TestClawHubSourceLive._PAYLOAD
+
+        monkeypatch.setattr(ClawHubSource, "_http_json", fake_json)
+        results = self._source().search("crypto portfolio")
+
+        assert captured["url"] == "https://clawhub.ai/api/search"
+        assert captured["params"]["q"] == "crypto portfolio"
+        assert len(results) == 2
+        top = results[0]
+        assert top.source == "clawhub"
+        assert top.identifier == "arein/test"
+        assert top.name == "Test"
+        assert top.description == "CLI for crypto portfolio tracking."
+        assert top.extra["downloads"] == 3494
+        assert top.extra["installs"] == 110
+        assert top.extra["stars"] == 1
+        assert top.trust_level == "community"
+
+    def test_search_ranks_query_overlap_above_downloads(self, monkeypatch):
+        payload = {
+            "results": [
+                {
+                    "canonicalUrl": "/big/popular-unrelated",
+                    "displayName": "popular-unrelated",
+                    "downloads": 100000,
+                    "install": {"reference": "big/popular-unrelated"},
+                    "skill": {"summary": "cooking pasta from scratch"},
+                },
+                {
+                    "canonicalUrl": "/small/crypto-helper",
+                    "displayName": "crypto-helper",
+                    "downloads": 5,
+                    "install": {"reference": "small/crypto-helper"},
+                    "skill": {"summary": "crypto price tracking helper"},
+                },
+            ]
+        }
+        monkeypatch.setattr(
+            ClawHubSource, "_http_json", lambda self, url, params=None: payload
+        )
+        results = self._source().search("crypto")
+        assert results[0].identifier == "small/crypto-helper"
+
+    def test_search_handles_unexpected_payload(self, monkeypatch):
+        monkeypatch.setattr(
+            ClawHubSource, "_http_json", lambda self, url, params=None: {}
+        )
+        assert self._source().search("x") == []
+
+    def test_inspect_matches_exact_reference_via_search(self, monkeypatch):
+        monkeypatch.setattr(
+            ClawHubSource,
+            "_http_json",
+            lambda src, url, params=None: TestClawHubSourceLive._PAYLOAD,
+        )
+        meta = self._source().inspect("arein/test")
+        assert meta is not None
+        assert meta.identifier == "arein/test"
+        assert self._source().inspect("nobody/nothing") is None
+
+    def test_fetch_returns_none_raw_endpoint_undocumented(self):
+        assert self._source().fetch("arein/test") is None
+
+
+class TestOfficialBundledIndexSource:
+    def _source(self):
+        return OptionalSkillSource()
+
+    def test_search_matches_tokens_against_bundled_index(self):
+        results = self._source().search("apple notes")
+        names = {r.identifier for r in results}
+        assert "apple-notes" in names
+        for r in results:
+            assert r.source == "official"
+            assert r.trust_level == "official"
+
+    def test_search_ranks_multi_token_overlap_first(self):
+        results = self._source().search("manage apple notes")
+        assert results[0].identifier == "apple-notes"
+
+    def test_empty_query_lists_bundled_skills(self):
+        results = self._source().search("", limit=5)
+        assert len(results) == 5
+        assert all(r.source == "official" for r in results)
+
+    def test_limit_caps_results(self):
+        assert len(self._source().search("", limit=3)) == 3
+
+    def test_no_match_returns_empty(self):
+        assert self._source().search("zzzqqqxyzzy-nonexistent") == []
+
+    def test_inspect_exact_name_and_unknown(self):
+        meta = self._source().inspect("apple-notes")
+        assert meta is not None
+        assert meta.name == "apple-notes"
+        assert meta.description
+        assert self._source().inspect("definitely-not-a-bundled-skill") is None
+
+    def test_fetch_returns_none_for_bundled_skills(self):
+        assert self._source().fetch("apple-notes") is None
+
+    def test_trust_level_for_is_official(self):
+        assert self._source().trust_level_for("anything") == "official"
+
+
+class TestTapsManagerReal:
+    def test_missing_file_loads_as_empty(self, tmp_path):
+        mgr = TapsManager(tmp_path / "nested" / "taps.json")
+        assert mgr.list_taps() == []
+
+    def test_add_list_remove_round_trip(self, tmp_path):
+        path = tmp_path / "taps.json"
+        mgr = TapsManager(path)
+        assert mgr.add_tap("mytap", "owner/repo") is True
+        assert mgr.add_tap("mytap", "owner/repo") is False
+        taps = mgr.list_taps()
+        assert len(taps) == 1
+        assert taps[0]["name"] == "mytap"
+        assert taps[0]["repo"] == "owner/repo"
+        assert taps[0]["added"]
+        assert mgr.remove_tap("mytap") is True
+        assert mgr.remove_tap("mytap") is False
+        assert mgr.list_taps() == []
+        assert path.exists()
+
+    def test_persisted_shape_matches_contract(self, tmp_path):
+        path = tmp_path / "taps.json"
+        TapsManager(path).add_tap("t", "o/r")
+        data = json.loads(path.read_text(encoding="utf-8"))
+        assert set(data.keys()) == {"taps"}
+        assert set(data["taps"][0].keys()) == {"name", "repo", "added"}
+
+    def test_file_mode_is_0600_after_write(self, tmp_path):
+        path = tmp_path / "taps.json"
+        TapsManager(path).add_tap("t", "o/r")
+        import stat
+
+        assert stat.S_IMODE(path.stat().st_mode) == 0o600
+
+    def test_parent_dirs_created_atomically(self, tmp_path):
+        path = tmp_path / "a" / "b" / "taps.json"
+        mgr = TapsManager(path)
+        assert mgr.add_tap("t", "o/r") is True
+        assert json.loads(path.read_text(encoding="utf-8"))["taps"]
+
+    def test_corrupt_json_loads_as_empty(self, tmp_path):
+        path = tmp_path / "taps.json"
+        path.write_text("{not json", encoding="utf-8")
+        assert TapsManager(path).list_taps() == []
+
+    def test_default_path_is_module_constant(self):
+        assert TapsManager().path == TAPS_FILE
+
+
+class TestCreateSourceRouterReal:
+    def test_router_contains_all_five_sources(self):
+        sources = create_source_router()
+        ids = [src.source_id() for src in sources]
+        for expected in ("official", "skills-sh", "well-known", "github", "clawhub"):
+            assert expected in ids
+        by_id = {src.source_id(): src for src in sources}
+        assert isinstance(by_id["github"], GitHubSource)
+        assert isinstance(by_id["skills-sh"], SkillsShSource)
+        assert isinstance(by_id["well-known"], WellKnownSkillSource)
+        assert isinstance(by_id["clawhub"], ClawHubSource)
+        assert isinstance(by_id["official"], OptionalSkillSource)
+
+    def test_router_iterates_source_instances_for_cli_callers(self):
+        sources = create_source_router()
+        for src in sources:
+            assert hasattr(src, "search")
+            assert hasattr(src, "inspect")
+            assert hasattr(src, "fetch")
+            assert src.name
+
+    def test_router_passes_auth_to_github(self):
+        auth = GitHubAuth(token="router-token")
+        sources = create_source_router(auth)
+        github = next(src for src in sources if src.source_id() == "github")
+        assert github._auth is auth
