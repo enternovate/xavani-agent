@@ -278,8 +278,9 @@ DEFERRED_TOOL_NAMES: frozenset = frozenset({
     "yb_search_sticker",
     "yb_send_sticker",
     "x_search",
-    # Document tools (docx/xlsx/pptx/pdf reading)
+    # Document tools (docx/xlsx/pptx/pdf reading + generation)
     "read_document",
+    "generate_document",
     # Voice tools
     "text_to_speech",
 })
