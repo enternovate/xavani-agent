@@ -8437,6 +8437,8 @@ class XavaniCLI:
             self._handle_loop_command(cmd_original)
         elif canonical == "loops":
             self._handle_loops_list(cmd_original)
+        elif canonical == "outstanding":
+            self._handle_outstanding_command(cmd_original)
         elif canonical == "advisor":
             self._handle_advisor_command(cmd_original)
         elif canonical == "hub":
@@ -10480,6 +10482,46 @@ class XavaniCLI:
             )
             self._console_print(head)
             self._console_print(f"      {spec.get('status')} · {spec['prompt'][:60]}")
+
+    def _handle_outstanding_command(self, cmd_original: str = "") -> None:
+        """Handle /outstanding [done N | cancel N] — cross-session work list."""
+        from xavani_wisdom.outstanding import OutstandingLedger
+
+        ledger = OutstandingLedger()
+        parts = cmd_original.split()
+
+        if len(parts) > 2 and parts[1] in ("done", "cancel"):
+            try:
+                n = int(parts[2])
+            except ValueError:
+                self._console_print("  Usage: /outstanding [done N | cancel N]")
+                return
+            status = "done" if parts[1] == "done" else "cancelled"
+            updated = ledger.set_status(n, status)
+            if updated is None:
+                self._console_print(f"  No item #{n} found.")
+            else:
+                label = "Completed" if status == "done" else "Cancelled"
+                self._console_print(f"  {label} #{n}: {updated['text'][:60]}")
+                self._console_print(
+                    f"  {ledger.open_count()} outstanding item(s) remain."
+                )
+            return
+
+        items = ledger.items()
+        if not items:
+            self._console_print("  Nothing outstanding. All clear.")
+            return
+        icons = {"goal": "*", "loop": "~", "todo": "-"}
+        for e in items:
+            icon = icons.get(e.get("kind", "goal"), "*")
+            session = f" (from {e['session_id']})" if e.get("session_id") else ""
+            self._console_print(
+                f"  {icon} #{e['n']} [{e.get('kind', 'goal')}] "
+                f"{e.get('text', '')[:70]}{session}"
+            )
+        self._console_print(f"  {len(items)} outstanding item(s).")
+        self._console_print("  Close one with /outstanding done <N>")
 
     def _handle_loop_watch(self, rest: str) -> None:
         """Handle /loop watch [every S] [passes N] [budget USD] [alert C] <prompt>.
