@@ -98,10 +98,16 @@ Shipped by workstream (commit ranges in git log f849dba..HEAD):
 
 ## RELEASE STATE (2026-08-23)
 
-- xavani-agent v0.2.0 released with desktop apps bundled.
-- xavani-desktop v0.5.0 released: CLI parity autocomplete (90 commands),
-  first-run setup wizard, full Settings view, effort/fast topbar chips,
-  GitHub update badge, media visual edit, voice input, Agent Ops view.
+- xavani-agent v0.2.0 released; xavani-desktop REVERSIONED to 0.2.0 per owner
+  instruction — version numbers stay EQUAL going forward, and every new CLI
+  feature must be surfaced in the desktop app. Enforcement:
+  xavani-desktop/scripts/check_parity.sh + weekly cli-parity workflow
+  (diffs engine COMMAND_REGISTRY vs packaging/parity/commands.snapshot.txt).
+- Release assets are named Xavani-0.2.0-* on BOTH releases; windows-build
+  workflow auto-attaches tag builds (condition matches github.ref_name).
+- Errors fixed post-release: deploy-site env policy (added v* tag allowlist),
+  uv.lock resync, homebrew sdist upload + detached-HEAD checkout fix,
+  MIG_LABELS NameError in desktop backend.
 - Desktop build rule: macOS dmg MUST be built with
   XAVANI_ENGINE_SRC=<clean export of the tag> — the ~/.xavani/xavani-agent
   clone lags behind main. Windows CI bundles engine from main on tag push.
