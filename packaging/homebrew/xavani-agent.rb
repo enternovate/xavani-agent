@@ -5,8 +5,8 @@ class XavaniAgent < Formula
   homepage "https://enternovate.co.za/xavani-agent"
   # Stable source should point at the semver-named sdist asset attached by
   # scripts/release.py, not the CalVer tag tarball.
-  url "https://github.com/enternovate/xavani-agent/releases/download/v0.1.2/xavani_agent-0.1.2.tar.gz"
-  sha256 "1a5515f08cc77ddb8d4e8ad43b92d1d4ef429ead7a1d00057886f2ed44d05be7"
+  url "https://github.com/enternovate/xavani-agent/releases/download/v0.2.0/xavani_agent-0.2.0.tar.gz"
+  sha256 "bf40a5a50b7abed910c1eb164be05686488528ee9b8db3a023e95528604ae138"
   license "MIT"
 
   depends_on "certifi" => :no_linkage
