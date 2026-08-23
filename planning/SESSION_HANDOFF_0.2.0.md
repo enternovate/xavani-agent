@@ -85,10 +85,30 @@ Shipped by workstream (commit ranges in git log f849dba..HEAD):
    credit, then:
    XAVANI_BENCH_JUDGE_MODEL=<model> python3 -m scripts.task_bench.run_bench /tmp/judge_task.json
 2. Website screenshots (owner, needs running app).
-3. Tagged GitHub release + push (owner step).
+3. ~~Tagged GitHub release + push~~ DONE 2026-08-23: main + tag v0.2.0
+   pushed by enternovate account; release live at
+   https://github.com/enternovate/xavani-agent/releases/tag/v0.2.0 with the
+   desktop apps attached (macOS dmg from a clean git-archive export of this
+   tag; Windows exe/zip from desktop CI run 32621337601 which checks out
+   engine main == this tag). Desktop release:
+   https://github.com/enternovate/xavani-desktop/releases/tag/v0.5.0
 4. Optional enforcement-side wiring IF agent/skill_utils.py or
    agent/tool_executor.py ever go clean of concurrent edits:
    skill-trigger discovery hook; nothing else pending.
+
+## RELEASE STATE (2026-08-23)
+
+- xavani-agent v0.2.0 released with desktop apps bundled.
+- xavani-desktop v0.5.0 released: CLI parity autocomplete (90 commands),
+  first-run setup wizard, full Settings view, effort/fast topbar chips,
+  GitHub update badge, media visual edit, voice input, Agent Ops view.
+- Desktop build rule: macOS dmg MUST be built with
+  XAVANI_ENGINE_SRC=<clean export of the tag> — the ~/.xavani/xavani-agent
+  clone lags behind main. Windows CI bundles engine from main on tag push.
+- Release pushes require the gh 'enternovate' account
+  (gh auth switch -u enternovate); georgem66 has no org push access.
+- Known user-side item: voice transcription needs OPENAI_API_KEY or
+  GROQ_API_KEY in ~/.xavani/.env (OpenRouter does not serve /audio/transcriptions).
 
 ## KEY FILE MAP (this build-out)
 
