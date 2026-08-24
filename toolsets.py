@@ -40,6 +40,10 @@ _XAVANI_CORE_TOOLS = [
     "terminal", "process",
     # File manipulation
     "read_file", "write_file", "patch", "edit", "search_files", "organize_files",
+    # Filesystem checkpoints (agent-invocable snapshot/restore)
+    "checkpoint",
+    # Security scanning (heuristic secret/vuln finder)
+    "security_scan",
     # Vision + image generation
     "vision_analyze", "image_generate",
     # Skills
@@ -189,7 +193,7 @@ TOOLSETS = {
     
     "file": {
         "description": "File manipulation tools: read, write, patch (with fuzzy matching), and search (content + files)",
-        "tools": ["read_file", "write_file", "patch", "search_files"],
+        "tools": ["read_file", "write_file", "patch", "search_files", "checkpoint"],
         "includes": []
     },
     
@@ -316,7 +320,7 @@ TOOLSETS = {
     
     "debugging": {
         "description": "Debugging and troubleshooting toolkit",
-        "tools": ["terminal", "process"],
+        "tools": ["terminal", "process", "security_scan"],
         "includes": ["web", "file"]  # For searching error messages and solutions, and file operations
     },
     
