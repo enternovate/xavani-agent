@@ -51,7 +51,7 @@ jobs:
         uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39  # v8.2.0
 
       - name: Set up Node.js
-        uses: actions/setup-node@e51e5fe84fc33b4c73ebe40526b2694712b5b858  #v4  # v4
+        uses: actions/setup-node@ae0d4ed08881f17d1511386f5be3e62356acd4a6  #v4  # v4
         with:
           node-version: '22'
 
