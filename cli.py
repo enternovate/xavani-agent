@@ -4156,6 +4156,19 @@ class XavaniCLI:
         if not text:
             return
 
+        # Adaptive stream pacing: batch deltas into ~60fps windows so a
+        # fast provider does not issue one terminal write per token.
+        # The scheduler sits BELOW the reasoning-tag prefilter and only
+        # batches complete emissions, so filtering semantics are intact.
+        sched = getattr(self, "_stream_scheduler", None)
+        if sched is not None:
+            sched.submit(text)
+            return
+
+        self._emit_stream_text_now(text)
+
+    def _emit_stream_text_now(self, text: str) -> None:
+        """Emit immediately (scheduler bypass for flush paths)."""
         # When show_reasoning is on and reasoning is still rendering,
         # defer content until the reasoning box closes.  This ensures the
         # reasoning block always appears BEFORE the response in the terminal.
@@ -4248,6 +4261,12 @@ class XavaniCLI:
 
     def _flush_stream(self) -> None:
         """Emit any remaining partial line from the stream buffer and close the box."""
+        # Drain the adaptive pacing scheduler first so no buffered delta
+        # is stranded when the turn boundary arrives.
+        sched = getattr(self, "_stream_scheduler", None)
+        if sched is not None:
+            sched.finish()
+
         # If we're still inside a "reasoning block" at end-of-stream, it was
         # a false positive — the model mentioned a tag like <think> in prose
         # but never closed it.  Recover the buffered content as regular text.
@@ -4308,6 +4327,14 @@ class XavaniCLI:
         self._reasoning_box_opened = False
         self._reasoning_buf = ""
         self._reasoning_preview_buf = ""
+        # Fresh adaptive scheduler per stream; flush target is the
+        # immediate emit path so batched text lands in the same renderer.
+        try:
+            from xavani_cli.stream_scheduler import StreamScheduler
+
+            self._stream_scheduler = StreamScheduler(flush=self._emit_stream_text_now)
+        except Exception:
+            self._stream_scheduler = None
         self._deferred_content = ""
         self._stream_table_buf = []
         self._in_stream_table = False
@@ -5723,6 +5750,11 @@ class XavaniCLI:
                     lines.append(_rate)
             except Exception as exc:
                 logger.debug("cache hit rate line failed in /status: %s", exc)
+
+        # Stream pacing telemetry (debug aid; zero-cost when no stream ran)
+        _sched = getattr(self, "_stream_scheduler", None)
+        if _sched is not None and getattr(_sched, "total_flushes", 0) > 1:
+            lines.append(f"Stream flush rate: {_sched.fps} fps ({_sched.total_flushes} flushes)")
 
         # Session recap — pure local compute summary of recent activity
         # (turn counts, tools used, files touched, last ask, last reply).
