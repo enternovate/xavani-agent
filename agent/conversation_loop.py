@@ -437,6 +437,12 @@ def run_conversation(
                 # review immediately on resume (which would surprise users
                 # whose session happened to land just past a multiple of N).
                 agent._turns_since_memory = prior_user_turns % agent._memory_nudge_interval
+    if conversation_history:
+        try:
+            from agent.turn_bank import hydrate_turn_bank
+            hydrate_turn_bank(agent, conversation_history)
+        except Exception:
+            pass
 
 
     # Prefill messages (few-shot priming) are injected at API-call time only,
@@ -4158,6 +4164,43 @@ def run_conversation(
         except Exception as _ver_err:
             logger.debug("file-mutation verifier footer failed: %s", _ver_err)
 
+    # Turn-completion explainer.
+    # When a turn ends abnormally — empty content after retries, a
+    # truncated stream, a budget/iteration limit, a guardrail halt — the
+    # user otherwise gets a blank or fragmentary response box. Surface a
+    # single user-visible explanation derived from ``_turn_exit_reason``.
+    #
+    # Gate so healthy turns stay quiet:
+    #   - ``text_response(...)`` exits never produce an explanation.
+    #   - We only act when there is no genuinely usable reply: an empty
+    #     response, the "(empty)" sentinel, or a suspiciously short
+    #     partial fragment with no terminating punctuation. A real short
+    #     answer keeps its text.
+    if not interrupted:
+        try:
+            from agent.turn_completion_explainer import (
+                format_turn_completion_explanation,
+                is_partial_fragment,
+                turn_completion_explainer_enabled,
+            )
+
+            if turn_completion_explainer_enabled():
+                _stripped = (final_response or "").strip()
+                _is_empty_terminal = not _stripped or _stripped == "(empty)"
+                _is_partial = is_partial_fragment(_stripped or "", _turn_exit_reason)
+                if _is_empty_terminal or _is_partial:
+                    _explanation = format_turn_completion_explanation(
+                        _turn_exit_reason,
+                        getattr(agent, "_last_persistence_error_cause", None),
+                    )
+                    if _explanation:
+                        if _is_empty_terminal:
+                            final_response = _explanation
+                        else:
+                            final_response = _stripped + "\n\n" + _explanation
+        except Exception as _exp_err:
+            logger.debug("turn-completion explainer failed: %s", _exp_err)
+
     # Plugin hook: transform_llm_output
     # Fired once per turn after the tool-calling loop completes.
     # Plugins can transform the LLM's output text before it's returned.
@@ -4306,6 +4349,26 @@ def run_conversation(
             )
         except Exception:
             pass  # Memory recording is best-effort
+
+    if final_response and completed and not interrupted:
+        try:
+            from agent.turn_bank import add_completed_turn
+            _user_text = original_user_message if isinstance(original_user_message, str) else ""
+            add_completed_turn(agent, _user_text, str(final_response))
+        except Exception:
+            pass
+
+    try:
+        from agent.background_review import write_hindsight_lesson
+        write_hindsight_lesson(
+            agent,
+            task_id=effective_task_id,
+            final_response=final_response,
+            completed=completed,
+            interrupted=interrupted,
+        )
+    except Exception:
+        pass
 
     # E02: turn timeline trace (JSONL). Best-effort; never breaks the turn.
     try:
