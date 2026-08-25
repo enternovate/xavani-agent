@@ -2985,6 +2985,7 @@ class XavaniCLI:
         self._secret_deadline = 0
         self._spinner_text: str = ""  # thinking spinner text for TUI
         self._tool_start_time: float = 0.0  # monotonic timestamp when current tool started (for live elapsed)
+        self._active_tool_calls: list[dict] = []
         self._pending_tool_info: dict = {}  # function_name -> list of (preview, args) for stacked scrollback
         self._last_scrollback_tool: str = ""  # last tool name printed to scrollback (for "new" dedup)
         self._command_running = False
@@ -3416,23 +3417,52 @@ class XavaniCLI:
             return max(1, math.ceil(text_width / width))
         return 1
 
+    def _tool_token_meter(self) -> str:
+        """Return the current session token count for an active tool line."""
+        agent = getattr(self, "agent", None)
+        if agent is None:
+            return ""
+        total = getattr(agent, "session_total_tokens", None)
+        if total is None:
+            turns = getattr(agent, "session_turn_usage", None) or []
+            if turns:
+                total = sum(int(turn.get("total", 0) or 0) for turn in turns)
+        if not isinstance(total, (int, float)) or total <= 0:
+            return ""
+        try:
+            from agent.usage_pricing import format_token_count_compact
+
+            compact = format_token_count_compact(int(total))
+            if compact[-1:] in {"K", "M", "B"} and "." in compact:
+                number, suffix = compact[:-1], compact[-1]
+                compact = f"{float(number):.1f}".rstrip("0").rstrip(".") + suffix
+            return f" · tokens {compact}"
+        except Exception:
+            return f" · tokens {int(total):,}"
+
     def _render_spinner_text(self) -> str:
         """Return the live spinner/status text exactly as rendered in the TUI."""
         txt = getattr(self, "_spinner_text", "")
         if not txt:
             return ""
+        active_tools = getattr(self, "_active_tool_calls", [])
         t0 = getattr(self, "_tool_start_time", 0) or 0
         if t0 > 0:
             elapsed = time.monotonic() - t0
             if elapsed >= 60:
                 _m, _s = int(elapsed // 60), int(elapsed % 60)
-                # Fixed-width timer to avoid status-line wrap jitter while
-                # scrolling/repainting (e.g. 01m05s, 12m09s).
                 elapsed_str = f"{_m:02d}m{_s:02d}s"
             else:
-                # Keep width stable before the 60s rollover as well.
                 elapsed_str = f"{elapsed:5.1f}s"
-            return f"  {txt}  ({elapsed_str})"
+            spinner = ""
+            token_meter = ""
+            if active_tools:
+                frame = _COMMAND_SPINNER_FRAMES[
+                    int(time.monotonic() * 10) % len(_COMMAND_SPINNER_FRAMES)
+                ]
+                spinner = f"{frame} "
+                token_meter = self._tool_token_meter()
+            return f"  {spinner}{txt}  ({elapsed_str}){token_meter}"
         return f"  {txt}"
 
     def _voice_record_key_label(self) -> str:
@@ -3764,8 +3794,9 @@ class XavaniCLI:
         """Called by agent when thinking starts/stops. Updates TUI spinner."""
         if not text:
             self._flush_reasoning_preview(force=True)
+        self._active_tool_calls = []
         self._spinner_text = text or ""
-        self._tool_start_time = 0.0  # clear tool timer when switching to thinking
+        self._tool_start_time = 0.0
         self._invalidate()
 
     # ── Streaming display ────────────────────────────────────────────────
@@ -5681,6 +5712,17 @@ class XavaniCLI:
             lines.append(
                 f"Provider cache hits: {cache_hits} (cache read ~{cache_read_tokens:,} tokens)"
             )
+            try:
+                from run_agent import cache_hit_rate_line
+
+                _rate = cache_hit_rate_line({
+                    "cache_read_tokens": cache_read_tokens,
+                    "prompt_tokens": getattr(agent, "session_prompt_tokens", 0) or 0,
+                })
+                if _rate:
+                    lines.append(_rate)
+            except Exception as exc:
+                logger.debug("cache hit rate line failed in /status: %s", exc)
 
         # Session recap — pure local compute summary of recent activity
         # (turn counts, tools used, files touched, last ask, last reply).
@@ -8225,7 +8267,7 @@ class XavaniCLI:
         _base_word = cmd_lower.split()[0].lstrip("/")
         _cmd_def = _resolve_cmd(_base_word)
         canonical = _cmd_def.name if _cmd_def else _base_word
-        
+
         if canonical in {"quit", "exit"}:
             # Parse --delete flag: /exit --delete also removes the current
             # session's transcripts + SQLite history. Ported from
@@ -10159,6 +10201,7 @@ class XavaniCLI:
             "reasoning_tokens": getattr(agent, "session_reasoning_tokens", 0) or 0,
             "total_tokens": getattr(agent, "session_total_tokens", 0) or 0,
             "api_calls": getattr(agent, "session_api_calls", 0) or 0,
+            "prompt_tokens": getattr(agent, "session_prompt_tokens", 0) or 0,
         }
         cost_result = estimate_usage_cost(
             agent.model,
@@ -11397,8 +11440,11 @@ class XavaniCLI:
         full history of tool calls (not just the current one in the spinner).
         """
         if event_type == "tool.completed":
-            self._tool_start_time = 0.0
-            # Print stacked scrollback line for "all" / "new" modes
+            if function_name:
+                self._finish_active_tool_call(
+                    tool_call_id=kwargs.get("tool_call_id"),
+                    function_name=function_name,
+                )
             if function_name and self.tool_progress_mode in {"all", "new"}:
                 duration = kwargs.get("duration", 0.0)
                 is_error = kwargs.get("is_error", False)
@@ -11459,18 +11505,60 @@ class XavaniCLI:
                 label = label[:_pl - 3] + "..."
             self._spinner_text = f"{emoji} {label}"
             self._tool_start_time = time.monotonic()
+            self._active_tool_calls = [
+                *getattr(self, "_active_tool_calls", []),
+                {
+                    "name": function_name,
+                    "text": self._spinner_text,
+                    "started_at": self._tool_start_time,
+                    "tool_call_id": kwargs.get("tool_call_id"),
+                },
+            ]
             # Store args for stacked scrollback line on completion
             self._pending_tool_info.setdefault(function_name, []).append(
                 function_args if function_args is not None else {}
             )
             self._invalidate()
 
+    def _finish_active_tool_call(
+        self,
+        *,
+        tool_call_id: Optional[str] = None,
+        function_name: Optional[str] = None,
+    ) -> None:
+        """Remove one active tool status, preferring its stable call ID."""
+        active_tools = getattr(self, "_active_tool_calls", [])
+        match_index = None
+        for index, active in enumerate(active_tools):
+            if tool_call_id and active.get("tool_call_id") == tool_call_id:
+                match_index = index
+                break
+            if tool_call_id is None and function_name and active.get("name") == function_name:
+                match_index = index
+                break
+        if match_index is None:
+            return
+        active_tools.pop(match_index)
+        if active_tools:
+            next_tool = active_tools[-1]
+            self._spinner_text = next_tool["text"]
+            self._tool_start_time = next_tool["started_at"]
+        else:
+            self._spinner_text = ""
+            self._tool_start_time = 0.0
+        self._invalidate()
+
     def _on_tool_start(self, tool_call_id: str, function_name: str, function_args: dict):
         """Capture local before-state for write-capable tools."""
+        for active in getattr(self, "_active_tool_calls", []):
+            if active.get("tool_call_id") is None and active.get("name") == function_name:
+                active["tool_call_id"] = tool_call_id
+                break
         try:
             from agent.display import capture_local_edit_snapshot
 
-            snapshot = capture_local_edit_snapshot(function_name, function_args)
+            snapshot_tool_name = "patch" if function_name == "edit" else function_name
+            snapshot = capture_local_edit_snapshot(snapshot_tool_name, function_args)
             if snapshot is not None:
                 self._pending_edit_snapshots[tool_call_id] = snapshot
         except Exception:
@@ -11478,12 +11566,14 @@ class XavaniCLI:
 
     def _on_tool_complete(self, tool_call_id: str, function_name: str, function_args: dict, function_result: str):
         """Render file edits with inline diff after write-capable tools complete."""
+        self._finish_active_tool_call(tool_call_id=tool_call_id, function_name=function_name)
         snapshot = self._pending_edit_snapshots.pop(tool_call_id, None)
         try:
             from agent.display import render_edit_diff_with_delta
 
+            render_tool_name = "patch" if function_name == "edit" else function_name
             render_edit_diff_with_delta(
-                function_name,
+                render_tool_name,
                 function_result,
                 function_args=function_args,
                 snapshot=snapshot,

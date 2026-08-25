@@ -4294,6 +4294,21 @@ def accumulate_session_usage(agent, usage) -> dict:
     return per_turn
 
 
+def cache_hit_rate_line(totals: dict) -> str | None:
+    """Render the session cache hit-rate line, or None when not measurable.
+
+    Hit rate = cache_read_tokens / prompt_tokens. Hidden when either
+    value is missing or zero so providers without cache accounting never
+    show a misleading 0%.
+    """
+    cache_read = int((totals.get("cache_read_tokens") or 0))
+    prompt = int((totals.get("prompt_tokens") or 0))
+    if cache_read <= 0 or prompt <= 0:
+        return None
+    pct = round(100 * cache_read / prompt)
+    return f"Cache hit rate:              {pct:>3}%  ({cache_read:,} / {prompt:,})"
+
+
 def render_cost_report(*, model, totals, per_turn=None, cost_result=None,
                        max_turns: int = 20) -> list:
     """Render the /cost report lines from plain totals (no live agent needed).
@@ -4329,6 +4344,9 @@ def render_cost_report(*, model, totals, per_turn=None, cost_result=None,
     lines.append(f"  Total tokens:             {total:>10,}")
     if calls:
         lines.append(f"  API calls:                {calls:>10,}")
+    rate_line = cache_hit_rate_line(totals)
+    if rate_line is not None:
+        lines.append(f"  {rate_line}")
     if cost_result is not None:
         if cost_result.amount_usd is not None:
             prefix = "~" if cost_result.status == "estimated" else ""
