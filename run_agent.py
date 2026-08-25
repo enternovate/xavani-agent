@@ -4221,10 +4221,30 @@ class AIAgent:
         try:
             from xavani_cli.magic_keywords import apply_magic_keywords
 
-            augmented, _detected = apply_magic_keywords(message)
+            augmented, detected = apply_magic_keywords(message)
+            if "ultrathink" in detected:
+                self._raise_reasoning_effort_for_turn()
             return augmented
         except Exception:
             return message
+
+    def _raise_reasoning_effort_for_turn(self) -> None:
+        """Raise reasoning effort to the model's maximum for this turn.
+
+        Upstream pattern: 'ultrathink' bypasses difficulty classification
+        and pins the highest effort the model supports. Only raises —
+        never lowers an explicitly configured higher effort.
+        """
+        try:
+            cfg = getattr(self, "reasoning_config", None)
+            if isinstance(cfg, dict):
+                current = str(cfg.get("effort", "") or "").lower()
+                if current in {"high", "max", "xhigh"}:
+                    return
+                self.reasoning_config = {**cfg, "effort": "high"}
+                logger.info("magic keyword: ultrathink → reasoning effort high")
+        except Exception as exc:
+            logger.debug("reasoning effort raise failed: %s", exc)
 
     def _run_codex_app_server_turn(
         self,
