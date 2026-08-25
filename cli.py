@@ -2503,6 +2503,16 @@ def _fuzzy_slash_suggestion(typed_base: str) -> str | None:
         candidates.update(f"/{alias}" for alias in cmd.aliases)
         candidates.update(f"/{alias}" for alias in cmd.cli_aliases)
     candidates.update({"/compact", "/learn"})
+    # Fuzzy scorer first: ranks prefix > substring > subsequence with
+    # tie-breaking on target length, which difflib's ratio treats worse.
+    try:
+        from xavani_cli.fuzzy import best_match
+
+        fuzzy = best_match(typed_base.lstrip("/"), sorted(candidates))
+        if fuzzy:
+            return f"/{fuzzy}" if not fuzzy.startswith("/") else fuzzy
+    except Exception:
+        pass
     matches = difflib.get_close_matches(
         typed_base, sorted(candidates), n=1, cutoff=0.7
     )
@@ -10899,7 +10909,19 @@ class XavaniCLI:
                 rebuilt = "provider client rebuilt"
         except Exception as exc:
             rebuilt = f"client rebuild skipped ({exc})"
-        self._console_print(f"  Fresh: stream state reset, {rebuilt}. Transcript kept.")
+        # Drop the memoized system prompt so the next turn re-derives it.
+        # A stale prompt cache is the other half of a wedged stream state.
+        prompt_dropped = False
+        try:
+            if getattr(agent, "_cached_system_prompt", None) is not None:
+                agent._cached_system_prompt = None
+                prompt_dropped = True
+        except Exception:
+            pass
+        detail = f"{rebuilt}"
+        if prompt_dropped:
+            detail += ", system prompt cache cleared"
+        self._console_print(f"  Fresh: stream state reset, {detail}. Transcript kept.")
 
     def _handle_rewind_command(self, cmd_original: str = "") -> None:
         """Handle /rewind [N | hash] — restore files to a checkpoint."""
