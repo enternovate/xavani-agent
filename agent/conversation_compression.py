@@ -33,6 +33,7 @@ these paths see no behavioural change.
 from __future__ import annotations
 
 import logging
+import json
 import os
 import tempfile
 import uuid
@@ -257,6 +258,107 @@ def replay_compression_warning(agent: Any) -> None:
             pass
 
 
+def _transcript_checkpoint_dir():
+    """Directory for pre-compress transcript snapshots."""
+    import os
+    from pathlib import Path
+
+    override = os.environ.get("XAVANI_COMPRESS_CHECKPOINT_DIR")
+    if override:
+        return Path(override)
+    return Path.home() / ".xavani" / "compress_checkpoints"
+
+
+def _write_snapshot_file(path, payload) -> bool:
+    """Atomically write one snapshot JSON file. Returns success."""
+    import tempfile
+
+    try:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        fd, tmp_name = tempfile.mkstemp(dir=str(path.parent), prefix=".cc-")
+        import os as _os
+
+        try:
+            with _os.fdopen(fd, "w", encoding="utf-8") as fh:
+                json.dump(payload, fh, ensure_ascii=False)
+            _os.replace(tmp_name, path)
+        except BaseException:
+            try:
+                _os.unlink(tmp_name)
+            except OSError:
+                pass
+            raise
+        return True
+    except Exception:
+        logger.debug("transcript snapshot write failed: %s", path, exc_info=True)
+        return False
+
+
+def write_transcript_snapshot(session_id, messages: list) -> bool:
+    """Persist a durable snapshot of the transcript before compression.
+
+    ``session_id`` may be an id string, an agent-like object with
+    ``session_id``, or a mapping containing ``session``.
+    """
+    import time as _time
+
+    if isinstance(session_id, str):
+        session = session_id
+    elif isinstance(session_id, dict):
+        session = session_id.get("session")
+    else:
+        session = getattr(session_id, "session_id", None)
+    payload = {
+        "ts": _time.time(),
+        "session": session,
+        "messages": messages,
+    }
+    name = f"{_time.strftime('%Y%m%d-%H%M%S')}-{(session or 'anon')[:24]}.json"
+    target = _transcript_checkpoint_dir() / name
+    return _write_snapshot_file(target, payload)
+
+
+def ensure_pre_compress_snapshot(agent, messages: list) -> bool:
+    """Gate: take a transcript snapshot before compression mutates context.
+
+    Returns False ONLY when the checkpoint is REQUIRED
+    (``XAVANI_COMPRESS_CHECKPOINT=required`` or config key
+    ``compression.pre_compress_checkpoint == "required"``) and the write
+    failed — callers must then abort compression. In the default
+    best-effort mode a failed write is logged but never blocks.
+    """
+    import os
+
+    ok = False
+    try:
+        ok = write_transcript_snapshot(
+            getattr(agent, "session_id", None), list(messages or [])
+        )
+    except Exception:
+        logger.debug("pre-compress snapshot crashed", exc_info=True)
+
+    required = os.environ.get("XAVANI_COMPRESS_CHECKPOINT", "").strip().lower() == "required"
+    if not required and not hasattr(agent, "_compress_checkpoint_required_resolved"):
+        try:
+            from xavani_cli.config import load_config
+
+            cfg = load_config() or {}
+            comp = cfg.get("compression") if isinstance(cfg, dict) else None
+            val = (comp or {}).get("pre_compress_checkpoint") if isinstance(comp, dict) else None
+            required = str(val or "").strip().lower() == "required"
+        except Exception:
+            pass
+
+    if not ok and required:
+        logger.error("pre-compress checkpoint REQUIRED but failed; blocking compression")
+        try:
+            agent._emit_status("⚠️ Could not save a pre-compression safety snapshot — compression blocked.")
+        except Exception:
+            pass
+        return False
+    return True
+
+
 def compress_context(
     agent: Any,
     messages: list,
@@ -297,6 +399,16 @@ def compress_context(
         f"{approx_tokens:,}" if approx_tokens else "unknown", agent.model,
         focus_topic,
     )
+
+    # Pre-compress checkpoint gate. Snapshot the transcript BEFORE any
+    # mutation; when the checkpoint is required and the write failed,
+    # abort compression entirely rather than risk context loss.
+    try:
+        if not ensure_pre_compress_snapshot(agent, messages):
+            return list(messages), system_message
+    except Exception:
+        logger.debug("pre-compress gate crashed (continuing)", exc_info=True)
+
     agent._emit_status(
         "🗜️ Compacting context — summarizing earlier conversation so I can continue..."
     )
