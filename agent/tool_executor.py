@@ -70,6 +70,41 @@ def _ra():
     return run_agent
 
 
+def _call_tool_progress_callback(callback, event, name, preview, args, **kwargs):
+    """Call progress callbacks with stable IDs and legacy compatibility."""
+    try:
+        return callback(event, name, preview, args, **kwargs)
+    except TypeError as exc:
+        if "unexpected keyword argument" not in str(exc):
+            raise
+        return callback(event, name, preview, args)
+
+
+# Tools whose JSON results may carry a unified ``diff`` field on success.
+_DIFF_CARRYING_TOOLS = frozenset({"write_file", "patch"})
+
+
+def _extract_edit_diff(function_name: str, function_args: dict | None, function_result) -> str | None:
+    """Pull a bounded unified diff out of a successful file-edit result.
+
+    Returns None for non-edit tools, errors, or oversized diffs so SSE
+    consumers never receive megabyte payloads. The desktop preview pane
+    renders this diff when a run touches a file.
+    """
+    try:
+        if function_name not in _DIFF_CARRYING_TOOLS:
+            return None
+        parsed = json.loads(function_result) if isinstance(function_result, str) else None
+        if not isinstance(parsed, dict) or parsed.get("error"):
+            return None
+        diff = parsed.get("diff")
+        if isinstance(diff, str) and 0 < len(diff) <= 64_000:
+            return diff
+    except (json.JSONDecodeError, TypeError, ValueError):
+        pass
+    return None
+
+
 def _record_tool_metric(agent, function_name, started_at, duration, is_error, error_class=""):
     """Record one tool call in the session metrics (harness item 2)."""
     try:
@@ -226,7 +261,10 @@ def execute_tool_calls_concurrent(agent, assistant_message, messages: list, effe
         if agent.tool_progress_callback:
             try:
                 preview = _build_tool_preview(name, args)
-                agent.tool_progress_callback("tool.started", name, preview, args)
+                _call_tool_progress_callback(
+                    agent.tool_progress_callback,
+                    "tool.started", name, preview, args, tool_call_id=tc.id,
+                )
             except Exception as cb_err:
                 logging.debug(f"Tool progress callback error: {cb_err}")
 
@@ -453,9 +491,14 @@ def execute_tool_calls_concurrent(agent, assistant_message, messages: list, effe
 
             if not blocked and agent.tool_progress_callback:
                 try:
-                    agent.tool_progress_callback(
+                    _edit_diff = _extract_edit_diff(function_name, function_args, function_result)
+                    _call_tool_progress_callback(
+                        agent.tool_progress_callback,
                         "tool.completed", function_name, None, None,
                         duration=tool_duration, is_error=is_error,
+                        tool_call_id=tc.id,
+                        diff=_edit_diff,
+                        path=(function_args or {}).get("path"),
                     )
                 except Exception as cb_err:
                     logging.debug(f"Tool progress callback error: {cb_err}")
@@ -636,7 +679,11 @@ def execute_tool_calls_sequential(agent, assistant_message, messages: list, effe
         if not _execution_blocked and agent.tool_progress_callback:
             try:
                 preview = _build_tool_preview(function_name, function_args)
-                agent.tool_progress_callback("tool.started", function_name, preview, function_args)
+                _call_tool_progress_callback(
+                    agent.tool_progress_callback,
+                    "tool.started", function_name, preview, function_args,
+                    tool_call_id=tool_call.id,
+                )
             except Exception as cb_err:
                 logging.debug(f"Tool progress callback error: {cb_err}")
 
@@ -907,9 +954,11 @@ def execute_tool_calls_sequential(agent, assistant_message, messages: list, effe
 
         if not _execution_blocked and agent.tool_progress_callback:
             try:
-                agent.tool_progress_callback(
+                _call_tool_progress_callback(
+                    agent.tool_progress_callback,
                     "tool.completed", function_name, None, None,
                     duration=tool_duration, is_error=_is_error_result,
+                    tool_call_id=tool_call.id,
                 )
             except Exception as cb_err:
                 logging.debug(f"Tool progress callback error: {cb_err}")
