@@ -2856,6 +2856,8 @@ class APIServerAdapter(BasePlatformAdapter):
                     "tool": tool_name,
                     "duration": round(kwargs.get("duration", 0), 3),
                     "error": kwargs.get("is_error", False),
+                    **({"diff": kwargs["diff"]} if kwargs.get("diff") else {}),
+                    **({"path": kwargs["path"]} if kwargs.get("path") else {}),
                 })
             elif event_type == "reasoning.available":
                 _push({
