@@ -8,6 +8,15 @@ import pytest
 from xavani_cli import agent_hub
 
 
+@pytest.fixture(autouse=True)
+def _clear_parked():
+    import xavani_cli.agent_hub as hub
+
+    hub._parked.clear()
+    yield
+    hub._parked.clear()
+
+
 @pytest.fixture
 def fake_registry(monkeypatch):
     """One running child in the delegate registry."""
