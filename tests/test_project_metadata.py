@@ -126,3 +126,9 @@ def test_dashboard_plugin_manifests_and_assets_are_packaged():
     assert "*/dashboard/manifest.json" in plugin_data
     assert "*/dashboard/dist/*" in plugin_data
     assert "*/dashboard/dist/**/*" in plugin_data
+
+
+def test_scaffold_templates_are_packaged():
+    package_data = _load_package_data()
+
+    assert "templates/scaffold/**/*.tmpl" in package_data["xavani_cli"]

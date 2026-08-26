@@ -593,7 +593,7 @@ _CLI_SUBCOMMANDS = frozenset({
     "dashboard", "chat", "gateway", "model", "fallback", "skills", "agents",
     "config", "logs", "sessions", "update", "debug", "kanban", "cron",
     "memory", "plan", "profile", "policies", "plugins", "sandbox", "setup",
-    "telemetry", "tools", "tui", "version",
+    "telemetry", "tools", "tui", "version", "new",
 })
 
 

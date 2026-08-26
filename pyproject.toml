@@ -255,7 +255,7 @@ mhangani = { git = "https://github.com/enternovate/mhangani.git" }
 py-modules = ["run_agent", "model_tools", "toolsets", "batch_runner", "trajectory_compressor", "toolset_distributions", "cli", "xavani_bootstrap", "xavani_constants", "xavani_state", "xavani_state_integrity", "xavani_home_check", "xavani_skill_audit", "xavani_approval_reasoning", "xavani_time", "xavani_logging", "utils", "xavani", "tools.plugin_api_gate"]
 
 [tool.setuptools.package-data]
-xavani_cli = ["web_dist/**/*", "tui_dist/**/*", "scripts/install.sh", "scripts/install.ps1"]
+xavani_cli = ["web_dist/**/*", "tui_dist/**/*", "scripts/install.sh", "scripts/install.ps1", "templates/scaffold/**/*.tmpl"]
 xavani_learner = ["style_library/*.yaml"]
 gateway = ["assets/**/*"]
 plugins = [

@@ -10247,7 +10247,7 @@ _BUILTIN_SUBCOMMANDS = frozenset(
         "config", "cron", "curator", "dashboard", "debug", "deps-provenance", "doctor",
         "dump", "fallback", "gateway", "hooks", "import", "insights",
         "constellation",
-        "finance", "journey", "kanban", "learn", "login", "logout", "logs", "lsp", "mcp", "memory",
+        "finance", "journey", "kanban", "learn", "login", "logout", "logs", "lsp", "mcp", "memory", "new",
         "model", "operator", "pairing", "plugins", "postinstall", "profile", "proxy",
         "secrets", "security-audit", "tokens",
         "send", "sessions", "setup",
@@ -13318,6 +13318,18 @@ Examples:
     from xavani_cli.deps_provenance import cmd_deps_provenance
 
     deps_parser.set_defaults(func=cmd_deps_provenance)
+
+    # =========================================================================
+    # new command — create local skill, plugin, and model-provider scaffolds
+    # =========================================================================
+    new_parser = subparsers.add_parser(
+        "new",
+        help="Create a skill, plugin, or model-provider scaffold",
+        description="Create a project scaffold without contacting external services",
+    )
+    from xavani_cli.scaffold import register_cli as register_scaffold_cli
+
+    register_scaffold_cli(new_parser)
 
     # =========================================================================
     # Parse and execute
