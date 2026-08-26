@@ -14,9 +14,11 @@ the absolute path plus the resume hint for the live session.
 
 from __future__ import annotations
 
+import importlib
 import json
 import os
 import sys
+from contextlib import contextmanager
 from datetime import datetime
 from pathlib import Path
 from types import SimpleNamespace
@@ -47,6 +49,40 @@ def _make_stub_cli(history):
     )
 
 
+@contextmanager
+def _fresh_cli_module():
+    original_modules = {
+        name: module
+        for name, module in sys.modules.items()
+        if name.startswith("cli") or name == "xavani_constants"
+    }
+    try:
+        for name in original_modules:
+            sys.modules.pop(name, None)
+        yield importlib.import_module("cli")
+    finally:
+        for name in [
+            name
+            for name in sys.modules
+            if name.startswith("cli") or name == "xavani_constants"
+        ]:
+            sys.modules.pop(name, None)
+        sys.modules.update(original_modules)
+
+
+def test_save_conversation_reload_restores_cached_cli_module(xavani_home):
+    """A fresh /save import must not leave fuzzy tests with stale cli globals."""
+    import cli as original_cli
+
+    with _fresh_cli_module() as reloaded_cli:
+        assert reloaded_cli is not original_cli
+        reloaded_cli.XavaniCLI.save_conversation(
+            _make_stub_cli([{"role": "user", "content": "hi"}])
+        )
+    assert sys.modules["cli"] is original_cli
+    assert original_cli.XavaniCLI.process_command.__globals__ is vars(original_cli)
+
+
 def test_save_conversation_writes_under_xavani_home(xavani_home, tmp_path, monkeypatch, capsys):
     """Snapshot must land under ~/.xavani/sessions/saved/, not CWD."""
     # Change CWD to a different directory to prove the file does NOT go there.
@@ -54,19 +90,13 @@ def test_save_conversation_writes_under_xavani_home(xavani_home, tmp_path, monke
     work.mkdir()
     monkeypatch.chdir(work)
 
-    # Import fresh to pick up the XAVANI_HOME fixture
-    for mod in [m for m in sys.modules if m.startswith("cli") or m == "xavani_constants"]:
-        sys.modules.pop(mod, None)
-
-    import cli  # noqa: F401  (module under test)
-
     stub = _make_stub_cli([
         {"role": "user", "content": "hi"},
         {"role": "assistant", "content": "hello"},
     ])
 
-    # Call the unbound method against our stub.
-    cli.XavaniCLI.save_conversation(stub)
+    with _fresh_cli_module() as cli:
+        cli.XavaniCLI.save_conversation(stub)
 
     # File must NOT be in CWD
     cwd_leak = list(work.glob("xavani_conversation_*.json"))
@@ -93,12 +123,9 @@ def test_save_conversation_writes_under_xavani_home(xavani_home, tmp_path, monke
 
 
 def test_save_conversation_empty_history_does_nothing(xavani_home, capsys):
-    for mod in [m for m in sys.modules if m.startswith("cli") or m == "xavani_constants"]:
-        sys.modules.pop(mod, None)
-    import cli
-
     stub = _make_stub_cli([])
-    cli.XavaniCLI.save_conversation(stub)
+    with _fresh_cli_module() as cli:
+        cli.XavaniCLI.save_conversation(stub)
 
     saved_dir = xavani_home / "sessions" / "saved"
     assert not saved_dir.exists() or not list(saved_dir.iterdir())
