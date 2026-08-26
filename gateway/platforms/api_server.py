@@ -589,6 +589,63 @@ class _IdempotencyCache:
 _idem_cache = _IdempotencyCache()
 
 
+# Browser extension turn envelope (hermes.browser.turn.v2) constants.
+_BROWSER_TURN_PROTOCOL_ID = "hermes.browser.turn.v2"
+# The extension's BCP total serialized budget; human input alone is
+# clamped client-side to 6k, so anything wildly over that is malformed.
+_BROWSER_TURN_MAX_INPUT_CHARS = 48_000
+
+
+def extract_browser_turn_text(body):
+    """Extract the user prompt from a request body of any accepted shape.
+
+    Accepts:
+      - plain string (legacy /v1/runs input)
+      - dict with ``input`` key (standard runs/chat bodies)
+      - dict with ``protocol == hermes.browser.turn.v2``: pulls
+        ``human_input.text`` and appends attachment text items.
+
+    Returns the prompt string, or None when no usable text exists.
+    Never raises — malformed envelopes degrade to None.
+    """
+    try:
+        if isinstance(body, str):
+            return body
+        if not isinstance(body, dict):
+            return None
+        if body.get("protocol") != _BROWSER_TURN_PROTOCOL_ID:
+            inner = body.get("input")
+            if isinstance(inner, str):
+                return inner
+            if isinstance(inner, list) and inner:
+                last = inner[-1]
+                if isinstance(last, dict):
+                    return str(last.get("content", "") or "")
+            return None
+
+        human = body.get("human_input")
+        text = ""
+        if isinstance(human, dict):
+            text = str(human.get("text", "") or "")
+        parts = []
+        if text:
+            parts.append(text[:_BROWSER_TURN_MAX_INPUT_CHARS])
+        attachments = body.get("attachment_context")
+        if isinstance(attachments, dict):
+            for item in attachments.get("items", []) or []:
+                if isinstance(item, dict):
+                    label = str(item.get("label", "") or "")
+                    content = str(item.get("text", "") or item.get("content", "") or "")
+                    if content:
+                        header = f"[attachment: {label}]\n" if label else "[attachment]\n"
+                        parts.append(header + content[:20_000])
+        if not parts:
+            return None
+        return "\n\n".join(parts)
+    except Exception:
+        return None
+
+
 def _make_request_fingerprint(body: Dict[str, Any], keys: List[str]) -> str:
     from hashlib import sha256
     subset = {k: body.get(k) for k in keys}
@@ -1011,6 +1068,8 @@ class APIServerAdapter(BasePlatformAdapter):
                 "run_approval_response": True,
                 "tool_progress_events": True,
                 "approval_events": True,
+                "profiles_api": True,
+                "skills_api": True,
                 "session_continuity_header": "X-Xavani-Session-Id",
                 "session_key_header": "X-Xavani-Session-Key",
                 "cors": bool(self._cors_origins),
@@ -1019,6 +1078,9 @@ class APIServerAdapter(BasePlatformAdapter):
                 "health": {"method": "GET", "path": "/health"},
                 "health_detailed": {"method": "GET", "path": "/health/detailed"},
                 "models": {"method": "GET", "path": "/v1/models"},
+                "profiles": {"method": "GET", "path": "/v1/profiles"},
+                "profile_active": {"method": "GET", "path": "/v1/profiles/active"},
+                "skills": {"method": "GET", "path": "/v1/skills"},
                 "chat_completions": {"method": "POST", "path": "/v1/chat/completions"},
                 "responses": {"method": "POST", "path": "/v1/responses"},
                 "runs": {"method": "POST", "path": "/v1/runs"},
@@ -1028,6 +1090,77 @@ class APIServerAdapter(BasePlatformAdapter):
                 "run_stop": {"method": "POST", "path": "/v1/runs/{run_id}/stop"},
             },
         })
+
+    async def _handle_profiles(self, request: "web.Request") -> "web.Response":
+        """GET /v1/profiles — list profiles for browser-extension discovery."""
+        auth_err = self._check_auth(request)
+        if auth_err:
+            return auth_err
+        try:
+            from xavani_cli.profiles import get_active_profile_name, list_profiles
+
+            profiles = [
+                {
+                    "name": p.name,
+                    "is_default": bool(p.is_default),
+                    "model": p.model,
+                    "provider": p.provider,
+                }
+                for p in list_profiles()
+            ]
+            active = get_active_profile_name()
+            return web.json_response({
+                "object": "xavani.profiles",
+                "active": active,
+                "profiles": profiles,
+            })
+        except Exception as exc:
+            return web.json_response(
+                {"object": "xavani.profiles", "error": str(exc)}, status=500,
+            )
+
+    async def _handle_profile_active(self, request: "web.Request") -> "web.Response":
+        """GET /v1/profiles/active — the currently running profile."""
+        auth_err = self._check_auth(request)
+        if auth_err:
+            return auth_err
+        try:
+            from xavani_cli.profiles import get_active_profile_name
+
+            return web.json_response({
+                "object": "xavani.profile",
+                "name": get_active_profile_name(),
+            })
+        except Exception as exc:
+            return web.json_response(
+                {"object": "xavani.profile", "error": str(exc)}, status=500,
+            )
+
+    async def _handle_skills(self, request: "web.Request") -> "web.Response":
+        """GET /v1/skills — skill names + descriptions (progressive tier 1)."""
+        auth_err = self._check_auth(request)
+        if auth_err:
+            return auth_err
+        try:
+            import json as _json
+            from pathlib import Path
+
+            manifest = Path(__file__).resolve().parents[2] / "oag_skills" / "MANIFEST.json"
+            data = _json.loads(manifest.read_text(encoding="utf-8"))
+            skills = [
+                {"name": s.get("name", ""), "description": s.get("description", "")}
+                for s in data.get("skills", [])
+                if isinstance(s, dict) and s.get("name")
+            ]
+            return web.json_response({
+                "object": "xavani.skills",
+                "total": len(skills),
+                "skills": skills,
+            })
+        except Exception as exc:
+            return web.json_response(
+                {"object": "xavani.skills", "error": str(exc)}, status=500,
+            )
 
     async def _handle_chat_completions(self, request: "web.Request") -> "web.Response":
         """POST /v1/chat/completions — OpenAI Chat Completions format."""
@@ -2894,6 +3027,12 @@ class APIServerAdapter(BasePlatformAdapter):
             return web.json_response(_openai_error("Invalid JSON"), status=400)
 
         raw_input = body.get("input")
+        # Browser extension turn.v2 envelopes carry the prompt inside
+        # human_input; accept them transparently on the runs route.
+        if raw_input is None:
+            raw_input = extract_browser_turn_text(body)
+            if isinstance(raw_input, str):
+                body = {**body, "input": raw_input}
         if not raw_input:
             return web.json_response(_openai_error("Missing 'input' field"), status=400)
 
@@ -3413,6 +3552,9 @@ class APIServerAdapter(BasePlatformAdapter):
             self._app.router.add_get("/v1/health", self._handle_health)
             self._app.router.add_get("/v1/models", self._handle_models)
             self._app.router.add_get("/v1/capabilities", self._handle_capabilities)
+            self._app.router.add_get("/v1/profiles", self._handle_profiles)
+            self._app.router.add_get("/v1/profiles/active", self._handle_profile_active)
+            self._app.router.add_get("/v1/skills", self._handle_skills)
             self._app.router.add_post("/v1/chat/completions", self._handle_chat_completions)
             self._app.router.add_post("/v1/responses", self._handle_responses)
             self._app.router.add_get("/v1/responses/{response_id}", self._handle_get_response)
