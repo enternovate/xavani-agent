@@ -1486,6 +1486,19 @@ def _run_single_child(
             except Exception:
                 pass
 
+    def _touch_at_child_run_boundary():
+        """Keep the parent active while the child starts its first call."""
+        if parent_agent is None:
+            return
+        touch = getattr(parent_agent, "_touch_activity", None)
+        if not touch:
+            return
+        try:
+            touch(f"delegate_task: subagent {task_index} working")
+        except Exception:
+            pass
+
+    _touch_at_child_run_boundary()
     _heartbeat_thread = threading.Thread(target=_heartbeat_loop, daemon=True)
 
     # Register the live agent in the module-level registry so the TUI can

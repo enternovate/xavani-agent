@@ -332,11 +332,12 @@ def get_cwd_skills_dir(
         except ValueError:
             pass
 
+    native_skills = (Path.home() / ".xavani" / "skills").resolve()
     while True:
         if inside_boundary and current == boundary:
             return None
         candidate = current / ".xavani" / "skills"
-        if candidate.is_dir():
+        if candidate.is_dir() and candidate.resolve() != native_skills:
             return candidate.resolve()
         parent = current.parent
         if parent == current:

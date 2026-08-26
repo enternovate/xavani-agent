@@ -75,6 +75,11 @@ def discard(entry: dict) -> None:
     entry.pop("captured", None)
 
 
+def count_entries(directory: Optional[Path] = None) -> int:
+    with _lock:
+        return len(_read_lines(_journal_file(directory)))
+
+
 def rollback_last(count: int = 1, directory: Optional[Path] = None) -> list:
     """Restore the last ``count`` journaled writes. Returns summaries."""
     if count < 1:

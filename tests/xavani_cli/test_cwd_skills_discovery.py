@@ -80,6 +80,24 @@ class TestGetCwdSkillsDir:
 
 
 class TestGetAllSkillsDirsIntegration:
+    def test_isolated_home_does_not_import_user_home_catalog(self, tmp_path):
+        from agent.skill_utils import get_all_skills_dirs
+
+        user_home = tmp_path / "user-home"
+        (user_home / ".xavani" / "skills").mkdir(parents=True)
+        project = user_home / "project"
+        project.mkdir()
+        isolated_home = tmp_path / "isolated-xavani-home"
+        (isolated_home / "skills").mkdir(parents=True)
+        with (
+            patch.dict(os.environ, {"XAVANI_HOME": str(isolated_home)}),
+            patch("agent.skill_utils.Path.home", return_value=user_home),
+            patch("os.getcwd", return_value=str(project)),
+        ):
+            result = get_all_skills_dirs()
+
+        assert result == [isolated_home / "skills"]
+
     def test_builtin_catalog_unchanged_without_cwd_dir(self, xavani_home, tmp_path):
         proj = tmp_path / "project"
         proj.mkdir()
