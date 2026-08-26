@@ -40,8 +40,9 @@ def test_paren_empty_sentinel_replaced():
 
 
 def test_partial_fragment_gets_appended():
-    out = _apply_explainer("The", "partial_stream_recovery")
-    assert out.startswith("The\n\n")
+    # Multi-word fragment reads as truncated mid-sentence.
+    out = _apply_explainer("The file", "partial_stream_recovery")
+    assert out.startswith("The file\n\n")
     assert "stream" in out.lower()
 
 
