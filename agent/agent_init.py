@@ -999,6 +999,9 @@ def init_agent(
     agent._memory_nudge_interval = 10
     agent._turns_since_memory = 0
     agent._iters_since_skill = 0
+    agent._turn_bank_interval = 0
+    agent._turn_bank_completed_count = 0
+    agent._turn_bank_pending = []
     # Episodic + procedural memory (xavani_memory) — the agent's long-term
     # learning store. Off by default unless XAVANI_EPISODIC_MEMORY=1, to keep
     # the default footprint identical to prior releases. When on, recall
@@ -1019,6 +1022,10 @@ def init_agent(
             agent._memory_enabled = mem_config.get("memory_enabled", False)
             agent._user_profile_enabled = mem_config.get("user_profile_enabled", False)
             agent._memory_nudge_interval = int(mem_config.get("nudge_interval", 10))
+            from agent.turn_bank import parse_turn_bank_interval
+            agent._turn_bank_interval = parse_turn_bank_interval(
+                mem_config.get("turn_bank_interval", 0)
+            )
             if agent._memory_enabled or agent._user_profile_enabled:
                 from tools.memory_tool import MemoryStore
                 agent._memory_store = MemoryStore(
