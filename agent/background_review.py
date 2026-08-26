@@ -29,6 +29,9 @@ import os
 from typing import Any, Dict, List, Optional
 
 logger = logging.getLogger(__name__)
+
+_MAX_HINDSIGHT_LESSON_CHARS = 1200
+
 try:
     from xavani_cli.safe_logging import SafeLogFilter
     SafeLogFilter.install()
@@ -327,6 +330,71 @@ def build_memory_write_metadata(
     return {k: v for k, v in metadata.items() if v not in {None, ""}}
 
 
+def write_hindsight_lesson(
+    agent: Any,
+    *,
+    task_id: Optional[str],
+    final_response: Optional[str],
+    completed: bool = True,
+    interrupted: bool = False,
+) -> bool:
+    """Write a concise lesson for a completed task through the memory tool."""
+    if (
+        not task_id
+        or not final_response
+        or not completed
+        or interrupted
+        or not getattr(agent, "_memory_enabled", False)
+        or not getattr(agent, "_memory_store", None)
+    ):
+        return False
+
+    response = str(final_response).strip()
+    lesson = response
+    for line in response.splitlines():
+        stripped = line.strip()
+        if stripped.lower().startswith(("lesson:", "takeaway:")):
+            lesson = stripped.split(":", 1)[1].strip()
+            break
+    lesson = lesson[:_MAX_HINDSIGHT_LESSON_CHARS].strip()
+    if not lesson or lesson.casefold() == "(empty)":
+        return False
+
+    prefix = f"Task {task_id} completed. Hindsight lesson: "
+    memory_limit = getattr(agent._memory_store, "memory_char_limit", None)
+    if isinstance(memory_limit, int):
+        current_chars = 0
+        char_count = getattr(agent._memory_store, "_char_count", None)
+        if callable(char_count):
+            try:
+                current_chars = max(0, int(char_count("memory")))
+            except Exception:
+                current_chars = 0
+        separator_chars = len("\n§\n") if current_chars else 0
+        available = memory_limit - current_chars - separator_chars
+        lesson = lesson[: available - len(prefix)].strip() if available > len(prefix) else ""
+    if not lesson or lesson.casefold() == "(empty)":
+        return False
+    content = prefix + lesson
+    try:
+        from tools.memory_tool import memory_tool
+
+        result = memory_tool(
+            action="add",
+            target="memory",
+            content=content,
+            store=agent._memory_store,
+        )
+        parsed = json.loads(result) if isinstance(result, str) else result
+    except Exception:
+        return False
+    return (
+        isinstance(parsed, dict)
+        and parsed.get("success") is True
+        and parsed.get("staged") is not True
+    )
+
+
 def _run_review_in_thread(
     agent: Any,
     messages_snapshot: List[Dict],
@@ -592,4 +660,5 @@ __all__ = [
     "spawn_background_review_thread",
     "summarize_background_review_actions",
     "build_memory_write_metadata",
+    "write_hindsight_lesson",
 ]

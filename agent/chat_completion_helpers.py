@@ -57,6 +57,7 @@ from agent.tool_dispatch_helpers import (
     _multimodal_text_summary,
 )
 from agent.retry_utils import jittered_backoff
+from agent.api_call_watchdog import ApiCallWatchdog
 from agent.tool_guardrails import (
     ToolGuardrailDecision,
     append_toolguard_guidance,
@@ -165,77 +166,87 @@ def interruptible_api_call(agent, api_kwargs: dict):
     _call_start = time.time()
     agent._touch_activity("waiting for non-streaming API response")
 
-    t = threading.Thread(target=_call, daemon=True)
-    t.start()
-    _poll_count = 0
-    while t.is_alive():
-        t.join(timeout=0.3)
-        _poll_count += 1
+    _watchdog_threshold = getattr(agent, "api_call_watchdog_threshold", 120.0)
+    _watchdog = ApiCallWatchdog(
+        getattr(agent, "_emit_status", None) or getattr(agent, "_touch_activity", lambda _message: None),
+        threshold_seconds=_watchdog_threshold,
+    )
 
-        # Touch activity every ~30s so the gateway's inactivity
-        # monitor knows we're alive while waiting for the response.
-        if _poll_count % 100 == 0:  # 100 × 0.3s = 30s
-            _elapsed = time.time() - _call_start
-            agent._touch_activity(
-                f"waiting for non-streaming response ({int(_elapsed)}s elapsed)"
-            )
+    try:
+        _watchdog.start()
+        t = threading.Thread(target=_call, daemon=True)
+        t.start()
+        _poll_count = 0
+        while t.is_alive():
+            t.join(timeout=0.3)
+            _poll_count += 1
 
-        # Stale-call detector: kill the connection if no response
-        # arrives within the configured timeout.
-        _elapsed = time.time() - _call_start
-        if _elapsed > _stale_timeout:
-            _est_ctx = sum(len(str(v)) for v in api_kwargs.get("messages", [])) // 4
-            logger.warning(
-                "Non-streaming API call stale for %.0fs (threshold %.0fs). "
-                "model=%s context=~%s tokens. Killing connection.",
-                _elapsed, _stale_timeout,
-                api_kwargs.get("model", "unknown"), f"{_est_ctx:,}",
-            )
-            agent._emit_status(
-                f"⚠️ No response from provider for {int(_elapsed)}s "
-                f"(non-streaming, model: {api_kwargs.get('model', 'unknown')}). "
-                f"Aborting call."
-            )
-            try:
-                if agent.api_mode == "anthropic_messages":
-                    agent._anthropic_client.close()
-                    agent._rebuild_anthropic_client()
-                else:
-                    rc = request_client_holder.get("client")
-                    if rc is not None:
-                        agent._close_request_openai_client(rc, reason="stale_call_kill")
-            except Exception:
-                pass
-            agent._touch_activity(
-                f"stale non-streaming call killed after {int(_elapsed)}s"
-            )
-            # Wait briefly for the thread to notice the closed connection.
-            t.join(timeout=2.0)
-            if result["error"] is None and result["response"] is None:
-                result["error"] = TimeoutError(
-                    f"Non-streaming API call timed out after {int(_elapsed)}s "
-                    f"with no response (threshold: {int(_stale_timeout)}s)"
+            # Touch activity every ~30s so the gateway's inactivity
+            # monitor knows we're alive while waiting for the response.
+            if _poll_count % 100 == 0:  # 100 × 0.3s = 30s
+                _elapsed = time.time() - _call_start
+                agent._touch_activity(
+                    f"waiting for non-streaming response ({int(_elapsed)}s elapsed)"
                 )
-            break
 
-        if agent._interrupt_requested:
-            # Force-close the in-flight worker-local HTTP connection to stop
-            # token generation without poisoning the shared client used to
-            # seed future retries.
-            try:
-                if agent.api_mode == "anthropic_messages":
-                    agent._anthropic_client.close()
-                    agent._rebuild_anthropic_client()
-                else:
-                    request_client = request_client_holder.get("client")
-                    if request_client is not None:
-                        agent._close_request_openai_client(request_client, reason="interrupt_abort")
-            except Exception:
-                pass
-            raise InterruptedError("Agent interrupted during API call")
-    if result["error"] is not None:
-        raise result["error"]
-    return result["response"]
+            # Stale-call detector: kill the connection if no response
+            # arrives within the configured timeout.
+            _elapsed = time.time() - _call_start
+            if _elapsed > _stale_timeout:
+                _est_ctx = sum(len(str(v)) for v in api_kwargs.get("messages", [])) // 4
+                logger.warning(
+                    "Non-streaming API call stale for %.0fs (threshold %.0fs). "
+                    "model=%s context=~%s tokens. Killing connection.",
+                    _elapsed, _stale_timeout,
+                    api_kwargs.get("model", "unknown"), f"{_est_ctx:,}",
+                )
+                agent._emit_status(
+                    f"⚠️ No response from provider for {int(_elapsed)}s "
+                    f"(non-streaming, model: {api_kwargs.get('model', 'unknown')}). "
+                    f"Aborting call."
+                )
+                try:
+                    if agent.api_mode == "anthropic_messages":
+                        agent._anthropic_client.close()
+                        agent._rebuild_anthropic_client()
+                    else:
+                        rc = request_client_holder.get("client")
+                        if rc is not None:
+                            agent._close_request_openai_client(rc, reason="stale_call_kill")
+                except Exception:
+                    pass
+                agent._touch_activity(
+                    f"stale non-streaming call killed after {int(_elapsed)}s"
+                )
+                # Wait briefly for the thread to notice the closed connection.
+                t.join(timeout=2.0)
+                if result["error"] is None and result["response"] is None:
+                    result["error"] = TimeoutError(
+                        f"Non-streaming API call timed out after {int(_elapsed)}s "
+                        f"with no response (threshold: {int(_stale_timeout)}s)"
+                    )
+                break
+
+            if agent._interrupt_requested:
+                # Force-close the in-flight worker-local HTTP connection to stop
+                # token generation without poisoning the shared client used to
+                # seed future retries.
+                try:
+                    if agent.api_mode == "anthropic_messages":
+                        agent._anthropic_client.close()
+                        agent._rebuild_anthropic_client()
+                    else:
+                        request_client = request_client_holder.get("client")
+                        if request_client is not None:
+                            agent._close_request_openai_client(request_client, reason="interrupt_abort")
+                except Exception:
+                    pass
+                raise InterruptedError("Agent interrupted during API call")
+        if result["error"] is not None:
+            raise result["error"]
+        return result["response"]
+    finally:
+        _watchdog.stop()
 
 
 
