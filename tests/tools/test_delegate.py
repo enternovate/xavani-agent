@@ -1636,6 +1636,48 @@ class TestDelegateHeartbeat(unittest.TestCase):
             any("terminal" in desc for desc in touch_calls),
             f"Heartbeat descriptions should include child tool info: {touch_calls}")
 
+    def test_heartbeat_touches_at_child_run_boundary_before_interval(self):
+        """Heartbeat starts at the child-run boundary, not one interval later."""
+        from tools.delegate_tool import _run_single_child
+
+        parent = _make_mock_parent()
+        touch_calls = []
+        touch_seen_during_run = []
+        parent._touch_activity = lambda desc: touch_calls.append(desc)
+
+        child = MagicMock()
+        child.get_activity_summary.return_value = {
+            "current_tool": "terminal",
+            "api_call_count": 1,
+            "max_iterations": 50,
+            "last_activity_desc": "executing tool: terminal",
+        }
+
+        def short_run(**kwargs):
+            time.sleep(0.05)
+            touch_seen_during_run.append(bool(touch_calls))
+            return {"final_response": "done", "completed": True, "api_calls": 1}
+
+        child.run_conversation.side_effect = short_run
+
+        with patch("tools.delegate_tool._HEARTBEAT_INTERVAL", 10.0):
+            _run_single_child(
+                task_index=0,
+                goal="Test heartbeat boundary",
+                child=child,
+                parent_agent=parent,
+            )
+
+        self.assertTrue(
+            touch_seen_during_run and touch_seen_during_run[0],
+            "Heartbeat should touch parent while child.run_conversation is active",
+        )
+        self.assertGreaterEqual(
+            len(touch_calls),
+            1,
+            "Heartbeat should touch parent before the first interval elapses",
+        )
+
     def test_heartbeat_stops_after_child_completes(self):
         """Heartbeat thread is cleaned up when the child finishes."""
         from tools.delegate_tool import _run_single_child
