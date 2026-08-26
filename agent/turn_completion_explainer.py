@@ -61,7 +61,8 @@ def is_partial_fragment(text: str, exit_reason: str) -> bool:
 
     A real terse answer ("Done.", "No?") keeps its text. The "(empty)"
     sentinel and genuinely empty responses are handled by the empty path,
-    not here.
+    not here. Single complete words ("done", "OK", "Yes") are answers,
+    not truncations — they never qualify.
     """
     stripped = (text or "").strip()
     if not stripped or stripped == "(empty)":
@@ -70,7 +71,12 @@ def is_partial_fragment(text: str, exit_reason: str) -> bool:
         return False
     if len(stripped) > 24:
         return False
-    return stripped[-1:] not in {".", "!", "?", "`", ")"}
+    if stripped[-1:] in {".", "!", "?", "`", ")"}:
+        return False
+    # A lone word is a complete reply, not a cut-off sentence.
+    if " " not in stripped:
+        return False
+    return True
 
 
 # Ordered prefix match: longest/most-specific reasons first.

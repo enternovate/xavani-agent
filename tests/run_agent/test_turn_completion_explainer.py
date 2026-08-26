@@ -81,11 +81,14 @@ class TestPartialFragment:
         [
             ("", False),
             ("(empty)", False),
-            ("The", True),  # short fragment, no punctuation
+            ("The", False),  # lone word = complete answer, not truncation
+            ("The file is", True),  # multi-word fragment mid-sentence
             ("Done.", False),  # terminal punctuation
             ("A" * 30, False),  # longer than 24 chars
             ("Sure!", False),
             ("Working on it?", False),
+            ("done", False),  # lone word = complete answer, not truncation
+            ("OK", False),
         ],
     )
     def test_classification(self, text, expected):
