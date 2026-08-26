@@ -170,6 +170,19 @@ def run_codex_app_server_turn(
         except Exception:
             logger.debug("background review spawn raised", exc_info=True)
 
+    try:
+        from agent.background_review import write_hindsight_lesson
+
+        write_hindsight_lesson(
+            agent,
+            task_id=effective_task_id,
+            final_response=turn.final_text,
+            completed=not turn.interrupted and turn.error is None,
+            interrupted=turn.interrupted,
+        )
+    except Exception:
+        logger.debug("hindsight lesson write raised", exc_info=True)
+
     return {
         "final_response": turn.final_text,
         "messages": messages,

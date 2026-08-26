@@ -23,7 +23,7 @@ import pytest
 import run_agent
 from agent.transports.codex_app_server_session import CodexAppServerSession, TurnResult
 
-pytestmark = pytest.mark.e2e
+pytestmark = pytest.mark.integration
 
 
 @pytest.fixture
@@ -89,6 +89,20 @@ class TestRunConversationCodexPath:
         assert result["api_calls"] == 1
         assert result["codex_thread_id"] == "thread-stub-1"
         assert result["codex_turn_id"] == "turn-stub-1"
+
+    def test_completed_turn_writes_hindsight_lesson(self, fake_session):
+        agent = _make_codex_agent()
+        with patch("agent.background_review.write_hindsight_lesson") as hindsight:
+            with patch.object(agent, "_spawn_background_review", return_value=None):
+                agent.run_conversation("hello there", task_id="task-e113")
+
+        hindsight.assert_called_once_with(
+            agent,
+            task_id="task-e113",
+            final_response="echo: hello there",
+            completed=True,
+            interrupted=False,
+        )
 
     def test_projected_messages_are_spliced(self, fake_session):
         agent = _make_codex_agent()
