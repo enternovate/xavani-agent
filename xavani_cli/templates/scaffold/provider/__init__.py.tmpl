@@ -1,0 +1,16 @@
+"""${display_name_text} provider profile."""
+from providers import register_provider
+from providers.base import ProviderProfile
+
+
+register_provider(
+    ProviderProfile(
+        name=${name_expr},
+        aliases=${aliases_expr},
+        display_name=${display_name_expr},
+        description=${description_expr},
+        env_vars=${env_vars_expr},
+        base_url=${base_url_expr},
+        fallback_models=(),
+    )
+)
