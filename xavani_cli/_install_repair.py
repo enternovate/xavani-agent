@@ -11,7 +11,7 @@ Both callers need to run the same core ``.[all]`` reinstall:
 
 This module is deliberately **stdlib-only** so importing it can never fail in
 the corrupted-venv state it exists to repair. ``xavani_cli.main`` imports
-``managed_uv``, ``hermes_constants``, and friends only in its late path; the
+``managed_uv``, ``xavani_constants``, and friends only in its late path; the
 early path must not. Where the late path uses ``managed_uv.ensure_uv`` to
 bootstrap uv if missing, the early path uses the stdlib
 :func:`xavani_cli._early_recovery._find_uv_binary` lookup and falls back to
@@ -55,7 +55,7 @@ def _is_termux_env(env: dict | None = None) -> bool:
 def _stdout_to_stderr():
     """Route fd 1 (and sys.stdout) to stderr for the duration of an install.
 
-    ``hermes acp`` speaks JSON-RPC on stdout; an inherited-fd install child
+    ``xavani acp`` speaks JSON-RPC on stdout; an inherited-fd install child
     writing there would corrupt the protocol. Mirrors
     ``main.py::_recover_from_interrupted_install``.
     """
@@ -93,7 +93,7 @@ def _resolve_install_target(root: Path) -> tuple[list[str], dict | None]:
     """
     uv_bin = _er._find_uv_binary()
     if uv_bin:
-        from hermes_constants import project_venv_dir
+        from xavani_constants import project_venv_dir
 
         env = {**os.environ, "VIRTUAL_ENV": str(project_venv_dir(root) or root / "venv")}
         if _is_termux_env(env):
@@ -105,10 +105,10 @@ def _resolve_install_target(root: Path) -> tuple[list[str], dict | None]:
 
 def _venv_scripts_dir(root: Path) -> Path | None:
     """Project venv Scripts/bin dir, when present. stdlib-only."""
-    # hermes_constants is stdlib-only, so the canonical layout helpers are safe
+    # xavani_constants is stdlib-only, so the canonical layout helpers are safe
     # to use from this corrupted-venv repair path (#76105: never open-code
     # the Scripts/bin split).
-    from hermes_constants import project_venv_dir, venv_bin_dir
+    from xavani_constants import project_venv_dir, venv_bin_dir
 
     venv_dir = project_venv_dir(root)
     if venv_dir is None:
@@ -185,23 +185,23 @@ def ensure_windows_bin_launchers(
     windows: bool | None = None,
     user_path_entries: list[str] | None = None,
 ) -> list[str]:
-    """Re-stage the Windows ``hermes`` launchers when they vanish.
+    """Re-stage the Windows ``xavani`` launchers when they vanish.
 
-    On Windows, ``hermes`` resolves through launchers derived from the venv
+    On Windows, ``xavani`` resolves through launchers derived from the venv
     console scripts — never ``venv\\Scripts`` itself on PATH, which would
     shadow the user's ``python`` (#83797). The canonical launcher home is
-    the managed binary dir — the default Hermes root's ``bin``
-    (``%LOCALAPPDATA%\\hermes\\bin``, next to the managed uv) — which lives
+    the managed binary dir — the default Xavani root's ``bin``
+    (``%LOCALAPPDATA%\\xavani\\bin``, next to the managed uv) — which lives
     OUTSIDE the git checkout so no git operation can ever touch it. It is
-    a per-machine dir shared by every profile: ``get_hermes_home()`` would
-    point inside ``profiles\\<name>`` under ``hermes -p``, so the anchor
-    here is :func:`hermes_constants.get_default_hermes_root`.
+    a per-machine dir shared by every profile: ``get_xavani_home()`` would
+    point inside ``profiles\\<name>`` under ``xavani -p``, so the anchor
+    here is :func:`xavani_constants.get_default_xavani_root`.
 
     Earlier installer versions staged them at ``<checkout>\\bin`` instead —
-    inside the git working tree — where ``hermes update``'s pre-update
+    inside the git working tree — where ``xavani update``'s pre-update
     autostash (``git stash push --include-untracked``) swept them off disk;
     once the desktop updater stopped re-applying stashes (``--keep-stash``)
-    nothing restored them and ``hermes`` stopped resolving in every new
+    nothing restored them and ``xavani`` stopped resolving in every new
     terminal. That legacy location is re-staged too, during the transition,
     for installs whose user PATH still resolves through it.
 
@@ -218,7 +218,7 @@ def ensure_windows_bin_launchers(
     Two targets, two gates, both failing toward inaction:
 
     - canonical managed binary dir: only when *root* is the managed clone
-      (``root.parent == get_default_hermes_root()``), so source checkouts
+      (``root.parent == get_default_xavani_root()``), so source checkouts
       elsewhere never gain launchers;
     - legacy ``<root>\\bin``: only when that dir is on the user PATH
       (registry value, process PATH as fallback), i.e. the install opted
@@ -228,7 +228,7 @@ def ensure_windows_bin_launchers(
     starts cannot tear a launcher. Never raises; returns the restored paths.
 
     *windows* and *user_path_entries* are injectable for tests, same pattern
-    as ``hermes_constants.venv_bin_dir``.
+    as ``xavani_constants.venv_bin_dir``.
     """
     if windows is None:
         windows = _is_windows()
@@ -237,14 +237,14 @@ def ensure_windows_bin_launchers(
 
     root = Path(root)
 
-    # Per-machine anchor: the DEFAULT Hermes root, not get_hermes_home() —
-    # under ``hermes -p <name>`` that returns ``profiles\\<name>``, which
+    # Per-machine anchor: the DEFAULT Xavani root, not get_xavani_home() —
+    # under ``xavani -p <name>`` that returns ``profiles\\<name>``, which
     # would fail the managed-clone gate below and silently skip the heal
     # for profile users. The launcher dir serves the whole machine.
-    from hermes_constants import get_default_hermes_root
+    from xavani_constants import get_default_xavani_root
 
     try:
-        home = Path(get_default_hermes_root())
+        home = Path(get_default_xavani_root())
     except Exception:
         return []
 
@@ -278,7 +278,7 @@ def ensure_windows_bin_launchers(
     if not targets:
         return []
 
-    from hermes_constants import project_venv_dir, venv_bin_dir
+    from xavani_constants import project_venv_dir, venv_bin_dir
 
     venv_dir = project_venv_dir(root)
     if venv_dir is None:
@@ -395,10 +395,10 @@ def migrate_windows_bin_path(
     root = Path(root)
 
     # Same per-machine anchor as ensure_windows_bin_launchers (see there).
-    from hermes_constants import get_default_hermes_root, venv_bin_dir
+    from xavani_constants import get_default_xavani_root, venv_bin_dir
 
     try:
-        home = Path(get_default_hermes_root())
+        home = Path(get_default_xavani_root())
     except Exception:
         return False
     if _normalize_windows_path(root.parent) != _normalize_windows_path(home):
@@ -533,7 +533,7 @@ def _restore_quarantined_exes(moved: list[tuple[Path, Path]]) -> None:
     module: one retry ladder and one recovery message for every restore site,
     instead of the near-identical copies that had already drifted (#75584).
     Warnings land on stderr — this module runs in the early-recovery path and
-    ``hermes acp`` speaks JSON-RPC on stdout.
+    ``xavani acp`` speaks JSON-RPC on stdout.
     """
     _er.restore_quarantined_shims(moved)
 

@@ -9,6 +9,7 @@ without risk of circular imports.
 """
 
 import os
+import sys
 import sysconfig
 from contextvars import ContextVar, Token
 from pathlib import Path
@@ -420,3 +421,17 @@ OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
 OPENROUTER_MODELS_URL = f"{OPENROUTER_BASE_URL}/models"
 
 AI_GATEWAY_BASE_URL = "https://ai-gateway.vercel.sh/v1"
+
+
+def venv_bin_dir(venv_dir, *, windows: bool | None = None) -> Path:
+    if windows is None:
+        windows = sys.platform == "win32"
+    return Path(venv_dir) / ("Scripts" if windows else "bin")
+
+
+def project_venv_dir(project_root) -> Path | None:
+    for name in ("venv", ".venv"):
+        candidate = Path(project_root) / name
+        if candidate.is_dir():
+            return candidate
+    return None
