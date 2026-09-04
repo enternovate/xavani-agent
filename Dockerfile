@@ -111,6 +111,12 @@ RUN chmod -R a+rX /opt/xavani && \
 # this a fast (~1s) egg-link creation with no resolution or downloads.
 RUN uv pip install --no-cache-dir --no-deps -e "."
 
+ARG XAVANI_GIT_SHA=
+RUN set -eu; \
+    if [ -n "${XAVANI_GIT_SHA}" ]; then \
+        printf '%s\n' "${XAVANI_GIT_SHA}" > /opt/xavani/.xavani_build_sha; \
+    fi
+
 # ---------- Runtime ----------
 ENV XAVANI_WEB_DIST=/opt/xavani/xavani_cli/web_dist
 ENV XAVANI_HOME=/opt/data
