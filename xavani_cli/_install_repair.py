@@ -119,7 +119,7 @@ def _venv_scripts_dir(root: Path) -> Path | None:
 
 
 #: Launcher command names install.ps1's Set-PathVariable exposes from the
-#: managed binary dir (the default Hermes root's ``bin``, next to uv.exe)
+#: managed binary dir (the default Xavani root's ``bin``, next to uv.exe)
 #: on the user PATH. Keep in lockstep with the launcher list in
 #: scripts/install.ps1.
 _WINDOWS_BIN_LAUNCHERS = ("xavani", "xavani-acp")
@@ -321,7 +321,7 @@ def ensure_windows_bin_launchers(
         # closed/broken stderr must not turn a successful heal into a crash.
         with contextlib.suppress(OSError, ValueError):
             print(
-                "  ✓ Restored hermes launcher(s): " + ", ".join(restored),
+                "  ✓ Restored xavani launcher(s): " + ", ".join(restored),
                 file=sys.stderr,
             )
     return restored
@@ -362,7 +362,7 @@ def migrate_windows_bin_path(
 ) -> bool:
     """One-time PATH migration to the ``XAVANI_HOME\\bin`` launcher layout.
 
-    Runs from the ``hermes update`` tail (and mirrors what install.ps1's
+    Runs from the ``xavani update`` tail (and mirrors what install.ps1's
     Set-PathVariable does on fresh installs/repairs, which never reach
     existing installs — updates don't run install.ps1):
 
@@ -448,7 +448,7 @@ def migrate_windows_bin_path(
             return False
         with contextlib.suppress(OSError, ValueError):
             print(
-                f"  ✓ hermes launchers now resolve from {home_bin} "
+                f"  ✓ xavani launchers now resolve from {home_bin} "
                 "(legacy PATH entries removed)",
                 file=sys.stderr,
             )
@@ -489,10 +489,10 @@ class ShimQuarantineError(RuntimeError):
         )
 
 
-def _quarantine_running_hermes_exe(
+def _quarantine_running_xavani_exe(
     scripts_dir: Path, *, failed_out: list[str] | None = None
 ) -> list[tuple[Path, Path]]:
-    """Rename live hermes*.exe shims aside so the installer can rewrite them.
+    """Rename live xavani*.exe shims aside so the installer can rewrite them.
 
     Windows blocks REPLACE on a running .exe but allows RENAME. Best-effort:
     silently skips anything that cannot be renamed. Returns (original,
@@ -552,7 +552,7 @@ def _run_install_cmd(cmd: list[str], *, env: dict | None, root: Path) -> None:
     scripts_dir = _venv_scripts_dir(root) if _is_windows() else None
     failed: list[str] = []
     moved = (
-        _quarantine_running_hermes_exe(scripts_dir, failed_out=failed)
+        _quarantine_running_xavani_exe(scripts_dir, failed_out=failed)
         if scripts_dir
         else []
     )
@@ -565,7 +565,7 @@ def _run_install_cmd(cmd: list[str], *, env: dict | None, root: Path) -> None:
         # Restore runs on success AND failure: a SUCCESSFUL install can still
         # skip the entry-points step entirely (uv audits an already-satisfied
         # editable install as a no-op and rewrites nothing), which would leave
-        # the quarantined shims renamed aside and `hermes` gone from PATH
+        # the quarantined shims renamed aside and `xavani` gone from PATH
         # (#75584). _restore_quarantined_exes only renames back when the
         # installer did NOT write a fresh shim, so this is safe in both cases.
         if scripts_dir is not None:
@@ -606,7 +606,7 @@ def run_core_install(root: Path) -> None:
       to ``python -m pip`` when no uv binary is available
     - target ``.[all]`` (or ``.[termux-all]`` on Termux) with the per-extra
       fallback ladder when the combined extras resolve fails
-    - quarantine live ``hermes*.exe`` shims on Windows so they can be replaced
+    - quarantine live ``xavani*.exe`` shims on Windows so they can be replaced
     - route ALL install output to stderr (acp/JSON-RPC safety)
     - Termux strips leaked PYTHONPATH/PYTHONHOME from the uv env
 
