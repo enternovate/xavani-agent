@@ -363,3 +363,116 @@ def base_url_host_matches(base_url: str, domain: str) -> bool:
     if not domain:
         return False
     return hostname == domain or hostname.endswith("." + domain)
+
+
+def _preserve_file_owner(path: Path) -> "tuple[int, int] | None":
+    """Capture the owning uid/gid of *path* if the platform supports it."""
+    if os.name != "posix":
+        return None
+    try:
+        st = path.stat()
+    except OSError:
+        return None
+    return st.st_uid, st.st_gid
+
+
+def _restore_file_owner(path: Path, owner: "tuple[int, int] | None") -> None:
+    """Re-apply uid/gid after an atomic replace when permitted.
+
+    Docker and NAS-backed installs often run some commands as root while the
+    persistent volume is owned by the runtime user. ``os.replace`` swaps in the
+    temp file's owner, so a root-run config write can leave ``config.yaml`` owned
+    by root. Best-effort chown preserves the existing owner for privileged
+    callers and is harmless for unprivileged callers that cannot chown.
+    """
+    if owner is None or not hasattr(os, "chown"):
+        return
+    try:
+        os.chown(path, owner[0], owner[1])
+    except OSError:
+        pass
+
+
+def atomic_write_text(
+    path: Union[str, Path],
+    content: str,
+    *,
+    encoding: str = "utf-8",
+    tmp_prefix: str = ".tmp_",
+    preserve_mode: bool = False,
+    create_mode: "int | None" = None,
+) -> None:
+    """Write *content* to *path* via temp file + fsync + atomic rename.
+
+    Ensures the target file is never left in a partially-written state if
+    the process crashes or is interrupted.  ``atomic_replace`` preserves
+    symlinks and handles cross-device / busy-file fallbacks.
+
+    Used by the memory store, skill manager, and agent importer so that
+    every destructive file rewrite in the codebase shares one implementation.
+
+    Args:
+        preserve_mode: When True, carry an existing target's permission bits
+            and (POSIX, best-effort) owner across the replace, like
+            ``atomic_yaml_write`` does unconditionally.  ``os.replace`` swaps
+            in mkstemp's 0600 temp file owned by the writing user, so without
+            this a root-run rewrite of a user-owned file flips its owner and
+            tightens its mode.  The mode is applied to the temp fd *before*
+            the replace, so the file never transits through 0600.  Off by
+            default: the historical callers (memory store, skill manager,
+            cron) own their 0600-is-fine files.
+        create_mode: Permission bits to apply when the target does not yet
+            exist (otherwise the new file keeps mkstemp's 0600).  Never
+            applied to an existing file.
+    """
+    path = Path(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+
+    original_mode = _preserve_file_mode(path) if preserve_mode else None
+    original_owner = _preserve_file_owner(path) if preserve_mode else None
+    effective_mode = original_mode
+    if effective_mode is None and create_mode is not None and not path.exists():
+        effective_mode = create_mode
+
+    fd, tmp_path = tempfile.mkstemp(
+        dir=str(path.parent), prefix=tmp_prefix, suffix=".tmp"
+    )
+    try:
+        with os.fdopen(fd, "w", encoding=encoding) as handle:
+            if effective_mode is not None and hasattr(os, "fchmod"):
+                os.fchmod(handle.fileno(), effective_mode)
+            handle.write(content)
+            handle.flush()
+            os.fsync(handle.fileno())
+        real_path = atomic_replace(tmp_path, path)
+        if preserve_mode:
+            _restore_file_owner(Path(real_path), original_owner)
+        if effective_mode is not None and not hasattr(os, "fchmod"):
+            _restore_file_mode(Path(real_path), effective_mode)
+    except BaseException:
+        try:
+            os.unlink(tmp_path)
+        except OSError:
+            pass
+        raise
+
+
+_fast_yaml_loader = None
+
+
+def _get_fast_yaml_loader():
+    global _fast_yaml_loader
+    if _fast_yaml_loader is None:
+        _fast_yaml_loader = getattr(yaml, "CSafeLoader", None) or yaml.SafeLoader
+    return _fast_yaml_loader
+
+
+def fast_safe_load(stream: Any) -> Any:
+    """``yaml.safe_load`` using the libyaml C loader when available.
+
+    Accepts the same inputs as ``yaml.safe_load`` (a ``str``/``bytes`` document
+    or a readable file object) and returns the same parsed structure. Falls
+    back to PyYAML's pure-Python ``SafeLoader`` when ``CSafeLoader`` isn't
+    available, so behavior is identical everywhere — only the speed differs.
+    """
+    return yaml.load(stream, Loader=_get_fast_yaml_loader())
