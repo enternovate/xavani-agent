@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import json
 import os
+import threading
 import urllib.request
 import urllib.error
 import time
@@ -1940,6 +1941,72 @@ def provider_label(provider: Optional[str]) -> str:
         return "Auto"
     normalized = normalize_provider(normalized)
     return _PROVIDER_LABELS.get(normalized, original or "OpenRouter")
+
+
+_OLLAMA_LOCAL_MODELS_CACHE: dict[str, tuple[tuple[str, ...], float]] = {}
+_OLLAMA_LOCAL_PROBE_FAILURE_CACHE: dict[str, float] = {}
+_OLLAMA_LOCAL_PROBE_REACHABLE: dict[str, bool] = {}
+
+
+def _provider_models_cache_path() -> Path:
+    from xavani_constants import get_xavani_home
+    return get_xavani_home() / "provider_models_cache.json"
+
+
+def _load_provider_models_cache() -> dict:
+    """Return the full cache dict, or {} on any error."""
+    try:
+        path = _provider_models_cache_path()
+        if not path.exists():
+            return {}
+        with open(path, encoding="utf-8") as f:
+            data = json.load(f)
+        return data if isinstance(data, dict) else {}
+    except Exception:
+        return {}
+
+
+_cache_write_lock = threading.Lock()
+
+
+def _save_provider_models_cache(data: dict) -> None:
+    """Persist the cache dict. Best-effort — silent on any error."""
+    try:
+        from utils import atomic_json_write
+        path = _provider_models_cache_path()
+        path.parent.mkdir(parents=True, exist_ok=True)
+        atomic_json_write(path, data, indent=None)
+    except Exception:
+        pass
+
+
+def clear_provider_models_cache(provider: Optional[str] = None) -> None:
+    """Drop a single provider's cache entry, or wipe the whole cache.
+
+    ``provider=None`` wipes everything; otherwise only that provider's
+    entry is removed. Used by ``/model --refresh`` and
+    ``xavani model --refresh``.
+    """
+    try:
+        _OLLAMA_LOCAL_MODELS_CACHE.clear()
+        _OLLAMA_LOCAL_PROBE_FAILURE_CACHE.clear()
+        _OLLAMA_LOCAL_PROBE_REACHABLE.clear()
+        if provider is None:
+            path = _provider_models_cache_path()
+            if path.exists():
+                path.unlink()
+            return
+        cache = _load_provider_models_cache()
+        requested = str(provider or "").strip().lower()
+        normalized = requested if requested == "ollama" else (normalize_provider(provider) or provider or "")
+        changed = False
+        if normalized in cache:
+            del cache[normalized]
+            changed = True
+        if changed:
+            _save_provider_models_cache(cache)
+    except Exception:
+        pass
 
 
 # Models that support OpenAI Priority Processing (service_tier="priority").
