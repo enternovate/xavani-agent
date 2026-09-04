@@ -27,6 +27,7 @@ the approval layer entirely — nothing they run can touch the host.
 """
 
 import contextvars
+import functools
 import logging
 import os
 import re
@@ -1883,3 +1884,112 @@ def check_all_command_guards(command: str, env_type: str,
 
 # Load permanent allowlist from config on module import
 load_permanent_allowlist()
+
+
+# Shell metacharacters, quotes, and whitespace that terminate a filesystem
+# path token on a command line. Used to bound the path tail we normalize.
+_PATH_TOKEN_STOP = r"""\s'"`;|&<>()"""
+# One path segment (no separators, no terminators) preceded by a separator.
+_PATH_TAIL = r"(?P<tail>(?:[/\\][^/\\" + _PATH_TOKEN_STOP + r"]*)+)"
+
+
+@functools.lru_cache(maxsize=64)
+def _home_prefix_fold_regex(path: str):
+    """Compile a regex matching *path* used as an absolute directory prefix.
+
+    The home components are matched with either separator (``/`` or ``\\``)
+    between them, followed by the rest of the path token (the ``tail`` group),
+    so a Windows native path (``C:\\Users\\alice\\.ssh\\authorized_keys``), its
+    forward-slash form, and mixed-separator forms all fold — and the tail's
+    backslashes get normalized to ``/`` by the caller so multi-segment static
+    patterns (``~/.ssh/authorized_keys``) still match. The trailing tail is
+    required (``+``), so a bare home with no path under it is not folded.
+
+    Returns ``None`` for an unset or degenerate path — one with fewer than two
+    components below the root — so a stray HOME / XAVANI_HOME such as ``/``,
+    ``C:\\`` or ``""`` cannot rewrite unrelated filesystem prefixes. Cached
+    because the resolved home is stable across calls on this hot path.
+    """
+    if not path:
+        return None
+    components = [c for c in re.split(r"[/\\]+", path) if c]
+    # Require at least two non-empty components below the root. For POSIX this
+    # mirrors the historical ``count("/") >= 2`` guard (``/home/alice`` folds,
+    # ``/home`` does not); for Windows it rejects a bare drive root (``C:\\``)
+    # while accepting a real home (``C:\\Users\\alice``).
+    if len(components) < 2:
+        return None
+    body = r"[/\\]+".join(re.escape(c) for c in components)
+    # Optional leading root separator (POSIX ``/`` or UNC ``\\``); a Windows
+    # drive letter is captured as the first component.
+    return re.compile(r"[/\\]*" + body + _PATH_TAIL)
+
+
+def _fold_home_prefixes(command: str, paths, replacement: str) -> str:
+    """Fold each resolved home *path* prefix in *command* to *replacement*.
+
+    *replacement* has no trailing separator (``~`` / ``~/.xavani``); the matched
+    path tail (with its backslashes normalized to ``/``) supplies it. Longest
+    candidate first so a deeper home (e.g. an explicit HOME under USERPROFILE)
+    folds before a shorter overlapping one that would otherwise clobber it.
+    """
+    seen: set[str] = set()
+    for path in sorted((p for p in paths if p), key=len, reverse=True):
+        if path in seen:
+            continue
+        seen.add(path)
+        pattern = _home_prefix_fold_regex(path)
+        if pattern is not None:
+            command = pattern.sub(
+                lambda m: replacement + m.group("tail").replace("\\", "/"),
+                command,
+            )
+    return command
+
+
+def _rewrite_resolved_user_home(command: str) -> str:
+    """Rewrite the current user's absolute home prefix to ``~/``.
+
+    Resolves the home at detection time — its expanduser form, symlink-resolved
+    form, and an explicitly set ``HOME`` — so absolute home paths are checked by
+    the same static patterns as tilde and ``$HOME`` forms. ``HOME`` is consulted
+    directly because Windows' ``os.path.expanduser`` resolves ``~`` from
+    ``USERPROFILE`` and ignores ``HOME``, unlike POSIX. Matches both POSIX
+    (``/home/alice``) and Windows (``C:\\Users\\alice`` or ``C:/Users/alice``)
+    separators. No-op when the home is unset or degenerate.
+    """
+    try:
+        home = os.path.expanduser("~")
+        candidates = [
+            home,
+            os.path.realpath(home),
+            os.environ.get("HOME", ""),
+        ]
+    except Exception:
+        return command
+    return _fold_home_prefixes(command, candidates, "~")
+
+
+def _rewrite_resolved_xavani_home(command: str) -> str:
+    """Rewrite the resolved absolute Xavani home prefix to ``~/.xavani/``.
+
+    Resolves the active ``XAVANI_HOME`` at call time (and its symlink-resolved
+    form) and folds an occurrence of ``<home>/`` in *command* into
+    ``~/.xavani/`` so the static ``_XAVANI_CONFIG_PATH`` / ``_XAVANI_ENV_PATH``
+    patterns match. In Docker and gateway deployments the agent often references
+    the resolved absolute path directly (e.g. ``sed -i ...
+    /home/xavani/.xavani/config.yaml``) rather than ``~``, ``$HOME``, or
+    ``$XAVANI_HOME``. Matches both POSIX and Windows separators. No-op when the
+    path can't be resolved or doesn't appear.
+    """
+    try:
+        from xavani_constants import get_xavani_home
+        home = get_xavani_home().expanduser()
+        candidates = [
+            str(home),
+            str(home.resolve(strict=False)),
+        ]
+    except Exception:
+        return command
+    return _fold_home_prefixes(command, candidates, "~/.xavani")
+
