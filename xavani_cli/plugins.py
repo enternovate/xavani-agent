@@ -1443,6 +1443,26 @@ def invoke_hook(hook_name: str, **kwargs: Any) -> List[Any]:
     return get_plugin_manager().invoke_hook(hook_name, **kwargs)
 
 
+def invoke_middleware(kind: str, **kwargs: Any) -> List[Any]:
+    """Invoke registered middleware callbacks.
+
+    Returns a list of non-``None`` return values from middleware callbacks.
+    """
+    manager = get_plugin_manager()
+    method = getattr(manager, "invoke_middleware", None)
+    if callable(method):
+        return [result for result in method(kind, **kwargs) if result is not None]
+    return []
+
+
+def has_middleware(kind: str) -> bool:
+    """Return True when middleware callbacks are registered for ``kind``."""
+    manager = get_plugin_manager()
+    method = getattr(manager, "has_middleware", None)
+    if callable(method):
+        return bool(method(kind))
+    return bool(getattr(manager, "_middleware", {}).get(kind))
+
 
 _thread_tool_whitelist = threading.local()
 
