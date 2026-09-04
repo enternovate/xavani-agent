@@ -27,6 +27,7 @@ the approval layer entirely — nothing they run can touch the host.
 """
 
 import contextvars
+import fnmatch
 import functools
 import logging
 import os
@@ -1993,3 +1994,96 @@ def _rewrite_resolved_xavani_home(command: str) -> str:
         return command
     return _fold_home_prefixes(command, candidates, "~/.xavani")
 
+
+
+_SHELL_CONTROL_CHARS = frozenset("\n\r;&|<>`$()")
+
+
+def _has_allowlist_shell_operator(command: str) -> bool:
+    """Return True when a command is too compound for the allowlist shortcut.
+
+    Quote-aware: shell metacharacters inside single/double quotes or behind
+    a backslash are literal arguments (``cargo bench -- '^a(b|c)$'``), not
+    shell syntax, so they don't disqualify an otherwise-simple command from
+    matching a ``cargo *`` allowlist glob. Exceptions that still disqualify:
+
+    - ``$`` or backtick inside DOUBLE quotes (expansion stays active there);
+    - any quoted/escaped control character when the command also carries a
+      ``-c``/``-e``/``--command``/``--eval``-style option that would hand
+      the quoted text to another interpreter (``sh -c '...'``,
+      ``git -c alias.x='!...' x``).
+    """
+    command = command or ""
+    quote = None  # None | "'" | '"'
+    has_reinterpretable = False
+    i = 0
+    n = len(command)
+    while i < n:
+        ch = command[i]
+        if quote == "'":
+            if ch == "'":
+                quote = None
+            elif ch in _SHELL_CONTROL_CHARS:
+                has_reinterpretable = True
+            i += 1
+            continue
+        if ch == "\\":
+            nxt = command[i + 1] if i + 1 < n else ""
+            if nxt in _SHELL_CONTROL_CHARS:
+                has_reinterpretable = True
+            i += 2
+            continue
+        if quote == '"':
+            if ch == '"':
+                quote = None
+            elif ch in ("`", "$"):
+                return True
+            elif ch in _SHELL_CONTROL_CHARS:
+                has_reinterpretable = True
+            i += 1
+            continue
+        if ch in ("'", '"'):
+            quote = ch
+            i += 1
+            continue
+        if ch == "$":
+            if i + 1 < n and command[i + 1] == "(":
+                return True
+            i += 1
+            continue
+        if ch in _SHELL_CONTROL_CHARS and ch not in "()":
+            return True
+        i += 1
+        continue
+    if quote is not None:
+        return True
+    return has_reinterpretable and bool(_REINTERPRETED_ARGUMENT_RE.search(command))
+
+
+def _command_matches_permanent_allowlist(command: str) -> bool:
+    """Return True when command_allowlist contains this command or a glob.
+
+    Permanent approvals historically store dangerous-pattern keys such as
+    ``recursive delete``. Manual entries in ``command_allowlist`` are command
+    text, and may include shell-style wildcards like ``podman *``.
+    """
+    command = (command or "").strip()
+    if not command:
+        return False
+    if _has_allowlist_shell_operator(command):
+        return False
+
+    with _lock:
+        patterns = tuple(_permanent_approved)
+
+    for pattern in patterns:
+        if not isinstance(pattern, str):
+            continue
+        pattern = pattern.strip()
+        if not pattern:
+            continue
+        if command == pattern:
+            return True
+        if any(ch in pattern for ch in "*?[") and fnmatch.fnmatchcase(command, pattern):
+            return True
+    return False
