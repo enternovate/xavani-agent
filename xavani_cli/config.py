@@ -4502,6 +4502,25 @@ def load_config() -> Dict[str, Any]:
         return expanded
 
 
+def load_config_readonly() -> Dict[str, Any]:
+    """Readonly fast path for load_config.
+
+    Returns the cached config dict directly without a defensive deepcopy.
+    Do not mutate the result.
+    """
+    with _CONFIG_LOCK:
+        try:
+            config_path = get_config_path()
+            path_key = str(config_path)
+            st = config_path.stat()
+            cached = _LOAD_CONFIG_CACHE.get(path_key)
+            if cached is not None and cached[:2] == (st.st_mtime_ns, st.st_size):
+                return cached[2]
+        except Exception:
+            pass
+    return load_config()
+
+
 _SECURITY_COMMENT = """
 # ── Security ──────────────────────────────────────────────────────────
 # Secret redaction is ON by default — strings that look like API keys,
