@@ -404,7 +404,7 @@ def get_container_exec_info() -> Optional[dict]:
 
 # Re-export from xavani_constants — canonical definition lives there.
 from xavani_constants import get_xavani_home  # noqa: F811,E402
-from utils import atomic_replace
+from utils import atomic_replace, fast_safe_load
 
 def get_config_path() -> Path:
     """Get the main config file path."""
@@ -4500,6 +4500,90 @@ def load_config() -> Dict[str, Any]:
         else:
             _LOAD_CONFIG_CACHE.pop(path_key, None)
         return expanded
+
+
+def require_readable_config_before_write(
+    config_path: Optional[Path] = None,
+) -> Dict[str, Any]:
+    """Refuse to replace an existing config.yaml that cannot be read or parsed.
+
+    Guards two collapse-to-empty failure modes that would otherwise let a
+    read-then-write caller silently wipe user overrides:
+
+    1. **Unreadable** (permissions / broken mount) - byte open fails.
+    2. **Unparseable or non-mapping** - YAML load raises, or the root is a
+       list/scalar. ``read_user_config_raw()`` / bare ``except`` loaders treat
+       both as ``{}``, so a subsequent write would replace the recoverable
+       file with only the caller's partial dict.
+
+    Returns the loaded mapping (or ``{}`` for a missing / empty / null
+    document) so mutation callers can skip a second parse. A valid empty
+    mapping (``{}``) is allowed through so first-time installs and
+    intentional empty configs still work. On parse failure this also
+    snapshots a ``.corrupt.*.bak`` via :func:`_warn_config_parse_failure`
+    before raising.
+    """
+    if config_path is None:
+        config_path = get_config_path()
+    try:
+        config_path.stat()
+    except FileNotFoundError:
+        return {}
+    except OSError as exc:
+        raise RuntimeError(
+            f"Refusing to overwrite {config_path}: existing config.yaml cannot be accessed "
+            f"({exc}). Fix the file permissions or move it aside first."
+        ) from exc
+
+    try:
+        with open(config_path, "rb") as f:
+            f.read(1)
+    except OSError as exc:
+        raise RuntimeError(
+            f"Refusing to overwrite {config_path}: existing config.yaml cannot be read "
+            f"({exc}). Fix the file permissions or move it aside first."
+        ) from exc
+
+    return _load_user_config_for_mutation(config_path)
+
+
+def _load_user_config_for_mutation(config_path: Path) -> Dict[str, Any]:
+    """Load raw user config for a fail-closed mutation path.
+
+    Fail closed on parse / non-mapping (no bare-except to ``{}`` collapse).
+    Used by :func:`require_readable_config_before_write` and any caller that
+    must re-validate after other work. Distinct from
+    :func:`read_user_config_raw`, which collapses non-dict roots to ``{}``.
+    """
+    if not config_path.exists():
+        return {}
+    try:
+        with open(config_path, encoding="utf-8") as f:
+            loaded = fast_safe_load(f)
+    except OSError as exc:
+        raise RuntimeError(
+            f"Refusing to overwrite {config_path}: existing config.yaml cannot be read "
+            f"({exc}). Fix the file permissions or move it aside first."
+        ) from exc
+    except Exception as exc:
+        _warn_config_parse_failure(config_path, exc)
+        raise RuntimeError(
+            f"Refusing to overwrite {config_path}: existing config.yaml is not valid YAML "
+            f"({exc}). Fix the file or restore from a .corrupt.*.bak backup first."
+        ) from exc
+    if loaded is None:
+        return {}
+    if not isinstance(loaded, dict):
+        exc = TypeError(
+            f"top-level YAML must be a mapping, got {type(loaded).__name__}"
+        )
+        _warn_config_parse_failure(config_path, exc)
+        raise RuntimeError(
+            f"Refusing to overwrite {config_path}: top-level YAML must be a mapping, "
+            f"got {type(loaded).__name__}. Fix the file or restore from a "
+            f".corrupt.*.bak backup first."
+        ) from exc
+    return loaded
 
 
 def load_config_readonly() -> Dict[str, Any]:
