@@ -118,6 +118,17 @@ def _env_key_for_server(name: str) -> str:
     return f"MCP_{name.upper().replace('-', '_')}_API_KEY"
 
 
+def _bearer_auth_headers(name: str) -> Dict[str, str]:
+    """Build the persisted Authorization header for a named MCP server.
+
+    The secret itself lives in the active profile's ``.env`` file. Keeping
+    this template construction beside ``_env_key_for_server`` ensures the CLI
+    and Dashboard produce byte-equivalent MCP configuration.
+    """
+    env_key = _env_key_for_server(name)
+    return {"Authorization": f"Bearer ${{{env_key}}}"}
+
+
 def _parse_env_assignments(raw_env: Optional[List[str]]) -> Dict[str, str]:
     """Parse ``KEY=VALUE`` strings from CLI args into an env dict."""
     parsed: Dict[str, str] = {}
