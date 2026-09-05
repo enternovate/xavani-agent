@@ -25,6 +25,7 @@ import os
 import random
 import re
 import sqlite3
+import sys
 import threading
 import time
 from pathlib import Path
@@ -2035,6 +2036,17 @@ class SessionDB:
     # =========================================================================
 
     @staticmethod
+    def _is_fts5_unavailable_error(exc: sqlite3.OperationalError) -> bool:
+        err = str(exc).lower()
+        if "no such module" in err and "fts5" in err:
+            return True
+        if "no such tokenizer: trigram" in err:
+            return True
+        if "no such tokenizer: cjk_unicode61" in err:
+            return True
+        return False
+
+    @staticmethod
     def _sanitize_fts5_query(query: str) -> str:
         """Sanitize user input for safe use in FTS5 MATCH queries.
 
@@ -3436,4 +3448,129 @@ class SessionExportTooLargeError(ValueError):
             f"session '{session_id}' has at least {message_count} active messages; "
             f"safe in-memory export limit is {limit}"
         )
+
+
+def _apply_macos_checkpoint_barrier(conn: sqlite3.Connection) -> None:
+    if sys.platform != "darwin":
+        return
+    try:
+        conn.execute("PRAGMA checkpoint_fullfsync=1")
+    except sqlite3.OperationalError:
+        pass
+
+
+def _enforce_macos_synchronous_full(conn: sqlite3.Connection) -> None:
+    if sys.platform != "darwin":
+        return
+    try:
+        conn.execute("PRAGMA synchronous=FULL")
+    except sqlite3.OperationalError:
+        pass
+
+
+def _reapply_durability_barriers(conn: sqlite3.Connection) -> bool:
+    try:
+        _apply_macos_checkpoint_barrier(conn)
+        _enforce_macos_synchronous_full(conn)
+        return True
+    except sqlite3.DatabaseError:
+        return False
+    except Exception:
+        return False
+
+
+def _connect_repair_durable(
+    db_path: Path, *, timeout: float = 5.0
+) -> sqlite3.Connection:
+    conn = sqlite3.connect(str(db_path), timeout=timeout, isolation_level=None)
+    _reapply_durability_barriers(conn)
+    return conn
+
+
+def fts5_cjk_so_path() -> Path:
+    env = os.getenv("XAVANI_FTS5_CJK_SO")
+    if env:
+        return Path(env).expanduser()
+    return get_xavani_home() / "lib" / "libfts5_cjk.so"
+
+
+def _cjk_fts_config_enabled() -> bool:
+    return os.getenv("XAVANI_CJK_FTS", "1").strip().lower() not in (
+        "0", "false", "off", "no",
+    )
+
+
+def load_fts5_cjk_extension(conn: sqlite3.Connection) -> bool:
+    if not _cjk_fts_config_enabled():
+        return False
+    path = fts5_cjk_so_path()
+    if not path.exists():
+        return False
+    try:
+        conn.enable_load_extension(True)
+        try:
+            conn.load_extension(str(path))
+        finally:
+            conn.enable_load_extension(False)
+        return True
+    except Exception:
+        logger.warning("fts5_cjk extension load failed (%s)", path, exc_info=True)
+        return False
+
+
+def _db_opens_cleanly(db_path: Path) -> Optional[str]:
+    conn = _connect_repair_durable(db_path)
+    try:
+        load_fts5_cjk_extension(conn)
+        conn.execute("PRAGMA journal_mode").fetchone()
+        rows = conn.execute("PRAGMA integrity_check").fetchall()
+        problems = [str(r[0]) for r in rows if r and str(r[0]).lower() != "ok"]
+        if problems:
+            return "; ".join(problems[:3])
+        conn.execute("SELECT COUNT(*) FROM sessions").fetchone()
+
+        for fts_table in ("messages_fts", "messages_fts_trigram", "messages_fts_cjk"):
+            try:
+                conn.execute(
+                    f"SELECT 1 FROM {fts_table} WHERE {fts_table} MATCH '\"\"' LIMIT 1"
+                ).fetchone()
+            except sqlite3.OperationalError as exc:
+                if SessionDB._is_fts5_unavailable_error(exc):
+                    continue
+                msg = str(exc).lower()
+                if "no such table" in msg or "no such column" in msg:
+                    continue
+                return f"fts5 read probe failed on {fts_table}: {exc}"
+            except sqlite3.DatabaseError as exc:
+                return f"fts5 read probe failed on {fts_table}: {exc}"
+
+        probe_session_id = f"_xavani_fts_health_probe_{time.time_ns()}"
+        try:
+            conn.execute("BEGIN IMMEDIATE")
+            conn.execute(
+                "INSERT INTO sessions (id, source, started_at) VALUES (?, ?, ?)",
+                (probe_session_id, "_health_probe", time.time()),
+            )
+            conn.execute(
+                "INSERT INTO messages (session_id, role, content, timestamp) "
+                "VALUES (?, ?, ?, ?)",
+                (probe_session_id, "user", "_fts_health_probe", time.time()),
+            )
+            conn.execute("ROLLBACK")
+        except sqlite3.OperationalError as exc:
+            try:
+                conn.execute("ROLLBACK")
+            except sqlite3.Error:
+                pass
+            msg = str(exc).lower()
+            if "no such table" in msg or "no such column" in msg:
+                return None
+            if "no such tokenizer: cjk_unicode61" in msg:
+                return None
+            return str(exc)
+        return None
+    except sqlite3.DatabaseError as exc:
+        return str(exc)
+    finally:
+        conn.close()
 

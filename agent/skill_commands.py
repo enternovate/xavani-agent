@@ -35,6 +35,88 @@ _skill_commands_platform: Optional[str] = None
 _SKILL_INVALID_CHARS = re.compile(r"[^a-z0-9-]")
 _SKILL_MULTI_HYPHEN = re.compile(r"-{2,}")
 
+_SKILL_INVOCATION_PREFIX = "[IMPORTANT: The user has invoked the "
+_SINGLE_SKILL_MARKER = "The full skill content is loaded below.]"
+_SINGLE_SKILL_INSTRUCTION = (
+    "The user has provided the following instruction alongside the skill invocation: "
+)
+_RUNTIME_NOTE = "\n\n[Runtime note:"
+_BUNDLE_MARKER = " skill bundle,"
+_BUNDLE_USER_INSTRUCTION = "\nUser instruction: "
+_BUNDLE_FIRST_SKILL_BLOCK = "\n\n[Loaded as part of the "
+
+_SKILL_NAME_RE = re.compile(re.escape(_SKILL_INVOCATION_PREFIX) + r'"([^"]*)"')
+
+SKILL_SCAFFOLD_SQL_LIKE = _SKILL_INVOCATION_PREFIX + "%"
+
+SKILL_EXCERPT_JOINT = "\x1e"
+
+
+def append_user_instruction(parts: list, instruction: str) -> str:
+    stable_prefix = "\n".join(parts) + "\n" + _SINGLE_SKILL_INSTRUCTION
+    parts.append(f"{_SINGLE_SKILL_INSTRUCTION}{instruction}")
+    return stable_prefix
+
+
+def extract_user_instruction_from_skill_message(content: Any) -> Optional[str]:
+    if not isinstance(content, str):
+        return None
+
+    if not content.startswith(_SKILL_INVOCATION_PREFIX):
+        return content
+
+    if _BUNDLE_MARKER in content:
+        return _extract_bundle_user_instruction(content)
+
+    if _SINGLE_SKILL_MARKER in content:
+        return _extract_single_skill_user_instruction(content)
+
+    return None
+
+
+def describe_skill_invocation(content: Any, separator: str = " — ") -> Optional[str]:
+    if not isinstance(content, str) or not content.startswith(_SKILL_INVOCATION_PREFIX):
+        return None
+
+    match = _SKILL_NAME_RE.match(content)
+    name = (match.group(1) if match else "").strip()
+    label = name if name.startswith("/") else f"/{name}"
+
+    instruction = extract_user_instruction_from_skill_message(content)
+    if instruction and instruction is not content:
+        instruction = instruction.split(SKILL_EXCERPT_JOINT)[0]
+        instruction = " ".join(instruction.split())
+        if instruction:
+            return f"{label}{separator}{instruction}" if name else instruction
+
+    return label if name else None
+
+
+def _extract_single_skill_user_instruction(message: str) -> Optional[str]:
+    marker_idx = message.rfind(_SINGLE_SKILL_INSTRUCTION)
+    if marker_idx < 0:
+        return None
+
+    instruction = message[marker_idx + len(_SINGLE_SKILL_INSTRUCTION):]
+    runtime_idx = instruction.find(_RUNTIME_NOTE)
+    if runtime_idx >= 0:
+        instruction = instruction[:runtime_idx]
+    instruction = instruction.strip()
+    return instruction or None
+
+
+def _extract_bundle_user_instruction(message: str) -> Optional[str]:
+    marker_idx = message.find(_BUNDLE_USER_INSTRUCTION)
+    if marker_idx < 0:
+        return None
+
+    instruction = message[marker_idx + len(_BUNDLE_USER_INSTRUCTION):]
+    first_skill_idx = instruction.find(_BUNDLE_FIRST_SKILL_BLOCK)
+    if first_skill_idx >= 0:
+        instruction = instruction[:first_skill_idx]
+    instruction = instruction.strip()
+    return instruction or None
+
 
 def _resolve_skill_commands_platform() -> Optional[str]:
     """Return the current platform scope used for disabled-skill filtering.
