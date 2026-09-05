@@ -435,3 +435,28 @@ def bounded_probe_run(
             pass
         return None
     return subprocess.CompletedProcess(list(argv), proc.returncode, stdout, stderr)
+
+
+def split_command_line(line: str) -> list[str]:
+    """Split a user-supplied command line into tokens, Windows-safely.
+
+    ``shlex.split(line)`` (posix=True) treats every backslash as an escape
+    character, so Windows paths are silently mangled. On Windows this uses
+    ``posix=False``, which preserves backslashes while still honoring
+    double-quoted tokens. On POSIX the behavior is exactly ``shlex.split``.
+
+    Raises ValueError for unbalanced quotes, same as ``shlex.split``.
+    """
+    if not IS_WINDOWS:
+        import shlex
+
+        return shlex.split(line)
+    import shlex
+
+    tokens = shlex.split(line, posix=False)
+    out: list[str] = []
+    for tok in tokens:
+        if len(tok) >= 2 and tok[0] == tok[-1] and tok[0] in ("'", '"'):
+            tok = tok[1:-1]
+        out.append(tok)
+    return out

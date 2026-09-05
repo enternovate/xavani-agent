@@ -827,6 +827,53 @@ def resume_job(job_id: str) -> Optional[Dict[str, Any]]:
     )
 
 
+def rearm_oneshot(job_id: str, run_at: Any) -> Optional[Dict[str, Any]]:
+    """Re-arm a completed one-shot as an explicit new occurrence."""
+    job_ref = resolve_job_ref(job_id)
+    if not job_ref:
+        return None
+    if isinstance(run_at, datetime):
+        run_at = run_at.isoformat()
+    parsed_schedule = parse_schedule(str(run_at))
+    if parsed_schedule.get("kind") != "once":
+        raise ValueError(
+            "Cannot re-arm recurring jobs: re-arm is one-shot-only; "
+            "use plain resume or cron run."
+        )
+    next_run_at = compute_next_run(parsed_schedule)
+    if next_run_at is None:
+        requested = parsed_schedule.get("run_at") or run_at
+        raise ValueError(
+            f"Requested one-shot time {requested} is more than "
+            f"{ONESHOT_GRACE_SECONDS}s in the past and cannot be scheduled."
+        )
+
+    with _jobs_file_lock:
+        jobs = load_jobs()
+        for index, job in enumerate(jobs):
+            if job.get("id") != job_ref["id"]:
+                continue
+            if job.get("schedule", {}).get("kind") != "once":
+                raise ValueError(
+                    "Cannot re-arm recurring jobs: re-arm is one-shot-only; "
+                    "use plain resume or cron run."
+                )
+            repeat = job.get("repeat") or {}
+            repeat["completed"] = 0
+            job["repeat"] = repeat
+            job["run_claim"] = None
+            job["fire_claim"] = None
+            job["enabled"] = True
+            job["state"] = "scheduled"
+            job["paused_at"] = None
+            job["paused_reason"] = None
+            job["next_run_at"] = next_run_at
+            jobs[index] = job
+            save_jobs(jobs)
+            return _normalize_job_record(job)
+    return None
+
+
 def trigger_job(job_id: str) -> Optional[Dict[str, Any]]:
     """Schedule a job to run on the next scheduler tick. Accepts a job ID or name."""
     job = resolve_job_ref(job_id)
