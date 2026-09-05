@@ -32,6 +32,7 @@ guarantee.
 from __future__ import annotations
 
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -39,6 +40,9 @@ from typing import Mapping, Optional, Sequence
 
 __all__ = [
     "IS_WINDOWS",
+    "bounded_probe_run",
+    "kill_process_tree",
+    "pid_is_xavani",
     "resolve_node_command",
     "windows_detach_flags",
     "windows_hide_flags",
@@ -294,3 +298,140 @@ def noninteractive_git_env(
         env[f"GIT_CONFIG_VALUE_{idx}"] = value
 
     return env
+
+
+def _process_start_time(pid: int) -> int | None:
+    try:
+        from gateway.status import get_process_start_time
+
+        return get_process_start_time(pid)
+    except Exception:
+        return None
+
+
+def _text_names_xavani(text: str) -> bool:
+    for token in re.split(r"[\\/\\s=,;\\\"']+", text.lower()):
+        if token.startswith("xavani") or token.startswith(".xavani"):
+            return True
+    return False
+
+
+def _process_command_is_xavani(pid: int) -> bool:
+    try:
+        import psutil
+
+        process = psutil.Process(pid)
+        command = " ".join(process.cmdline() or [])
+        executable = process.exe() or ""
+        return _text_names_xavani(f"{command} {executable}")
+    except Exception:
+        return False
+
+
+def pid_is_xavani(
+    pid: int,
+    *,
+    expected_start_time: int | None = None,
+) -> bool:
+    if not isinstance(pid, int) or isinstance(pid, bool) or pid <= 0:
+        return False
+    if not IS_WINDOWS:
+        if expected_start_time is None:
+            return True
+        try:
+            return _process_start_time(pid) == expected_start_time
+        except Exception:
+            return False
+
+    try:
+        current_start_time = _process_start_time(pid)
+    except Exception:
+        return False
+    if current_start_time is None:
+        return False
+    if (
+        expected_start_time is not None
+        and current_start_time != expected_start_time
+    ):
+        return False
+    try:
+        return _process_command_is_xavani(pid)
+    except Exception:
+        return False
+
+
+def kill_process_tree(proc: "subprocess.Popen") -> None:
+    try:
+        from agent.deadline import kill_process_tree as _deadline_kill_tree
+
+        _deadline_kill_tree(proc.pid)
+    except Exception:
+        _legacy_kill_process_tree(proc)
+        return
+    try:
+        proc.kill()
+    except OSError:
+        pass
+
+
+def _legacy_kill_process_tree(proc: "subprocess.Popen") -> None:
+    if not IS_WINDOWS:
+        try:
+            import signal as _signal
+
+            pgid = os.getpgid(proc.pid)
+            if pgid == proc.pid:
+                os.killpg(pgid, _signal.SIGKILL)  # windows-footgun: ok — inside `if not IS_WINDOWS` gate
+        except Exception:
+            pass
+    try:
+        proc.kill()
+    except OSError:
+        pass
+    if IS_WINDOWS:
+        try:
+            subprocess.run(
+                ["taskkill", "/T", "/F", "/PID", str(proc.pid)],
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                stdin=subprocess.DEVNULL,
+                timeout=2,
+                check=False,
+                creationflags=windows_hide_flags(),
+            )
+        except Exception:
+            pass
+
+
+def bounded_probe_run(
+    argv: Sequence[str],
+    *,
+    timeout: float,
+    errors: str = "replace",
+    env: "Mapping[str, str] | None" = None,
+) -> "subprocess.CompletedProcess[str] | None":
+    _popen_kwargs: dict = {"creationflags": windows_hide_flags()} if IS_WINDOWS else {"process_group": 0}
+    try:
+        proc = subprocess.Popen(
+            list(argv),
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            stdin=subprocess.DEVNULL,
+            text=True,
+            encoding="utf-8",
+            errors=errors,
+            env=dict(env) if env is not None else None,
+            **_popen_kwargs,
+        )
+    except Exception:
+        return None
+    try:
+        stdout, stderr = proc.communicate(timeout=timeout)
+    except Exception:
+        kill_process_tree(proc)
+        try:
+            proc.communicate(timeout=1)
+        except Exception:
+            pass
+        return None
+    return subprocess.CompletedProcess(list(argv), proc.returncode, stdout, stderr)
