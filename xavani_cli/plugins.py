@@ -38,6 +38,7 @@ so plugin-defined tools appear alongside the built-in tools.
 from __future__ import annotations
 
 import asyncio
+import hashlib
 import importlib
 import importlib.metadata
 import importlib.util
@@ -47,6 +48,7 @@ import os
 import sys
 import threading
 import types
+from collections.abc import Mapping
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Set, Union
@@ -67,6 +69,26 @@ def get_bundled_plugins_dir() -> Path:
     if env_override:
         return Path(env_override)
     return Path(__file__).resolve().parent.parent / "plugins"
+
+
+def _portable_skill_namespace(key: str) -> str:
+    slug = "".join(
+        ch if ch.isascii() and (ch.isalnum() or ch in "_-") else "-"
+        for ch in key.lower()
+    )
+    slug = slug.strip("-_") or "plugin"
+    digest = hashlib.sha256(key.encode("utf-8")).hexdigest()[:8]
+    return f"agent-plugin-{slug}-{digest}"
+
+
+def _display_author(value: object) -> str:
+    if isinstance(value, Mapping):
+        return ", ".join(
+            str(value[field])
+            for field in ("name", "email", "url")
+            if value.get(field)
+        )
+    return "" if value is None else str(value)
 
 try:
     import yaml
@@ -275,6 +297,8 @@ class PluginManifest:
     # category plugin at ``plugins/image_gen/openai/`` the key is
     # ``image_gen/openai``. When empty, falls back to ``name``.
     key: str = ""
+    portable: bool = False
+    skill_namespace: str = ""
 
 
 @dataclass
@@ -964,6 +988,93 @@ class PluginManager:
                 sum(1 for p in self._plugins.values() if p.enabled),
             )
 
+    def _collect_directory_manifests(self) -> List[PluginManifest]:
+        manifests: List[PluginManifest] = []
+
+        repo_plugins = get_bundled_plugins_dir()
+        logger.debug("Scanning bundled plugins: %s", repo_plugins)
+        bundled = self._scan_directory(
+            repo_plugins,
+            source="bundled",
+            skip_names={"memory", "context_engine", "platforms", "model-providers"},
+        )
+        logger.debug("  bundled (top-level): %d manifest(s)", len(bundled))
+        manifests.extend(bundled)
+        bundled_platforms = self._scan_directory(
+            repo_plugins / "platforms", source="bundled"
+        )
+        logger.debug("  bundled/platforms: %d manifest(s)", len(bundled_platforms))
+        manifests.extend(bundled_platforms)
+
+        user_dir = get_xavani_home() / "plugins"
+        logger.debug("Scanning user plugins: %s", user_dir)
+        user_manifests = self._scan_directory(user_dir, source="user")
+        logger.debug("  user: %d manifest(s)", len(user_manifests))
+        manifests.extend(user_manifests)
+
+        if _env_enabled("XAVANI_ENABLE_PROJECT_PLUGINS"):
+            project_dir = Path.cwd() / ".xavani" / "plugins"
+            logger.debug("Scanning project plugins: %s", project_dir)
+            project_manifests = self._scan_directory(project_dir, source="project")
+            logger.debug("  project: %d manifest(s)", len(project_manifests))
+            manifests.extend(project_manifests)
+        else:
+            logger.debug(
+                "Project plugins disabled (set XAVANI_ENABLE_PROJECT_PLUGINS=1 to enable)"
+            )
+
+        return manifests
+
+    def has_enabled_portable_mcp(self, raw_config: Mapping[str, Any]) -> bool:
+        if _env_enabled("XAVANI_SAFE_MODE"):
+            return False
+
+        plugins_config = raw_config.get("plugins")
+        if not isinstance(plugins_config, dict):
+            return False
+        enabled_value = plugins_config.get("enabled")
+        if not isinstance(enabled_value, list):
+            return False
+        enabled = {value for value in enabled_value if isinstance(value, str)}
+        disabled_value = plugins_config.get("disabled", [])
+        disabled = (
+            {value for value in disabled_value if isinstance(value, str)}
+            if isinstance(disabled_value, list)
+            else set()
+        )
+        if not enabled:
+            return False
+
+        winners: Dict[str, PluginManifest] = {}
+        for manifest in self._collect_directory_manifests():
+            winners[manifest.key or manifest.name] = manifest
+
+        for manifest in winners.values():
+            if not manifest.portable:
+                continue
+            lookup_key = manifest.key or manifest.name
+            if lookup_key in disabled or manifest.name in disabled:
+                continue
+            if lookup_key not in enabled and manifest.name not in enabled:
+                continue
+            if not manifest.path:
+                continue
+            try:
+                from xavani_cli.agent_plugins import _discover_mcp
+
+                if _discover_mcp(
+                    Path(manifest.path),
+                    get_xavani_home()
+                    / "plugin-data"
+                    / (manifest.skill_namespace or lookup_key),
+                    [],
+                    create_data=False,
+                ):
+                    return True
+            except (OSError, RuntimeError, ValueError):
+                continue
+        return False
+
     # -----------------------------------------------------------------------
     # Directory scanning
     # -----------------------------------------------------------------------
@@ -1027,6 +1138,36 @@ class PluginManager:
                 )
                 if manifest is not None:
                     manifests.append(manifest)
+                continue
+
+            portable_file = child / "plugin.json"
+            if portable_file.exists() or portable_file.is_symlink():
+                try:
+                    from xavani_cli.agent_plugins import read_agent_plugin_manifest
+
+                    data, diagnostics = read_agent_plugin_manifest(child)
+                    for diagnostic in diagnostics:
+                        logger.warning(
+                            "Agent Plugin '%s': %s",
+                            child,
+                            diagnostic.message,
+                        )
+                    key = f"{prefix}/{child.name}" if prefix else data["name"]
+                    manifests.append(
+                        PluginManifest(
+                            name=data["name"],
+                            version=data.get("version", ""),
+                            description=data.get("description", ""),
+                            author=_display_author(data.get("author", "")),
+                            source=source,
+                            path=str(child),
+                            key=key,
+                            portable=True,
+                            skill_namespace=_portable_skill_namespace(key),
+                        )
+                    )
+                except Exception as exc:
+                    logger.warning("Failed to parse %s: %s", portable_file, exc)
                 continue
 
             # No manifest at this level. If we're still within the depth
@@ -1433,6 +1574,10 @@ def discover_plugins(force: bool = False) -> None:
     manifests and reload state in the current process.
     """
     get_plugin_manager().discover_and_load(force=force)
+
+
+def has_enabled_agent_plugin_mcp(raw_config: Mapping[str, Any]) -> bool:
+    return get_plugin_manager().has_enabled_portable_mcp(raw_config)
 
 
 def invoke_hook(hook_name: str, **kwargs: Any) -> List[Any]:
