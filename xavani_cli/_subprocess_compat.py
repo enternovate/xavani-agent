@@ -46,6 +46,42 @@ __all__ = [
 ]
 
 
+NO_DRIVER_DIFF_FLAGS = ("--no-ext-diff", "--no-textconv")
+
+_DIFF_RENDERING_SUBCOMMANDS = frozenset({"diff", "show", "log", "blame"})
+
+
+def harden_git_argv(args: Sequence[str]) -> list[str]:
+    """Return a copy of subcommand-first git *args* with diff-driver flags
+    inserted for diff-rendering subcommands.
+
+    *args* is the argument list WITHOUT the leading ``"git"`` (e.g.
+    ``["diff", "HEAD"]`` or ``["-c", "core.quotePath=false", "diff", ...]``).
+    The first non-option token is treated as the subcommand; if it is one of
+    :data:`_DIFF_RENDERING_SUBCOMMANDS`, :data:`NO_DRIVER_DIFF_FLAGS` is
+    inserted immediately after it. Non-diff subcommands are returned unchanged.
+
+    Pair with :func:`noninteractive_git_env`: the env layer disables
+    fsmonitor/hooks/pager/editor/credential sinks, this closes the one class
+    (attacker-named attribute drivers) env overrides cannot reach.
+    """
+    out = list(args)
+    _value_opts = {"-C", "-c", "--git-dir", "--work-tree", "--namespace", "--exec-path"}
+    i = 0
+    while i < len(out):
+        tok = out[i]
+        if tok in _value_opts:
+            i += 2
+            continue
+        if tok.startswith("-"):
+            i += 1
+            continue
+        if tok in _DIFF_RENDERING_SUBCOMMANDS:
+            return out[: i + 1] + list(NO_DRIVER_DIFF_FLAGS) + out[i + 1 :]
+        return out
+    return out
+
+
 IS_WINDOWS = sys.platform == "win32"
 
 
