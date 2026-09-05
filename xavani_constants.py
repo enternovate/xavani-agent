@@ -179,6 +179,23 @@ def get_optional_skills_dir(default: Path | None = None) -> Path:
     return get_xavani_home() / "optional-skills"
 
 
+def get_optional_mcps_dir(default: Path | None = None) -> Path:
+    """Return the optional-mcps directory, honoring package-manager wrappers.
+
+    Packaged installs may ship ``optional-mcps`` outside the Python package
+    tree and expose it via ``XAVANI_OPTIONAL_MCPS``.
+    """
+    override = os.getenv("XAVANI_OPTIONAL_MCPS", "").strip()
+    if override:
+        return Path(override)
+    packaged = _get_packaged_data_dir("optional-mcps")
+    if packaged is not None:
+        return packaged
+    if default is not None:
+        return default
+    return get_xavani_home() / "optional-mcps"
+
+
 def get_bundled_skills_dir(default: Path | None = None) -> Path:
     """Return the bundled skills directory for source and packaged installs.
 
