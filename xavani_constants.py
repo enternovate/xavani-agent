@@ -106,6 +106,27 @@ def get_xavani_home() -> Path:
     return Path.home() / ".xavani"
 
 
+def get_process_xavani_home() -> Path:
+    """Return the Xavani home for the running process, ignoring task overrides.
+
+    Unlike :func:`get_xavani_home`, this never follows the context-local
+    override set by :func:`set_xavani_home_override`. It resolves only the
+    process ``XAVANI_HOME`` env var (falling back to the platform default),
+    so it reflects the scope the process was launched under **as long as
+    nothing mutates ``os.environ`` in-process**.
+
+    Use this for machine/process-level assets that live under the launch
+    home and must stay visible even while a request is scoped to another
+    profile. Do NOT use it for genuinely profile-scoped data (memories,
+    backups, checkpoints, provider config) — those should keep following
+    the override.
+    """
+    val = os.environ.get("XAVANI_HOME", "").strip()
+    if val:
+        return Path(val)
+    return Path.home() / ".xavani"
+
+
 def get_default_xavani_root() -> Path:
     """Return the root Xavani directory for profile-level operations.
 
