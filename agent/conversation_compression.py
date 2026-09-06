@@ -36,6 +36,7 @@ import logging
 import json
 import os
 import tempfile
+import time
 import uuid
 from datetime import datetime
 from pathlib import Path
@@ -705,9 +706,188 @@ def try_shrink_image_parts_in_messages(api_messages: list) -> bool:
     return changed_count > 0
 
 
+PREFLIGHT_COMPRESSION_STATUS_TEMPLATE = (
+    "Preflight compression: ~{tokens:,} tokens "
+    ">= {threshold:,} threshold. This may take a moment."
+)
+IDLE_COMPACTION_STATUS_TEMPLATE = (
+    "Resumed after {idle_seconds}s idle — compacting "
+    "~{tokens:,} tokens before continuing."
+)
+
+
+def _session_was_rotated_by_compression(session_db: Any, session_id: str) -> bool:
+    getter = getattr(type(session_db), "get_session", None)
+    if not callable(getter):
+        return False
+    session = getter(session_db, session_id)
+    return bool(
+        session
+        and session.get("ended_at") is not None
+        and session.get("end_reason") == "compression"
+    )
+
+
+def compression_skipped_due_to_lock(agent: Any) -> bool:
+    _sig = getattr(agent, "_compression_skipped_due_to_lock", None)
+    return _sig is True or isinstance(_sig, str)
+
+
+def conversation_history_after_compression(
+    agent: Any,
+    messages: list,
+    previous_history: Optional[list] = None,
+) -> Optional[list]:
+    if bool(getattr(agent, "_last_compression_attempt_recorded", False)):
+        attempt_in_place = getattr(agent, "_last_compression_attempt_in_place", None)
+        if attempt_in_place is True:
+            return list(messages)
+        if attempt_in_place is False:
+            return None
+        return previous_history
+    if bool(getattr(agent, "_last_compaction_in_place", False)):
+        return list(messages)
+    return None
+
+
+def _adopt_live_compression_child(
+    agent: Any,
+    session_db: Any,
+    parent_session_id: str,
+) -> Optional[list[dict[str, Any]]]:
+    resolver = getattr(type(session_db), "get_compression_tip", None)
+    row_getter = getattr(type(session_db), "get_session", None)
+    loader = getattr(type(session_db), "get_messages_as_conversation", None)
+    if not callable(resolver) or not callable(row_getter) or not callable(loader):
+        return None
+    tip = resolver(session_db, parent_session_id)
+    if not tip or str(tip) == str(parent_session_id):
+        return None
+    child_session_id = str(tip)
+    child = row_getter(session_db, child_session_id)
+    if not isinstance(child, dict) or child.get("ended_at") is not None:
+        return None
+    recovered = loader(session_db, child_session_id)
+    if not isinstance(recovered, list) or not recovered:
+        return None
+    confirmed = resolver(session_db, parent_session_id)
+    if not confirmed or str(confirmed) != child_session_id:
+        return None
+
+    agent.session_id = child_session_id
+    try:
+        from gateway.session_context import set_current_session_id
+
+        set_current_session_id(child_session_id)
+    except Exception:
+        os.environ["XAVANI_SESSION_ID"] = child_session_id
+    try:
+        from xavani_logging import set_session_context
+
+        set_session_context(child_session_id)
+    except Exception:
+        pass
+
+    agent._session_db_created = True
+    if child.get("system_prompt"):
+        agent._cached_system_prompt = child["system_prompt"]
+    agent._last_flushed_db_idx = len(recovered)
+    agent._flushed_db_message_session_id = child_session_id
+    agent._flushed_db_message_ids = {
+        id(message) for message in recovered if isinstance(message, dict)
+    }
+
+    on_session_start = getattr(agent.context_compressor, "on_session_start", None)
+    if callable(on_session_start):
+        try:
+            on_session_start(
+                child_session_id,
+                boundary_reason="compression",
+                old_session_id=parent_session_id,
+                session_db=session_db,
+                platform=getattr(agent, "platform", None) or "cli",
+                conversation_id=getattr(agent, "_gateway_session_key", None),
+            )
+        except Exception as exc:
+            logger.debug("context engine compression-child adoption failed: %s", exc)
+    else:
+        bind_state = getattr(agent.context_compressor, "bind_session_state", None)
+        if callable(bind_state):
+            try:
+                bind_state(session_db=session_db, session_id=child_session_id)
+            except Exception:
+                pass
+    try:
+        if agent._memory_manager:
+            agent._memory_manager.on_session_switch(
+                child_session_id,
+                parent_session_id=parent_session_id,
+                reset=False,
+                reason="compression",
+            )
+    except Exception as exc:
+        logger.debug("memory manager compression-child adoption failed: %s", exc)
+
+    return recovered
+
+
+def recover_rotated_compression_session(
+    agent: Any,
+) -> Optional[list[dict[str, Any]]]:
+    session_db = getattr(agent, "_session_db", None)
+    session_id = getattr(agent, "session_id", None) or ""
+    if session_db is None or not session_id:
+        return None
+    try:
+        if not _session_was_rotated_by_compression(session_db, session_id):
+            return None
+        holder_getter = getattr(session_db, "get_compression_lock_holder", None)
+        for attempt in range(21):
+            recovered = _adopt_live_compression_child(agent, session_db, session_id)
+            if recovered is not None:
+                return recovered
+            holder = holder_getter(session_id) if callable(holder_getter) else None
+            if not holder or attempt == 20:
+                if not holder:
+                    orphan_reopener = getattr(
+                        type(session_db),
+                        "reopen_orphaned_compression_session",
+                        None,
+                    )
+                    if callable(orphan_reopener):
+                        try:
+                            if orphan_reopener(session_db, session_id):
+                                logger.warning(
+                                    "compression recovery: reopened orphaned "
+                                    "session=%s with no continuation",
+                                    session_id,
+                                )
+                        except Exception as exc:
+                            logger.warning(
+                                "orphaned compression session reopen failed "
+                                "for %s: %s",
+                                session_id,
+                                exc,
+                            )
+                return None
+            time.sleep(0.05)
+        return None
+    except Exception as exc:
+        logger.warning(
+            "compression session recovery failed for session=%s (%s: %s)",
+            session_id,
+            type(exc).__name__,
+            exc,
+        )
+        return None
+
+
 __all__ = [
     "check_compression_model_feasibility",
     "replay_compression_warning",
     "compress_context",
     "try_shrink_image_parts_in_messages",
+    "recover_rotated_compression_session",
+    "conversation_history_after_compression",
+    "compression_skipped_due_to_lock",
 ]

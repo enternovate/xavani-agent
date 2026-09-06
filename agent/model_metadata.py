@@ -1836,3 +1836,31 @@ def estimate_request_tokens_rough(
     if tools:
         total += (len(str(tools)) + 3) // 4
     return total
+
+
+def anchored_context_tokens(
+    messages: List[Dict[str, Any]],
+    anchor: Optional[Dict[str, Any]],
+    *,
+    charge_stale_thinking: bool = True,
+) -> Optional[int]:
+    if not isinstance(anchor, dict) or not isinstance(messages, list):
+        return None
+    base_count = anchor.get("base_count") or 0
+    if base_count <= 0 or len(messages) < base_count:
+        return None
+    base_msg = messages[base_count - 1]
+    if id(base_msg) != anchor.get("base_last_id"):
+        return None
+    base_role = base_msg.get("role") if isinstance(base_msg, dict) else None
+    if base_role != anchor.get("base_last_role"):
+        return None
+    total = int(anchor["prompt_tokens"]) + int(anchor.get("completion_tokens") or 0)
+    delta = messages[base_count:]
+    if delta:
+        first = delta[0]
+        if isinstance(first, dict) and first.get("role") == "assistant":
+            delta = delta[1:]
+    if delta:
+        total += estimate_messages_tokens_rough(delta)
+    return total
