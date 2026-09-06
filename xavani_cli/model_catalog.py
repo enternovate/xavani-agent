@@ -53,6 +53,13 @@ import urllib.request
 from pathlib import Path
 from typing import Any
 
+logger = logging.getLogger(__name__)
+try:
+    from xavani_cli.safe_logging import SafeLogFilter
+    SafeLogFilter.install()
+except Exception:
+    pass
+
 from xavani_cli import __version__ as _XAVANI_VERSION
 from utils import atomic_replace
 
