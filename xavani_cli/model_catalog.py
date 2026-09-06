@@ -1,7 +1,3 @@
-# Copyright (c) 2025-2026 Enternovate.
-# MIT License -- See LICENSE file for full terms.
-# Built by Enternovate -- Open source. Private. Local.
-
 """Remote model catalog fetcher.
 
 The Xavani docs site hosts a JSON manifest of curated models for providers
@@ -50,6 +46,7 @@ from __future__ import annotations
 
 import json
 import logging
+import threading
 import time
 import urllib.error
 import urllib.request
@@ -60,11 +57,6 @@ from xavani_cli import __version__ as _XAVANI_VERSION
 from utils import atomic_replace
 
 logger = logging.getLogger(__name__)
-try:
-    from xavani_cli.safe_logging import SafeLogFilter
-    SafeLogFilter.install()
-except Exception:
-    pass
 
 # ---------------------------------------------------------------------------
 # Constants
@@ -73,7 +65,19 @@ except Exception:
 DEFAULT_CATALOG_URL = (
     "https://enternovate.co.za/xavani-agent/docs/api/model-catalog.json"
 )
-DEFAULT_TTL_HOURS = 24
+# Fallback fetch chain. The Docusaurus site is served through Vercel, which
+# occasionally returns HTTP 403 + x-vercel-mitigated: challenge for non-
+# browser clients (urllib, curl). When that happens the disk cache goes
+# stale and new model releases never reach the picker. The raw GitHub URL
+# is the same manifest published from the same repo and is not bot-gated,
+# so we fall through to it whenever the primary URL fails.
+DEFAULT_CATALOG_FALLBACK_URLS: tuple[str, ...] = (
+    "https://raw.githubusercontent.com/enternovate/xavani-agent/main/website/static/api/model-catalog.json",
+)
+DEFAULT_TTL_MINUTES = 20
+# Legacy key. ``ttl_hours`` is honoured only when the user set it explicitly;
+# the shipped default is ``ttl_minutes`` above.
+DEFAULT_TTL_HOURS = DEFAULT_TTL_MINUTES / 60.0
 DEFAULT_FETCH_TIMEOUT = 8.0
 SUPPORTED_SCHEMA_VERSION = 1
 
@@ -103,10 +107,28 @@ def _load_catalog_config() -> dict[str, Any]:
     if not isinstance(raw, dict):
         raw = {}
 
+    # ``ttl_minutes`` is the shipped default (20). ``ttl_hours`` is the legacy
+    # key: honoured when a user set it explicitly and ``ttl_minutes`` is still
+    # at its default (load_config() deep-merges the default in, so "present"
+    # alone doesn't mean "user-set"), so old customized configs keep their
+    # chosen window.
+    ttl_minutes = raw.get("ttl_minutes")
+    try:
+        ttl_minutes = float(ttl_minutes) if ttl_minutes not in (None, "") else DEFAULT_TTL_MINUTES
+    except (TypeError, ValueError):
+        ttl_minutes = DEFAULT_TTL_MINUTES
+    if ttl_minutes == DEFAULT_TTL_MINUTES and raw.get("ttl_hours"):
+        try:
+            ttl_minutes = float(raw["ttl_hours"]) * 60.0
+        except (TypeError, ValueError):
+            pass
+    if ttl_minutes <= 0:
+        ttl_minutes = DEFAULT_TTL_MINUTES
+
     return {
         "enabled": bool(raw.get("enabled", True)),
         "url": str(raw.get("url") or DEFAULT_CATALOG_URL),
-        "ttl_hours": float(raw.get("ttl_hours") or DEFAULT_TTL_HOURS),
+        "ttl_hours": ttl_minutes / 60.0,
         "providers": raw.get("providers") if isinstance(raw.get("providers"), dict) else {},
     }
 
@@ -146,6 +168,31 @@ def _fetch_manifest(url: str, timeout: float) -> dict[str, Any] | None:
         return None
 
     return data
+
+
+def _fetch_manifest_with_fallback(
+    primary_url: str,
+    timeout: float,
+    fallback_urls: tuple[str, ...] = DEFAULT_CATALOG_FALLBACK_URLS,
+) -> dict[str, Any] | None:
+    """Try ``primary_url`` first, then walk ``fallback_urls``.
+
+    Returns the first manifest that fetches and validates, or None when
+    every URL fails. Skips fallback URLs identical to the primary so an
+    operator who configured the catalog URL to point at the raw GitHub
+    copy doesn't double-fetch.
+    """
+    data = _fetch_manifest(primary_url, timeout)
+    if data is not None:
+        return data
+    for url in fallback_urls:
+        if not url or url == primary_url:
+            continue
+        data = _fetch_manifest(url, timeout)
+        if data is not None:
+            logger.info("model catalog primary URL failed; using fallback %s", url)
+            return data
+    return None
 
 
 def _validate_manifest(data: Any) -> bool:
@@ -204,6 +251,36 @@ def _write_disk_cache(data: dict[str, Any]) -> None:
         logger.info("model catalog cache write failed: %s", exc)
 
 
+# Stale-while-revalidate machinery: at most one background manifest refresh
+# in flight per process. The refreshed manifest lands on disk; the NEXT
+# get_catalog() call picks it up via the mtime check.
+_catalog_swr_lock = threading.Lock()
+_catalog_swr_inflight = False
+
+
+def _spawn_catalog_swr_refresh(url: str) -> None:
+    """Refresh the catalog manifest off-thread (fire-and-forget, deduped)."""
+    global _catalog_swr_inflight
+    with _catalog_swr_lock:
+        if _catalog_swr_inflight:
+            return
+        _catalog_swr_inflight = True
+
+    def _refresh() -> None:
+        global _catalog_swr_inflight
+        try:
+            fetched = _fetch_manifest_with_fallback(url, DEFAULT_FETCH_TIMEOUT)
+            if fetched is not None:
+                _write_disk_cache(fetched)
+        except Exception:
+            logger.debug("catalog SWR refresh failed", exc_info=True)
+        finally:
+            with _catalog_swr_lock:
+                _catalog_swr_inflight = False
+
+    threading.Thread(target=_refresh, daemon=True, name="model-catalog-swr").start()
+
+
 # ---------------------------------------------------------------------------
 # Public API
 # ---------------------------------------------------------------------------
@@ -243,8 +320,18 @@ def get_catalog(*, force_refresh: bool = False) -> dict[str, Any]:
         _catalog_cache_source_mtime = disk_mtime
         return disk_data
 
+    # Stale-while-revalidate: an expired disk copy is served immediately and
+    # refreshed off-thread, so interactive surfaces (the /model picker calls
+    # this via get_curated_nous_model_ids on every open) never block on the
+    # manifest fetch. Only a cold cache (no disk copy at all) still blocks.
+    if not force_refresh and disk_data is not None:
+        _catalog_cache = disk_data
+        _catalog_cache_source_mtime = disk_mtime
+        _spawn_catalog_swr_refresh(cfg["url"])
+        return disk_data
+
     # Need to (re)fetch. If it fails, fall back to any stale disk copy.
-    fetched = _fetch_manifest(cfg["url"], DEFAULT_FETCH_TIMEOUT)
+    fetched = _fetch_manifest_with_fallback(cfg["url"], DEFAULT_FETCH_TIMEOUT)
     if fetched is not None:
         _write_disk_cache(fetched)
         new_disk_data, new_mtime = _read_disk_cache()
@@ -262,6 +349,33 @@ def get_catalog(*, force_refresh: bool = False) -> dict[str, Any]:
         return disk_data
 
     return {}
+
+
+def refresh_interval_seconds() -> float:
+    """Return the configured catalog TTL in seconds (the gateway poll cadence)."""
+    return max(60.0, _load_catalog_config()["ttl_hours"] * 3600.0)
+
+
+def refresh_catalogs() -> bool:
+    """Force-refresh every remote model catalog the picker reads from.
+
+    Fetches the curated manifest, the OpenRouter live list (tool-support /
+    free-pricing filter) and the Nous Portal recommendations, writing each
+    to its disk cache so the next ``/model`` open in ANY process on this
+    machine sees the new lists. Blocking; run it off the event loop.
+    Returns True when the manifest refresh succeeded.
+    """
+    if not _load_catalog_config()["enabled"]:
+        return False
+    catalog = get_catalog(force_refresh=True)
+    try:
+        from xavani_cli.models import fetch_nous_recommended_models, fetch_openrouter_models
+
+        fetch_openrouter_models(force_refresh=True)
+        fetch_nous_recommended_models(force_refresh=True)
+    except Exception:
+        logger.debug("provider catalog refresh failed", exc_info=True)
+    return bool(catalog)
 
 
 def _fetch_provider_override(provider: str) -> dict[str, Any] | None:
@@ -329,6 +443,73 @@ def get_curated_nous_models() -> list[str] | None:
         if mid:
             out.append(mid)
     return out or None
+
+
+def _default_model_from_block(block: dict[str, Any] | None) -> str | None:
+    """Return the id of the model entry labeled ``"default": true``, or None."""
+    if not isinstance(block, dict):
+        return None
+    for m in block.get("models", []):
+        if isinstance(m, dict) and m.get("default"):
+            mid = str(m.get("id") or "").strip()
+            if mid:
+                return mid
+    return None
+
+
+def get_default_model_from_cache(provider: str) -> str | None:
+    """Return the catalog's labeled default model for ``provider`` — cache only.
+
+    The manifest marks exactly one model entry per provider with
+    ``"default": true``; that entry is the model Xavani silently lands on when
+    the user never picked one. This accessor reads ONLY the in-process copy or
+    the disk cache — it NEVER triggers a network fetch, so it is safe on hot
+    resolution paths (agent build, gateway session setup) that must stay
+    network-free. The cache is kept fresh by the picker/`xavani update` paths;
+    when no cached manifest exists (fresh install, offline), returns None and
+    the caller falls back to the in-repo constant.
+    """
+    if _catalog_cache is not None:
+        block = _catalog_cache.get("providers", {}).get(provider)
+        found = _default_model_from_block(block)
+        if found:
+            return found
+    disk_data, _mtime = _read_disk_cache()
+    if disk_data is not None:
+        block = disk_data.get("providers", {}).get(provider)
+        return _default_model_from_block(block)
+    return None
+
+
+def seed_cache_from_checkout(project_root: "Path | str") -> bool:
+    """Overwrite the disk cache with the catalog shipped in a local checkout.
+
+    ``xavani update`` pulls the latest repo, so the freshly-pulled
+    ``website/static/api/model-catalog.json`` IS the newest catalog — no
+    network round-trip needed. Copying it straight over the disk cache keeps
+    the model picker current even when the remote manifest fetch is bot-gated
+    or the Portal hiccups.
+
+    Reads the shipped manifest, validates it against the schema, and writes it
+    to ``~/.xavani/cache/model_catalog.json`` via the same atomic writer the
+    network path uses. Returns ``True`` on success, ``False`` if the file is
+    missing, malformed, or fails validation (caller should treat a ``False``
+    as non-fatal — the network fetch path still applies on the next picker
+    open).
+    """
+    src = Path(project_root) / "website" / "static" / "api" / "model-catalog.json"
+    try:
+        with open(src, encoding="utf-8") as fh:
+            data = json.load(fh)
+    except (OSError, json.JSONDecodeError) as exc:
+        logger.debug("model catalog seed from checkout skipped (%s): %s", src, exc)
+        return False
+    if not _validate_manifest(data):
+        logger.debug("model catalog seed from checkout skipped: invalid manifest at %s", src)
+        return False
+    _write_disk_cache(data)
+    reset_cache()  # drop the in-process copy so the next read picks up the seed
+    return True
 
 
 def reset_cache() -> None:
