@@ -45,7 +45,7 @@ from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from http.server import BaseHTTPRequestHandler, HTTPServer, ThreadingHTTPServer
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import Any, Callable, Dict, FrozenSet, List, Optional, Tuple
 from urllib.parse import parse_qs, urlencode, urlparse
 
 import httpx
@@ -2900,6 +2900,54 @@ def login_spotify_command(args) -> None:
     print(f"  Auth state: {saved_to}")
     print("  Provider state saved under providers.spotify")
     print(f"  Docs: {SPOTIFY_DOCS_URL}")
+
+_CONSOLE_BROWSER_NAMES: FrozenSet[str] = frozenset(
+    {
+        "w3m",
+        "lynx",
+        "links",
+        "links2",
+        "elinks",
+        "www-browser",
+        "browsh",
+    }
+)
+
+
+def _can_open_graphical_browser() -> bool:
+    import webbrowser as _webbrowser
+
+    def _names_console_browser(value: str) -> bool:
+        token = value.strip().split()[0] if value.strip() else ""
+        base = os.path.basename(token).lower()
+        return base in _CONSOLE_BROWSER_NAMES
+
+    browser_env = os.environ.get("BROWSER", "")
+    if browser_env and _names_console_browser(browser_env):
+        return False
+
+    if sys.platform.startswith("linux"):
+        has_display = bool(
+            os.environ.get("DISPLAY") or os.environ.get("WAYLAND_DISPLAY")
+        )
+        if not has_display and not browser_env:
+            return False
+
+    try:
+        controller = _webbrowser.get()
+    except Exception:
+        return False
+
+    candidate = (
+        getattr(controller, "name", "")
+        or getattr(controller, "basename", "")
+        or ""
+    )
+    if candidate and _names_console_browser(candidate):
+        return False
+
+    return True
+
 
 # =============================================================================
 # SSH / remote session detection
