@@ -23,7 +23,7 @@ import time
 import zipfile
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 from xavani_constants import get_default_xavani_root, get_xavani_home, display_xavani_home
 
@@ -948,3 +948,473 @@ def create_pre_migration_backup(
 
     _prune_pre_migration_backups(backup_dir, keep=keep)
     return out_path
+
+
+_SQLITE_HEADER = b"SQLite format 3\0"
+
+DEFAULT_INTEGRITY_CHECK_MAX_BYTES = 2 << 30
+
+
+def verify_sqlite_integrity(
+    path: Path,
+    *,
+    check_header: bool = True,
+    run_pragma: bool = True,
+    max_bytes: int = DEFAULT_INTEGRITY_CHECK_MAX_BYTES,
+) -> dict:
+    result: dict = {"valid": False, "message": "", "size": None}
+
+    try:
+        st = path.stat()
+    except FileNotFoundError:
+        result["message"] = f"not found: {path}"
+        return result
+    except OSError as exc:
+        result["message"] = f"cannot stat: {exc}"
+        return result
+
+    result["size"] = st.st_size
+
+    if st.st_size < 100:
+        result["message"] = f"too small ({st.st_size} bytes) to be a valid SQLite database"
+        return result
+
+    oversized = max_bytes > 0 and st.st_size > max_bytes
+
+    if check_header:
+        from xavani_cli.sqlite_safe_read import read_header_bytes_preopen
+
+        head = read_header_bytes_preopen(path, length=len(_SQLITE_HEADER))
+        if head is None:
+            result["valid"] = False
+            result["message"] = "cannot read header"
+            return result
+        if head != _SQLITE_HEADER:
+            result["valid"] = False
+            result["message"] = (
+                f"missing SQLite header magic (got {head[:16].hex()!r})"
+            )
+            return result
+
+    if oversized:
+        run_pragma = False
+        probe = None
+        try:
+            probe = sqlite3.connect(f"file:{path}?mode=ro", uri=True, timeout=1.0)
+            probe.execute("PRAGMA schema_version").fetchone()
+            probe.execute("SELECT count(*) FROM sqlite_master").fetchone()
+            result["valid"] = True
+            result["message"] = (
+                f"size {st.st_size:,} bytes exceeds max_bytes {max_bytes:,}; "
+                "skipped PRAGMA integrity_check (header + schema probe passed)"
+            )
+        except sqlite3.DatabaseError as exc:
+            result["valid"] = False
+            result["message"] = f"schema probe failed: {exc}"
+            return result
+        except Exception as exc:
+            result["valid"] = False
+            result["message"] = f"schema probe error: {exc}"
+            return result
+        finally:
+            if probe is not None:
+                try:
+                    probe.close()
+                except Exception:
+                    pass
+
+    if run_pragma:
+        conn = None
+        try:
+            conn = sqlite3.connect(f"file:{path}?mode=ro", uri=True, timeout=1.0)
+            cursor = conn.execute("PRAGMA integrity_check")
+            rows = cursor.fetchall()
+            if len(rows) == 1 and rows[0][0] == "ok":
+                result["valid"] = True
+                result["message"] = "integrity check passed"
+                return result
+            errors = [str(r[0]) for r in rows]
+            result["message"] = f"integrity check failed: {'; '.join(errors[:5])}"
+            return result
+        except sqlite3.DatabaseError as exc:
+            result["message"] = f"cannot open database: {exc}"
+            return result
+        except Exception as exc:
+            result["message"] = f"integrity check error: {exc}"
+            return result
+        finally:
+            if conn is not None:
+                try:
+                    conn.close()
+                except Exception:
+                    pass
+
+    result["valid"] = True
+    if not result["message"]:
+        result["message"] = "header check passed"
+    return result
+
+
+def copy_db_and_verify(src: Path, dst: Path) -> bool:
+    if not _safe_copy_db(src, dst):
+        return False
+    integrity = verify_sqlite_integrity(dst, run_pragma=True)
+    if not integrity.get("valid"):
+        try:
+            dst.unlink(missing_ok=True)
+        except OSError:
+            pass
+        logger.warning("Backup of %s failed integrity verification: %s", src, integrity.get("message"))
+        return False
+    return True
+
+
+def _foreign_db_holder_pids(db_path: Path) -> Optional[List[int]]:
+    if not sys.platform.startswith("linux"):
+        return None
+
+    def _canonical(path: str) -> str:
+        return os.path.normcase(
+            os.path.abspath(path.removesuffix(" (deleted)"))
+        )
+
+    canonical_db = _canonical(os.fspath(db_path))
+    watched = {canonical_db, canonical_db + "-wal", canonical_db + "-shm"}
+    pids: List[int] = []
+    try:
+        own_pid = os.getpid()
+        for pid_str in os.listdir("/proc"):
+            if not pid_str.isdigit():
+                continue
+            pid = int(pid_str)
+            if pid == own_pid:
+                continue
+            fd_dir = f"/proc/{pid}/fd"
+            try:
+                fds = os.listdir(fd_dir)
+            except OSError:
+                continue
+            for fd in fds:
+                try:
+                    target = os.readlink(f"{fd_dir}/{fd}")
+                except OSError:
+                    continue
+                if _canonical(target) in watched:
+                    pids.append(pid)
+                    break
+    except OSError:
+        return None
+    return pids
+
+
+def _safe_restore_db(src: Path, dst: Path) -> bool:
+    try:
+        dst_conn = sqlite3.connect(str(dst))
+        try:
+            dst_conn.execute("PRAGMA wal_checkpoint(TRUNCATE)")
+        except Exception:
+            pass
+        src_conn = sqlite3.connect(f"file:{src}?mode=ro", uri=True)
+        try:
+            src_conn.backup(dst_conn)
+        finally:
+            src_conn.close()
+        dst_conn.close()
+        try:
+            mode = src.stat().st_mode
+            dst.chmod(mode)
+        except Exception:
+            pass
+        return True
+    except Exception as exc:
+        logger.warning("SQLite safe restore failed for %s -> %s: %s", src, dst, exc)
+        from xavani_cli.sqlite_safe_read import (
+            LiveConnectionError,
+            offline_file_access,
+        )
+
+        try:
+            holders = _foreign_db_holder_pids(dst)
+            if holders:
+                logger.error(
+                    "Refusing unlink+move restore of %s: process(es) %s still "
+                    "hold the database or its WAL open. Stop them and retry.",
+                    dst, holders,
+                )
+                return False
+            with offline_file_access(dst, what="unlink+move restore of"):
+                tmp = dst.parent / f".{dst.name}.snap_restore"
+                shutil.copy2(src, tmp)
+                dst.unlink(missing_ok=True)
+                for _sidecar_suffix in ("-wal", "-shm", "-journal"):
+                    dst.with_name(dst.name + _sidecar_suffix).unlink(missing_ok=True)
+                shutil.move(str(tmp), str(dst))
+            return True
+        except LiveConnectionError as exc2:
+            logger.error(
+                "Refusing unlink+move restore of %s: %s Close the in-process "
+                "database handles (or restart Xavani) and retry.",
+                dst, exc2,
+            )
+            return False
+        except Exception as exc2:
+            logger.error("Fallback restore also failed for %s -> %s: %s", src, dst, exc2)
+            return False
+
+
+_CRON_JOBS_REL = "cron/jobs.json"
+
+
+def _count_cron_jobs(path: Path) -> Optional[int]:
+    if not path.is_file():
+        return None
+    try:
+        with open(path, "r", encoding="utf-8-sig") as f:
+            data = json.load(f)
+    except (OSError, json.JSONDecodeError):
+        return None
+    if isinstance(data, dict):
+        jobs = data.get("jobs", [])
+        return len(jobs) if isinstance(jobs, list) else None
+    if isinstance(data, list):
+        return len(data)
+    return None
+
+
+def restore_cron_jobs_if_emptied(
+    snapshot_id: str,
+    xavani_home: Optional[Path] = None,
+) -> Optional[Dict[str, Any]]:
+    if not snapshot_id:
+        return None
+
+    home = xavani_home or get_xavani_home()
+    live_path = home / _CRON_JOBS_REL
+
+    live_count = _count_cron_jobs(live_path)
+    if live_count is None:
+        return None
+
+    snap_path = _quick_snapshot_root(home) / snapshot_id / _CRON_JOBS_REL
+    snap_count = _count_cron_jobs(snap_path)
+    if not snap_count:
+        return None
+
+    if live_count >= snap_count:
+        return None
+
+    try:
+        live_path.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(snap_path, live_path)
+    except (OSError, PermissionError) as exc:
+        logger.error(
+            "Cron jobs were emptied during update but auto-restore failed: %s", exc
+        )
+        return None
+
+    logger.warning(
+        "Restored %d cron job(s) from pre-update snapshot %s "
+        "(live file had %d job(s), snapshot had %d — jobs were lost during migration)",
+        snap_count,
+        snapshot_id,
+        live_count,
+        snap_count,
+    )
+    return {"restored": True, "job_count": snap_count, "snapshot_id": snapshot_id}
+
+
+def _sibling_profile_homes(invoking_home: Path) -> list[tuple[str, Path]]:
+    homes: list[tuple[str, Path]] = []
+    try:
+        from xavani_cli.profiles import (
+            _get_default_xavani_home,
+            _get_profiles_root,
+            _PROFILE_ID_RE,
+        )
+
+        invoking = invoking_home.resolve()
+        default_home = _get_default_xavani_home()
+        if default_home.is_dir() and default_home.resolve() != invoking:
+            homes.append(("default", default_home))
+        root = _get_profiles_root()
+        if root.is_dir():
+            for entry in sorted(root.iterdir()):
+                if (
+                    entry.is_dir()
+                    and entry.name != "default"
+                    and _PROFILE_ID_RE.match(entry.name)
+                    and entry.resolve() != invoking
+                ):
+                    homes.append((entry.name, entry))
+    except Exception as exc:
+        logger.debug("Sibling profile enumeration failed: %s", exc)
+    return homes
+
+
+def create_pre_update_snapshots_all_profiles(
+    invoking_home: Optional[Path] = None,
+    keep: Optional[int] = None,
+    max_file_size: Optional[int] = None,
+) -> Dict[str, str]:
+    results: Dict[str, str] = {}
+    home = invoking_home or get_xavani_home()
+    for name, profile_home in _sibling_profile_homes(home):
+        try:
+            snap_id = create_quick_snapshot(
+                label="pre-update",
+                xavani_home=profile_home,
+            )
+            if snap_id:
+                results[name] = snap_id
+        except Exception as exc:
+            logger.debug("Pre-update snapshot for profile %s failed: %s", name, exc)
+    return results
+
+
+_PROTECTED_CONFIG_PATHS: Tuple[Tuple[str, ...], ...] = (
+    ("model", "provider"),
+    ("model", "default"),
+    ("model", "base_url"),
+    ("model", "api_key"),
+    ("moa",),
+)
+
+
+def _read_raw_yaml_dict(path: Path) -> Optional[Dict[str, Any]]:
+    if not path.is_file():
+        return None
+    try:
+        import yaml
+
+        with open(path, "r", encoding="utf-8") as f:
+            data = yaml.safe_load(f)
+    except Exception:
+        return None
+    return data if isinstance(data, dict) else None
+
+
+def _get_config_path_value(data: Dict[str, Any], dotted: Tuple[str, ...]) -> Any:
+    node: Any = data
+    for key in dotted:
+        if not isinstance(node, dict):
+            return None
+        node = node.get(key)
+    return node
+
+
+def _set_config_path_value(data: Dict[str, Any], dotted: Tuple[str, ...], value: Any) -> None:
+    node = data
+    for key in dotted[:-1]:
+        child = node.get(key)
+        if not isinstance(child, dict):
+            child = {}
+            node[key] = child
+        node = child
+    node[dotted[-1]] = value
+
+
+def restore_config_model_settings_if_rewritten(
+    snapshot_id: str,
+    xavani_home: Optional[Path] = None,
+) -> Optional[Dict[str, Any]]:
+    if not snapshot_id:
+        return None
+
+    home = xavani_home or get_xavani_home()
+    live_path = home / "config.yaml"
+    snap_path = _quick_snapshot_root(home) / snapshot_id / "config.yaml"
+
+    snap = _read_raw_yaml_dict(snap_path)
+    if not snap:
+        return None
+    live = _read_raw_yaml_dict(live_path)
+    if live is None:
+        return None
+
+    restored_keys: list[str] = []
+    for dotted in _PROTECTED_CONFIG_PATHS:
+        snap_val = _get_config_path_value(snap, dotted)
+        if snap_val in (None, "", {}, []):
+            continue
+        live_val = _get_config_path_value(live, dotted)
+        if live_val == snap_val:
+            continue
+        _set_config_path_value(live, dotted, snap_val)
+        restored_keys.append(".".join(dotted))
+
+    if not restored_keys:
+        return None
+
+    try:
+        from utils import atomic_yaml_write
+
+        atomic_yaml_write(live_path, live)
+    except (OSError, PermissionError) as exc:
+        logger.error(
+            "config.yaml model settings were rewritten during update but "
+            "auto-restore failed: %s",
+            exc,
+        )
+        return None
+
+    logger.warning(
+        "Restored user config value(s) %s from pre-update snapshot %s — "
+        "the update flow rewrote them (#64160)",
+        ", ".join(restored_keys),
+        snapshot_id,
+    )
+    return {"restored": True, "keys": restored_keys, "snapshot_id": snapshot_id}
+
+
+def restore_config_model_settings_all_profiles(
+    profile_snapshots: Dict[str, str],
+    invoking_home: Optional[Path] = None,
+) -> list[Dict[str, Any]]:
+    restored: list[Dict[str, Any]] = []
+    if not profile_snapshots:
+        return restored
+    home = invoking_home or get_xavani_home()
+    by_name = dict(_sibling_profile_homes(home))
+    for name, snap_id in profile_snapshots.items():
+        profile_home = by_name.get(name)
+        if profile_home is None:
+            continue
+        try:
+            result = restore_config_model_settings_if_rewritten(
+                snap_id, xavani_home=profile_home
+            )
+        except Exception as exc:
+            logger.debug(
+                "Config model-settings restore check for profile %s failed: %s",
+                name,
+                exc,
+            )
+            continue
+        if result:
+            result["profile"] = name
+            restored.append(result)
+    return restored
+
+
+def restore_cron_jobs_all_profiles(
+    profile_snapshots: Dict[str, str],
+    invoking_home: Optional[Path] = None,
+) -> list[Dict[str, Any]]:
+    restored: list[Dict[str, Any]] = []
+    if not profile_snapshots:
+        return restored
+    home = invoking_home or get_xavani_home()
+    by_name = dict(_sibling_profile_homes(home))
+    for name, snap_id in profile_snapshots.items():
+        profile_home = by_name.get(name)
+        if profile_home is None:
+            continue
+        try:
+            result = restore_cron_jobs_if_emptied(snap_id, xavani_home=profile_home)
+        except Exception as exc:
+            logger.debug("Cron restore check for profile %s failed: %s", name, exc)
+            continue
+        if result:
+            result["profile"] = name
+            restored.append(result)
+    return restored
