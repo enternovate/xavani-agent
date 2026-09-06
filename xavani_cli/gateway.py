@@ -5452,3 +5452,484 @@ def _gateway_command_inner(args):
             print("Legacy unit migration only applies to systemd-based Linux hosts.")
             return
         remove_legacy_xavani_units(interactive=not yes, dry_run=dry_run)
+
+
+
+@dataclass(frozen=True)
+class WindowsGatewayService:
+    """A real Windows service supervising a profile gateway process tree."""
+
+    name: str
+    profile: str
+    service_pid: int
+    gateway_pid: int
+    descendant_pids: frozenset[int]
+    descendant_identities: tuple[tuple[int, float], ...]
+    service_create_time: float = 0.0
+    gateway_create_time: float = 0.0
+
+
+
+
+def _parse_launchd_pid_from_list_output(output: str) -> int | None:
+    """Extract the PID from ``launchctl list <label>`` output.
+
+    When launchd is actively supervising a process, the output includes a
+    ``"PID" = <number>;`` line.  When the service definition is only *registered*
+    but not running (macOS 26+ with an unmanageable domain, fallback active),
+    the output lacks a PID field entirely.  Returns ``None`` when no PID is
+    found or the PID is non-positive (e.g. ``-1`` for a recently-crashed service).
+    """
+    for line in output.splitlines():
+        stripped = line.strip()
+        if stripped.startswith('"PID"') or stripped.startswith("PID"):
+            parts = stripped.split("=", 1)
+            if len(parts) == 2:
+                val = parts[1].strip().rstrip(";").strip('"')
+                try:
+                    pid = int(val)
+                    return pid if pid > 0 else None
+                except ValueError:
+                    return None
+    return None
+
+
+def _parse_launchd_pid_from_print_output(output: str) -> int | None:
+    """Extract the live PID from ``launchctl print`` output (``pid = <N>``).
+
+    A bootstrapped-but-not-running service prints no ``pid =`` line; the
+    first (service-level) occurrence wins over any nested endpoint state.
+    Returns ``None`` when no PID is found or the PID is non-positive.
+    """
+    for line in output.splitlines():
+        stripped = line.strip()
+        if stripped.startswith("pid = "):
+            try:
+                pid = int(stripped[len("pid = "):].strip())
+                return pid if pid > 0 else None
+            except ValueError:
+                return None
+    return None
+
+
+
+
+def _launchd_print_service_pid(domain: str, label: str) -> tuple[bool, int | None]:
+    """Return ``(loaded, pid)`` for ``domain/label`` via ``launchctl print``.
+
+    Domain-explicit on purpose: legacy ``launchctl list`` infers its domain
+    from the caller's execution context, which is exactly the ambiguity that
+    sank the first fleet-restart attempt (#41403 review). ``TimeoutExpired``
+    propagates — fleet-restart callers own per-label failure accounting (a
+    wedged launchctl call must be reported, not read as "unloaded").
+    """
+    try:
+        result = subprocess.run(
+            ["launchctl", "print", f"{domain}/{label}"],
+            capture_output=True,
+            text=True, encoding='utf-8', errors='replace',
+            timeout=5,
+        )
+    except FileNotFoundError:
+        return (False, None)
+    if result.returncode != 0:
+        return (False, None)
+    return (True, _parse_launchd_pid_from_print_output(result.stdout))
+
+
+
+
+def _launchd_unsupported_marker_path() -> Path:
+    return get_xavani_home() / ".gateway-launchd-unsupported"
+
+
+
+def _launchd_unsupported_marker_exists() -> bool:
+    return _launchd_unsupported_marker_path().exists()
+
+
+
+LAUNCHD_SUPERVISION_VERIFY_TIMEOUT = 20.0
+
+
+def find_windows_gateway_services(
+    *,
+    psutil_module=None,
+    profile_processes: list[ProfileGatewayProcess] | None = None,
+) -> list[WindowsGatewayService]:
+    """Find profile gateways supervised by real Windows services.
+
+    Service-logon processes can deny the interactive Desktop access to their
+    command lines. The updater can still identify them without guessing: a
+    validated profile gateway PID comes from Xavani's own PID file, and its
+    parent chain terminates at a running SCM service PID. The complete service
+    subtree is returned so the Desktop preflight exempts only processes the CLI
+    updater will stop through the Service Control Manager.
+    """
+    if sys.platform != "win32":
+        return []
+    try:
+        if psutil_module is None:
+            import psutil as psutil_module  # type: ignore[no-redef]  # noqa: PLC0415
+        if profile_processes is None:
+            profile_processes = find_profile_gateway_processes(strict=True)
+        service_names_by_pid: dict[int, set[str]] = {}
+        indeterminate_services_by_pid: dict[int, list[tuple[str, object]]] = {}
+        for service in psutil_module.win_service_iter():
+            try:
+                if all(
+                    callable(getattr(service, field, None))
+                    for field in ("name", "status", "pid")
+                ):
+                    service_name = str(service.name() or "")
+                    service_status = service.status()
+                    service_pid = int(service.pid() or 0)
+                else:
+                    data = service.as_dict()
+                    service_name = str(data.get("name") or "")
+                    service_status = data.get("status")
+                    service_pid = int(data.get("pid") or 0)
+            except FileNotFoundError:
+                # The service was deleted between enumeration and inspection;
+                # it cannot still supervise a live gateway tree.
+                continue
+            except Exception as exc:
+                raise RuntimeError("SCM service inspection failed") from exc
+            if not service_name:
+                raise RuntimeError("SCM service has an empty name")
+            if service_status == "stopped":
+                continue
+            if service_status != "running":
+                if service_pid > 0:
+                    indeterminate_services_by_pid.setdefault(service_pid, []).append(
+                        (service_name, service_status)
+                    )
+                continue
+            if service_pid <= 0:
+                raise RuntimeError(
+                    f"Running SCM service {service_name} has no valid process ID"
+                )
+            service_names_by_pid.setdefault(service_pid, set()).add(service_name)
+    except Exception as exc:
+        raise RuntimeError("SCM service enumeration failed") from exc
+
+    found: dict[str, WindowsGatewayService] = {}
+    for profile_process in profile_processes:
+        try:
+            gateway_process = psutil_module.Process(int(profile_process.pid))
+            gateway_create_time = float(gateway_process.create_time())
+            if profile_process.create_time <= 0 or abs(
+                gateway_create_time - profile_process.create_time
+            ) > 0.001:
+                raise RuntimeError("Gateway process identity changed during SCM discovery")
+            ancestor_pids = [int(parent.pid) for parent in gateway_process.parents()]
+            for pid in ancestor_pids:
+                indeterminate_services = indeterminate_services_by_pid.get(pid, [])
+                if indeterminate_services:
+                    service_name, service_status = indeterminate_services[0]
+                    raise RuntimeError(
+                        f"SCM service {service_name} has indeterminate status: "
+                        f"{service_status}"
+                    )
+            shared_service_pids = [
+                pid
+                for pid in ancestor_pids
+                if len(service_names_by_pid.get(pid, set())) > 1
+            ]
+            if shared_service_pids:
+                raise RuntimeError(
+                    "Gateway ownership is ambiguous under shared SCM host PID(s): "
+                    + ", ".join(str(pid) for pid in shared_service_pids)
+                )
+            service_pid = next(
+                (
+                    pid
+                    for pid in ancestor_pids
+                    if len(service_names_by_pid.get(pid, set())) == 1
+                ),
+                None,
+            )
+            if service_pid is None:
+                continue
+            service_name = next(iter(service_names_by_pid[service_pid]))
+            service_process = psutil_module.Process(service_pid)
+            service_create_time = float(service_process.create_time())
+            descendant_processes = service_process.children(recursive=True)
+            descendants = frozenset(int(child.pid) for child in descendant_processes)
+            if int(profile_process.pid) not in descendants:
+                continue
+            descendant_identities = tuple(
+                sorted(
+                    (int(child.pid), float(child.create_time()))
+                    for child in descendant_processes
+                )
+            )
+            found[service_name] = WindowsGatewayService(
+                name=service_name,
+                profile=str(profile_process.profile),
+                service_pid=service_pid,
+                gateway_pid=int(profile_process.pid),
+                descendant_pids=descendants,
+                descendant_identities=descendant_identities,
+                service_create_time=service_create_time,
+                gateway_create_time=gateway_create_time,
+            )
+        except RuntimeError:
+            raise
+        except Exception as exc:
+            raise RuntimeError(
+                "Could not determine SCM ownership for gateway profile "
+                f"{profile_process.profile}"
+            ) from exc
+    return [found[name] for name in sorted(found)]
+
+
+
+
+def _capture_gateway_argv(pid: int) -> list[str] | None:
+    """Return the live argv of a running gateway process, or ``None``.
+
+    Used to respawn gateways that have no profile→PID-file mapping (e.g. a
+    Windows Scheduled Task running ``pythonw.exe -m xavani_cli.main gateway
+    run``). ``_pause_windows_gateways_for_update`` force-kills such gateways
+    before mutating the venv; without their original command line we cannot
+    bring them back, so we snapshot it here before the kill.
+
+    Best-effort: returns ``None`` if psutil is unavailable, the process is
+    gone, access is denied, or the argv doesn't look like a gateway command.
+    """
+    if pid <= 1:
+        return None
+    try:
+        import psutil  # type: ignore
+    except ImportError:
+        return None
+    try:
+        argv = list(psutil.Process(pid).cmdline() or [])
+    except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
+        return None
+    except Exception:
+        return None
+    if not argv:
+        return None
+    # Guard against snapshotting an unrelated process whose PID happened to be
+    # reported by the scan: only respawn things that actually look like a
+    # gateway run command line.
+    try:
+        from gateway.status import looks_like_gateway_command_line
+
+        if not looks_like_gateway_command_line(" ".join(argv)):
+            return None
+    except Exception:
+        pass
+    return argv
+
+
+
+
+def _prepare_profile_gateway_update_restart(profile: str, pid: int) -> str | None:
+    """Choose who relaunches a profile gateway after ``xavani update``.
+
+    A gateway started with ``--external-supervisor`` must exit back to that
+    manager. Starting Xavani's detached watcher as well would escape the
+    manager and race its replacement process. Ordinary foreground gateways
+    retain the existing detached-watcher behavior.
+
+    When the profile-derived relaunch cannot be armed -- typically because
+    ``_gateway_run_args_for_profile`` cannot rebuild a run argv for this
+    profile -- fall back to replaying the process's own captured command
+    line, which is what ``launch_detached_gateway_restart_by_cmdline``
+    exists for and what the Windows post-update path already does for its
+    unmapped gateways.  Without this the caller has no way to relaunch the
+    process and (before #88654) silently left it running pre-update modules
+    against post-update code on disk.  ``argv`` is already captured above,
+    so the fallback costs nothing extra.
+    """
+    argv = _capture_gateway_argv(pid)
+    if argv and "--external-supervisor" in argv:
+        return "external-supervisor"
+    if launch_detached_profile_gateway_restart(profile, pid):
+        return "detached"
+    if argv and launch_detached_gateway_restart_by_cmdline(pid, list(argv)):
+        return "detached-cmdline"
+    return None
+
+
+
+
+def launch_detached_gateway_restart_by_cmdline(
+    old_pid: int, run_argv: list[str]
+) -> bool:
+    """Relaunch a gateway by replaying its captured command line after exit.
+
+    Companion to ``launch_detached_profile_gateway_restart`` for gateways that
+    have no profile→PID-file mapping (Scheduled-Task / manually-launched
+    ``gateway run`` whose XAVANI_HOME or argv doesn't match a known profile).
+    Uses the identical detached-watcher mechanism; only the respawn argv
+    differs (the process's own argv instead of a profile-derived one).
+    """
+    if old_pid <= 0 or not run_argv:
+        return False
+    return _spawn_gateway_restart_watcher(old_pid, list(run_argv))
+
+
+
+
+def _launchd_service_registered(label: str) -> bool:
+    """True when launchd knows ``label`` (``launchctl list <label>`` exit 0).
+
+    Registration is domain-agnostic and — unlike the ``launchctl print``
+    domain probes in ``_locate_launchd_gateway_service`` — stays true on
+    macOS 26+ hosts whose per-user domains reject service management, so
+    the update path can still hand the label to ``launchd_restart()``,
+    which owns that fallback.  ``FileNotFoundError``/``TimeoutExpired``
+    propagate: the caller treats gate errors as a best-effort skip,
+    matching the pre-fleet inline behavior.
+    """
+    result = subprocess.run(
+        ["launchctl", "list", label],
+        capture_output=True,
+        text=True, encoding='utf-8', errors='replace',
+        timeout=5,
+    )
+    return result.returncode == 0
+
+
+
+
+def _locate_launchd_gateway_service(label: str) -> tuple[str | None, int | None]:
+    """Return ``(domain, pid)`` for ``label``, probing both per-user domains.
+
+    Probes ``gui/<uid>`` first (Aqua sessions), then ``user/<uid>``
+    (Background/SSH sessions).  ``domain`` is None when the label is not
+    bootstrapped in either; ``pid`` is None when the service has no live
+    process.  Sibling profile services resolve independently — a fleet can
+    legitimately mix domains (a profile installed over SSH lands in
+    ``user/<uid>`` while the rest live in ``gui/<uid>``), so the current
+    profile's cached domain (``_launchd_domain()``) is never consulted.
+    ``TimeoutExpired`` propagates (see ``_launchd_print_service_pid``).
+    """
+    uid = os.getuid()  # windows-footgun: ok — POSIX launchd (macOS) helper, never invoked on Windows
+    for domain in (f"gui/{uid}", f"user/{uid}"):
+        loaded, pid = _launchd_print_service_pid(domain, label)
+        if loaded:
+            return (domain, pid)
+    return (None, None)
+
+
+
+
+def launchd_gateway_labels_for_install() -> list[str]:
+    """Return the launchd gateway label for every profile of THIS install.
+
+    Derived from the install's profile layout (rooted at
+    ``get_default_xavani_root()``), NOT by globbing ``~/Library/LaunchAgents``:
+    the LaunchAgents directory is shared per-user, so a sandboxed
+    ``XAVANI_HOME`` (tests, capture sandboxes, side-by-side installs) must
+    never enumerate — let alone restart — another install's fleet.
+
+    Root label first, then profile labels sorted by name.  Profile names
+    that cannot map to a service suffix (see ``_profile_suffix``'s naming
+    rule) are skipped — ``gateway install`` could never have created a
+    predictable label for them.  Profiles without an installed gateway are
+    harmless to include: their labels simply aren't bootstrapped and
+    callers skip them after a failed locate.
+    """
+    import re as _re
+
+    from xavani_cli.profiles import list_profiles
+
+    root_label: list[str] = []
+    profile_labels: list[str] = []
+    for profile in list_profiles():
+        if profile.is_default:
+            root_label.append("ai.xavani.gateway")
+        elif _re.match(r"^[a-z0-9][a-z0-9_-]{0,63}$", profile.name):
+            profile_labels.append(f"ai.xavani.gateway-{profile.name}")
+    return root_label + sorted(profile_labels)
+
+
+
+
+def _launchd_kickstart(label: str, domain: str) -> None:
+    """Hard-restart ``domain/label`` via ``launchctl kickstart -k``.
+
+    Raises ``CalledProcessError``/``TimeoutExpired`` — callers own the
+    per-label failure accounting during fleet restarts.
+    """
+    subprocess.run(
+        ["launchctl", "kickstart", "-k", f"{domain}/{label}"],
+        check=True,
+        capture_output=True,
+        text=True, encoding='utf-8', errors='replace',
+        timeout=90,
+    )
+
+
+
+
+def _wait_for_launchd_service_pid(
+    label: str, old_pid: int | None, timeout: float = 10.0, *, domain: str
+) -> bool:
+    import time
+    """Poll ``domain/label`` until the service runs on a fresh PID.
+
+    launchd's exit → ``KeepAlive`` respawn transition is not instantaneous;
+    a one-shot check races that window and falsely reports the service as
+    down (same rationale as the systemd ``is-active`` poll in the update
+    path).  Poll every 0.5s up to ``timeout`` seconds before giving up.
+    ``TimeoutExpired`` from launchctl propagates — callers own per-label
+    failure accounting.
+    """
+    deadline = time.monotonic() + max(timeout, 0.5)
+    while True:
+        _loaded, pid = _launchd_print_service_pid(domain, label)
+        if pid is not None and pid > 0 and pid != old_pid:
+            return True
+        if time.monotonic() >= deadline:
+            return False
+        time.sleep(0.5)
+
+
+
+
+def wait_for_launchd_gateway_supervision(
+    *,
+    timeout: float = LAUNCHD_SUPERVISION_VERIFY_TIMEOUT,
+    label: str | None = None,
+    poll_interval: float = 0.5,
+) -> bool:
+    """Poll launchd until it is supervising a live gateway process.
+
+    :func:`launchd_restart` returns as soon as the restart has been *requested*.
+    The ``_request_gateway_self_restart`` branch hands the work to the running
+    gateway and returns immediately, and a plist reload is handed to a detached
+    helper.  Both are asynchronous, so a caller that reads "returned without
+    raising" as "the service is up" cannot see a helper that dies before its
+    first bootstrap (#88848) — nor a ``launchctl bootstrap`` that exits 0
+    without registering, which the reporter measured on macOS 26.6.1.
+
+    Judge the outcome the way #80491 taught the helper to judge it: by a live
+    supervised pid, never by an exit code.  :func:`_launchctl_label_supervising_process`
+    is already that predicate, so this only adds the wait.
+
+    Returns True immediately when the detached fallback is active.  On a host
+    where launchd cannot manage the domain the gateway runs unsupervised *by
+    design*, so the absence of a launchd pid there is the expected state and
+    not the silent failure this guards against.
+    """
+    import time
+
+    if _launchd_unsupported_marker_exists():
+        return True
+
+    label = label or get_launchd_label()
+    deadline = time.monotonic() + max(timeout, 0.0)
+    while True:
+        if _launchctl_label_supervising_process(label):
+            return True
+        if time.monotonic() >= deadline:
+            return False
+        time.sleep(max(poll_interval, 0.01))
+
+
