@@ -473,3 +473,139 @@ def project_venv_dir(project_root) -> Path | None:
         if candidate.is_dir():
             return candidate
     return None
+
+
+def venv_python_path(venv_dir, *, windows: bool | None = None) -> Path:
+    """Path to the Python interpreter inside *venv_dir* (may not exist)."""
+    if windows is None:
+        windows = sys.platform == "win32"
+    return venv_bin_dir(venv_dir, windows=windows) / (
+        "python.exe" if windows else "python"
+    )
+
+
+def iter_xavani_node_dirs(home: Path | None = None) -> list[Path]:
+    """Return Xavani-managed Node.js directories in preferred lookup order.
+
+    Windows installs from ``scripts/install.ps1`` unpack portable Node directly
+    into ``%LOCALAPPDATA%\\\\xavani\\\\node``. POSIX installs use
+    ``$XAVANI_HOME/node/bin``. Include both shapes on every platform so mixed
+    or migrated installs still work.
+    """
+    root = home or get_xavani_home()
+    dirs = [root / "node"]
+    bin_dir = root / "node" / "bin"
+    # NOTE: keep this ordering in sync with hermesManagedNodePathEntries() in
+    # apps/desktop/electron/backend-env.ts — the Electron main process is Node
+    # and cannot import this module, so the platform-ordering rule is mirrored
+    # there (once; main.ts imports it rather than keeping its own copy).
+    if sys.platform == "win32":
+        return dirs + [bin_dir]
+    return [bin_dir] + dirs
+
+
+def with_xavani_node_path(env: dict[str, str] | None = None) -> dict[str, str]:
+    """Return *env* with Xavani-managed Node directories prepended to PATH."""
+    merged = dict(os.environ if env is None else env)
+    existing = merged.get("PATH", "")
+    parts = [p for p in existing.split(os.pathsep) if p]
+    managed = [str(path) for path in iter_xavani_node_dirs() if path.is_dir()]
+    for entry in reversed(managed):
+        if entry not in parts:
+            parts.insert(0, entry)
+    merged["PATH"] = os.pathsep.join(parts)
+    return merged
+
+
+# ─── Partial-update diagnostics ──────────────────────────────────────────────
+
+# Top-level packages/modules that ship as part of Xavani itself. An ImportError
+# naming one of these means our own tree is inconsistent; anything else is a
+# third-party problem with different remediation. Single source of truth —
+# `xavani_cli.update_cmd`'s post-update probe consumes this same set so the
+# guard that BLOCKS and the hint that EXPLAINS can never disagree.
+FIRST_PARTY_MODULE_ROOTS = frozenset(
+    {
+        "agent",
+        "acp_adapter",
+        "cli",
+        "cron",
+        "gateway",
+        "model_tools",
+        "plugins",
+        "providers",
+        "tools",
+        "toolsets",
+        "run_agent",
+        "tui_gateway",
+        "utils",
+        "xavani_cli",
+        "xavani_constants",
+        "xavani_state",
+    }
+)
+
+
+def is_first_party_module(name: str | None) -> bool:
+    """True when *name* is a module that ships with Xavani.
+
+    Matches on the first dotted segment against an exact set — a substring or
+    ``startswith`` test would also claim third-party ``agents``, ``agentops``,
+    and ``toolsets_x``.
+    """
+    root = str(name).split(".")[0] if name else ""
+    if not root:
+        return False
+    return root in FIRST_PARTY_MODULE_ROOTS or root.startswith("xavani_")
+
+
+def partial_update_hint(exc: BaseException) -> list[str]:
+    """Return recovery guidance lines when *exc* looks like a half-updated tree.
+
+    An interrupted or partially-applied update can leave the checkout with new
+    files in one package and stale files in another. Every file still parses,
+    so nothing is corrupt in the usual sense — but a module that imports a name
+    added in the same release from a sibling that wasn't refreshed dies with
+    ``ImportError: cannot import name 'X' from 'y'`` on every startup.
+
+    Users hit this as an opaque crash with no indication that the *install*,
+    rather than their config, is the problem — and `xavani update` is exactly
+    the command they need but are least likely to trust after a failed update.
+    Return the guidance so callers can print it alongside the raw error.
+
+    Returns an empty list for unrelated exceptions, so callers can splat it
+    unconditionally.
+    """
+    if not isinstance(exc, ImportError):
+        return []
+    # A missing third-party dependency is a different problem (bad venv, missing
+    # extra) with different remediation, so don't claim a partial update.
+    if isinstance(exc, ModuleNotFoundError):
+        return []
+    name = getattr(exc, "name", None)
+    if not is_first_party_module(name):
+        return []
+    return [
+        "",
+        "This looks like a partially-updated install: one module was refreshed "
+        "and a related one was not.",
+        "Re-run the update to bring the whole tree to the same version:",
+        "    xavani update",
+        "If that also fails, reinstall: https://enternovate.co.za/xavani-agent",
+    ]
+
+
+def emit_partial_update_hint(exc: BaseException, *, file=None) -> bool:
+    """Print recovery guidance for a half-updated tree.
+
+    Returns True when guidance was written (caller should then exit), False
+    when *exc* is not a first-party ``ImportError`` (caller should re-raise).
+    """
+    lines = partial_update_hint(exc)
+    if not lines:
+        return False
+    out = sys.stderr if file is None else file
+    print(f"Error: {exc}", file=out)
+    for line in lines:
+        print(line, file=out)
+    return True
