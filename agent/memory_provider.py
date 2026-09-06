@@ -37,6 +37,7 @@ Optional hooks (override to opt in):
 from __future__ import annotations
 
 import logging
+import re
 from abc import ABC, abstractmethod
 from typing import Any, Dict, List, Optional
 
@@ -286,3 +287,23 @@ class MemoryProvider(ABC):
 
         Use to mirror built-in memory writes to your backend.
         """
+
+
+TRIVIAL_PROMPT_RE = re.compile(
+    r'^(yes|no|ok|okay|sure|thanks|thank you|y|n|yep|nope|yeah|nah|'
+    r'hi|hey|hello|yo|sup|'
+    r'continue|go ahead|do it|proceed|got it|cool|nice|great|done|next|lgtm|k)'
+    r'[\s!?.:;,"' + "'" + r'~\u2018\u2019\u201c\u201d\u2014\u2013\u2026()\[\]{}<>*&^%$#@!+=`\u00a0]*$',
+    re.IGNORECASE,
+)
+
+
+def is_trivial_prompt(text: Optional[str]) -> bool:
+    if not text:
+        return True
+    stripped = text.strip()
+    if not stripped:
+        return True
+    if stripped.startswith("/"):
+        return True
+    return bool(TRIVIAL_PROMPT_RE.match(stripped))

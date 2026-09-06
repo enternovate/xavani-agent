@@ -213,3 +213,29 @@ class ContextEngine(ABC):
         """
         self.context_length = context_length
         self.threshold_tokens = int(context_length * self.threshold_percent)
+
+
+def automatic_compaction_status_message(
+    engine: Any,
+    *,
+    phase: str,
+    default_message: str,
+    **context: Any,
+) -> str | None:
+    if not getattr(engine, "emit_automatic_compaction_status", True):
+        return None
+
+    formatter = getattr(engine, "get_automatic_compaction_status_message", None)
+    if callable(formatter):
+        message = formatter(
+            phase=phase,
+            default_message=default_message,
+            **context,
+        )
+    else:
+        message = default_message
+
+    if message is None:
+        return None
+    message = str(message).strip()
+    return message or None
