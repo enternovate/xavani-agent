@@ -45,6 +45,7 @@ __all__ = [
     "pid_is_xavani",
     "resolve_node_command",
     "windows_detach_flags",
+    "windows_detach_flags_without_breakaway",
     "windows_hide_flags",
     "windows_detach_popen_kwargs",
 ]
@@ -143,6 +144,9 @@ def resolve_node_command(name: str, argv: Sequence[str]) -> list[str]:
 _CREATE_NEW_PROCESS_GROUP = 0x00000200
 _DETACHED_PROCESS = 0x00000008
 _CREATE_NO_WINDOW = 0x08000000
+_CREATE_BREAKAWAY_FROM_JOB = 0x01000000
+
+_WINDOWS_GATEWAY_BREAKAWAY_ENV = "_XAVANI_GATEWAY_BREAKAWAY"
 
 
 def windows_detach_flags() -> int:
@@ -166,6 +170,12 @@ def windows_detach_flags() -> int:
     if not IS_WINDOWS:
         return 0
     return _CREATE_NEW_PROCESS_GROUP | _DETACHED_PROCESS | _CREATE_NO_WINDOW
+
+
+def windows_detach_flags_without_breakaway() -> int:
+    if not IS_WINDOWS:
+        return 0
+    return _CREATE_NEW_PROCESS_GROUP | _CREATE_NO_WINDOW
 
 
 def windows_hide_flags() -> int:

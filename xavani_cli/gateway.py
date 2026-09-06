@@ -9,6 +9,7 @@ Handles: xavani gateway [run|start|stop|restart|status|install|uninstall|setup]
 """
 
 import asyncio
+import json
 import logging
 import os
 import shutil
@@ -5932,4 +5933,242 @@ def wait_for_launchd_gateway_supervision(
             return False
         time.sleep(max(poll_interval, 0.01))
 
+
+
+
+def _spawn_gateway_restart_watcher(old_pid: int, run_argv: list[str]) -> bool:
+    """Spawn the detached watcher that respawns ``run_argv`` once ``old_pid`` exits."""
+    if old_pid <= 0 or not run_argv:
+        return False
+
+    # The watcher is a tiny Python subprocess that polls the old PID and
+    # respawns the gateway once it's gone.  Both legs of the chain need
+    # platform-appropriate detach semantics:
+    #
+    # POSIX — ``start_new_session=True`` (os.setsid in the child) detaches
+    # from the parent's process group so Ctrl+C in the CLI doesn't
+    # propagate and the watcher/gateway survive the CLI exiting.
+    #
+    # Windows — ``start_new_session`` is silently accepted but does NOT
+    # detach.  The watcher stays attached to the CLI's console and dies
+    # when the user closes the terminal, leaving ``xavani update`` users
+    # with no running gateway until they re-invoke ``xavani gateway``
+    # manually.  The Win32 equivalent is the ``CREATE_NEW_PROCESS_GROUP |
+    # DETACHED_PROCESS | CREATE_NO_WINDOW`` creationflags bundle.
+    #
+    # ``windows_detach_popen_kwargs()`` returns the right kwargs for the
+    # host platform and is a no-op on POSIX (just ``start_new_session=True``).
+    from xavani_cli._subprocess_compat import (
+        windows_detach_flags_without_breakaway,
+        windows_detach_popen_kwargs,
+    )
+
+    # On Windows the incoming ``run_argv`` leads with the venv's console
+    # ``python.exe`` (from ``get_python_path()``).  That's the interpreter we
+    # want: the watcher respawns it under CREATE_NO_WINDOW detach flags, so
+    # the gateway owns one hidden console that all descendants inherit —
+    # nothing flashes (#54220/#56747).  The spec helper normalizes the
+    # interpreter and captures the stable cwd + env overlay (XAVANI_HOME,
+    # VIRTUAL_ENV, PYTHONPATH) so the respawn doesn't depend on the watcher's
+    # transient working directory.  No-op on POSIX.
+    # See gateway_windows.windowless_gateway_restart_spec.
+    respawn_cwd = ""
+    respawn_env_overlay: dict[str, str] = {}
+    if sys.platform == "win32":
+        try:
+            from xavani_cli.gateway_windows import (
+                windowless_gateway_restart_spec,
+            )
+
+            run_argv, respawn_cwd, respawn_env_overlay = (
+                windowless_gateway_restart_spec(list(run_argv))
+            )
+        except Exception:
+            # Best-effort: if the rewrite fails for any reason, fall back to
+            # the original argv.  A visible window is worse than nothing, but
+            # a failed respawn is worse still — keep the gateway coming back.
+            respawn_cwd = ""
+            respawn_env_overlay = {}
+
+    # Serialized as JSON literals embedded in the watcher source so the
+    # inner respawn can apply cwd= / env= without extra argv plumbing.
+    respawn_cwd_literal = json.dumps(respawn_cwd)
+    respawn_env_literal = json.dumps(respawn_env_overlay)
+
+    watcher = textwrap.dedent(
+        """
+        import os
+        import subprocess
+        import sys
+        import time
+        from xavani_cli._subprocess_compat import (
+            _WINDOWS_GATEWAY_BREAKAWAY_ENV,
+            windows_detach_flags,
+            windows_detach_flags_without_breakaway,
+        )
+
+        pid = int(sys.argv[1])
+        cmd = sys.argv[2:]
+        _respawn_cwd = {respawn_cwd_literal}
+        _respawn_env_overlay = {respawn_env_literal}
+        deadline = time.monotonic() + 120
+        while time.monotonic() < deadline:
+            # ``os.kill(pid, 0)`` is not a no-op on Windows — use the
+            # cross-platform existence check.
+            from gateway.status import _pid_exists
+            if not _pid_exists(pid):
+                break
+            time.sleep(0.2)
+
+        # Route stray stdout/stderr from the respawned gateway to the same
+        # sidecar log _spawn_detached uses.  DEVNULL here meant a gateway
+        # killed moments after respawn (e.g. parent Job Object teardown when
+        # breakaway is denied, #48820 4th repro) left ZERO trace anywhere —
+        # no gateway.log line, no exit-diag record, nothing.  Best-effort:
+        # fall back to DEVNULL when the log dir is unavailable.
+        _stdio_target = subprocess.DEVNULL
+        _stdio_fh = None
+        try:
+            from xavani_cli.config import get_xavani_home
+            from pathlib import Path
+            _log_dir = Path(get_xavani_home()) / "logs"
+            _log_dir.mkdir(parents=True, exist_ok=True)
+            _stdio_fh = open(_log_dir / "gateway-stdio.log", "ab", buffering=0)
+            _stdio_target = _stdio_fh
+        except Exception:
+            pass
+
+        # Platform-appropriate detach for the respawned gateway.  On POSIX
+        # start_new_session=True maps to os.setsid; on Windows we need
+        # explicit creationflags because start_new_session is a no-op there.
+        # CREATE_BREAKAWAY_FROM_JOB is critical: the watcher itself may have
+        # been spawned inside a job object (Electron/Tauri parent), and
+        # without breakaway the respawned gateway would die when that job
+        # tears down. See _subprocess_compat.windows_detach_flags().
+        _popen_kwargs = {{
+            "stdout": _stdio_target,
+            "stderr": _stdio_target,
+        }}
+        # Anchor the respawned gateway at the stable working dir and overlay
+        # the env (VIRTUAL_ENV / PYTHONPATH / XAVANI_HOME) the windowless
+        # base interpreter needs to import xavani_cli.  Empty on POSIX, where
+        # the venv python resolves imports without help.
+        if _respawn_cwd:
+            _popen_kwargs["cwd"] = _respawn_cwd
+        _base_env = {{**os.environ, **_respawn_env_overlay}}
+        try:
+            if sys.platform == "win32":
+                try:
+                    _popen_kwargs["creationflags"] = windows_detach_flags()
+                    # Stamp the breakaway state exactly like the canonical
+                    # gateway_windows._spawn_detached, so the respawned
+                    # gateway's exit-diag / lifecycle records show whether it
+                    # escaped the parent Job Object (#48820 4th repro:
+                    # without the stamp, a job-teardown kill was
+                    # indistinguishable from any other silent death).
+                    _popen_kwargs["env"] = {{
+                        **_base_env, _WINDOWS_GATEWAY_BREAKAWAY_ENV: "1",
+                    }}
+                    subprocess.Popen(cmd, **_popen_kwargs)
+                except OSError:
+                    # CREATE_BREAKAWAY_FROM_JOB can be rejected with
+                    # ERROR_ACCESS_DENIED when the parent's job object refuses
+                    # breakaway. Retry without it — DETACHED_PROCESS et al.
+                    # alone are enough in most setups. Mirrors the canonical
+                    # fallback in gateway_windows._spawn_detached.
+                    _popen_kwargs["creationflags"] = (
+                        windows_detach_flags_without_breakaway()
+                    )
+                    _popen_kwargs["env"] = {{
+                        **_base_env, _WINDOWS_GATEWAY_BREAKAWAY_ENV: "0",
+                    }}
+                    subprocess.Popen(cmd, **_popen_kwargs)
+            else:
+                if _respawn_env_overlay:
+                    _popen_kwargs["env"] = _base_env
+                _popen_kwargs["start_new_session"] = True
+                subprocess.Popen(cmd, **_popen_kwargs)
+        finally:
+            if _stdio_fh is not None:
+                try:
+                    _stdio_fh.close()
+                except OSError:
+                    pass
+        """
+    ).strip().format(
+        respawn_cwd_literal=respawn_cwd_literal,
+        respawn_env_literal=respawn_env_literal,
+    )
+
+    watcher_argv = [
+        sys.executable,
+        "-c",
+        watcher,
+        str(old_pid),
+        *run_argv,
+    ]
+
+    # Same platform-aware detach for the watcher process itself — so
+    # closing the user's terminal doesn't kill the watcher.
+    try:
+        subprocess.Popen(
+            watcher_argv,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            **windows_detach_popen_kwargs(),
+        )
+    except OSError:
+        # CREATE_BREAKAWAY_FROM_JOB rejected by the parent job object
+        # (Electron, Windows Terminal with restrictive job settings, …).
+        # Retry without it. POSIX never reaches this branch — there
+        # ``start_new_session=True`` cannot raise OSError — so the
+        # fallback is only meaningful on Windows.
+        try:
+            fallback_kwargs: dict = (
+                {"creationflags": windows_detach_flags_without_breakaway()}
+                if sys.platform == "win32"
+                else {"start_new_session": True}
+            )
+            subprocess.Popen(
+                watcher_argv,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                **fallback_kwargs,
+            )
+        except OSError:
+            return False
+    return True
+
+
+
+def _launchctl_label_supervising_process(label: str) -> bool:
+    """True when launchd both knows ``label`` AND is running a process for it.
+
+    A bare ``launchctl list <label>`` exit-0 only proves a *definition* is
+    registered — it also returns 0 for ``state = not running`` (macOS 26+),
+    which is why :func:`_probe_launchd_service_running` already insists on a
+    PID. The reload's success check needs the same standard: ending the retry
+    loop on "a definition exists" can report success for a job launchd is not
+    actually running.
+
+    Measured against live launchd (2026-08-05): immediately after ``bootout``
+    the label deregisters within ~1s (rc=113) while the old process keeps
+    draining, so this is NOT what distinguishes a draining instance from a
+    fresh one — waiting for the old PID to exit before bootstrapping is what
+    does that. This check is the narrower guarantee: success means launchd is
+    supervising a live process.
+    """
+    try:
+        result = subprocess.run(
+            ["launchctl", "list", label],
+            check=False,
+            timeout=10,
+            capture_output=True,
+            text=True, encoding='utf-8', errors='replace',
+        )
+        if result.returncode != 0:
+            return False
+        return _parse_launchd_pid_from_list_output(result.stdout) is not None
+    except (subprocess.TimeoutExpired, OSError):
+        return False
 
