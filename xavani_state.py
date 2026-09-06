@@ -19,6 +19,7 @@ Key design decisions:
 - Session source tagging ('cli', 'telegram', 'discord', etc.) for filtering
 """
 
+import errno
 import json
 import logging
 import os
@@ -3573,4 +3574,360 @@ def _db_opens_cleanly(db_path: Path) -> Optional[str]:
         return str(exc)
     finally:
         conn.close()
+
+_READ_ONLY_IOERR_RETRY_ATTEMPTS = 3
+
+
+_MALFORMED_SCHEMA_MARKERS = ("malformed database schema",)
+_MALFORMED_DB_MARKERS = (
+    *_MALFORMED_SCHEMA_MARKERS,
+    "database disk image is malformed",
+)
+
+# Process-global guard so auto-repair is attempted at most once per DB path
+# per process (prevents repair loops and serialises concurrent web_server /
+# gateway opens against the same malformed file).
+def is_malformed_db_error(exc: BaseException) -> bool:
+    """True for explicit malformed-schema or generic corrupt-image errors.
+
+    This broad classifier is for diagnostics and explicit offline recovery
+    dispatch. Runtime repair must use :func:`is_malformed_schema_error`, since
+    a generic corrupt-image error does not identify the damaged object.
+    """
+    if not isinstance(exc, sqlite3.DatabaseError):
+        return False
+    return any(marker in str(exc).lower() for marker in _MALFORMED_DB_MARKERS)
+
+
+# SQLITE_IOERR, matched as a plain substring so wrapped error strings still
+# classify. Shared by the read-only open retry and the write-path BEGIN retry.
+_DISK_IO_ERROR_MARKER = "disk i/o error"
+
+# Broader set for HTTP classification: a read that failed for one of these
+# reasons found the store BUSY, not gone. Callers map it to 503 (retry, the
+# list was not cleared) instead of 500. Corruption is deliberately absent —
+# a malformed store must surface, not be retried into a timeout.
+_TRANSIENT_SQLITE_MARKERS = (
+    _DISK_IO_ERROR_MARKER,
+    "database is locked",
+    "database table is locked",
+    "busy",
+)
+
+
+def is_transient_sqlite_error(exc: BaseException) -> bool:
+    """True when a SQLite failure means "busy right now", not "damaged".
+
+    One predicate so the read paths cannot drift apart on what counts as
+    recoverable: the read-only open retry, and the HTTP 503-vs-500 split on
+    the session-list endpoints, classify the same way.
+    """
+    if not isinstance(exc, sqlite3.OperationalError):
+        return False
+    message = str(exc).lower()
+    return any(marker in message for marker in _TRANSIENT_SQLITE_MARKERS)
+
+def _is_transient_read_only_ioerr(exc: sqlite3.OperationalError, *, attempt: int) -> bool:
+    """True when a read-only open should be retried rather than raised.
+
+    A ``mode=ro`` connection cannot perform WAL recovery (recovery needs to
+    write the -shm index, which read-only mode refuses), so a concurrent WAL
+    checkpoint / reset / frame-flush can surface ``SQLITE_IOERR`` ("disk I/O
+    error") to a reader on an otherwise healthy database (#100436). The
+    transition is millisecond-scale, so a bounded number of short retries
+    clears it without changing classification for genuine storage failures —
+    a persistent IOERR still exhausts the budget and propagates.
+    """
+    return (
+        attempt < _READ_ONLY_IOERR_RETRY_ATTEMPTS
+        and _DISK_IO_ERROR_MARKER in str(exc).lower()
+    )
+
+
+def is_malformed_schema_error(exc: BaseException) -> bool:
+    """True only when SQLite explicitly reports malformed schema text.
+
+    A generic ``database disk image is malformed`` error is SQLITE_CORRUPT
+    and may come from any B-tree or freelist page.  It does not prove that
+    canonical rows are intact, so runtime schema/FTS repair must fail closed.
+    """
+    if not isinstance(exc, sqlite3.DatabaseError):
+        return False
+    return any(marker in str(exc).lower() for marker in _MALFORMED_SCHEMA_MARKERS)
+
+
+_DISK_FULL_MARKERS = (
+    "no space left on device",
+    "not enough space",
+    "database or disk is full",  # SQLITE_FULL
+    "disk full",
+    "full disk",
+    "enospc",
+)
+
+
+def is_disk_full_error(exc: BaseException | str | None) -> bool:
+    """True when *exc* (or a stringified error) is a disk-full / ENOSPC failure.
+
+    Covers:
+      * ``OSError`` with ``errno.ENOSPC``
+      * SQLite ``OperationalError: database or disk is full`` (SQLITE_FULL)
+      * Plain English / errno strings that survive RPC wrapping
+    """
+    if exc is None:
+        return False
+    if isinstance(exc, OSError) and getattr(exc, "errno", None) == errno.ENOSPC:
+        return True
+    text = exc if isinstance(exc, str) else str(exc)
+    lowered = text.lower()
+    return any(marker in lowered for marker in _DISK_FULL_MARKERS)
+
+
+# Every cause bucket classify_persistence_error can return. Consumers that
+# enumerate causes (e.g. the cron scheduler's explainer-variant suppression)
+# must iterate this tuple instead of hardcoding the list, so adding a bucket
+# can never silently desynchronize them.
+PERSISTENCE_ERROR_CAUSES = (
+    "locked",
+    "compression",
+    "compression_closed",
+    "turn_lease",
+    "corrupt",
+    "replaced",
+    "disk",
+    "unknown",
+)
+
+
+# Markers that mean the database FILE itself is structurally damaged.  Kept
+# as plain substrings so sqlite3.DatabaseError, wrapped RPC strings, and
+# logged message text all match the same helper.  NOTE: "database disk image
+# is malformed" contains the word "disk", so this check MUST run before the
+# disk-full/readonly bucket in classify_persistence_error — otherwise real
+# B-tree corruption gets reported to the user as "free some disk space"
+# (the misdiagnosis documented on #77386).
+_DB_CORRUPTION_MARKERS = (
+    "malformed",              # "database disk image is malformed" (SQLITE_CORRUPT)
+    "file is not a database", # SQLITE_NOTADB (also connection-level poisoning)
+    "not a database",
+    "database corruption",
+)
+
+
+def classify_persistence_error(exc_or_str) -> str:
+    """Classify a session-persistence failure into a coarse cause bucket.
+
+    Fast-failing a turn on a SessionDB write error is deliberate (the
+    transcript would otherwise be lost on restart), but the *guidance* the
+    user gets must match the cause: sustained SQLite write-lock contention
+    ("database is locked" on a shared state.db) needs "storage was busy,
+    send it again", while a full disk or read-only database needs the
+    disk-space/permissions advice. Returns one of PERSISTENCE_ERROR_CAUSES:
+
+    * ``"locked"``  — SQLite lock/busy contention (another process holds the
+      database write lock); transient, retry-later guidance applies.
+    * ``"compression"`` — a live compression lease refused the transcript
+      write; the database itself is healthy and unlocked.
+    * ``"compression_closed"`` — the write targeted a session already
+      rotated (closed) by compression and no live continuation was adopted;
+      the store is healthy — the client must refresh/adopt the new session
+      id, so disk-space advice would be a misdiagnosis.
+    * ``"turn_lease"`` — a presented session-turn-lease holder no longer
+      owns the conversation (expired, released, or reclaimed); fail-fast
+      fencing, not a storage fault.
+    * ``"corrupt"`` — the database file itself is structurally damaged
+      (``database disk image is malformed`` / SQLITE_NOTADB).  Distinct from
+      ``"disk"``: freeing space cannot help, the user needs the repair path
+      (``xavani doctor`` / automatic schema surgery).
+    * ``"replaced"`` — the ``state.db`` path no longer names the file this
+      process opened (out-of-band ``cp``/``mv``/restore). In-file FTS repair
+      cannot help; writes to the live handle must stop.
+    * ``"disk"``    — disk full / read-only / permission-shaped failures
+      (delegates the disk-full patterns to :func:`is_disk_full_error` so the
+      two classifiers can never drift apart — e.g. ENOSPC).
+    * ``"unknown"`` — anything else (or no visible exception at all).
+    """
+    if exc_or_str is None:
+        return "unknown"
+    # A refused write during a live compression lease is contention, not
+    # storage damage — but its message ("is being compressed by another
+    # writer" / "Compression lease lost") contains neither "locked" nor
+    # "busy", so it must be matched by type and by phrase (for strings that
+    # survived RPC wrapping).
+    if isinstance(exc_or_str, SessionTurnLeaseLostError):
+        return "turn_lease"
+    if isinstance(exc_or_str, CompressionSessionClosedError):
+        return "compression_closed"
+    if isinstance(exc_or_str, CompressionSessionBusyError):
+        return "compression"
+    if isinstance(exc_or_str, StateDbReplacedError):
+        # Includes DeletedWalGenerationError (subclass).
+        return "replaced"
+    if isinstance(exc_or_str, StateDbCorruptError):
+        return "corrupt"
+    text = str(exc_or_str).lower()
+    if "turn lease" in text:
+        return "turn_lease"
+    if "closed by compression" in text:
+        return "compression_closed"
+    if "being compressed" in text or "compression lease" in text:
+        return "compression"
+    if "was replaced underneath" in text:
+        return "replaced"
+    if "deleted state.db-wal" in text or "deleted state.db-shm" in text:
+        return "replaced"
+    # Structural corruption BEFORE the lock and disk buckets: "database disk
+    # image is malformed" contains "disk" (and some wrapped corruption
+    # strings mention "locked" recovery attempts), so later buckets would
+    # steal it and misdiagnose damage as space/contention.
+    if any(marker in text for marker in _DB_CORRUPTION_MARKERS):
+        return "corrupt"
+    if (
+        "locked" in text
+        or "busy" in text
+    ):
+        return "locked"
+    if (
+        is_disk_full_error(exc_or_str)
+        or "disk" in text
+        or "readonly" in text
+        or "read-only" in text
+    ):
+        return "disk"
+    return "unknown"
+
+
+_repair_attempted_paths: set[str] = set()
+_repair_attempt_lock = threading.Lock()
+
+
+def _claim_repair_attempt(db_path: Path) -> bool:
+    """Claim the one-shot repair attempt for *db_path* in this process.
+
+    Returns True for the first caller, False afterwards. Keeps a malformed
+    DB from triggering an unbounded repair/reopen loop and stops concurrent
+    callers from racing surgery on the same file.
+    """
+    key = str(db_path)
+    with _repair_attempt_lock:
+        if key in _repair_attempted_paths:
+            return False
+        _repair_attempted_paths.add(key)
+        return True
+
+class CompressionSessionClosedError(RuntimeError):
+    """A durable write targeted a parent already closed by compression."""
+
+    def __init__(self, session_id: str):
+        self.session_id = session_id
+        super().__init__(
+            f"Session {session_id!r} is closed by compression; "
+            "adopt its live continuation before appending messages"
+        )
+
+
+class CompressionSessionBusyError(RuntimeError):
+    """A non-owner tried to write while compression owns the session."""
+
+
+class SessionCompressionInProgressError(CompressionSessionBusyError):
+    """A concurrent writer collided with a *live* compression lock.
+
+    Split out from :class:`CompressionSessionBusyError` because the two
+    conditions that class covers need opposite handling. This one is
+    transient: a healthy compressor holds the session for a few seconds and
+    the lock row carries its own ``expires_at``, so the write can simply wait
+    (see ``_execute_write``'s patience loop). The other case, a compressor
+    discovering its own lease is gone, is permanent and must fail fast rather
+    than spin out the whole patience budget.
+
+    Subclassing keeps every existing ``except CompressionSessionBusyError``
+    handler working unchanged.
+    """
+
+
+class SessionTurnLeaseLostError(RuntimeError):
+    """A transcript write presented a turn-lease holder that no longer owns it.
+
+    Fail-fast fencing: do not retry inside ``_execute_write``. The caller
+    either still thinks it owns the conversation after expiry/reclaim, or
+    the lease row is gone. A later writer may already be persisting a
+    newer turn; landing this write would interleave a stale reply.
+    """
+
+
+class StateDbReplacedError(RuntimeError):
+    """The state.db path no longer names the file this SessionDB opened.
+
+    Raised when an out-of-band ``cp``/``mv``/restore replaces the database
+    under a live gateway. In-place FTS repair and fail-open trigger
+    dropping cannot fix a generation mismatch; they amplify it.
+    """
+
+
+class DeletedWalGenerationError(StateDbReplacedError):
+    """A live process holds a deleted state.db-wal / -shm generation.
+
+    Opening or writing through this handle would mint a second WAL inode
+    (or keep committing on the orphan) — the split-brain that produces
+    intermittent SQLITE_CORRUPT / SQLITE_IOERR. Stop the writers; do not
+    unlink the WAL yourself. ``database.journal_mode: delete`` is operator
+    containment, not a default change.
+
+    Subclasses :class:`StateDbReplacedError` so every downstream consumer
+    that already stops SQLite writes and diverts pending transcripts on a
+    replaced store (gateway retry queue, run_agent flush) handles the split
+    WAL generation identically — the correct response is the same: stop
+    writing, preserve the transcript tail on disk.
+    """
+
+
+# SQLite header: 4-byte big-endian application_id at offset 68. Distinct from
+# inode: ``cp`` onto the same path keeps st_ino and truncates+rewrites.
+_STATE_DB_APPLICATION_ID_OFFSET = 68
+_STATE_DB_GENERATION_KEY = "db_file_generation"
+_STATE_DB_REPLACED_MSG = (
+    "FATAL: state.db was replaced underneath the gateway; refusing further "
+    "writes to this file. Divert transcripts to sessions/<id>.jsonl (and the "
+    "gateway pending_messages spool) and restore or reopen after operator "
+    "intervention."
+)
+_DELETED_WAL_GENERATION_MSG = (
+    "FATAL: a live process holds a deleted state.db-wal or state.db-shm "
+    "inode while the path names a different (or missing) generation. "
+    "Refusing to open or write so a second WAL cannot be minted. "
+    "Stop the gateway, dashboard, and cron writers that hold the deleted "
+    "sidecar, then reopen. Do not delete the WAL yourself. "
+    "database.journal_mode: delete is operator containment, not a new default."
+)
+
+
+class StateDbCorruptError(sqlite3.DatabaseError):
+    """A live SessionDB observed structural (non-FTS) corruption and is quarantined.
+
+    Raised once a write on this handle reports bare ``SQLITE_CORRUPT`` /
+    ``SQLITE_NOTADB`` that is neither FTS-scoped (``_is_fts_write_corruption_error``)
+    nor a replaced-file case (``StateDbReplacedError``). Subclasses
+    ``sqlite3.DatabaseError`` so every existing ``except sqlite3.Error``
+    degrade path keeps working; ``sqlite_errorcode``/``sqlite_errorname``
+    are copied from the originating error.
+
+    The quarantine is sticky for the life of the handle: later writes fail
+    fast, the handle never reopens after ``close()``, and ``close()`` skips
+    its own WAL checkpoint. Field evidence (the #90837 lost/reordered-page
+    signature, the #90950 page-1 clobber): a handle that kept writing for ~50
+    minutes after the first structural error checkpointed 15 pages under the
+    wrong page numbers on shutdown, turning a still-readable file into
+    ``file is not a database``. Stopping the writes is what prevents that;
+    skipping the explicit checkpoint is the second line of defence. SQLite
+    still runs its own last-connection checkpoint inside ``close()`` (and
+    deletes the ``-wal`` sidecar) unless ``SQLITE_DBCONFIG_NO_CKPT_ON_CLOSE``
+    is set — Python exposes it via ``Connection.setconfig()`` on 3.12+, so
+    quarantine disables the close-time checkpoint there and the WAL survives
+    on disk for forensics; on 3.11 the internal checkpoint is unavoidable
+    (post-quarantine it can only carry pre-corruption committed frames, since
+    no further writes are accepted). The
+    recovery boundary is a process restart on a repaired or restored file.
+    """
+
 
