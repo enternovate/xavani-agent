@@ -1439,3 +1439,42 @@ def resolve_profile_env(profile_name: str) -> str:
         )
 
     return str(profile_dir)
+
+
+def backfill_profile_envs(quiet: bool = False) -> List[str]:
+    from xavani_constants import named_profile_is_deleted
+
+    backfilled: List[str] = []
+    profiles_root = _get_profiles_root()
+    if not profiles_root.is_dir():
+        return backfilled
+
+    default_env = _get_default_xavani_home() / ".env"
+
+    for entry in sorted(profiles_root.iterdir()):
+        if not entry.is_dir() or not _PROFILE_ID_RE.match(entry.name):
+            continue
+        if entry.name == "default":
+            continue
+        if named_profile_is_deleted(entry):
+            continue
+        env_path = entry / ".env"
+        if env_path.exists():
+            continue
+        try:
+            if default_env.is_file():
+                shutil.copy2(default_env, env_path)
+            else:
+                env_path.write_text(
+                    "# Per-profile secrets for this Xavani profile.\n"
+                    "# API keys and tokens set here override the shell environment.\n"
+                    "# Behavioral settings belong in config.yaml, not here.\n",
+                    encoding="utf-8",
+                )
+            os.chmod(str(env_path), 0o600)
+            backfilled.append(entry.name)
+        except OSError as e:
+            if not quiet:
+                print(f"⚠ Could not seed .env for profile '{entry.name}': {e}")
+
+    return backfilled

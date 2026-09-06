@@ -609,3 +609,24 @@ def emit_partial_update_hint(exc: BaseException, *, file=None) -> bool:
     for line in lines:
         print(line, file=out)
     return True
+
+
+_DELETED_PROFILES_DIR = ".deleted"
+
+
+def profile_tombstone_path(profile_home: Path) -> Path:
+    return profile_home.parent / _DELETED_PROFILES_DIR / profile_home.name
+
+
+def named_profile_is_deleted(profile_home: str | Path) -> bool:
+    return profile_tombstone_path(Path(profile_home)).exists()
+
+
+def mark_named_profile_deleted(profile_home: str | Path) -> None:
+    marker = profile_tombstone_path(Path(profile_home))
+    marker.parent.mkdir(parents=True, exist_ok=True)
+    marker.write_text("deleted\n", encoding="utf-8")
+
+
+def clear_named_profile_deleted(profile_home: str | Path) -> None:
+    profile_tombstone_path(Path(profile_home)).unlink(missing_ok=True)
