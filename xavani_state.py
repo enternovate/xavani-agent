@@ -34,6 +34,13 @@ from pathlib import Path
 from agent.memory_manager import sanitize_context
 from xavani_constants import get_xavani_home
 from xavani_state_integrity import integrity_enabled, verify_sqlite_db
+from xavani_state_repair import (
+    _claim_repair_attempt,
+    _connect_repair_durable,
+    _db_opens_cleanly,
+    _reapply_durability_barriers,
+    repair_state_db_schema,
+)
 from typing import Any, Callable, Dict, List, Optional, Tuple, TypeVar
 
 logger = logging.getLogger(__name__)
@@ -3469,23 +3476,6 @@ def _enforce_macos_synchronous_full(conn: sqlite3.Connection) -> None:
         pass
 
 
-def _reapply_durability_barriers(conn: sqlite3.Connection) -> bool:
-    try:
-        _apply_macos_checkpoint_barrier(conn)
-        _enforce_macos_synchronous_full(conn)
-        return True
-    except sqlite3.DatabaseError:
-        return False
-    except Exception:
-        return False
-
-
-def _connect_repair_durable(
-    db_path: Path, *, timeout: float = 5.0
-) -> sqlite3.Connection:
-    conn = sqlite3.connect(str(db_path), timeout=timeout, isolation_level=None)
-    _reapply_durability_barriers(conn)
-    return conn
 
 
 def fts5_cjk_so_path() -> Path:
@@ -3519,61 +3509,7 @@ def load_fts5_cjk_extension(conn: sqlite3.Connection) -> bool:
         return False
 
 
-def _db_opens_cleanly(db_path: Path) -> Optional[str]:
-    conn = _connect_repair_durable(db_path)
-    try:
-        load_fts5_cjk_extension(conn)
-        conn.execute("PRAGMA journal_mode").fetchone()
-        rows = conn.execute("PRAGMA integrity_check").fetchall()
-        problems = [str(r[0]) for r in rows if r and str(r[0]).lower() != "ok"]
-        if problems:
-            return "; ".join(problems[:3])
-        conn.execute("SELECT COUNT(*) FROM sessions").fetchone()
 
-        for fts_table in ("messages_fts", "messages_fts_trigram", "messages_fts_cjk"):
-            try:
-                conn.execute(
-                    f"SELECT 1 FROM {fts_table} WHERE {fts_table} MATCH '\"\"' LIMIT 1"
-                ).fetchone()
-            except sqlite3.OperationalError as exc:
-                if SessionDB._is_fts5_unavailable_error(exc):
-                    continue
-                msg = str(exc).lower()
-                if "no such table" in msg or "no such column" in msg:
-                    continue
-                return f"fts5 read probe failed on {fts_table}: {exc}"
-            except sqlite3.DatabaseError as exc:
-                return f"fts5 read probe failed on {fts_table}: {exc}"
-
-        probe_session_id = f"_xavani_fts_health_probe_{time.time_ns()}"
-        try:
-            conn.execute("BEGIN IMMEDIATE")
-            conn.execute(
-                "INSERT INTO sessions (id, source, started_at) VALUES (?, ?, ?)",
-                (probe_session_id, "_health_probe", time.time()),
-            )
-            conn.execute(
-                "INSERT INTO messages (session_id, role, content, timestamp) "
-                "VALUES (?, ?, ?, ?)",
-                (probe_session_id, "user", "_fts_health_probe", time.time()),
-            )
-            conn.execute("ROLLBACK")
-        except sqlite3.OperationalError as exc:
-            try:
-                conn.execute("ROLLBACK")
-            except sqlite3.Error:
-                pass
-            msg = str(exc).lower()
-            if "no such table" in msg or "no such column" in msg:
-                return None
-            if "no such tokenizer: cjk_unicode61" in msg:
-                return None
-            return str(exc)
-        return None
-    except sqlite3.DatabaseError as exc:
-        return str(exc)
-    finally:
-        conn.close()
 
 _READ_ONLY_IOERR_RETRY_ATTEMPTS = 3
 
@@ -3801,19 +3737,7 @@ _repair_attempted_paths: set[str] = set()
 _repair_attempt_lock = threading.Lock()
 
 
-def _claim_repair_attempt(db_path: Path) -> bool:
-    """Claim the one-shot repair attempt for *db_path* in this process.
 
-    Returns True for the first caller, False afterwards. Keeps a malformed
-    DB from triggering an unbounded repair/reopen loop and stops concurrent
-    callers from racing surgery on the same file.
-    """
-    key = str(db_path)
-    with _repair_attempt_lock:
-        if key in _repair_attempted_paths:
-            return False
-        _repair_attempted_paths.add(key)
-        return True
 
 class CompressionSessionClosedError(RuntimeError):
     """A durable write targeted a parent already closed by compression."""
