@@ -144,6 +144,6 @@ tests green on touched files.
 
 ## Suite
 
-Full `pytest tests/` (2026-09-06, HEAD 8da3c1af): 18896 passed,
-269 skipped, 0 failed in 521s. Every slice commit also shows its own
+Full `pytest tests/` (2026-09-07, HEAD 3ef6b8ed): 18880 passed,
+269 skipped, 0 failed in 348s. Every slice commit also shows its own
 GREEN run (new tests plus prior port files, ruff clean).
