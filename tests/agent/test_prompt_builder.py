@@ -478,7 +478,7 @@ class TestBuildNousSubscriptionPrompt:
 
         prompt = build_nous_subscription_prompt({"image_generate"})
 
-        assert "suggest Nous subscription as one option" in prompt
+        assert "suggest Xavani subscription as one option" in prompt
         assert "Do not mention subscription unless" in prompt
 
     def test_feature_flag_off_returns_empty_prompt(self, monkeypatch):
