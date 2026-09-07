@@ -17,7 +17,7 @@ Skill Sync covers two surfaces, both under this one command for launch:
   Organisation — skills shared with your team:
     xavani sync propose <skill>        share a skill with your organisation
 
-Sync is INERT unless the resolved Nous token carries the access-gate claim
+Sync is INERT unless the resolved Xavani token carries the access-gate claim
 AND a sync base URL is configured. The commands report that state rather than
 failing opaquely.
 """

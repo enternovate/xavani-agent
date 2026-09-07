@@ -5,7 +5,7 @@ Three cookies in play:
                          (HttpOnly, lifetime = token TTL, ~15 min)
   - xavani_session_rt:   the OAuth refresh token
                          (HttpOnly, lifetime = 24h, ROTATING + reuse-detected)
-                         Nous Portal issues a rotating refresh token for the
+                         Xavani Portal issues a rotating refresh token for the
                          dashboard auth-code grant (Portal NAS #293 / xavani
                          #37247). ``set_session_cookies`` writes this cookie
                          whenever the provider returns a non-empty
@@ -83,7 +83,7 @@ SESSION_AT_COOKIE = "xavani_session_at"
 SESSION_RT_COOKIE = "xavani_session_rt"
 # Provider that minted the session. This non-secret routing hint prevents a
 # refresh token from being handed to the wrong provider when several dashboard
-# auth plugins are enabled (for example Basic + Nous OAuth).
+# auth plugins are enabled (for example Basic + Xavani OAuth).
 SESSION_PROVIDER_COOKIE = "xavani_session_provider"
 PKCE_COOKIE = "xavani_session_pkce"
 # One-shot loop-guard marker for the auto-SSO redirect (Phase 1,
@@ -193,7 +193,7 @@ def set_session_cookies(
     ``access_token_expires_in`` is in seconds. Use the provider's reported
     TTL for the access token.
 
-    ``refresh_token`` is written as the RT cookie when non-empty. Nous Portal
+    ``refresh_token`` is written as the RT cookie when non-empty. Xavani Portal
     issues a 24h rotating refresh token (xavani #37247); a provider that
     omits it returns ``Session.refresh_token == ""`` and we simply don't
     persist the RT cookie — the session then behaves as access-token-only

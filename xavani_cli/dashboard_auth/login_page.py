@@ -4,8 +4,8 @@ No React, no JavaScript dependency. Listed providers come from the
 registry; clicking a provider sends a GET to
 ``/auth/login?provider=<name>``.
 
-Visual styling mirrors the Nous Research design system (the
-``@nous-research/ui`` package the React dashboard uses): the same
+Visual styling mirrors the Enternovate design system (the
+Enternovate design system the React dashboard uses): the same
 ``Collapse`` / ``Rules Compressed`` typeface, amber-on-dark colour
 tokens (``#170d02`` / ``#ffac02`` / ``#fff``), uppercase + wide-tracking
 brand chrome, and the inset-bevel button shadow. Fonts are served
@@ -40,7 +40,7 @@ _LOGIN_HTML_TEMPLATE = """\
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Sign in — Xavani Agent</title>
 <style>
-  /* Brand fonts shipped by @nous-research/ui — same files the SPA loads. */
+  /* Brand fonts shipped by the Enternovate design system — same files the SPA loads. */
   @font-face {{
     font-family: 'Collapse';
     font-style: normal;
@@ -302,7 +302,7 @@ _LOGIN_HTML_TEMPLATE = """\
 </head>
 <body>
 <main>
-  <div class="brand">Nous<span class="dot"></span>Research</div>
+  <div class="brand">Xavani<span class="dot"></span>Research</div>
   <div class="card">
     <h1>Sign in</h1>
     <p class="subtitle">Choose a sign-in method to continue to the Xavani Agent dashboard.</p>
@@ -394,7 +394,7 @@ _EMPTY_HTML = """\
 <p>This dashboard is bound to a non-loopback host but no authentication
 providers are available.</p>
 <p>Configure the bundled username/password provider or an OAuth provider.
-See the <a href="https://xavani-agent.nousresearch.com/docs/user-guide/features/web-dashboard#authentication-gated-mode">dashboard
+See the <a href="https://xavani-agent.enternovate.com/docs/user-guide/features/web-dashboard#authentication-gated-mode">dashboard
 authentication documentation</a> for setup instructions.</p>
 <p>For auth-free local use, bind to <code>127.0.0.1</code> and connect through
 an SSH tunnel or Tailscale.</p>

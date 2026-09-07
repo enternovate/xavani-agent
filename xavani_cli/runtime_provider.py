@@ -1165,7 +1165,7 @@ def resolve_runtime_provider(
                 getattr(entry, "runtime_api_key", None)
                 or getattr(entry, "access_token", "")
             )
-        # For Nous, the pool entry's runtime_api_key is the agent_key
+        # For Xavani, the pool entry's runtime_api_key is the agent_key
         # compatibility field: either an invoke JWT or legacy opaque key.
         # The pool doesn't
         # refresh it during selection (that would trigger network calls in
@@ -1180,7 +1180,7 @@ def resolve_runtime_provider(
                 "scope": getattr(entry, "scope", None),
             }
             if not _agent_key_is_usable(nous_state, min_ttl):
-                logger.debug("Nous pool entry agent_key expired/missing, falling through to runtime resolution")
+                logger.debug("Xavani pool entry agent_key expired/missing, falling through to runtime resolution")
                 pool_api_key = ""
         if entry is not None and pool_api_key:
             return _resolve_runtime_from_pool_entry(
@@ -1210,9 +1210,9 @@ def resolve_runtime_provider(
         except AuthError:
             if requested_provider != "auto":
                 raise
-            # Auto-detected Nous but credentials are stale/revoked —
+            # Auto-detected Xavani but credentials are stale/revoked —
             # fall through to env-var providers (e.g. OpenRouter).
-            logger.info("Auto-detected Nous provider but credentials failed; "
+            logger.info("Auto-detected Xavani provider but credentials failed; "
                         "falling through to next provider.")
 
     if provider == "openai-codex":

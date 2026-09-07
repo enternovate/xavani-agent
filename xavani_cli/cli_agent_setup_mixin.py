@@ -257,7 +257,7 @@ class CLIAgentSetupMixin:
 
         Called from the interactive startup path when
         ``_runtime_credentials_ready()`` is False and stdin is a TTY. Runs the
-        exact same flow as ``xavani model`` (which fronts Quick Setup / Nous
+        exact same flow as ``xavani model`` (which fronts Quick Setup / Xavani
         Portal OAuth as the first, recommended option) so there is a single
         source of truth for provider onboarding. Returns True when a provider
         was configured.
@@ -266,7 +266,7 @@ class CLIAgentSetupMixin:
 
         _cprint("")
         _cprint("⚕ No inference provider is configured yet — let's fix that.")
-        _cprint("  You'll pick a provider (Nous Portal OAuth is the fastest; "
+        _cprint("  You'll pick a provider (Xavani Portal OAuth is the fastest; "
                 "no API key needed) and a model.")
         try:
             answer = input("  Set up a provider now? [Y/n]: ").strip().lower()
@@ -601,7 +601,7 @@ class CLIAgentSetupMixin:
             # Hydrate credits notices at session OPEN (parity with the TUI), so a
             # depletion / usage-band warning shows before the first message. The
             # notice_callback is bound above → _on_notice renders the line. Idempotent
-            # + fail-open inside the helper; harmless for non-Nous providers.
+            # + fail-open inside the helper; harmless for non-Xavani providers.
             try:
                 from agent.credits_tracker import seed_credits_at_session_start
 

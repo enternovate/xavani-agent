@@ -831,9 +831,9 @@ def run_doctor(args):
 
         nous_status = get_nous_auth_status()
         if nous_status.get("logged_in"):
-            check_ok("Nous Portal auth", "(logged in)")
+            check_ok("Xavani Portal auth", "(logged in)")
         else:
-            check_warn("Nous Portal auth", "(not logged in)")
+            check_warn("Xavani Portal auth", "(not logged in)")
 
         codex_status = get_codex_auth_status()
         if codex_status.get("logged_in"):
@@ -877,7 +877,7 @@ def run_doctor(args):
         check_warn("Auth provider status", f"(could not check: {e})")
 
     # xAI OAuth — separate try/except so an import failure here cannot
-    # disrupt the already-printed Nous/Codex/Gemini/MiniMax rows above.
+    # disrupt the already-printed Xavani/Codex/Gemini/MiniMax rows above.
     try:
         from xavani_cli.auth import get_xai_oauth_auth_status
         xai_oauth_status = get_xai_oauth_auth_status() or {}

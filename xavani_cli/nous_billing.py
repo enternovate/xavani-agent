@@ -1,4 +1,4 @@
-"""Nous Portal Remote Spending HTTP client (Phase 2b).
+"""Xavani Portal Remote Spending HTTP client (Phase 2b).
 
 Thin, fail-loud client for the four ``/api/billing/*`` endpoints the terminal
 billing screens drive. Companion to ``xavani_cli/nous_account.py`` (which owns
@@ -32,7 +32,7 @@ import urllib.parse
 import urllib.request
 from typing import Any, Optional
 
-DEFAULT_PORTAL_BASE_URL = "https://portal.nousresearch.com"
+DEFAULT_PORTAL_BASE_URL = "https://portal.enternovate.co.za"
 
 # Default HTTP timeout (seconds). Charge/poll calls are quick; keep this tight so
 # a hung portal doesn't freeze the TUI.
@@ -231,7 +231,7 @@ def invalidate_cached_token() -> None:
 def _billing_not_logged_in(exc: Optional[BaseException] = None) -> "BillingAuthError":
     """Build the canonical 'not logged in' BillingAuthError (single source)."""
     err = BillingAuthError(
-        "Not logged into Nous Portal — run `xavani portal` to log in.",
+        "Not logged into Xavani Portal — run `xavani portal` to log in.",
         status=401,
         error="invalid_token",
     )
@@ -247,7 +247,7 @@ def _resolve_token_and_base(*, use_cache: bool = True) -> tuple[str, str]:
     (``resolve_nous_access_token``), so a short-lived (~15 min) access token that
     has expired is transparently refreshed via the stored ``refresh_token``
     instead of failing as "not logged in". Raises :class:`BillingAuthError` only
-    when there is no usable Nous session at all.
+    when there is no usable Xavani session at all.
 
     The result is cached for ``_TOKEN_CACHE_TTL_SECONDS`` to keep the charge poll
     loop from re-locking + re-reading the auth store on every 2s tick. Pass
@@ -456,14 +456,14 @@ def _request(
         raise  # unreachable; _raise_for_error always raises
     except urllib.error.URLError as exc:
         raise BillingError(
-            f"Could not reach Nous Portal: {exc.reason}", error="network_error"
+            f"Could not reach Xavani Portal: {exc.reason}", error="network_error"
         ) from exc
     except TimeoutError as exc:
         # urlopen() wraps CONNECT-phase timeouts in URLError, but a timeout
         # during resp.read() surfaces as a bare TimeoutError — normalize it so
         # transport failures always honor the typed-BillingError contract.
         raise BillingError(
-            "Could not reach Nous Portal: timed out", error="network_error"
+            "Could not reach Xavani Portal: timed out", error="network_error"
         ) from exc
 
 

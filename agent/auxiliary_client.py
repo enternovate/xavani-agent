@@ -12,7 +12,7 @@ Resolution order for text tasks (auto mode):
   1. User's main provider + main model (used regardless of provider type —
      aggregators, direct API-key providers, native Anthropic, Codex, etc.)
   2. OpenRouter  (OPENROUTER_API_KEY)
-  3. Nous Portal (~/.xavani/auth.json active provider)
+  3. Xavani Portal (~/.xavani/auth.json active provider)
   4. Custom endpoint (config.yaml model.base_url + OPENAI_API_KEY)
   5. Native Anthropic
   6. Direct API-key providers (z.ai/GLM, Kimi/Moonshot, MiniMax, MiniMax-CN)
@@ -21,7 +21,7 @@ Resolution order for text tasks (auto mode):
 Resolution order for vision/multimodal tasks (auto mode):
   1. Selected main provider, if it is one of the supported vision backends below
   2. OpenRouter
-  3. Nous Portal
+  3. Xavani Portal
   4. Native Anthropic
   5. Custom endpoint (for local vision models: Qwen-VL, LLaVA, Pixtral, etc.)
   6. None
@@ -404,9 +404,9 @@ _AI_GATEWAY_HEADERS = {
     "User-Agent": f"XavaniAgent/{_XAVANI_VERSION}",
 }
 
-# Nous Portal extra_body for product attribution.
+# Xavani Portal extra_body for product attribution.
 # Callers should pass this as extra_body in chat.completions.create()
-# when the auxiliary client is backed by Nous Portal.
+# when the auxiliary client is backed by Xavani Portal.
 #
 # The tags are computed from agent.portal_tags so the client= marker stays
 # in lockstep with xavani_cli.__version__ across every Portal call site
@@ -416,7 +416,7 @@ from agent.portal_tags import nous_portal_tags as _nous_portal_tags
 
 
 def _nous_extra_body() -> dict:
-    """Return a fresh Nous Portal ``extra_body`` dict.
+    """Return a fresh Xavani Portal ``extra_body`` dict.
 
     Computed at call time so a hot-reloaded ``xavani_cli.__version__`` is
     reflected without restarting long-running processes.
@@ -430,13 +430,13 @@ def _nous_extra_body() -> dict:
 # ``_nous_extra_body()`` or import ``nous_portal_tags`` directly.
 NOUS_EXTRA_BODY = _nous_extra_body()
 
-# Set at resolve time — True if the auxiliary client points to Nous Portal
+# Set at resolve time — True if the auxiliary client points to Xavani Portal
 auxiliary_is_nous: bool = False
 
 # Default auxiliary models per provider
 _OPENROUTER_MODEL = "google/gemini-3-flash-preview"
 _NOUS_MODEL = "google/gemini-3-flash-preview"
-_NOUS_DEFAULT_BASE_URL = "https://inference-api.nousresearch.com/v1"
+_NOUS_DEFAULT_BASE_URL = "https://inference-api.enternovate.co.za/v1"
 _ANTHROPIC_DEFAULT_BASE_URL = "https://api.anthropic.com"
 _AUTH_JSON_PATH = get_xavani_home() / "auth.json"
 
@@ -1221,9 +1221,9 @@ def _maybe_wrap_anthropic(
 
 
 def _read_nous_auth() -> Optional[dict]:
-    """Read and validate ~/.xavani/auth.json for an active Nous provider.
+    """Read and validate ~/.xavani/auth.json for an active Xavani provider.
 
-    Returns the provider state dict if Nous is active with tokens,
+    Returns the provider state dict if Xavani is active with tokens,
     otherwise None.
     """
     pool_present, entry = _select_pool_entry("nous")
@@ -1254,22 +1254,22 @@ def _read_nous_auth() -> Optional[dict]:
             return None
         return provider
     except Exception as exc:
-        logger.debug("Could not read Nous auth: %s", exc)
+        logger.debug("Could not read Xavani auth: %s", exc)
         return None
 
 
 def _nous_api_key(provider: dict) -> str:
-    """Extract the Nous runtime credential from the compatibility field."""
+    """Extract the Xavani runtime credential from the compatibility field."""
     return provider.get("agent_key") or provider.get("access_token", "")
 
 
 def _nous_base_url() -> str:
-    """Resolve the Nous inference base URL from env or default."""
+    """Resolve the Xavani inference base URL from env or default."""
     return os.getenv("NOUS_INFERENCE_BASE_URL", _NOUS_DEFAULT_BASE_URL)
 
 
 def _resolve_nous_runtime_api(*, force_refresh: bool = False) -> Optional[tuple[str, str]]:
-    """Return fresh Nous runtime credentials when available.
+    """Return fresh Xavani runtime credentials when available.
 
     This mirrors the main agent's 401 recovery path and keeps auxiliary
     clients aligned with the singleton auth store + JWT/mint flow instead of
@@ -1293,7 +1293,7 @@ def _resolve_nous_runtime_api(*, force_refresh: bool = False) -> Optional[tuple[
             ),
         )
     except Exception as exc:
-        logger.debug("Auxiliary Nous runtime credential resolution failed: %s", exc)
+        logger.debug("Auxiliary Xavani runtime credential resolution failed: %s", exc)
         return None
 
     api_key = str(creds.get("api_key") or "").strip()
@@ -1542,7 +1542,7 @@ def _describe_openrouter_unavailable() -> str:
 
 
 def _try_nous(vision: bool = False) -> Tuple[Optional[OpenAI], Optional[str]]:
-    # Nous Portal was removed as a provider; auxiliary fallback skips it.
+    # Xavani Portal was removed as a provider; auxiliary fallback skips it.
     return None, None
 
     # The historical body below is unreachable; kept for diff readability
@@ -1552,7 +1552,7 @@ def _try_nous(vision: bool = False) -> Tuple[Optional[OpenAI], Optional[str]]:
         _remaining = nous_rate_limit_remaining()
         if _remaining is not None and _remaining > 0:
             logger.debug(
-                "Auxiliary: skipping Nous Portal (rate-limited, resets in %.0fs)",
+                "Auxiliary: skipping Xavani Portal (rate-limited, resets in %.0fs)",
                 _remaining,
             )
             _mark_provider_unhealthy("nous", ttl=_remaining)
@@ -1564,23 +1564,23 @@ def _try_nous(vision: bool = False) -> Tuple[Optional[OpenAI], Optional[str]]:
     runtime = _resolve_nous_runtime_api(force_refresh=False)
     if runtime is None and not nous:
         logger.warning(
-            "Auxiliary Nous client unavailable: no Nous authentication found "
+            "Auxiliary Xavani client unavailable: no Xavani authentication found "
             "(run: xavani auth)."
         )
         _mark_provider_unhealthy("nous", ttl=60)
         return None, None
     if runtime is None and nous:
-        # Runtime credential mint failed but stored Nous auth is still present.
+        # Runtime credential mint failed but stored Xavani auth is still present.
         # Falls back to the raw stored token below; surface a debug line so
         # operators investigating expired/invalid sessions have a breadcrumb,
         # without blocking the fallback path the rest of this function relies on.
         logger.debug(
-            "Auxiliary Nous: runtime credential mint failed; falling back to "
+            "Auxiliary Xavani: runtime credential mint failed; falling back to "
             "stored auth.json token."
         )
     global auxiliary_is_nous
     auxiliary_is_nous = True
-    logger.debug("Auxiliary client: Nous Portal")
+    logger.debug("Auxiliary client: Xavani Portal")
 
     # Ask the Portal which model it currently recommends for this task type.
     # The /api/nous/recommended-models endpoint is the authoritative source:
@@ -2497,7 +2497,7 @@ def _recoverable_pool_provider(resolved_provider: str, client: Any) -> Optional[
         return "openai-codex"
     if base_url_host_matches(base, "openrouter.ai"):
         return "openrouter"
-    if base_url_host_matches(base, "inference-api.nousresearch.com"):
+    if base_url_host_matches(base, "inference-api.enternovate.co.za"):
         return "nous"
     if base_url_host_matches(base, "api.anthropic.com"):
         return "anthropic"
@@ -2892,11 +2892,11 @@ def _resolve_auto(main_runtime: Optional[Dict[str, Any]] = None) -> Tuple[Option
       1. User's main provider + main model, regardless of provider type.
          This means auxiliary tasks (compression, vision, web extraction,
          session search, etc.) use the same model the user configured for
-         chat.  Users on OpenRouter/Nous get their chosen chat model; users
+         chat.  Users on OpenRouter/Xavani get their chosen chat model; users
          on DeepSeek/ZAI/Alibaba get theirs; etc.  Running aux tasks on the
          user's picked model keeps behavior predictable — no surprise
          switches to a cheap fallback model for side tasks.
-      2. OpenRouter → Nous → custom → Codex → API-key providers (fallback
+      2. OpenRouter → Xavani → custom → Codex → API-key providers (fallback
          chain, only used when the main provider has no working client).
     """
     global auxiliary_is_nous, _stale_base_url_warned
@@ -2931,7 +2931,7 @@ def _resolve_auto(main_runtime: Optional[Dict[str, Any]] = None) -> Tuple[Option
     #
     # This is the primary aux backend for every user.  "auto" means
     # "use my main chat model for side tasks as well" — including users
-    # on aggregators (OpenRouter, Nous) who previously got routed to a
+    # on aggregators (OpenRouter, Xavani) who previously got routed to a
     # cheap provider-side default.  Explicit per-task overrides set via
     # config.yaml (auxiliary.<task>.provider) still win over this.
     main_provider = str(runtime_provider or _read_main_provider() or "")
@@ -3205,7 +3205,7 @@ def resolve_provider_client(
         return (_to_async_client(client, final_model, is_vision=is_vision) if async_mode
                 else (client, final_model))
 
-    # ── Nous Portal (OAuth) ──────────────────────────────────────────
+    # ── Xavani Portal (OAuth) ──────────────────────────────────────────
     if provider == "nous":
         # Detect vision tasks: either explicit model override from
         # _PROVIDER_VISION_MODELS, or caller passed a known vision model.
@@ -3216,7 +3216,7 @@ def resolve_provider_client(
         client, default = _try_nous(vision=_is_vision)
         if client is None:
             logger.warning("resolve_provider_client: nous requested "
-                           "but Nous Portal not configured (run: xavani auth)")
+                           "but Xavani Portal not configured (run: xavani auth)")
             return None, None
         final_model = _normalize_resolved_model(model or default, provider)
         return (_to_async_client(client, final_model, is_vision=is_vision) if async_mode
@@ -3262,7 +3262,7 @@ def resolve_provider_client(
     # silently re-routing every auxiliary task (compression, web extract,
     # session search, curator, etc.) to whatever Step-2 fallback the user
     # has configured.  Users on xAI Grok OAuth would then see surprise
-    # OpenRouter / Nous bills for side tasks they thought were running on
+    # OpenRouter / Xavani bills for side tasks they thought were running on
     # their xAI subscription.
     if provider == "xai-oauth":
         client, default = _build_xai_oauth_aux_client(model)
@@ -3773,7 +3773,7 @@ def _strict_vision_backend_available(provider: str) -> bool:
 def get_available_vision_backends() -> List[str]:
     """Return the currently available vision backends in auto-selection order.
 
-    Order: active provider → OpenRouter → Nous → stop.  This is the single
+    Order: active provider → OpenRouter → Xavani → stop.  This is the single
     source of truth for setup, tool gating, and runtime auto-routing of
     vision tasks.
     """
@@ -3788,7 +3788,7 @@ def get_available_vision_backends() -> List[str]:
             client, _ = resolve_provider_client(main_provider, _read_main_model())
             if client is not None:
                 available.append(main_provider)
-    # 2. OpenRouter, 3. Nous — skip if already covered by main provider.
+    # 2. OpenRouter, 3. Xavani — skip if already covered by main provider.
     for p in _VISION_AUTO_PROVIDER_ORDER:
         if p not in available and _strict_vision_backend_available(p):
             available.append(p)
@@ -3846,11 +3846,11 @@ def resolve_vision_provider_client(
         #      _PROVIDER_VISION_MODELS provides per-provider vision model
         #      overrides when the provider has a dedicated multimodal model
         #      that differs from the chat model (e.g. xiaomi → mimo-v2-omni,
-        #      zai → glm-5v-turbo). Nous is the exception: it has a dedicated
+        #      zai → glm-5v-turbo). Xavani is the exception: it has a dedicated
         #      strict vision backend with tier-aware defaults, so it must not
         #      fall through to the user's text chat model here.
         #   2. OpenRouter  (vision-capable aggregator fallback)
-        #   3. Nous Portal (vision-capable aggregator fallback)
+        #   3. Xavani Portal (vision-capable aggregator fallback)
         #   4. Stop
         main_provider = _read_main_provider()
         main_model = _read_main_model()
@@ -3948,8 +3948,8 @@ def resolve_vision_provider_client(
 def get_auxiliary_extra_body() -> dict:
     """Return extra_body kwargs for auxiliary API calls.
     
-    Includes Nous Portal product tags when the auxiliary client is backed
-    by Nous Portal. Returns empty dict otherwise.
+    Includes Xavani Portal product tags when the auxiliary client is backed
+    by Xavani Portal. Returns empty dict otherwise.
     """
     return _nous_extra_body() if auxiliary_is_nous else {}
 
@@ -4037,7 +4037,7 @@ def _refresh_nous_auxiliary_client(
     main_runtime: Optional[Dict[str, Any]] = None,
     is_vision: bool = False,
 ) -> Tuple[Optional[Any], Optional[str]]:
-    """Refresh Nous runtime creds, rebuild the client, and replace the cache entry."""
+    """Refresh Xavani runtime creds, rebuild the client, and replace the cache entry."""
     runtime = _resolve_nous_runtime_api(force_refresh=True)
     if runtime is None:
         return None, model
@@ -4495,7 +4495,7 @@ def _build_call_kwargs(
         kwargs["temperature"] = temperature
 
     if max_tokens is not None:
-        # Codex adapter handles max_tokens internally; OpenRouter/Nous use max_tokens.
+        # Codex adapter handles max_tokens internally; OpenRouter/Xavani use max_tokens.
         # Direct OpenAI api.openai.com with newer models needs max_completion_tokens.
         # ZAI vision models (glm-4v-flash, glm-4v-plus, etc.) reject max_tokens with
         # error code 1210 ("API 调用参数有误") on multimodal requests — skip it.
@@ -4764,10 +4764,10 @@ def call_llm(
                     raise
                 first_err = retry_err
 
-        # ── Nous auth refresh parity with main agent ──────────────────
+        # ── Xavani auth refresh parity with main agent ──────────────────
         client_is_nous = (
             resolved_provider == "nous"
-            or base_url_host_matches(_base_info, "inference-api.nousresearch.com")
+            or base_url_host_matches(_base_info, "inference-api.enternovate.co.za")
         )
         if _is_auth_error(first_err) and client_is_nous:
             refreshed_client, refreshed_model = _refresh_nous_auxiliary_client(
@@ -4781,7 +4781,7 @@ def call_llm(
                 is_vision=(task == "vision"),
             )
             if refreshed_client is not None:
-                logger.info("Auxiliary %s: refreshed Nous runtime credentials after 401, retrying",
+                logger.info("Auxiliary %s: refreshed Xavani runtime credentials after 401, retrying",
                             task or "call")
                 if refreshed_model and refreshed_model != kwargs.get("model"):
                     kwargs["model"] = refreshed_model
@@ -5145,10 +5145,10 @@ async def async_call_llm(
                     raise
                 first_err = retry_err
 
-        # ── Nous auth refresh parity with main agent ──────────────────
+        # ── Xavani auth refresh parity with main agent ──────────────────
         client_is_nous = (
             resolved_provider == "nous"
-            or base_url_host_matches(_client_base, "inference-api.nousresearch.com")
+            or base_url_host_matches(_client_base, "inference-api.enternovate.co.za")
         )
         if _is_auth_error(first_err) and client_is_nous:
             refreshed_client, refreshed_model = _refresh_nous_auxiliary_client(
@@ -5161,7 +5161,7 @@ async def async_call_llm(
                 is_vision=(task == "vision"),
             )
             if refreshed_client is not None:
-                logger.info("Auxiliary %s (async): refreshed Nous runtime credentials after 401, retrying",
+                logger.info("Auxiliary %s (async): refreshed Xavani runtime credentials after 401, retrying",
                             task or "call")
                 if refreshed_model and refreshed_model != kwargs.get("model"):
                     kwargs["model"] = refreshed_model

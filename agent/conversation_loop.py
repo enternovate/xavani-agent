@@ -1026,8 +1026,8 @@ def run_conversation(
         api_kwargs = None  # Guard against UnboundLocalError in except handler
 
         while retry_count < max_retries:
-            # ── Nous Portal rate limit guard ──────────────────────
-            # If another session already recorded that Nous is rate-
+            # ── Xavani Portal rate limit guard ──────────────────────
+            # If another session already recorded that Xavani is rate-
             # limited, skip the API call entirely.  Each attempt
             # (including SDK-level retries) counts against RPH and
             # deepens the rate limit hole.
@@ -1040,7 +1040,7 @@ def run_conversation(
                     _nous_remaining = nous_rate_limit_remaining()
                     if _nous_remaining is not None and _nous_remaining > 0:
                         _nous_msg = (
-                            f"Nous Portal rate limit active — "
+                            f"Xavani Portal rate limit active — "
                             f"resets in {_fmt_nous_remaining(_nous_remaining)}."
                         )
                         agent._vprint(
@@ -1805,9 +1805,9 @@ def run_conversation(
                         )
                 
                 has_retried_429 = False  # Reset on success
-                # Clear Nous rate limit state on successful request —
+                # Clear Xavani rate limit state on successful request —
                 # proves the limit has reset and other sessions can
-                # resume hitting Nous.
+                # resume hitting Xavani.
                 if agent.provider == "nous":
                     try:
                         from agent.nous_rate_guard import clear_nous_rate_limit
@@ -2191,7 +2191,7 @@ def run_conversation(
                 ):
                     nous_auth_retry_attempted = True
                     if agent._try_refresh_nous_client_credentials(force=True):
-                        print(f"{agent.log_prefix}🔐 Nous agent key refreshed after 401. Retrying request...")
+                        print(f"{agent.log_prefix}🔐 Xavani agent key refreshed after 401. Retrying request...")
                         continue
                     # Credential refresh didn't help — show diagnostic info.
                     # Most common causes: Portal OAuth expired/revoked,
@@ -2205,13 +2205,13 @@ def run_conversation(
                             _body_text = str(_body)[:200]
                     except Exception:
                         pass
-                    print(f"{agent.log_prefix}🔐 Nous 401 — Portal authentication failed.")
+                    print(f"{agent.log_prefix}🔐 Xavani 401 — Portal authentication failed.")
                     if _body_text:
                         print(f"{agent.log_prefix}   Response: {_body_text}")
                     print(f"{agent.log_prefix}   Most likely: Portal OAuth expired, account out of credits, or agent key revoked.")
                     print(f"{agent.log_prefix}   Troubleshooting:")
                     print(f"{agent.log_prefix}     • Re-authenticate: xavani login --provider nous")
-                    print(f"{agent.log_prefix}     • Check credits / billing: https://portal.nousresearch.com")
+                    print(f"{agent.log_prefix}     • Check credits / billing: https://portal.enternovate.co.za")
                     print(f"{agent.log_prefix}     • Verify stored credentials: {_dhh}/auth.json")
                     print(f"{agent.log_prefix}     • Switch providers temporarily: /model <model> --provider openrouter")
                 if (
@@ -2492,8 +2492,8 @@ def run_conversation(
                             primary_recovery_attempted = False
                             continue
 
-                # ── Nous Portal: record rate limit & skip retries ─────
-                # When Nous returns a 429 that is a genuine account-
+                # ── Xavani Portal: record rate limit & skip retries ─────
+                # When Xavani returns a 429 that is a genuine account-
                 # level rate limit, record the reset time to a shared
                 # file so ALL sessions (cron, gateway, auxiliary) know
                 # not to pile on, then skip further retries -- each
@@ -2501,13 +2501,13 @@ def run_conversation(
                 # The retry loop's top-of-iteration guard will catch
                 # this on the next pass and try fallback or bail.
                 #
-                # IMPORTANT: Nous Portal multiplexes multiple upstream
+                # IMPORTANT: Xavani Portal multiplexes multiple upstream
                 # providers (DeepSeek, Kimi, MiMo, Xavani).  A 429 can
                 # also mean an UPSTREAM provider is out of capacity
                 # for one specific model -- transient, clears in
                 # seconds, nothing to do with the caller's quota.
                 # Tripping the cross-session breaker on that would
-                # block every Nous model for minutes.  We use
+                # block every Xavani model for minutes.  We use
                 # ``is_genuine_nous_rate_limit`` to tell the two
                 # apart via the 429's own x-ratelimit-* headers and
                 # the last-known-good state captured on the previous
@@ -2540,7 +2540,7 @@ def run_conversation(
                             )
                         else:
                             logging.info(
-                                "Nous 429 looks like upstream capacity "
+                                "Xavani 429 looks like upstream capacity "
                                 "(no exhausted bucket in headers or "
                                 "last-known state) -- not tripping "
                                 "cross-session breaker."

@@ -10309,7 +10309,7 @@ class GatewayRunner:
         lines.append(t("gateway.model.provider_label", provider=provider_label))
 
         # Context: always resolve via the provider-aware chain so Codex OAuth,
-        # Copilot, and Nous-enforced caps win over the raw models.dev entry.
+        # Copilot, and Xavani-enforced caps win over the raw models.dev entry.
         mi = result.model_info
         from xavani_cli.model_switch import resolve_display_context_length
         _sw2_config_ctx = None

@@ -673,7 +673,7 @@ def try_recover_primary_transport(
     Anthropic, OpenAI, local models) where a TCP-level hiccup does not
     mean the provider is down.
 
-    Skipped for proxy/aggregator providers (OpenRouter, Nous) which
+    Skipped for proxy/aggregator providers (OpenRouter, Xavani) which
     already manage connection pools and retries server-side — if our
     retries through them are exhausted, one more rebuilt client won't help.
     """
@@ -1135,7 +1135,7 @@ def anthropic_prompt_cache_policy(
     provider_lower = eff_provider.lower()
     is_claude = "claude" in model_lower
     is_openrouter = base_url_host_matches(eff_base_url, "openrouter.ai")
-    # Nous Portal proxies to OpenRouter behind the scenes — identical
+    # Xavani Portal proxies to OpenRouter behind the scenes — identical
     # OpenAI-wire envelope cache_control semantics. Treat it as an
     # OpenRouter-equivalent endpoint for caching layout purposes.
     is_nous_portal = "nousresearch" in eff_base_url.lower()
@@ -1149,7 +1149,7 @@ def anthropic_prompt_cache_policy(
         return True, True
     if (is_openrouter or is_nous_portal) and is_claude:
         return True, False
-    # Nous Portal Qwen (e.g. qwen3.6-plus) takes the same envelope-layout
+    # Xavani Portal Qwen (e.g. qwen3.6-plus) takes the same envelope-layout
     # cache_control path as Portal Claude. Portal proxies to OpenRouter
     # and the upstream Qwen route accepts cache_control markers; without
     # this branch the alibaba-family check below only matches

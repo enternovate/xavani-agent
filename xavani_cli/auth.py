@@ -5,7 +5,7 @@
 """
 Multi-provider authentication system for Xavani Agent.
 
-Supports OAuth device code flows (Nous Portal, future: OpenAI Codex) and
+Supports OAuth device code flows (Xavani Portal, future: OpenAI Codex) and
 traditional API key providers (OpenRouter, custom endpoints). Auth state
 is persisted in ~/.xavani/auth.json with cross-process file locking.
 
@@ -16,7 +16,7 @@ Architecture:
 - resolve_*_runtime_credentials() handles token refresh and key minting
 - logout_command() is the CLI entry point for clearing auth
 
-Nous authentication paths:
+Xavani authentication paths:
 - Invoke JWT (preferred): use a scoped access_token directly for inference.
 - Legacy session key (fallback): mint an opaque 24h key when JWT auth is
   unavailable, or when XAVANI_AGENT_USE_LEGACY_SESSION_KEYS is set for
@@ -79,9 +79,9 @@ except Exception:
 AUTH_STORE_VERSION = 1
 AUTH_LOCK_TIMEOUT_SECONDS = 15.0
 
-# Nous Portal defaults
-DEFAULT_NOUS_PORTAL_URL = "https://portal.nousresearch.com"
-DEFAULT_NOUS_INFERENCE_URL = "https://inference-api.nousresearch.com/v1"
+# Portal defaults
+DEFAULT_NOUS_PORTAL_URL = "https://portal.enternovate.co.za"
+DEFAULT_NOUS_INFERENCE_URL = "https://inference-api.enternovate.co.za/v1"
 DEFAULT_NOUS_CLIENT_ID = "xavani-cli"
 NOUS_LEGACY_AGENT_KEY_SCOPE = "inference:mint_agent_key"
 NOUS_INFERENCE_INVOKE_SCOPE = "inference:invoke"
@@ -193,7 +193,7 @@ class ProviderConfig:
 PROVIDER_REGISTRY: Dict[str, ProviderConfig] = {
     "nous": ProviderConfig(
         id="nous",
-        name="Nous Portal",
+        name="Xavani Portal",
         auth_type="oauth_device_code",
         portal_base_url=DEFAULT_NOUS_PORTAL_URL,
         inference_base_url=DEFAULT_NOUS_INFERENCE_URL,
@@ -763,14 +763,14 @@ def format_auth_error(error: Exception) -> str:
 
     if error.code == "subscription_required":
         return (
-            "No active paid subscription found on Nous Portal. "
+            "No active paid subscription found on Xavani Portal. "
             "Please purchase/activate a subscription, then retry."
         )
 
     if error.code == "insufficient_credits":
         return (
             "Subscription credits are exhausted. "
-            "Top up/renew credits in Nous Portal, then retry."
+            "Top up/renew credits in Xavani Portal, then retry."
         )
 
     if error.code == "temporarily_unavailable":
@@ -916,7 +916,7 @@ def _file_lock(
     Reentrant per-thread via ``holder.depth``. Falls back to a depth-only
     guard when neither ``fcntl`` nor ``msvcrt`` is available (rare).
     Callers supply their own ``threading.local`` so independent locks
-    (e.g. profile auth.json vs shared Nous store) don't share reentrancy
+    (e.g. profile auth.json vs shared Xavani store) don't share reentrancy
     state — that would let one lock's reentrant acquisition silently skip
     the other's kernel-level flock.
     """
@@ -982,7 +982,7 @@ def _auth_store_lock(timeout_seconds: float = AUTH_LOCK_TIMEOUT_SECONDS):
 
     Lock ordering invariant: when this lock is held together with
     ``_nous_shared_store_lock``, acquire ``_auth_store_lock`` FIRST
-    (outer) and the shared Nous lock SECOND (inner). All runtime
+    (outer) and the shared Xavani lock SECOND (inner). All runtime
     refresh paths follow this order; violating it risks deadlock
     against a concurrent import on the shared store.
     """
@@ -1243,7 +1243,7 @@ def get_provider_auth_state(provider_id: str) -> Optional[Dict[str, Any]]:
     ``read_credential_pool``'s per-provider shadowing semantics so that
     ``_seed_from_singletons`` can reseed a profile's credential pool from
     global-scope provider state (e.g. a globally-authenticated Anthropic
-    OAuth or Nous device-code session). See issue #18594 follow-up.
+    OAuth or Xavani device-code session). See issue #18594 follow-up.
     """
     auth_store = _load_auth_store()
     state = _load_provider_state(auth_store, provider_id)
@@ -1613,7 +1613,7 @@ def _normalize_nous_inference_auth_mode(inference_auth_mode: Optional[str]) -> s
     if mode not in NOUS_INFERENCE_AUTH_MODES:
         allowed = ", ".join(sorted(NOUS_INFERENCE_AUTH_MODES))
         raise ValueError(
-            "Invalid Nous inference auth mode "
+            "Invalid Xavani inference auth mode "
             f"{inference_auth_mode!r}; expected one of: {allowed}"
         )
     return mode
@@ -1726,7 +1726,7 @@ def _log_nous_invoke_jwt_selected(
     access_token: Any,
     sequence_id: Optional[str] = None,
 ) -> None:
-    logger.info("Nous inference auth: using NAS invoke JWT")
+    logger.info("Xavani inference auth: using NAS invoke JWT")
     _oauth_trace(
         "nous_invoke_jwt_selected",
         sequence_id=sequence_id,
@@ -1741,7 +1741,7 @@ def _log_nous_legacy_session_key_selected(
     sequence_id: Optional[str] = None,
 ) -> None:
     logger.info(
-        "Nous inference auth: using legacy session key path (%s)",
+        "Xavani inference auth: using legacy session key path (%s)",
         reason,
     )
     _oauth_trace(
@@ -3937,7 +3937,7 @@ def _request_nous_device_code_with_scope_fallback(
             and _nous_scope_has_invoke(scope)
             and _is_nous_invoke_scope_refusal(exc)
         ):
-            logger.info("Nous inference auth: NAS refused invoke scope, retrying legacy scope")
+            logger.info("Xavani inference auth: NAS refused invoke scope, retrying legacy scope")
             _oauth_trace("nous_device_code_invoke_scope_refused")
             retry_scope = NOUS_LEGACY_AGENT_KEY_SCOPE
             return (
@@ -4002,11 +4002,11 @@ def _poll_for_token(
 
 
 # =============================================================================
-# Nous Portal — token refresh, agent key minting, model discovery
+# Xavani Portal — token refresh, agent key minting, model discovery
 # =============================================================================
 
 # -----------------------------------------------------------------------------
-# Shared Nous token store — lets OAuth credentials persist across profiles
+# Shared Xavani token store — lets OAuth credentials persist across profiles
 # so a new `xavani --profile <name> auth add nous --type oauth` can one-tap
 # import instead of running the full device-code flow every time.
 #
@@ -4029,7 +4029,7 @@ _nous_shared_lock_holder = threading.local()
 
 
 def _nous_shared_auth_dir() -> Path:
-    """Resolve the directory that holds the shared Nous token store.
+    """Resolve the directory that holds the shared Xavani token store.
 
     Honors ``XAVANI_SHARED_AUTH_DIR`` so tests can redirect it to a tmp
     path without touching the real user's home. Defaults to
@@ -4067,7 +4067,7 @@ def _nous_shared_store_path() -> Path:
             resolved = path
         if resolved == real_home_shared:
             raise RuntimeError(
-                f"Refusing to touch real user shared Nous auth store during test run: "
+                f"Refusing to touch real user shared Xavani auth store during test run: "
                 f"{path}. Set XAVANI_SHARED_AUTH_DIR to a tmp_path in your test fixture."
             )
     return path
@@ -4075,7 +4075,7 @@ def _nous_shared_store_path() -> Path:
 
 @contextmanager
 def _nous_shared_store_lock(timeout_seconds: float = AUTH_LOCK_TIMEOUT_SECONDS):
-    """Cross-profile lock for the shared Nous OAuth store.
+    """Cross-profile lock for the shared Xavani OAuth store.
 
     Lock ordering invariant: if both this and ``_auth_store_lock`` need
     to be held, acquire ``_auth_store_lock`` FIRST. All runtime refresh
@@ -4096,13 +4096,13 @@ def _nous_shared_store_lock(timeout_seconds: float = AUTH_LOCK_TIMEOUT_SECONDS):
         lock_path,
         _nous_shared_lock_holder,
         timeout_seconds,
-        "Timed out waiting for shared Nous auth lock",
+        "Timed out waiting for shared Xavani auth lock",
     ):
         yield
 
 
 def _merge_shared_nous_oauth_state(state: Dict[str, Any]) -> bool:
-    """Copy fresher shared OAuth tokens into a profile-local Nous state."""
+    """Copy fresher shared OAuth tokens into a profile-local Xavani state."""
     shared = _read_shared_nous_state()
     if not shared:
         return False
@@ -4137,7 +4137,7 @@ def _merge_shared_nous_oauth_state(state: Dict[str, Any]) -> bool:
 
 
 def _write_shared_nous_state(state: Dict[str, Any]) -> None:
-    """Persist a minimal copy of the Nous OAuth state to the shared store.
+    """Persist a minimal copy of the Xavani OAuth state to the shared store.
 
     Best-effort: any failure is swallowed after logging. The shared store
     is a convenience layer; the per-profile auth.json remains the source
@@ -4178,7 +4178,7 @@ def _write_shared_nous_state(state: Dict[str, Any]) -> None:
                 pass
             tmp = path.with_name(f"{path.name}.tmp.{os.getpid()}.{uuid.uuid4().hex}")
             # Create with 0o600 atomically via os.open(O_EXCL) — closes the TOCTOU
-            # window where write_text() + post-write chmod briefly exposed Nous
+            # window where write_text() + post-write chmod briefly exposed Xavani
             # refresh_token at process umask. See #19673, #21148.
             fd = os.open(
                 str(tmp),
@@ -4203,11 +4203,11 @@ def _write_shared_nous_state(state: Dict[str, Any]) -> None:
             refresh_token_fp=_token_fingerprint(refresh_token),
         )
     except Exception as exc:
-        logger.debug("Failed to write shared Nous auth store: %s", exc)
+        logger.debug("Failed to write shared Xavani auth store: %s", exc)
 
 
 def _read_shared_nous_state() -> Optional[Dict[str, Any]]:
-    """Return the shared Nous OAuth state if present and well-formed.
+    """Return the shared Xavani OAuth state if present and well-formed.
 
     Returns ``None`` when the file is missing, unreadable, malformed, or
     lacks required fields. Callers should treat ``None`` as "no shared
@@ -4223,7 +4223,7 @@ def _read_shared_nous_state() -> Optional[Dict[str, Any]]:
     try:
         payload = json.loads(path.read_text())
     except (OSError, ValueError) as exc:
-        logger.debug("Shared Nous auth store at %s is unreadable: %s", path, exc)
+        logger.debug("Shared Xavani auth store at %s is unreadable: %s", path, exc)
         return None
     if not isinstance(payload, dict):
         return None
@@ -4237,7 +4237,7 @@ def _read_shared_nous_state() -> Optional[Dict[str, Any]]:
 
 
 def _clear_shared_nous_state(reason: str) -> None:
-    """Remove the shared Nous OAuth store after a terminal token failure."""
+    """Remove the shared Xavani OAuth store after a terminal token failure."""
     try:
         with _nous_shared_store_lock():
             path = _nous_shared_store_path()
@@ -4247,11 +4247,11 @@ def _clear_shared_nous_state(reason: str) -> None:
                 pass
         _oauth_trace("nous_shared_store_cleared", reason=reason)
     except Exception as exc:
-        logger.debug("Failed to clear shared Nous auth store: %s", exc)
+        logger.debug("Failed to clear shared Xavani auth store: %s", exc)
 
 
 def _is_terminal_nous_refresh_error(exc: Exception) -> bool:
-    """True when retrying the same Nous refresh token cannot succeed."""
+    """True when retrying the same Xavani refresh token cannot succeed."""
     return (
         isinstance(exc, AuthError)
         and exc.provider == "nous"
@@ -4339,7 +4339,7 @@ def _quarantine_nous_pool_entries(
     *,
     reason: str,
 ) -> bool:
-    """Remove singleton-seeded Nous pool entries that contain dead OAuth state."""
+    """Remove singleton-seeded Xavani pool entries that contain dead OAuth state."""
     pool = auth_store.get("credential_pool")
     if not isinstance(pool, dict):
         return False
@@ -4371,7 +4371,7 @@ def _try_import_shared_nous_state(
     timeout_seconds: float = 15.0,
     min_key_ttl_seconds: int = 5 * 60,
 ) -> Optional[Dict[str, Any]]:
-    """Attempt to rehydrate Nous OAuth state from the shared store.
+    """Attempt to rehydrate Xavani OAuth state from the shared store.
 
     Reads the shared file (if present), runs a forced refresh+mint using
     the stored refresh_token to produce a fresh access_token + agent_key
@@ -4427,14 +4427,14 @@ def _try_import_shared_nous_state(
         )
         if _is_terminal_nous_refresh_error(exc):
             _clear_shared_nous_state("shared_import_terminal_refresh_failure")
-        logger.debug("Shared Nous import failed: %s", exc)
+        logger.debug("Shared Xavani import failed: %s", exc)
         return None
     except Exception as exc:
         _oauth_trace(
             "nous_shared_import_failed",
             error_type=type(exc).__name__,
         )
-        logger.debug("Shared Nous import failed: %s", exc)
+        logger.debug("Shared Xavani import failed: %s", exc)
         return None
 
     return refreshed
@@ -4473,7 +4473,7 @@ def _refresh_access_token(
     description = str(error_payload.get("error_description") or "Refresh token exchange failed")
     relogin = code in {"invalid_grant", "invalid_token", "refresh_token_reused"}
 
-    # Detect the OAuth 2.1 "refresh token reuse" signal from the Nous portal
+    # Detect the OAuth 2.1 "refresh token reuse" signal from the Xavani portal
     # server and surface an actionable message.  This fires when an external
     # process (health-check script, monitoring tool, custom self-heal hook)
     # called POST /api/oauth/token with Xavani's refresh_token without
@@ -4483,12 +4483,12 @@ def _refresh_access_token(
     lowered = description.lower()
     if code == "refresh_token_reused" or "reuse" in lowered or "reuse detected" in lowered:
         description = (
-            "Nous Portal detected refresh-token reuse and revoked this session.\n"
+            "Xavani Portal detected refresh-token reuse and revoked this session.\n"
             "This usually means an external process (monitoring script, "
             "custom self-heal hook, or another Xavani install sharing "
             "~/.xavani/auth.json) called POST /api/oauth/token with Xavani's "
             "refresh token without persisting the rotated token back.\n"
-            "Nous refresh tokens are single-use — only Xavani may call the "
+            "Xavani refresh tokens are single-use — only Xavani may call the "
             "refresh endpoint. For health checks, use `xavani auth status` "
             "instead.\n"
             "Re-authenticate with: xavani auth add nous"
@@ -4538,7 +4538,7 @@ def fetch_nous_models(
     timeout_seconds: float = 15.0,
     verify: bool | str = True,
 ) -> List[str]:
-    """Fetch available model IDs from the Nous inference API."""
+    """Fetch available model IDs from the Xavani inference API."""
     timeout = httpx.Timeout(timeout_seconds)
     with httpx.Client(timeout=timeout, headers={"Accept": "application/json"}, verify=verify) as client:
         response = client.get(
@@ -4610,14 +4610,14 @@ def resolve_nous_access_token(
     ca_bundle: Optional[str] = None,
     refresh_skew_seconds: int = ACCESS_TOKEN_REFRESH_SKEW_SECONDS,
 ) -> str:
-    """Resolve a refresh-aware Nous Portal access token for managed tool gateways."""
+    """Resolve a refresh-aware Xavani Portal access token for managed tool gateways."""
     with _auth_store_lock():
         auth_store = _load_auth_store()
         state = _load_provider_state(auth_store, "nous")
 
         if not state:
             raise AuthError(
-                "Xavani is not logged into Nous Portal.",
+                "Xavani is not logged into Xavani Portal.",
                 provider="nous",
                 relogin_required=True,
             )
@@ -4637,7 +4637,7 @@ def resolve_nous_access_token(
             refresh_token = state.get("refresh_token")
             if not isinstance(access_token, str) or not access_token:
                 raise AuthError(
-                    "No access token found for Nous Portal login.",
+                    "No access token found for Xavani Portal login.",
                     provider="nous",
                     relogin_required=True,
                 )
@@ -4729,7 +4729,7 @@ def refresh_nous_oauth_pure(
     inference_auth_mode: str = NOUS_INFERENCE_AUTH_MODE_AUTO,
     on_state_update: Optional[Callable[[Dict[str, Any], str], None]] = None,
 ) -> Dict[str, Any]:
-    """Refresh Nous OAuth state without mutating auth.json directly.
+    """Refresh Xavani OAuth state without mutating auth.json directly.
 
     ``on_state_update`` is called after a successful access-token refresh and
     before any subsequent agent-key mint. Callers that own persistent state can
@@ -4838,7 +4838,7 @@ def refresh_nous_oauth_from_state(
     inference_auth_mode: str = NOUS_INFERENCE_AUTH_MODE_AUTO,
     on_state_update: Optional[Callable[[Dict[str, Any], str], None]] = None,
 ) -> Dict[str, Any]:
-    """Refresh Nous OAuth from a state dict. Thin wrapper around refresh_nous_oauth_pure."""
+    """Refresh Xavani OAuth from a state dict. Thin wrapper around refresh_nous_oauth_pure."""
     tls = state.get("tls") or {}
     return refresh_nous_oauth_pure(
         state.get("access_token", ""),
@@ -4867,10 +4867,10 @@ def persist_nous_credentials(
     *,
     label: Optional[str] = None,
 ):
-    """Persist minted Nous OAuth credentials as the singleton provider state
+    """Persist minted Xavani OAuth credentials as the singleton provider state
     and ensure the credential pool is in sync.
 
-    Nous credentials are read at runtime from two independent locations:
+    Xavani credentials are read at runtime from two independent locations:
 
     - ``providers.nous``: singleton state read by
       ``resolve_nous_runtime_credentials()`` during 401 recovery and by
@@ -4928,7 +4928,7 @@ def _sync_nous_pool_from_auth_store() -> None:
 
         load_pool("nous")
     except Exception as exc:
-        logger.debug("Failed to sync Nous credential pool from auth store: %s", exc)
+        logger.debug("Failed to sync Xavani credential pool from auth store: %s", exc)
 
 
 def resolve_nous_runtime_credentials(
@@ -4940,7 +4940,7 @@ def resolve_nous_runtime_credentials(
     inference_auth_mode: str = NOUS_INFERENCE_AUTH_MODE_AUTO,
 ) -> Dict[str, Any]:
     """
-    Resolve Nous inference credentials for runtime use.
+    Resolve Xavani inference credentials for runtime use.
 
     Ensures access_token is valid (refreshes if needed) and a short-lived
     inference key is present with minimum TTL (mints/reuses as needed).
@@ -4958,7 +4958,7 @@ def resolve_nous_runtime_credentials(
         state = _load_provider_state(auth_store, "nous")
 
         if not state:
-            raise AuthError("Xavani is not logged into Nous Portal.",
+            raise AuthError("Xavani is not logged into Xavani Portal.",
                             provider="nous", relogin_required=True)
 
         persisted_state = dict(state)
@@ -4972,6 +4972,7 @@ def resolve_nous_runtime_credentials(
         ).rstrip("/")
         inference_base_url = (
             _optional_base_url(state.get("inference_base_url"))
+            or os.getenv("XAVANI_INFERENCE_BASE_URL")
             or os.getenv("NOUS_INFERENCE_BASE_URL")
             or DEFAULT_NOUS_INFERENCE_URL
         ).rstrip("/")
@@ -4980,7 +4981,7 @@ def resolve_nous_runtime_credentials(
         def _persist_state(reason: str) -> None:
             nonlocal persisted_state, state_persisted
             # Skip writes where only derived TTL countdowns changed; this keeps
-            # the mtime-keyed Nous auth-status cache warm during read paths.
+            # the mtime-keyed Xavani auth-status cache warm during read paths.
             if (
                 _nous_effective_provider_state(state)
                 == _nous_effective_provider_state(persisted_state)
@@ -5032,7 +5033,7 @@ def resolve_nous_runtime_credentials(
             refresh_token = state.get("refresh_token")
 
             if not isinstance(access_token, str) or not access_token:
-                raise AuthError("No access token found for Nous Portal login.",
+                raise AuthError("No access token found for Xavani Portal login.",
                                 provider="nous", relogin_required=True)
 
             # Step 1: refresh access token if expiring. If the access token
@@ -5140,7 +5141,7 @@ def resolve_nous_runtime_credentials(
                 )
             elif selected_auth_path == NOUS_AUTH_PATH_LEGACY_SESSION_KEY_CACHE:
                 used_cached_key = True
-                logger.info("Nous inference auth: using cached agent_key")
+                logger.info("Xavani inference auth: using cached agent_key")
                 _oauth_trace("agent_key_reuse", sequence_id=sequence_id)
             else:
                 _log_nous_legacy_session_key_selected(
@@ -5288,7 +5289,7 @@ def resolve_nous_runtime_credentials(
 
     api_key = state.get("agent_key")
     if not isinstance(api_key, str) or not api_key:
-        raise AuthError("Failed to resolve a Nous inference API key",
+        raise AuthError("Failed to resolve a Xavani inference API key",
                         provider="nous", code="server_error")
 
     expires_at = state.get("agent_key_expires_at")
@@ -5380,7 +5381,7 @@ def _snapshot_nous_pool_status() -> Dict[str, Any]:
 
 # ── Process-level memo for get_nous_auth_status() ──
 # get_nous_auth_status() validates state by calling resolve_nous_runtime_credentials(),
-# which does a synchronous OAuth refresh POST to portal.nousresearch.com. That can take
+# which does a synchronous OAuth refresh POST to the portal host. That can take
 # ~350ms even on the failure path, and read-only UI surfaces (`xavani tools`, status panels,
 # subscription-feature checks) call it many times per render — `xavani tools` → "All Platforms"
 # was firing the refresh ~31× during one menu paint, racking up >13s of HTTP and burning
@@ -5402,7 +5403,7 @@ def _auth_file_mtime() -> Optional[float]:
 def invalidate_nous_auth_status_cache() -> None:
     """Clear the get_nous_auth_status() process-level memo.
 
-    Call this from any code path that mutates Nous auth state without going
+    Call this from any code path that mutates Xavani auth state without going
     through resolve_nous_runtime_credentials() (e.g. tests). Login/logout
     flows touch auth.json, so the mtime check below invalidates them
     automatically — explicit invalidation is the belt-and-braces option.
@@ -5412,7 +5413,7 @@ def invalidate_nous_auth_status_cache() -> None:
 
 
 def get_nous_auth_status() -> Dict[str, Any]:
-    """Status snapshot for Nous auth.
+    """Status snapshot for Xavani auth.
 
     Prefer the auth-store provider state, because that is the live source of
     truth for refresh + mint operations. When provider state exists, validate it
@@ -7072,7 +7073,7 @@ def resolve_minimax_oauth_runtime_credentials(
         if exc.relogin_required and state.get("refresh_token"):
             # Terminal refresh failure — clear dead tokens from auth.json so
             # subsequent calls fail fast without a network retry, mirroring
-            # the Nous / xAI-OAuth / Codex-OAuth quarantine pattern.
+            # the Xavani / xAI-OAuth / Codex-OAuth quarantine pattern.
             for _k in ("access_token", "refresh_token", "expires_at", "expires_in", "obtained_at"):
                 state.pop(_k, None)
             state["last_auth_error"] = {
@@ -7140,7 +7141,7 @@ def _nous_device_code_login(
     ca_bundle: Optional[str] = None,
     min_key_ttl_seconds: int = 5 * 60,
 ) -> Dict[str, Any]:
-    """Run the Nous device-code flow and return full OAuth state without persisting."""
+    """Run the Xavani device-code flow and return full OAuth state without persisting."""
     pconfig = PROVIDER_REGISTRY["nous"]
     portal_base_url = (
         portal_base_url
@@ -7150,6 +7151,7 @@ def _nous_device_code_login(
     ).rstrip("/")
     requested_inference_url = (
         inference_base_url
+        or os.getenv("XAVANI_INFERENCE_BASE_URL")
         or os.getenv("NOUS_INFERENCE_BASE_URL")
         or pconfig.inference_base_url
     ).rstrip("/")
@@ -7255,7 +7257,7 @@ def _nous_device_code_login(
                 "portal_base_url", DEFAULT_NOUS_PORTAL_URL
             ).rstrip("/")
             print()
-            print("Your Nous Portal account does not have an active subscription.")
+            print("Your Xavani Portal account does not have an active subscription.")
             print(f"  Subscribe here: {portal_url}/billing")
             print()
             print("After subscribing, run `xavani model` again to finish setup.")
@@ -7264,7 +7266,7 @@ def _nous_device_code_login(
 
 
 def _login_nous(args, pconfig: ProviderConfig) -> None:
-    """Nous Portal device authorization flow."""
+    """Xavani Portal device authorization flow."""
     timeout_seconds = getattr(args, "timeout", None) or 15.0
     insecure = bool(getattr(args, "insecure", False))
     ca_bundle = (
@@ -7277,7 +7279,7 @@ def _login_nous(args, pconfig: ProviderConfig) -> None:
         auth_state = None
 
         # Codex-style auto-import: before launching a fresh device-code
-        # flow, check the shared store for an existing Nous credential
+        # flow, check the shared store for an existing Xavani credential
         # from any other profile. If present, offer to rehydrate it.
         shared = _read_shared_nous_state()
         if shared:
@@ -7287,15 +7289,15 @@ def _login_nous(args, pconfig: ProviderConfig) -> None:
                 shared_path = None
             print()
             if shared_path:
-                print(f"Found existing Nous OAuth credentials at {shared_path}")
+                print(f"Found existing Xavani OAuth credentials at {shared_path}")
             else:
-                print("Found existing shared Nous OAuth credentials")
+                print("Found existing shared Xavani OAuth credentials")
             try:
                 do_import = input("Import these credentials? [Y/n]: ").strip().lower()
             except (EOFError, KeyboardInterrupt):
                 do_import = "y"
             if do_import in {"", "y", "yes"}:
-                print("Rehydrating Nous session from shared credentials...")
+                print("Rehydrating Xavani session from shared credentials...")
                 auth_state = _try_import_shared_nous_state(
                     timeout_seconds=timeout_seconds,
                     min_key_ttl_seconds=5 * 60,
@@ -7402,7 +7404,7 @@ def _login_nous(args, pconfig: ProviderConfig) -> None:
                 print("No free models currently available.")
                 print(f"Upgrade at {_url} to access paid models.")
             else:
-                print("No curated models available for Nous Portal.")
+                print("No curated models available for Xavani Portal.")
         except Exception as exc:
             message = format_auth_error(exc) if isinstance(exc, AuthError) else str(exc)
             print()
@@ -7412,7 +7414,7 @@ def _login_nous(args, pconfig: ProviderConfig) -> None:
         # If no model was selected (user picked "Skip (keep current)",
         # model list fetch failed, or no curated models were available),
         # preserve the user's previous provider — don't silently switch
-        # them to Nous with a mismatched model.  The Nous OAuth tokens
+        # them to Xavani with a mismatched model.  The Xavani OAuth tokens
         # stay saved for future use.
         if not selected_model:
             # Restore the prior active_provider that _save_provider_state
@@ -7426,8 +7428,8 @@ def _login_nous(args, pconfig: ProviderConfig) -> None:
                     auth_store.pop("active_provider", None)
                 _save_auth_store(auth_store)
             print()
-            print("No provider change. Nous credentials saved for future use.")
-            print("  Run `xavani model` again to switch to Nous Portal.")
+            print("No provider change. Xavani credentials saved for future use.")
+            print("  Run `xavani model` again to switch to Xavani Portal.")
             return
 
         config_path = _update_config_for_provider(

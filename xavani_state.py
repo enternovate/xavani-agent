@@ -1971,7 +1971,7 @@ class SessionDB:
                     logger.warning("Failed to deserialize tool_calls in conversation replay, falling back to []")
                     msg["tool_calls"] = []
             # Restore reasoning fields on assistant messages so providers
-            # that replay reasoning (OpenRouter, OpenAI, Nous) receive
+            # that replay reasoning (OpenRouter, OpenAI, Xavani) receive
             # coherent multi-turn reasoning context.
             if row["role"] == "assistant":
                 if row["finish_reason"]:

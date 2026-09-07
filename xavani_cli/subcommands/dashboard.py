@@ -199,7 +199,7 @@ def build_dashboard_parser(
     _configure_serve_parser(serve_parser, cmd_dashboard=cmd_dashboard)
 
     # `xavani dashboard register` — register a self-hosted dashboard OAuth
-    # client with Nous Portal and write the client_id into ~/.xavani/.env.
+    # client with Xavani Portal and write the client_id into ~/.xavani/.env.
     # Nested subparser so bare `xavani dashboard` keeps launching the server
     # (set_defaults(func=cmd_dashboard) above remains the default).
     dashboard_subparsers = dashboard_parser.add_subparsers(
@@ -207,9 +207,9 @@ def build_dashboard_parser(
     )
     dashboard_register_parser = dashboard_subparsers.add_parser(
         "register",
-        help="Register a self-hosted dashboard with Nous Portal (writes the OAuth client ID to .env)",
+        help="Register a self-hosted dashboard with Xavani Portal (writes the OAuth client ID to .env)",
         description=(
-            "Register this install as a self-hosted dashboard with your Nous "
+            "Register this install as a self-hosted dashboard with your Xavani "
             "Portal account. Creates an OAuth client, writes "
             "XAVANI_DASHBOARD_OAUTH_CLIENT_ID into ~/.xavani/.env, and prints "
             "how to engage the login gate. Requires being logged in (xavani setup)."
@@ -234,7 +234,7 @@ def build_dashboard_parser(
         dest="portal_url",
         default=None,
         help=(
-            "Override the Nous Portal base URL for registration (default: the "
+            "Override the Xavani Portal base URL for registration (default: the "
             "portal you logged into). The access token must be valid at this "
             "portal. Also settable via XAVANI_DASHBOARD_PORTAL_URL. Mainly for "
             "testing against a staging/preview portal."

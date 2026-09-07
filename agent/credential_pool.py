@@ -176,7 +176,7 @@ class PooledCredential:
     @property
     def runtime_api_key(self) -> str:
         if self.provider == "nous":
-            # Nous stores the runtime inference credential in agent_key for
+            # Xavani stores the runtime inference credential in agent_key for
             # compatibility. It may be a NAS invoke JWT or legacy opaque key.
             return str(self.agent_key or self.access_token or "")
         return str(self.access_token or "")
@@ -504,7 +504,7 @@ class CredentialPool:
         though fresh credentials are sitting on disk — and every request
         fails with "no available entries (all exhausted or empty)".
 
-        Mirrors the Nous/Anthropic resync paths above.  Only applies to
+        Mirrors the Xavani/Anthropic resync paths above.  Only applies to
         device_code-sourced entries; env/API-key-sourced entries have no
         auth.json shadow to sync from.
         """
@@ -614,14 +614,14 @@ class CredentialPool:
         return entry
 
     def _sync_nous_entry_from_auth_store(self, entry: PooledCredential) -> PooledCredential:
-        """Sync a Nous pool entry from auth.json if tokens differ.
+        """Sync a Xavani pool entry from auth.json if tokens differ.
 
-        Nous OAuth refresh tokens are single-use.  When another process
+        Xavani OAuth refresh tokens are single-use.  When another process
         (e.g. a concurrent cron) refreshes the token via
         ``resolve_nous_runtime_credentials``, it writes fresh tokens to
         auth.json under ``_auth_store_lock``.  The pool entry's tokens
         become stale.  This method detects that and adopts the newer pair,
-        avoiding a "refresh token reuse" revocation on the Nous Portal.
+        avoiding a "refresh token reuse" revocation on the Xavani Portal.
         """
         if self.provider != "nous" or entry.source != "device_code":
             return entry
@@ -647,7 +647,7 @@ class CredentialPool:
             )
             if should_sync:
                 logger.debug(
-                    "Pool entry %s: syncing Nous state from auth.json",
+                    "Pool entry %s: syncing Xavani state from auth.json",
                     entry.id,
                 )
                 field_updates: Dict[str, Any] = {
@@ -682,7 +682,7 @@ class CredentialPool:
                 self._persist()
                 return updated
         except Exception as exc:
-            logger.debug("Failed to sync Nous entry from auth.json: %s", exc)
+            logger.debug("Failed to sync Xavani entry from auth.json: %s", exc)
         return entry
 
     def _sync_device_code_entry_to_auth_store(self, entry: PooledCredential) -> None:
@@ -695,12 +695,12 @@ class CredentialPool:
         re-seeding a consumed single-use refresh token.
 
         Applies to any OAuth provider whose singleton lives in auth.json
-        (currently Nous, OpenAI Codex, and xAI Grok OAuth).
+        (currently Xavani, OpenAI Codex, and xAI Grok OAuth).
 
         ``set_active=False`` on every write: a pool sync-back is a
         token-rotation side effect, not the user choosing a provider.
         Using ``_save_provider_state`` (which sets ``active_provider``)
-        here would mean every Nous/Codex/xAI refresh in a multi-provider
+        here would mean every Xavani/Codex/xAI refresh in a multi-provider
         setup silently flips the ``active_provider`` flag — the next
         ``xavani`` invocation that defaults to the active provider
         (e.g. setup wizard, ``xavani auth status``) would land on
@@ -928,7 +928,7 @@ class CredentialPool:
                 # refresh_token is dead.  Clear it from auth.json so the next
                 # session does not re-seed the same revoked credentials, and
                 # remove all singleton-seeded (loopback_pkce) entries from the
-                # in-memory pool.  Mirrors the Nous quarantine path above.
+                # in-memory pool.  Mirrors the Xavani quarantine path above.
                 if auth_mod._is_terminal_xai_oauth_refresh_error(exc):
                     logger.debug(
                         "xAI OAuth refresh token is terminally invalid; clearing local token state"
@@ -994,7 +994,7 @@ class CredentialPool:
                 # refresh_token is dead.  Clear it from auth.json so the next
                 # session does not re-seed the same revoked credentials, and
                 # remove all singleton-seeded (device_code) entries from the
-                # in-memory pool.  Mirrors the xAI and Nous quarantine paths.
+                # in-memory pool.  Mirrors the xAI and Xavani quarantine paths.
                 if auth_mod._is_terminal_codex_oauth_refresh_error(exc):
                     logger.debug(
                         "Codex OAuth refresh token is terminally invalid; clearing local token state"
@@ -1040,7 +1040,7 @@ class CredentialPool:
             if self.provider == "nous":
                 synced = self._sync_nous_entry_from_auth_store(entry)
                 if synced.refresh_token != entry.refresh_token:
-                    logger.debug("Nous refresh failed but auth.json has newer tokens — adopting")
+                    logger.debug("Xavani refresh failed but auth.json has newer tokens — adopting")
                     updated = replace(
                         synced,
                         last_status=STATUS_OK,
@@ -1055,7 +1055,7 @@ class CredentialPool:
                     self._sync_device_code_entry_to_auth_store(updated)
                     return updated
                 if auth_mod._is_terminal_nous_refresh_error(exc):
-                    logger.debug("Nous refresh token is terminally invalid; clearing local token state")
+                    logger.debug("Xavani refresh token is terminally invalid; clearing local token state")
                     try:
                         with _auth_store_lock():
                             auth_store = _load_auth_store()
@@ -1083,7 +1083,7 @@ class CredentialPool:
                                 _save_provider_state(auth_store, "nous", state)
                                 _save_auth_store(auth_store)
                     except Exception as clear_exc:
-                        logger.debug("Failed to clear terminal Nous OAuth state: %s", clear_exc)
+                        logger.debug("Failed to clear terminal Xavani OAuth state: %s", clear_exc)
 
                     singleton_sources = {
                         auth_mod.NOUS_DEVICE_CODE_SOURCE,
@@ -1135,7 +1135,7 @@ class CredentialPool:
                 auth_mod.XAI_ACCESS_TOKEN_REFRESH_SKEW_SECONDS,
             )
         if self.provider == "nous":
-            # Nous refresh/mint can require network access and should happen when
+            # Xavani refresh/mint can require network access and should happen when
             # runtime credentials are actually resolved, not merely when the pool
             # is enumerated for listing, migration, or selection.
             return False

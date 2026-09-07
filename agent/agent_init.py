@@ -1106,7 +1106,7 @@ def init_agent(
     # same tools via ctx.register_tool(), which lands in agent.tools
     # through _ra().get_tool_definitions()).  Duplicate function names cause
     # 400 errors on providers that enforce unique names (e.g. Xiaomi
-    # MiMo via Nous Portal).
+    # MiMo via Xavani Portal).
     if agent._memory_manager and agent.tools is not None:
         _existing_tool_names = {
             t.get("function", {}).get("name")

@@ -28,7 +28,7 @@ logger = logging.getLogger(__name__)
 
 # Canonical index location. Override via config key ``plugins.index_url``.
 DEFAULT_INDEX_URL = (
-    "https://raw.githubusercontent.com/NousResearch/hermes-plugin-index/main/index.json"
+    "https://enternovate.co.za/xavani-agent/plugins/index.json"
 )
 
 # Cache the fetched index for 24 hours; a stale cache is still preferred over

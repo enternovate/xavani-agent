@@ -363,7 +363,7 @@ def _has_any_provider_configured() -> bool:
     except Exception:
         pass
 
-    # Check for Nous Portal OAuth credentials
+    # Check for Xavani Portal OAuth credentials
     auth_file = get_xavani_home() / "auth.json"
     if auth_file.exists():
         try:
@@ -2292,7 +2292,7 @@ def _aux_config_menu() -> None:
         print("  Side tasks (vision, compression, web extraction, etc.) default")
         print('  to your main chat model.  "auto" means "use my main model" —')
         print("  Xavani only falls back to a lightweight backend (OpenRouter,")
-        print("  Nous Portal) if the main model is unavailable.  Override a")
+        print("  Xavani Portal) if the main model is unavailable.  Override a")
         print("  task below if you want it pinned to a specific provider/model.")
         print()
 
@@ -2670,7 +2670,7 @@ def _model_flow_ai_gateway(config, current_model=""):
 
 
 def _model_flow_nous(config, current_model="", args=None):
-    """Nous Portal provider: ensure logged in, then pick model."""
+    """Xavani Portal provider: ensure logged in, then pick model."""
     from xavani_cli.auth import (
         get_provider_auth_state,
         _prompt_model_selection,
@@ -2692,7 +2692,7 @@ def _model_flow_nous(config, current_model="", args=None):
 
     state = get_provider_auth_state("nous")
     if not state or not state.get("access_token"):
-        print("Not logged into Nous Portal. Starting login...")
+        print("Not logged into Xavani Portal. Starting login...")
         print()
         try:
             mock_args = argparse.Namespace(
@@ -2735,7 +2735,7 @@ def _model_flow_nous(config, current_model="", args=None):
 
     model_ids = get_curated_nous_model_ids()
     if not model_ids:
-        print("No curated models available for Nous Portal.")
+        print("No curated models available for Xavani Portal.")
         return
 
     # Verify credentials are still valid (catches expired sessions early)
@@ -2746,7 +2746,7 @@ def _model_flow_nous(config, current_model="", args=None):
         msg = format_auth_error(exc) if isinstance(exc, AuthError) else str(exc)
         if relogin:
             print(f"Session expired: {msg}")
-            print("Re-authenticating with Nous Portal...\n")
+            print("Re-authenticating with Xavani Portal...\n")
             try:
                 mock_args = argparse.Namespace(
                     portal_url=None,
@@ -2804,7 +2804,7 @@ def _model_flow_nous(config, current_model="", args=None):
         )
 
     if not model_ids and not unavailable_models:
-        print("No models available for Nous Portal after filtering.")
+        print("No models available for Xavani Portal after filtering.")
         return
 
     if free_tier and not model_ids:
@@ -2829,7 +2829,7 @@ def _model_flow_nous(config, current_model="", args=None):
     )
     if selected:
         _save_model_choice(selected)
-        # Reactivate Nous as the provider and update config
+        # Reactivate Xavani as the provider and update config
         inference_url = creds.get("base_url", "")
         _update_config_for_provider("nous", inference_url)
         current_model_cfg = config.get("model")
@@ -2851,7 +2851,7 @@ def _model_flow_nous(config, current_model="", args=None):
             save_env_value("OPENAI_BASE_URL", "")
             save_env_value("OPENAI_API_KEY", "")
         save_config(config)
-        print(f"Default model set to: {selected} (via Nous Portal)")
+        print(f"Default model set to: {selected} (via Xavani Portal)")
         # Offer Tool Gateway enablement for paid subscribers
         prompt_enable_tool_gateway(config)
     else:
@@ -5273,7 +5273,7 @@ def _model_flow_api_key_provider(config, provider_id, current_model=""):
                 print()
                 print(
                     "   Alternatives with workable free usage: DeepSeek, "
-                    "OpenRouter (free models), Groq, Nous."
+                    "OpenRouter (free models), Groq, Xavani."
                 )
                 print()
                 print("Not saving Gemini as the default provider.")
@@ -10383,24 +10383,24 @@ def main():
     )
     model_parser.add_argument(
         "--portal-url",
-        help="Portal base URL for Nous login (default: production portal)",
+        help="Portal base URL for Xavani login (default: production portal)",
     )
     model_parser.add_argument(
         "--inference-url",
-        help="Inference API base URL for Nous login (default: production inference API)",
+        help="Inference API base URL for Xavani login (default: production inference API)",
     )
     model_parser.add_argument(
         "--client-id",
         default=None,
-        help="OAuth client id to use for Nous login (default: xavani-cli)",
+        help="OAuth client id to use for Xavani login (default: xavani-cli)",
     )
     model_parser.add_argument(
-        "--scope", default=None, help="OAuth scope to request for Nous login"
+        "--scope", default=None, help="OAuth scope to request for Xavani login"
     )
     model_parser.add_argument(
         "--no-browser",
         action="store_true",
-        help="Do not attempt to open the browser automatically during Nous login",
+        help="Do not attempt to open the browser automatically during Xavani login",
     )
     model_parser.add_argument(
         "--manual-paste",
@@ -10416,15 +10416,15 @@ def main():
         "--timeout",
         type=float,
         default=15.0,
-        help="HTTP request timeout in seconds for Nous login (default: 15)",
+        help="HTTP request timeout in seconds for Xavani login (default: 15)",
     )
     model_parser.add_argument(
-        "--ca-bundle", help="Path to CA bundle PEM file for Nous TLS verification"
+        "--ca-bundle", help="Path to CA bundle PEM file for Xavani TLS verification"
     )
     model_parser.add_argument(
         "--insecure",
         action="store_true",
-        help="Disable TLS verification for Nous login (testing only)",
+        help="Disable TLS verification for Xavani login (testing only)",
     )
     model_parser.set_defaults(func=cmd_model)
 
@@ -10622,7 +10622,7 @@ def main():
         help="Local OpenAI-compatible proxy to OAuth providers",
         description=(
             "Run a local HTTP server that forwards OpenAI-compatible requests "
-            "to an OAuth-authenticated provider (e.g. Nous Portal). External "
+            "to an OAuth-authenticated provider (e.g. Xavani Portal). External "
             "apps can point at the proxy with any bearer token; the proxy "
             "attaches your real credentials."
         ),
@@ -10865,8 +10865,8 @@ def main():
     auth_add.add_argument(
         "--api-key", help="API key value (otherwise prompted securely)"
     )
-    auth_add.add_argument("--portal-url", help="Nous portal base URL")
-    auth_add.add_argument("--inference-url", help="Nous inference base URL")
+    auth_add.add_argument("--portal-url", help="Xavani portal base URL")
+    auth_add.add_argument("--inference-url", help="Xavani inference base URL")
     auth_add.add_argument("--client-id", help="OAuth client id")
     auth_add.add_argument("--scope", help="OAuth scope override")
     auth_add.add_argument(
