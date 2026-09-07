@@ -74,6 +74,11 @@ subsystem), home rewrite + allowlist approval helpers, portable MCP probe.
 
 - hermes_cli/diagnostics_upload.py: Nous-internal S3 phone-home. Xavani
   ships zero phone-home by design. Never port.
+- hermes_cli/nous_subscription.py (1482 lines): Xavani owns a native
+  implementation (xavani_cli/nous_subscription.py, 803 lines, Enternovate
+  header, zero hermes hits, rewired to Xavani auth/config/gateway).
+  Owner decision 2026-09-06: never port the upstream version over it.
+  portal_cli guards resolve against the native module.
 - agent/pet/generate/: dev-time sprite tooling, no runtime imports.
 
 ## Remaining gaps (evidence, not guesses)
