@@ -132,6 +132,16 @@ remain) and no Enternovate hosts are invented.
 - Kept: MIT attribution (LICENSE/README/AGENTS.md), identity
   disclaimers ("NOT Hermes"), data-compat keys, scrub regex.
 
+## Subscription scrapped (2026-09-07, commit 79d9f415)
+
+Owner: no subscription product exists. Deleted 7 modules
+(billing_view, billing_usage, subscription_view, nous_billing,
+nous_account, nous_subscription, cli_billing_mixin) plus 4 port
+tests, 6039 lines removed. Subscription prompt returns "".
+Portal tools/status fail closed. Setup/tools/status run direct
+paths via an inert features helper. 461 unit plus 122 integration
+tests green on touched files.
+
 ## Suite
 
 Full `pytest tests/` (2026-09-06, HEAD 8da3c1af): 18896 passed,
