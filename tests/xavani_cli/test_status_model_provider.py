@@ -6,7 +6,6 @@
 
 from types import SimpleNamespace
 
-from xavani_cli.nous_subscription import NousFeatureState, NousSubscriptionFeatures
 import pytest
 
 pytestmark = pytest.mark.integration
@@ -70,8 +69,7 @@ def test_show_status_displays_legacy_string_model_and_custom_endpoint(monkeypatc
     assert "Provider:     Custom endpoint" in out
 
 
-def test_show_status_reports_managed_nous_features(monkeypatch, capsys, tmp_path):
-    monkeypatch.setattr("xavani_cli.status.managed_nous_tools_enabled", lambda: True)
+def test_show_status_has_no_subscription_section(monkeypatch, capsys, tmp_path):
     from xavani_cli import status as status_mod
 
     _patch_common_status_deps(monkeypatch, status_mod, tmp_path)
@@ -83,31 +81,13 @@ def test_show_status_reports_managed_nous_features(monkeypatch, capsys, tmp_path
     )
     monkeypatch.setattr(status_mod, "resolve_requested_provider", lambda requested=None: "nous", raising=False)
     monkeypatch.setattr(status_mod, "resolve_provider", lambda requested=None, **kwargs: "nous", raising=False)
-    monkeypatch.setattr(status_mod, "provider_label", lambda provider: "Nous Portal", raising=False)
-    monkeypatch.setattr(
-        status_mod,
-        "get_nous_subscription_features",
-        lambda config: NousSubscriptionFeatures(
-            subscribed=True,
-            nous_auth_present=True,
-            provider_is_nous=True,
-            features={
-                "web": NousFeatureState("web", "Web tools", True, True, True, True, False, True, "firecrawl"),
-                "image_gen": NousFeatureState("image_gen", "Image generation", True, True, True, True, False, True, "Nous Subscription"),
-                "tts": NousFeatureState("tts", "OpenAI TTS", True, True, True, True, False, True, "OpenAI TTS"),
-                "browser": NousFeatureState("browser", "Browser automation", True, True, True, True, False, True, "Browser Use"),
-                "modal": NousFeatureState("modal", "Modal execution", False, True, False, False, False, True, "local"),
-            },
-        ),
-        raising=False,
-    )
+    monkeypatch.setattr(status_mod, "provider_label", lambda provider: "Xavani Portal", raising=False)
 
     status_mod.show_status(SimpleNamespace(all=False, deep=False))
 
     out = capsys.readouterr().out
-    assert "Nous Tool Gateway" in out
-    assert "Browser automation" in out
-    assert "active via Nous subscription" in out
+    assert "Tool Gateway" not in out
+    assert "Xavani Subscription" not in out
 
 
 def test_show_status_hides_nous_subscription_section_when_feature_flag_is_off(monkeypatch, capsys, tmp_path):

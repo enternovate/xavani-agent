@@ -560,28 +560,18 @@ def test_visible_providers_include_nous_subscription_when_logged_in(monkeypatch)
     monkeypatch.setattr("xavani_cli.tools_config.managed_nous_tools_enabled", lambda: True)
     config = {"model": {"provider": "nous"}}
 
-    monkeypatch.setattr(
-        "xavani_cli.nous_subscription.get_nous_auth_status",
-        lambda: {"logged_in": True},
-    )
-
     providers = _visible_providers(TOOL_CATEGORIES["browser"], config)
 
-    assert providers[0]["name"].startswith("Nous Subscription")
+    assert all("Subscription" not in provider["name"] for provider in providers)
 
 
 def test_visible_providers_hide_nous_subscription_when_feature_flag_is_off(monkeypatch):
     monkeypatch.setattr("xavani_cli.tools_config.managed_nous_tools_enabled", lambda: False)
     config = {"model": {"provider": "nous"}}
 
-    monkeypatch.setattr(
-        "xavani_cli.nous_subscription.get_nous_auth_status",
-        lambda: {"logged_in": True},
-    )
-
     providers = _visible_providers(TOOL_CATEGORIES["browser"], config)
 
-    assert all(not provider["name"].startswith("Nous Subscription") for provider in providers)
+    assert all("Subscription" not in provider["name"] for provider in providers)
 
 
 def test_local_browser_provider_is_saved_explicitly(monkeypatch):
@@ -627,7 +617,6 @@ def test_reconfigure_lists_enabled_web_without_existing_provider_config(monkeypa
 
 def test_first_install_nous_auto_configures_managed_defaults(monkeypatch):
     monkeypatch.setattr("xavani_cli.tools_config.managed_nous_tools_enabled", lambda: True)
-    monkeypatch.setattr("xavani_cli.nous_subscription.managed_nous_tools_enabled", lambda: True)
     config = {
         "model": {"provider": "nous"},
         "platform_toolsets": {"cli": []},
@@ -660,10 +649,6 @@ def test_first_install_nous_auto_configures_managed_defaults(monkeypatch):
         "xavani_cli.tools_config._get_enabled_platforms",
         lambda: ["cli"],
     )
-    monkeypatch.setattr(
-        "xavani_cli.nous_subscription.get_nous_auth_status",
-        lambda: {"logged_in": True},
-    )
 
     configured = []
     monkeypatch.setattr(
@@ -673,10 +658,9 @@ def test_first_install_nous_auto_configures_managed_defaults(monkeypatch):
 
     tools_command(first_install=True, config=config)
 
-    assert config["web"]["backend"] == "firecrawl"
-    assert config["tts"]["provider"] == "openai"
-    assert config["browser"]["cloud_provider"] == "browser-use"
-    assert configured == []
+    assert config.get("web", {}).get("backend") != "managed"
+    assert config.get("browser", {}).get("cloud_provider") != "managed"
+    assert sorted(configured) == ["browser", "image_gen", "tts", "web"]
 
 # ── Platform / toolset consistency ────────────────────────────────────────────
 

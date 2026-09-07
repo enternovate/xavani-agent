@@ -26,8 +26,7 @@ import copy
 from pathlib import Path
 from typing import Optional, Dict, Any
 
-from xavani_cli.nous_subscription import get_nous_subscription_features
-from tools.tool_backend_helpers import managed_nous_tools_enabled
+from tools.tool_backend_helpers import inert_subscription_features, managed_nous_tools_enabled
 from utils import base_url_hostname
 from xavani_constants import get_optional_skills_dir
 
@@ -372,7 +371,7 @@ def _print_setup_summary(config: dict, xavani_home):
     print_header("Tool Availability Summary")
 
     tool_status = []
-    subscription_features = get_nous_subscription_features(config)
+    subscription_features = inert_subscription_features(config)
 
     # Vision — use the same runtime resolver as the actual vision tools
     try:
@@ -1156,7 +1155,7 @@ def _setup_tts_provider(config: dict):
     """Interactive TTS provider selection with install flow for NeuTTS."""
     tts_config = config.get("tts", {})
     current_provider = tts_config.get("provider", "edge")
-    subscription_features = get_nous_subscription_features(config)
+    subscription_features = inert_subscription_features(config)
 
     provider_labels = {
         "edge": "Edge TTS",
@@ -1522,7 +1521,7 @@ def setup_terminal_backend(config: dict):
         managed_modal_available = bool(
             managed_nous_tools_enabled()
             and
-            get_nous_subscription_features(config).nous_auth_present
+            inert_subscription_features(config).nous_auth_present
             and is_managed_tool_gateway_ready("modal")
         )
         modal_mode = normalize_modal_mode(cfg_get(config, "terminal", "modal_mode"))

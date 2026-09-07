@@ -28,10 +28,7 @@ from xavani_cli.config import (
     load_config, save_config, get_env_value, save_env_value,
 )
 from xavani_cli.colors import Colors, color
-from xavani_cli.nous_subscription import (
-    apply_nous_managed_defaults,
-    get_nous_subscription_features,
-)
+from tools.tool_backend_helpers import inert_subscription_features
 from tools.tool_backend_helpers import fal_key_is_configured, managed_nous_tools_enabled
 from utils import base_url_hostname, is_truthy_value
 
@@ -1366,7 +1363,7 @@ def _toolset_has_keys(ts_key: str, config: dict = None) -> bool:
             return False
 
     if ts_key in {"web", "image_gen", "tts", "browser"}:
-        features = get_nous_subscription_features(config)
+        features = inert_subscription_features(config)
         feature = features.features.get(ts_key)
         if feature and (feature.available or feature.managed_by_nous):
             return True
@@ -1713,7 +1710,7 @@ def _plugin_browser_providers() -> list[dict]:
 
 def _visible_providers(cat: dict, config: dict) -> list[dict]:
     """Return provider entries visible for the current auth/config state."""
-    features = get_nous_subscription_features(config)
+    features = inert_subscription_features(config)
     visible = []
     for provider in cat.get("providers", []):
         if provider.get("managed_nous_feature") and not managed_nous_tools_enabled():
@@ -1928,7 +1925,7 @@ def _is_provider_active(provider: dict, config: dict) -> bool:
 
     managed_feature = provider.get("managed_nous_feature")
     if managed_feature:
-        features = get_nous_subscription_features(config)
+        features = inert_subscription_features(config)
         feature = features.features.get(managed_feature)
         if feature is None:
             return False
@@ -2287,7 +2284,7 @@ def _configure_provider(provider: dict, config: dict):
     managed_feature = provider.get("managed_nous_feature")
 
     if provider.get("requires_nous_auth"):
-        features = get_nous_subscription_features(config)
+        features = inert_subscription_features(config)
         if not features.nous_auth_present:
             _print_warning("  Xavani Subscription is only available after logging into Xavani Portal.")
             return
@@ -2572,7 +2569,7 @@ def _reconfigure_provider(provider: dict, config: dict):
     managed_feature = provider.get("managed_nous_feature")
 
     if provider.get("requires_nous_auth"):
-        features = get_nous_subscription_features(config)
+        features = inert_subscription_features(config)
         if not features.nous_auth_present:
             _print_warning("  Xavani Subscription is only available after logging into Xavani Portal.")
             return
@@ -2772,10 +2769,7 @@ def tools_command(args=None, first_install: bool = False, config: dict = None):
                     label = next((l for k, l, _ in _get_effective_configurable_toolsets() if k == ts), ts)
                     print(color(f"  - {label}", Colors.RED))
 
-            auto_configured = apply_nous_managed_defaults(
-                config,
-                enabled_toolsets=new_enabled,
-            )
+            auto_configured = []
             if managed_nous_tools_enabled():
                 for ts_key in sorted(auto_configured):
                     label = next((l for k, l, _ in CONFIGURABLE_TOOLSETS if k == ts_key), ts_key)
