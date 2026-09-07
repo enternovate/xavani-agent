@@ -31,7 +31,7 @@ Substrate facts (verified May 2026):
 - ``list_authenticated_providers`` already populates each row's
   ``models`` from the curated catalog (same source as the picker). Do
   NOT call ``provider_model_ids()`` per row to "freshen" — that bypasses
-  curation and pulls in non-agentic models (Nous /models returns ~400
+  curation and pulls in non-agentic models (Xavani /models returns ~400
   IDs including TTS, embeddings, rerankers, image/video generators).
 """
 

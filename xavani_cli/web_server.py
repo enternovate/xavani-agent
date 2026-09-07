@@ -1422,7 +1422,7 @@ async def reveal_env_var(body: EnvVarReveal, request: Request):
 #
 # Phase 1 surfaces *which OAuth providers exist* and whether each is
 # connected, plus a disconnect button. The actual login flow (PKCE for
-# Anthropic, device-code for Nous/Codex) still runs in the CLI for now;
+# Anthropic, device-code for Xavani/Codex) still runs in the CLI for now;
 # Phase 2 will add in-browser flows. For unconnected providers we return
 # the canonical ``xavani auth add <provider>`` command so the dashboard
 # can surface a one-click copy.
@@ -1568,10 +1568,10 @@ _OAUTH_PROVIDER_CATALOG: tuple[Dict[str, Any], ...] = (
     },
     {
         "id": "nous",
-        "name": "Nous Portal",
+        "name": "Xavani Portal",
         "flow": "device_code",
         "cli_command": "xavani auth add nous",
-        "docs_url": "https://portal.nousresearch.com",
+        "docs_url": "https://portal.enternovate.co.za",
         "status_fn": None,  # dispatched via auth.get_nous_auth_status
     },
     {
@@ -1596,7 +1596,7 @@ _OAUTH_PROVIDER_CATALOG: tuple[Dict[str, Any], ...] = (
         # MiniMax's flow is structurally device-code (verification URI +
         # user code, backend polls the token endpoint) with a PKCE
         # extension for code-binding. The dashboard renders the same UX
-        # as Nous's device-code flow; the PKCE bit is a security
+        # as Xavani's device-code flow; the PKCE bit is a security
         # extension that doesn't change the operator experience.
         "flow": "device_code",
         "cli_command": "xavani auth add minimax-oauth",
@@ -1620,7 +1620,7 @@ def _resolve_provider_status(provider_id: str, status_fn) -> Dict[str, Any]:
             return {
                 "logged_in": bool(raw.get("logged_in")),
                 "source": "nous_portal",
-                "source_label": raw.get("portal_base_url") or "Nous Portal",
+                "source_label": raw.get("portal_base_url") or "Xavani Portal",
                 "token_preview": _truncate_token(raw.get("access_token")),
                 "expires_at": raw.get("access_expires_at"),
                 "has_refresh_token": bool(raw.get("has_refresh_token")),
@@ -1760,7 +1760,7 @@ async def disconnect_oauth_provider(provider_id: str, request: Request):
 #          → persists to ~/.xavani/.anthropic_oauth.json AND credential pool
 #          → returns { ok: true, status: "approved" }
 #
-#   Device code (Nous, OpenAI Codex):
+#   Device code (Xavani, OpenAI Codex):
 #     1. POST /api/providers/oauth/{nous|openai-codex}/start
 #          → server hits provider's device-auth endpoint
 #          → gets { user_code, verification_url, device_code, interval, expires_in }
@@ -1970,7 +1970,7 @@ def _submit_anthropic_pkce(session_id: str, code_input: str) -> Dict[str, Any]:
 
 
 async def _start_device_code_flow(provider_id: str) -> Dict[str, Any]:
-    """Initiate a device-code flow (Nous, OpenAI Codex, or MiniMax).
+    """Initiate a device-code flow (Xavani, OpenAI Codex, or MiniMax).
 
     Calls the provider's device-auth endpoint via the existing CLI helpers,
     then spawns a background poller. Returns the user-facing display fields
@@ -2069,7 +2069,7 @@ async def _start_device_code_flow(provider_id: str) -> Dict[str, Any]:
     if provider_id == "minimax-oauth":
         # MiniMax uses a device-code-style flow (verification URI + user
         # code + background poll) with a PKCE extension on top. From the
-        # operator's perspective it's identical to Nous's device-code
+        # operator's perspective it's identical to Xavani's device-code
         # flow; the PKCE bit (verifier + challenge from
         # _minimax_pkce_pair) is a security extension that binds the
         # token exchange to the original session.
@@ -2146,7 +2146,7 @@ async def _start_device_code_flow(provider_id: str) -> Dict[str, Any]:
 
 
 def _nous_poller(session_id: str) -> None:
-    """Background poller that drives a Nous device-code flow to completion."""
+    """Background poller that drives a Xavani device-code flow to completion."""
     from xavani_cli.auth import (
         NOUS_INFERENCE_AUTH_MODE_FRESH,
         _poll_for_token,
@@ -2216,7 +2216,7 @@ def _minimax_poller(session_id: str) -> None:
 
     Mirrors `_nous_poller` but calls the MiniMax-specific token endpoint,
     which uses a PKCE-style ``code_verifier`` + ``user_code`` rather than
-    the ``device_code`` field used by Nous. On success, builds the same
+    the ``device_code`` field used by Xavani. On success, builds the same
     auth_state dict that ``_minimax_oauth_login`` (the CLI flow) builds
     and persists via ``_minimax_save_auth_state`` — so the dashboard
     path leaves the system in the same state as

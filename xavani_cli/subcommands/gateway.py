@@ -258,7 +258,7 @@ def build_gateway_parser(
         help="Enroll this gateway with a relay connector (writes relay auth creds to .env)",
         description=(
             "Redeem a single-use enrollment token with a relay connector. "
-            "Authenticates as your Nous Portal account (the connector derives the "
+            "Authenticates as your Xavani Portal account (the connector derives the "
             "authoritative tenant from it), mints this gateway's per-gateway secret "
             "and per-tenant delivery key, and writes GATEWAY_RELAY_ID / "
             "GATEWAY_RELAY_SECRET / GATEWAY_RELAY_DELIVERY_KEY into ~/.xavani/.env. "
@@ -318,7 +318,7 @@ def build_gateway_parser(
         help="Local OpenAI-compatible proxy to OAuth providers",
         description=(
             "Run a local HTTP server that forwards OpenAI-compatible requests "
-            "to an OAuth-authenticated provider (e.g. Nous Portal). External "
+            "to an OAuth-authenticated provider (e.g. Xavani Portal). External "
             "apps can point at the proxy with any bearer token; the proxy "
             "attaches your real credentials."
         ),

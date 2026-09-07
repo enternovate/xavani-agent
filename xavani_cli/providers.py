@@ -62,7 +62,7 @@ XAVANI_OVERLAYS: Dict[str, XavaniOverlay] = {
     "nous": XavaniOverlay(
         transport="openai_chat",
         auth_type="oauth_device_code",
-        base_url_override="https://inference-api.nousresearch.com/v1",
+        base_url_override="https://inference-api.enternovate.co.za/v1",
     ),
     "openai-codex": XavaniOverlay(
         transport="codex_responses",
@@ -379,7 +379,7 @@ ALIASES: Dict[str, str] = {
 # not in the catalog.
 
 _LABEL_OVERRIDES: Dict[str, str] = {
-    "nous": "Nous Portal",
+    "nous": "Xavani Portal",
     "openai-codex": "OpenAI Codex",
     "copilot-acp": "GitHub Copilot ACP",
     "stepfun": "StepFun Step Plan",

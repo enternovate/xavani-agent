@@ -2,7 +2,7 @@
 
 The Xavani docs site hosts a JSON manifest of curated models for providers
 we want to update without shipping a release (currently OpenRouter and
-Nous Portal). This module fetches, validates, and caches that manifest,
+Xavani Portal). This module fetches, validates, and caches that manifest,
 falling back to the in-repo hardcoded lists when the network is unavailable.
 
 Pipeline
@@ -367,7 +367,7 @@ def refresh_catalogs() -> bool:
     """Force-refresh every remote model catalog the picker reads from.
 
     Fetches the curated manifest, the OpenRouter live list (tool-support /
-    free-pricing filter) and the Nous Portal recommendations, writing each
+    free-pricing filter) and the Xavani Portal recommendations, writing each
     to its disk cache so the next ``/model`` open in ANY process on this
     machine sees the new lists. Blocking; run it off the event loop.
     Returns True when the manifest refresh succeeded.
@@ -437,7 +437,7 @@ def get_curated_openrouter_models() -> list[tuple[str, str]] | None:
 
 
 def get_curated_nous_models() -> list[str] | None:
-    """Return Nous Portal's curated list of model ids from the manifest.
+    """Return Xavani Portal's curated list of model ids from the manifest.
 
     Returns ``None`` when the manifest is unavailable.
     """

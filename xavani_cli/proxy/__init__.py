@@ -14,7 +14,7 @@ upstream credential to the forwarded request. The credential is refreshed
 automatically when it approaches expiry.
 
 First-class adapter:
-  - ``nous`` — Nous Portal (https://inference-api.nousresearch.com/v1)
+  - ``nous`` — Xavani Portal (https://inference-api.enternovate.co.za/v1)
 
 Future adapters can plug in by implementing ``UpstreamAdapter``.
 """

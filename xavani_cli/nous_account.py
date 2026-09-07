@@ -1,4 +1,4 @@
-"""Normalized Nous Portal account entitlement helpers."""
+"""Normalized Xavani Portal account entitlement helpers."""
 
 from __future__ import annotations
 
@@ -132,11 +132,11 @@ class NousPortalAccountInfo:
 
 
 def nous_portal_billing_url(account_info: Optional[NousPortalAccountInfo] = None) -> str:
-    """Return the billing URL for a normalized Nous account snapshot."""
+    """Return the billing URL for a normalized Xavani account snapshot."""
     try:
         from xavani_cli.auth import DEFAULT_NOUS_PORTAL_URL
     except Exception:
-        DEFAULT_NOUS_PORTAL_URL = "https://portal.nousresearch.com"
+        DEFAULT_NOUS_PORTAL_URL = "https://portal.enternovate.co.za"
 
     base = None
     if account_info is not None:
@@ -176,7 +176,7 @@ def format_nous_portal_entitlement_message(
     include_refresh_hint: bool = True,
     coverage_category: Optional[str] = None,
 ) -> Optional[str]:
-    """Return user-facing guidance for a missing Nous tool-gateway entitlement.
+    """Return user-facing guidance for a missing Xavani tool-gateway entitlement.
 
     ``None`` means the account is entitled to use the capability — via paid
     service access OR a live free tool pool that covers it. The message works
@@ -201,7 +201,7 @@ def format_nous_portal_entitlement_message(
                 # specific capability isn't covered. Surface a neutral billing
                 # nudge without exposing pool-vs-paid internals to the user.
                 return (
-                    f"{capability} isn't included with your current Nous Portal "
+                    f"{capability} isn't included with your current Xavani Portal "
                     f"access. Add credits or a subscription to enable it at {billing_url}."
                 )
         elif account_info.tool_gateway_entitled:
@@ -209,7 +209,7 @@ def format_nous_portal_entitlement_message(
 
     if account_info is None:
         return (
-            f"Xavani could not verify your Nous Portal entitlement, so {capability} "
+            f"Xavani could not verify your Xavani Portal entitlement, so {capability} "
             f"is unavailable. Run `xavani model` to refresh your login, or check "
             f"billing at {billing_url}."
         )
@@ -217,19 +217,19 @@ def format_nous_portal_entitlement_message(
     if not account_info.logged_in:
         if account_info.inference_credential_present:
             return (
-                f"Nous inference credentials are configured, but Xavani cannot verify "
-                f"your Nous Portal paid access for {capability}. Log in with "
+                f"Xavani inference credentials are configured, but Xavani cannot verify "
+                f"your Xavani Portal paid access for {capability}. Log in with "
                 f"`xavani model` to enable Portal-managed features. Billing and "
                 f"credits are managed at {billing_url}."
             )
         return (
-            f"Log in to Nous Portal to use {capability}: run `xavani model`. "
+            f"Log in to Xavani Portal to use {capability}: run `xavani model`. "
             f"Billing and credits are managed at {billing_url}."
         )
 
     if account_info.paid_service_access is None:
         detail = (
-            f"Xavani could not verify your Nous Portal paid access, so {capability} "
+            f"Xavani could not verify your Xavani Portal paid access, so {capability} "
             f"is unavailable."
         )
         if account_info.error:
@@ -243,9 +243,9 @@ def format_nous_portal_entitlement_message(
     reason = access.reason if access else None
     if reason == "account_missing":
         return (
-            f"Xavani could not find a Nous Portal account or organisation for this "
+            f"Xavani could not find a Xavani Portal account or organisation for this "
             f"login, so {capability} is unavailable. Run `xavani model` to "
-            f"authenticate again; if the problem persists, contact Nous support."
+            f"authenticate again; if the problem persists, contact Xavani support."
         )
 
     if reason == "no_usable_credits" or account_info.paid_service_access is False:
@@ -255,7 +255,7 @@ def format_nous_portal_entitlement_message(
         return message
 
     return (
-        f"Your Nous Portal account does not currently have paid service access, "
+        f"Your Xavani Portal account does not currently have paid service access, "
         f"so {capability} is unavailable. Add credits or update billing at {billing_url}."
     )
 
@@ -282,7 +282,7 @@ def _no_paid_access_message(
         elif cap is not None:
             cap_detail = f" Your organisation's per-member spend cap is ${cap:.2f}."
         return (
-            f"Your Nous Portal access is paused because you've exceeded the"
+            f"Your Xavani Portal access is paused because you've exceeded the"
             f" per-member spend cap set by your organisation.{cap_detail}"
             f"{credit_detail} Ask your organisation admin to raise the"
             f" member spend cap at {billing_url}, then run `xavani model`"
@@ -292,27 +292,27 @@ def _no_paid_access_message(
     if has_active_subscription and active_subscription_is_paid:
         credit_detail = _credit_detail(total_usable, subscription_credits, purchased_credits)
         return (
-            f"Your Nous Portal credits are exhausted{credit_detail}, so {capability} "
+            f"Your Xavani Portal credits are exhausted{credit_detail}, so {capability} "
             f"is unavailable. Top up or renew credits at {billing_url}."
         )
 
     if has_active_subscription and active_subscription_is_paid is False:
         return (
-            f"Your current Nous Portal plan does not include paid service access, "
+            f"Your current Xavani Portal plan does not include paid service access, "
             f"so {capability} is unavailable. Upgrade or add credits at {billing_url}."
         )
 
     if has_active_subscription is False:
         credit_detail = _credit_detail(total_usable, subscription_credits, purchased_credits)
         return (
-            f"Your Nous Portal account has no active subscription or usable credits"
+            f"Your Xavani Portal account has no active subscription or usable credits"
             f"{credit_detail}, so {capability} is unavailable. Subscribe or add credits "
             f"at {billing_url}."
         )
 
     credit_detail = _credit_detail(total_usable, subscription_credits, purchased_credits)
     return (
-        f"Your Nous Portal account has no usable paid credits{credit_detail}, so "
+        f"Your Xavani Portal account has no usable paid credits{credit_detail}, so "
         f"{capability} is unavailable. Add credits or update billing at {billing_url}."
     )
 
@@ -345,7 +345,7 @@ def get_nous_portal_account_info(
     force_fresh: bool = False,
     min_jwt_ttl_seconds: int = 60,
 ) -> NousPortalAccountInfo:
-    """Return normalized Nous Portal account entitlement information.
+    """Return normalized Xavani Portal account entitlement information.
 
     By default, a valid unexpired OAuth access JWT is used as a low-latency
     local account snapshot. ``force_fresh=True`` always calls
@@ -496,7 +496,7 @@ def _fresh_account_info(
 def _info_from_inference_key_pool(
     portal_base_url: Optional[str],
 ) -> Optional[NousPortalAccountInfo]:
-    """Return an explicit unknown-entitlement snapshot for opaque Nous keys."""
+    """Return an explicit unknown-entitlement snapshot for opaque Xavani keys."""
     try:
         entry = _select_nous_pool_entry()
         if entry is None:
@@ -629,7 +629,7 @@ def _fetch_nous_account_info(
     access_token: str,
     portal_base_url: Optional[str] = None,
 ) -> dict[str, Any]:
-    base = (portal_base_url or "https://portal.nousresearch.com").rstrip("/")
+    base = (portal_base_url or "https://portal.enternovate.co.za").rstrip("/")
     url = f"{base}/api/oauth/account"
     headers = {
         "Authorization": f"Bearer {access_token}",

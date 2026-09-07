@@ -1,6 +1,6 @@
 """SSE ``[DONE]`` sentinel normalization for OpenAI-compatible proxies.
 
-Some upstreams (notably Nous Portal for certain free models) deliver a
+Some upstreams (notably Xavani Portal for certain free models) deliver a
 complete chat-completions stream — content deltas, a non-null
 ``finish_reason``, and often a ``lastOne: true`` usage frame — then close
 the connection without the conventional OpenAI terminal event::

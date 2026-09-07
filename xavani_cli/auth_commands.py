@@ -251,7 +251,7 @@ def auth_add_command(args) -> None:
         return
 
     if provider == "nous":
-        # Codex-style auto-import: if a shared Nous credential lives at
+        # Codex-style auto-import: if a shared Xavani credential lives at
         # <xavani-root>/shared/nous_auth.json (written by any previous
         # successful login), offer to import it instead of running the
         # full device-code flow. This makes `xavani --profile <name>
@@ -265,15 +265,15 @@ def auth_add_command(args) -> None:
                 path = None
             print()
             if path:
-                print(f"Found existing Nous OAuth credentials at {path}")
+                print(f"Found existing Xavani OAuth credentials at {path}")
             else:
-                print("Found existing shared Nous OAuth credentials")
+                print("Found existing shared Xavani OAuth credentials")
             try:
                 do_import = input("Import these credentials? [Y/n]: ").strip().lower()
             except (EOFError, KeyboardInterrupt):
                 do_import = "y"
             if do_import in {"", "y", "yes"}:
-                print("Rehydrating Nous session from shared credentials...")
+                print("Rehydrating Xavani session from shared credentials...")
                 rehydrated = auth_mod._try_import_shared_nous_state(
                     timeout_seconds=getattr(args, "timeout", None) or 15.0,
                     min_key_ttl_seconds=max(

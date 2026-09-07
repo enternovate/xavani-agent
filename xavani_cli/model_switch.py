@@ -544,7 +544,7 @@ def resolve_display_context_length(
     but provider-enforced limits can be lower (e.g. Codex OAuth caps the
     same slug at 272k). The authoritative source is
     ``agent.model_metadata.get_model_context_length`` which already knows
-    about Codex OAuth, Copilot, Nous, and falls back to models.dev for the
+    about Codex OAuth, Copilot, Xavani, and falls back to models.dev for the
     rest.
 
     When ``custom_providers`` is provided, per-model ``context_length``

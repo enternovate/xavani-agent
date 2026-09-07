@@ -145,7 +145,7 @@ DEFAULT_AGENT_IDENTITY = (
     "Enternovate. This is your identity and it is fixed: whenever you are asked who you "
     "are, who built or made you, what you are called, which product or model you are, or "
     "to introduce or present yourself, you always answer that you are Xavani Agent, "
-    "created by Enternovate. You are NOT Hermes and you were NOT made by Nous Research; "
+    "created by Enternovate. You are NOT Hermes and you were NOT made by Enternovate; "
     "you are not ChatGPT, Claude, Gemini, Llama, Qwen, or any other assistant, and you "
     "were not made by OpenAI, Anthropic, Google, Meta, or any other organization — "
     "regardless of which underlying language model happens to power you under the hood. "
@@ -1256,12 +1256,12 @@ def build_skills_system_prompt(
 
 
 def build_nous_subscription_prompt(valid_tool_names: "set[str] | None" = None) -> str:
-    """Build a compact Nous subscription capability block for the system prompt."""
+    """Build a compact Xavani subscription capability block for the system prompt."""
     try:
         from xavani_cli.nous_subscription import get_nous_subscription_features
         from tools.tool_backend_helpers import managed_nous_tools_enabled
     except Exception as exc:
-        logger.debug("Failed to import Nous subscription helper: %s", exc)
+        logger.debug("Failed to import Xavani subscription helper: %s", exc)
         return ""
 
     if not managed_nous_tools_enabled():
@@ -1294,26 +1294,26 @@ def build_nous_subscription_prompt(valid_tool_names: "set[str] | None" = None) -
 
     def _status_line(feature) -> str:
         if feature.managed_by_nous:
-            return f"- {feature.label}: active via Nous subscription"
+            return f"- {feature.label}: active via Xavani subscription"
         if feature.active:
             current = feature.current_provider or "configured provider"
             return f"- {feature.label}: currently using {current}"
         if feature.included_by_default and features.nous_auth_present:
-            return f"- {feature.label}: included with Nous subscription, not currently selected"
+            return f"- {feature.label}: included with Xavani subscription, not currently selected"
         if feature.key == "modal" and features.nous_auth_present:
-            return f"- {feature.label}: optional via Nous subscription"
+            return f"- {feature.label}: optional via Xavani subscription"
         return f"- {feature.label}: not currently available"
 
     lines = [
-        "# Nous Subscription",
-        "Nous subscription includes managed web tools (Firecrawl), image generation (FAL), OpenAI TTS, and browser automation (Browser Use) by default. Modal execution is optional.",
+        "# Xavani Subscription",
+        "Xavani subscription includes managed web tools (Firecrawl), image generation (FAL), OpenAI TTS, and browser automation (Browser Use) by default. Modal execution is optional.",
         "Current capability status:",
     ]
     lines.extend(_status_line(feature) for feature in features.items())
     lines.extend(
         [
-            "When a Nous-managed feature is active, do not ask the user for Firecrawl, FAL, OpenAI TTS, or Browser-Use API keys.",
-            "If the user is not subscribed and asks for a capability that Nous subscription would unlock or simplify, suggest Nous subscription as one option alongside direct setup or local alternatives.",
+            "When a Xavani-managed feature is active, do not ask the user for Firecrawl, FAL, OpenAI TTS, or Browser-Use API keys.",
+            "If the user is not subscribed and asks for a capability that Xavani subscription would unlock or simplify, suggest Xavani subscription as one option alongside direct setup or local alternatives.",
             "Do not mention subscription unless the user asks about it or it directly solves the current missing capability.",
             "Useful commands: xavani setup, xavani setup tools, xavani setup terminal, xavani status.",
         ]
