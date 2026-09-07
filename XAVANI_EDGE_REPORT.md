@@ -117,6 +117,21 @@ targeted tests green.
   remain future work.
 - Upstream hash drift: runtime 13e72fb2 vs known 63279301 (Slice D).
 
+## Agent-only endpoints (2026-09-07, commit 58693198)
+
+Owner: Xavani ships the agent, not inference/portal services. No
+Enternovate service hosts exist, so portal/inference URL defaults are
+empty strings. Portal commands fail closed with clear messages.
+Portal fetchers were already fail-open. Provider key `nous` stays as
+inert plumbing for stored logins; no traffic can reach Nous (no URLs
+remain) and no Enternovate hosts are invented.
+- Login page brand reads Xavani Agent.
+- debug --nous private-upload path deleted (was a dead flag).
+- web_dist bundle still embeds old strings: generated artifact,
+  refreshes on next frontend rebuild. Never hand-edited.
+- Kept: MIT attribution (LICENSE/README/AGENTS.md), identity
+  disclaimers ("NOT Hermes"), data-compat keys, scrub regex.
+
 ## Suite
 
 Full `pytest tests/` (2026-09-06, HEAD 8da3c1af): 18896 passed,
