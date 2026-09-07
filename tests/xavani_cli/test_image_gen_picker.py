@@ -239,14 +239,6 @@ class TestConfigWriting:
     def test_plugin_provider_active_overrides_managed_nous_active_label(self, monkeypatch):
         from xavani_cli import tools_config
 
-        monkeypatch.setattr(
-            tools_config,
-            "get_nous_subscription_features",
-            lambda config: SimpleNamespace(
-                features={"image_gen": SimpleNamespace(managed_by_nous=True)}
-            ),
-        )
-
         config = {"image_gen": {"provider": "openai", "use_gateway": False}}
         nous_row = {
             "name": "Nous Subscription",

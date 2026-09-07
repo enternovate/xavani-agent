@@ -116,58 +116,8 @@ def _cmd_open(args) -> int:
 
 def _cmd_tools(args) -> int:
     """List the Tool Gateway catalog + current routing."""
-    try:
-        from xavani_cli.nous_subscription import get_nous_subscription_features
-    except ImportError:
-        get_nous_subscription_features = None
-
-    config = load_config() or {}
-    try:
-        features = get_nous_subscription_features(config) if get_nous_subscription_features else None
-    except Exception:
-        features = None
-    if features is None:
-        print("Could not resolve Tool Gateway state.", file=sys.stderr)
-        return 1
-
-    # Static catalog — the partners Tool Gateway routes to today.
-    catalog = [
-        ("web",       "Web search & extract",  "Firecrawl"),
-        ("image_gen", "Image generation",      "FAL"),
-        ("tts",       "Text-to-speech",        "OpenAI TTS"),
-        ("browser",   "Browser automation",    "Browser Use"),
-        ("modal",     "Cloud terminal",        "Modal"),
-    ]
-
-    print()
-    print(color("  Tool Gateway catalog", Colors.MAGENTA))
-    print(color("  ────────────────────", Colors.MAGENTA))
-
-    if not features.nous_auth_present:
-        print(color("  Not logged into Xavani Portal — sign in with `xavani portal`.", Colors.YELLOW))
-        print()
-
-    label_width = max(len(label) for _, label, _ in catalog)
-    for key, label, partner in catalog:
-        feat = features.features.get(key)
-        if feat is None:
-            state = color("unknown", Colors.DIM)
-        elif feat.managed_by_nous:
-            state = color("✓ via Xavani Portal", Colors.GREEN)
-        elif feat.active and feat.current_provider:
-            state = feat.current_provider
-        elif feat.active:
-            state = "active"
-        else:
-            state = color("not configured", Colors.DIM)
-        print(f"  {label:<{label_width}}  partner: {partner:<14} {state}")
-
-    print()
-    if SUBSCRIPTION_URL:
-        print(color(f"  Manage your subscription: {SUBSCRIPTION_URL}", Colors.DIM))
-    print(color(f"  Docs: {DOCS_URL}", Colors.DIM))
-    return 0
-
+    print("The portal service is unavailable in this build.")
+    return 1
 
 def _cmd_login(args) -> int:
     """Run the one-shot Xavani Portal onboarding (login + model + provider + tools).

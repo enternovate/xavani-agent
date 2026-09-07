@@ -20,7 +20,6 @@ from xavani_cli.auth import AuthError, resolve_provider
 from xavani_cli.colors import Colors, color
 from xavani_cli.config import get_env_path, get_env_value, get_xavani_home, load_config
 from xavani_cli.models import provider_label
-from xavani_cli.nous_subscription import get_nous_subscription_features
 from xavani_cli.runtime_provider import resolve_requested_provider
 from xavani_cli.vercel_auth import describe_vercel_auth
 from xavani_constants import OPENROUTER_MODELS_URL
@@ -284,42 +283,6 @@ def show_status(args):
     if xai_oauth_status.get("error") and not xai_oauth_logged_in:
         print(f"    Error:      {xai_oauth_status.get('error')}")
 
-    # =========================================================================
-    # Xavani Subscription Features
-    # =========================================================================
-    if managed_nous_tools_enabled():
-        features = get_nous_subscription_features(config)
-        print()
-        print(color("◆ Xavani Tool Gateway", Colors.CYAN, Colors.BOLD))
-        if not features.nous_auth_present:
-            print("  Xavani Portal   ✗ not logged in")
-        else:
-            print("  Xavani Portal   ✓ managed tools available")
-        for feature in features.items():
-            if feature.managed_by_nous:
-                state = "active via Xavani subscription"
-            elif feature.active:
-                current = feature.current_provider or "configured provider"
-                state = f"active via {current}"
-            elif feature.included_by_default and features.nous_auth_present:
-                state = "included by subscription, not currently selected"
-            elif feature.key == "modal" and features.nous_auth_present:
-                state = "available via subscription (optional)"
-            else:
-                state = "not configured"
-            print(f"  {feature.label:<15} {check_mark(feature.available or feature.active or feature.managed_by_nous)} {state}")
-    elif nous_logged_in:
-        # Logged into Xavani but on the free tier — show upgrade nudge
-        print()
-        print(color("◆ Xavani Tool Gateway", Colors.CYAN, Colors.BOLD))
-        print("  Your free-tier Xavani account does not include Tool Gateway access.")
-        print("  Upgrade your subscription to unlock managed web, image, TTS, and browser tools.")
-        try:
-            portal_url = nous_status.get("portal_base_url", "").rstrip("/")
-            if portal_url:
-                print(f"  Upgrade: {portal_url}")
-        except Exception:
-            pass
 
     # =========================================================================
     # API-Key Providers

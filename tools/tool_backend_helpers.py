@@ -18,6 +18,26 @@ _DEFAULT_MODAL_MODE = "auto"
 _VALID_MODAL_MODES = {"auto", "direct", "managed"}
 
 
+def inert_subscription_features(config=None):
+    from types import SimpleNamespace
+
+    blank = SimpleNamespace(
+        available=False,
+        managed_by_nous=False,
+        current_provider="",
+        direct_override=False,
+    )
+    return SimpleNamespace(
+        nous_auth_present=False,
+        features={},
+        web=blank,
+        browser=blank,
+        image_gen=blank,
+        tts=blank,
+        modal=blank,
+    )
+
+
 def managed_nous_tools_enabled() -> bool:
     """Return True when the user has an active paid Nous subscription.
 
