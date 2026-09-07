@@ -81,10 +81,29 @@ subsystem), home rewrite + allowlist approval helpers, portable MCP probe.
   portal_cli guards resolve against the native module.
 - agent/pet/generate/: dev-time sprite tooling, no runtime imports.
 
+## Enternovate rebrand (2026-09-07, commit 44305506)
+
+Owner rule: nothing leads to Nous Research; everything falls under
+Xavani agent plus Enternovate. 70 files changed, ruff clean,
+targeted tests green.
+
+- URLs: portal/inference/docs hosts now enternovate.co.za,
+  xavani-agent.enternovate.com, inference-api.enternovate.co.za.
+  Plugin index default now enternovate.co.za/xavani-agent/plugins.
+  ASSUMPTION for owner to confirm: portal.enternovate.co.za and
+  inference-api.enternovate.co.za must exist or be replaced with the
+  real Enternovate service hosts.
+- Env: XAVANI_* primaries everywhere; NOUS_* kept as read fallback so
+  existing logins keep working.
+- Strings: Nous Portal/Research/login/model/credits/subscription now
+  Xavani/Enternovate in all user-facing text.
+- Removed: debug --nous flag and its private-upload path (dead flag;
+  uploads always used pastebin). Zero phone-home holds.
+- Kept by design: internal provider key `nous` (dict keys, auth state,
+  function names). Renaming breaks stored logins; it is invisible.
+
 ## Remaining gaps (evidence, not guesses)
 
-- hermes_cli/nous_subscription.py (1482 lines): portal_cli and account
-  paths guard it. Needs its own slice.
 - hermes_cli/gateway_windows.py (1959 lines): watcher import guarded.
   Needs its own slice.
 - hermes_cli/proxy_cli.py (903 lines) + agent/proxy_sources/iron_proxy:
