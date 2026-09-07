@@ -62,7 +62,7 @@ XAVANI_OVERLAYS: Dict[str, XavaniOverlay] = {
     "nous": XavaniOverlay(
         transport="openai_chat",
         auth_type="oauth_device_code",
-        base_url_override="https://inference-api.enternovate.co.za/v1",
+        base_url_override="",
     ),
     "openai-codex": XavaniOverlay(
         transport="codex_responses",
