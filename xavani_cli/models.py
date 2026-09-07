@@ -520,7 +520,7 @@ def fetch_nous_account_tier(access_token: str, portal_base_url: str = "") -> dic
 
     Returns an empty dict on any failure (network, auth, parse).
     """
-    base = (portal_base_url or "https://portal.enternovate.co.za").rstrip("/")
+    base = (portal_base_url or "").rstrip("/")
     url = f"{base}/api/oauth/account"
     headers = {
         "Authorization": f"Bearer {access_token}",
@@ -802,7 +802,7 @@ def fetch_nous_recommended_models(
     (network, parse, non-2xx). Callers must treat missing/null fields as
     "no recommendation" and fall back to their own default.
     """
-    base = (portal_base_url or "https://portal.enternovate.co.za").rstrip("/")
+    base = (portal_base_url or "").rstrip("/")
     now = time.monotonic()
     cached = _nous_recommended_cache.get(base)
     if not force_refresh and cached is not None:
@@ -840,7 +840,7 @@ def _resolve_nous_portal_url() -> str:
             return portal.rstrip("/")
         return str(DEFAULT_NOUS_PORTAL_URL).rstrip("/")
     except Exception:
-        return "https://portal.enternovate.co.za"
+        return ""
 
 
 def _extract_model_name(entry: Any) -> Optional[str]:
@@ -1499,7 +1499,7 @@ def _resolve_openrouter_api_key() -> str:
     return os.getenv("OPENROUTER_API_KEY", "").strip()
 
 
-_DEFAULT_NOUS_INFERENCE_BASE = "https://inference-api.enternovate.co.za"
+_DEFAULT_NOUS_INFERENCE_BASE = ""
 
 
 def _resolve_nous_pricing_credentials() -> tuple[str, str]:

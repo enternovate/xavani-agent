@@ -67,7 +67,7 @@ class _DaemonThreadPoolExecutor(ThreadPoolExecutor):
     network I/O) would therefore block interpreter exit forever.  Daemon
     workers skip both mechanisms, so abandoned tasks die with the interpreter.
 
-    Mirrors Hermes' ``tools/daemon_pool.DaemonThreadPoolExecutor``.  Falls
+    Mirrors the upstream ``tools/daemon_pool.DaemonThreadPoolExecutor``.  Falls
     back to the stdlib implementation if the private ``_worker`` symbol ever
     moves.
     """
@@ -500,7 +500,7 @@ class MemoryManager:
         - Bare skill invocations (no instruction) return None → callers skip
           the turn, since there is no user content worth remembering.
 
-        Xavani's skill pipeline does not yet expose the Hermes
+        Xavani's skill pipeline does not yet expose the upstream
         ``extract_user_instruction_from_skill_message`` helper, so when it is
         unavailable this degrades to a passthrough (no scaffolding stripping).
         """

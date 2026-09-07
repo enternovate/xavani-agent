@@ -16,4 +16,5 @@ def test_topup_url_falls_back_to_portal():
     from xavani_cli.nous_account import nous_portal_topup_url
 
     url = nous_portal_topup_url(None)
-    assert isinstance(url, str) and url.startswith("https://")
+    assert isinstance(url, str)
+    assert "nousresearch.com" not in url

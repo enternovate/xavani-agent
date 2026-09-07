@@ -80,8 +80,8 @@ AUTH_STORE_VERSION = 1
 AUTH_LOCK_TIMEOUT_SECONDS = 15.0
 
 # Portal defaults
-DEFAULT_NOUS_PORTAL_URL = "https://portal.enternovate.co.za"
-DEFAULT_NOUS_INFERENCE_URL = "https://inference-api.enternovate.co.za/v1"
+DEFAULT_NOUS_PORTAL_URL = ""
+DEFAULT_NOUS_INFERENCE_URL = ""
 DEFAULT_NOUS_CLIENT_ID = "xavani-cli"
 NOUS_LEGACY_AGENT_KEY_SCOPE = "inference:mint_agent_key"
 NOUS_INFERENCE_INVOKE_SCOPE = "inference:invoke"

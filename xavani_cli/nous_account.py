@@ -136,7 +136,7 @@ def nous_portal_billing_url(account_info: Optional[NousPortalAccountInfo] = None
     try:
         from xavani_cli.auth import DEFAULT_NOUS_PORTAL_URL
     except Exception:
-        DEFAULT_NOUS_PORTAL_URL = "https://portal.enternovate.co.za"
+        DEFAULT_NOUS_PORTAL_URL = ""
 
     base = None
     if account_info is not None:

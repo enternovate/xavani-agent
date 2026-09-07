@@ -1571,7 +1571,7 @@ _OAUTH_PROVIDER_CATALOG: tuple[Dict[str, Any], ...] = (
         "name": "Xavani Portal",
         "flow": "device_code",
         "cli_command": "xavani auth add nous",
-        "docs_url": "https://portal.enternovate.co.za",
+        "docs_url": "https://enternovate.co.za/xavani-agent/docs",
         "status_fn": None,  # dispatched via auth.get_nous_auth_status
     },
     {

@@ -302,7 +302,7 @@ _LOGIN_HTML_TEMPLATE = """\
 </head>
 <body>
 <main>
-  <div class="brand">Xavani<span class="dot"></span>Research</div>
+  <div class="brand">Xavani<span class="dot"></span>Agent</div>
   <div class="card">
     <h1>Sign in</h1>
     <p class="subtitle">Choose a sign-in method to continue to the Xavani Agent dashboard.</p>

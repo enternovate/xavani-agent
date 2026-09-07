@@ -4326,7 +4326,7 @@ def run_conversation(
     )
 
     # Bounded flush of background memory work so the turn's sync has a chance
-    # to land before the loop reports completion (mirrors Hermes' flush_pending
+    # to land before the loop reports completion (mirrors the upstream flush_pending
     # usage at turn/exit boundaries). Best-effort only — a wedged provider must
     # never block turn completion.
     _mm = getattr(agent, "_memory_manager", None)

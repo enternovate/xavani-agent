@@ -21,13 +21,12 @@ surface for the Portal subscription itself.
 from __future__ import annotations
 
 import sys
-import webbrowser
 
 from xavani_cli.colors import Colors, color
 from xavani_cli.config import load_config
 
-DEFAULT_PORTAL_URL = "https://portal.enternovate.co.za"
-SUBSCRIPTION_URL = "https://portal.enternovate.co.za/manage-subscription"
+DEFAULT_PORTAL_URL = ""
+SUBSCRIPTION_URL = ""
 DOCS_URL = "https://enternovate.co.za/xavani-agent/docs/user-guide/features/tool-gateway"
 
 
@@ -63,9 +62,8 @@ def _cmd_status(args) -> int:
         if inference:
             print(f"  API:     {inference}")
     else:
-        print(f"  Auth:    {color('not logged in', Colors.YELLOW)}")
-        print(f"  Sign up: {SUBSCRIPTION_URL}")
-        print("  Login:   xavani portal")
+        print(f"  Auth:    {color('not configured', Colors.YELLOW)}")
+        print("  The portal service is unavailable in this build.")
 
     # Provider selection (independent of auth)
     model_cfg = config.get("model") if isinstance(config.get("model"), dict) else {}
@@ -112,17 +110,8 @@ def _cmd_status(args) -> int:
 
 def _cmd_open(args) -> int:
     """Open the Portal subscription page in the default browser."""
-    target = SUBSCRIPTION_URL
-    print(f"Opening {target}")
-    try:
-        opened = webbrowser.open(target)
-    except Exception:
-        opened = False
-    if not opened:
-        print()
-        print("Could not launch a browser. Visit the URL above manually.")
-        return 1
-    return 0
+    print("The portal service is unavailable in this build.")
+    return 1
 
 
 def _cmd_tools(args) -> int:
@@ -174,7 +163,8 @@ def _cmd_tools(args) -> int:
         print(f"  {label:<{label_width}}  partner: {partner:<14} {state}")
 
     print()
-    print(color(f"  Manage your subscription: {SUBSCRIPTION_URL}", Colors.DIM))
+    if SUBSCRIPTION_URL:
+        print(color(f"  Manage your subscription: {SUBSCRIPTION_URL}", Colors.DIM))
     print(color(f"  Docs: {DOCS_URL}", Colors.DIM))
     return 0
 
