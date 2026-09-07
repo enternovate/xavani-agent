@@ -36,11 +36,6 @@ def _cmd_status(args) -> int:
         from xavani_cli.auth import get_nous_auth_status_local
     except ImportError:
         get_nous_auth_status_local = None
-    try:
-        from xavani_cli.nous_subscription import get_nous_subscription_features
-    except ImportError:
-        get_nous_subscription_features = None
-
     config = load_config() or {}
 
     try:
@@ -77,10 +72,7 @@ def _cmd_status(args) -> int:
     print()
     print(color("  Tool Gateway", Colors.MAGENTA))
     print(color("  ────────────", Colors.MAGENTA))
-    try:
-        features = get_nous_subscription_features(config) if get_nous_subscription_features else None
-    except Exception:
-        features = None
+    features = None
 
     if features is None:
         print("  (could not resolve subscription state)")

@@ -277,7 +277,6 @@ def test_codex_provider_replaces_incompatible_default_model(monkeypatch):
 
 
 def test_model_flow_nous_prints_subscription_guidance_without_mutating_explicit_tts(monkeypatch, capsys):
-    monkeypatch.setattr("xavani_cli.nous_subscription.managed_nous_tools_enabled", lambda: True)
     config = {
         "model": {"provider": "nous", "default": "claude-opus-4-6"},
         "tts": {"provider": "elevenlabs"},
@@ -312,7 +311,6 @@ def test_model_flow_nous_prints_subscription_guidance_without_mutating_explicit_
 
 
 def test_model_flow_nous_offers_tool_gateway_prompt_when_unconfigured(monkeypatch, capsys):
-    monkeypatch.setattr("xavani_cli.nous_subscription.managed_nous_tools_enabled", lambda: True)
     config = {
         "model": {"provider": "nous", "default": "claude-opus-4-6"},
         "tts": {"provider": "edge"},
@@ -339,9 +337,8 @@ def test_model_flow_nous_offers_tool_gateway_prompt_when_unconfigured(monkeypatc
     xavani_main._model_flow_nous(config, current_model="claude-opus-4-6")
 
     out = capsys.readouterr().out
-    # Tool Gateway prompt should be shown (input() raises OSError in pytest
-    # which is caught, so the prompt text appears but nothing is applied)
-    assert "Tool Gateway" in out
+    # No Tool Gateway prompt exists without a subscription product.
+    assert "Tool Gateway" not in out
 
 
 def test_codex_provider_uses_config_model(monkeypatch):
