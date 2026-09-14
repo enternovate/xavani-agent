@@ -4,6 +4,13 @@
 # is mitigated at a different layer than CodeQL can see in its taint analysis.
 #
 # Full audit trail and rationale for each suppression is documented below.
+#
+# Effect scope (important): this file takes effect only under CodeQL ADVANCED
+# setup with a workflow that references it. The repository currently runs
+# GitHub's DEFAULT setup, which ignores this file entirely, so the matching
+# open alerts must be dismissed individually (or the repo switched to
+# advanced setup) for them to close. The rule ids below are kept aligned with
+# what the API actually emits so the switch is safe when made.
 
 path_filters:
   # Test fixtures are not production code
@@ -64,12 +71,14 @@ query_filters:
       id: py/weak-cryptographic-hash
 
   # ── checkout-of-untrusted-code / untrusted-checkout-TOCTOU ──────────
-  # MITIGATION: nix-lockfile-fix workflow uses persist-credentials: false
-  # and all subsequent actions are inlined (not loaded from checkout).
-  - exclude:
-      id: actions/checkout-untrusted
-  - exclude:
-      id: actions/untrusted-checkout-toctou
+  # MITIGATION: the nix-lockfile-fix workflow checks out a PR branch that a
+  # maintainer explicitly authorized via a comment command; persist-credentials
+  # is intentionally true because the job must push the lockfile fix back to
+  # that branch (the PAT is scoped to the job and never exposed to the PR
+  # code); every subsequent action is pinned by SHA and inlined (none loaded
+  # from the checkout), which is the TOCTOU mitigation this suppression
+  # covers. Rule ids below are the ones GitHub actually emits (verified via
+  # the code-scanning alerts API, 2026-09-14: alerts 1300/1301).
 
   # ── functionality-from-untrusted-source ──────────────────────────────
   # MITIGATION: External CDN scripts use Subresource Integrity (SRI) hashes.
