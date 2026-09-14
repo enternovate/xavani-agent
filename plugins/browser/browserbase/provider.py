@@ -10,7 +10,7 @@ ABC introduced in PR #25214). The legacy in-tree module
 is now the canonical implementation.
 
 Browserbase requires direct ``BROWSERBASE_API_KEY`` and ``BROWSERBASE_PROJECT_ID``
-credentials. Managed Nous gateway support has been removed — the Nous
+credentials. Managed Xavani Portal gateway support has been removed — the Xavani Portal
 subscription now routes through Browser Use instead (see
 ``plugins/browser/browser_use/``).
 
@@ -55,7 +55,7 @@ except Exception:
 class BrowserbaseBrowserProvider(BrowserProvider):
     """Browserbase (https://browserbase.com) cloud browser backend.
 
-    Direct credentials only — managed-Nous-gateway support lives on the
+    Direct credentials only — managed-Xavani Portal-gateway support lives on the
     Browser Use provider now.
     """
 

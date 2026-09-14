@@ -166,7 +166,7 @@ enternovate/xavani-agent/
 │   ├── main.py                   # Entry point, argument parsing, command dispatch
 │   ├── config.py                 # Config management, migration, env var definitions
 │   ├── setup.py                  # Interactive setup wizard
-│   ├── auth.py                   # Provider resolution, OAuth, Nous Portal
+│   ├── auth.py                   # Provider resolution, OAuth, Xavani Portal
 │   ├── models.py                 # OpenRouter model selection lists
 │   ├── banner.py                 # Welcome banner, ASCII art
 │   ├── commands.py               # Central slash command registry (CommandDef), autocomplete, gateway helpers
@@ -218,7 +218,7 @@ enternovate/xavani-agent/
 |------|---------|
 | `~/.xavani/config.yaml` | Settings (model, terminal, toolsets, compression, etc.) |
 | `~/.xavani/.env` | API keys and secrets |
-| `~/.xavani/auth.json` | OAuth credentials (Nous Portal) |
+| `~/.xavani/auth.json` | OAuth credentials (Xavani Portal) |
 | `~/.xavani/skills/` | All active skills (bundled + hub-installed + agent-created) |
 | `~/.xavani/memories/` | Persistent memory (MEMORY.md, USER.md) |
 | `~/.xavani/state.db` | SQLite session database |

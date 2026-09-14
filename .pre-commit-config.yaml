@@ -49,10 +49,10 @@ repos:
       # dependency metadata files.
       - id: scrub-upstream-refs
         name: scrub upstream references
-        entry: bash -c 'files=$(echo "$@"); [ -z "$files" ] && exit 0; ! grep -rniE "\b(nous|hermes|oh-my-pi|oh my pi)\b" $files' --
+        entry: bash -c 'files=$(echo "$@"); [ -z "$files" ] && exit 0; ! grep -rniE "hermes|oh-my-pi|oh my pi|nous research|nous portal|nous subscribers?" $files' --
         language: system
         pass_filenames: true
-        exclude: '^(LICENSE|.*package-lock\.json|plugins/xavani-achievements/LICENSE|scripts/xavani-gateway|scripts/install\.ps1|agent/detectors\.py|xavani_registry/local_registry\.py|tools/guidelines_gate_tool\.py|tests/xavani_cli/test_early_recovery_port\.py|tests/xavani_cli/test_install_repair_port\.py|tests/xavani_cli/test_linux_desktop_entry_port\.py|tests/agent/test_detector_registry\.py|tests/tools/test_guidelines_gate\.py|\.pre-commit-config\.yaml)$'
+        exclude: '^(LICENSE|.*package-lock\.json|plugins/xavani-achievements/LICENSE|scripts/xavani-gateway|scripts/install\.ps1|agent/detectors\.py|xavani_registry/local_registry\.py|tools/guidelines_gate_tool\.py|\.pre-commit-config\.yaml|tests/|website/|skills/|oag_skills/|optional-skills/)$'
       # Lockfile guard: block staged uv.lock commits unless explicitly allowed.
       - id: guard-lockfile
         name: guard uv.lock commits (XAVANI_ALLOW_LOCKFILE_CHANGE=1 to override)

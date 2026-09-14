@@ -49,7 +49,7 @@ export function Banner({ t }: { t: Theme }) {
         <ArtLines lines={logoLines} />
       ) : (
         <Text bold color={t.color.primary}>
-          {t.brand.icon} NOUS XAVANI
+          {t.brand.icon} XAVANI
         </Text>
       )}
 
