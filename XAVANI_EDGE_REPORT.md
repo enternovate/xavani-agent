@@ -1,6 +1,6 @@
-# Xavani Edge Report — Hermes Parity Ports
+# Xavani Edge Report — Upstream Parity Ports
 
-Date: 2026-09-06. Head: see git log. Plan: .hermes/plans/2026-09-04_162315-xavani-hermes-parity.md.
+Date: 2026-09-06. Head: see git log. Plan: the 2026-09-04 parity plan (session archive).
 
 Method: every slice follows TDD (RED new tests fail, GREEN pass), ruff clean,
 case-blind brand grep, 1 commit per slice. Figures below come from real tool
@@ -11,9 +11,9 @@ output, not estimates.
 - Port test files: 131 files under tests/.
 - Commits in repo: 511+ (parity chain starts 483d8a1).
 - Full suite: see Suite section below.
-- Brand rule: zero `hermes` code hits in ported files. `nous` stays only for
-  the external Nous vendor (provider id, Portal URLs, token names), matching
-  Xavani auth truth. `synchronous` substring hits are false positives.
+- Brand rule: zero upstream-brand code hits in ported files. The internal
+  provider key stays only as inert plumbing for stored logins. The
+  `synchronous` substring hits are false positives.
 
 ## Ported (functional, tested)
 
@@ -35,10 +35,10 @@ relay_plugin_cutover, linux_desktop_entry, setup_whatsapp_cloud,
 dashboard_procs, dashboard_register, sse_done, win_pty_bridge,
 windows_ssh_runtime, subcommands package (46 files), console_engine,
 dashboard_auth package (13 files), cli_agent_setup_mixin,
-cli_commands_mixin, cli_billing_mixin, slash_exec, pets, portal_cli,
+cli_commands_mixin, slash_exec, pets, portal_cli,
 container_boot, journey (merged with native), browser probe helpers,
 managed_uv, model_catalog, macos_tcc_anchor, _scan_venv_blockers,
-update_cmd epic (11354 lines), nous_account, nous_billing.
+update_cmd epic (11354 lines).
 
 Agent layer: turn_context, message_metadata, skill invocation block,
 merged markers, FTS error classes, repair classifiers, turn-context chain
@@ -72,18 +72,18 @@ subsystem), home rewrite + allowlist approval helpers, portable MCP probe.
 
 ## Deliberately skipped
 
-- hermes_cli/diagnostics_upload.py: Nous-internal S3 phone-home. Xavani
-  ships zero phone-home by design. Never port.
-- hermes_cli/nous_subscription.py (1482 lines): Xavani owns a native
-  implementation (xavani_cli/nous_subscription.py, 803 lines, Enternovate
-  header, zero hermes hits, rewired to Xavani auth/config/gateway).
+- The upstream diagnostics-upload module: vendor-internal S3 phone-home.
+  Xavani ships zero phone-home by design. Never port.
+- The upstream subscription module (1482 lines): Xavani owns a native
+  implementation (803 lines, Enternovate header, zero upstream hits,
+  rewired to Xavani auth/config/gateway).
   Owner decision 2026-09-06: never port the upstream version over it.
   portal_cli guards resolve against the native module.
 - agent/pet/generate/: dev-time sprite tooling, no runtime imports.
 
 ## Enternovate rebrand (2026-09-07, commit 44305506)
 
-Owner rule: nothing leads to Nous Research; everything falls under
+Owner rule: nothing leads to upstream vendors; everything falls under
 Xavani agent plus Enternovate. 70 files changed, ruff clean,
 targeted tests green.
 
@@ -93,24 +93,24 @@ targeted tests green.
   ASSUMPTION for owner to confirm: portal.enternovate.co.za and
   inference-api.enternovate.co.za must exist or be replaced with the
   real Enternovate service hosts.
-- Env: XAVANI_* primaries everywhere; NOUS_* kept as read fallback so
-  existing logins keep working.
-- Strings: Nous Portal/Research/login/model/credits/subscription now
+- Env: XAVANI_* primaries everywhere; legacy vendor env vars kept as
+  read fallbacks so existing logins keep working.
+- Strings: vendor portal/login/model/credits/subscription wording now
   Xavani/Enternovate in all user-facing text.
-- Removed: debug --nous flag and its private-upload path (dead flag;
+- Removed: the vendor debug flag and its private-upload path (dead flag;
   uploads always used pastebin). Zero phone-home holds.
-- Kept by design: internal provider key `nous` (dict keys, auth state,
+- Kept by design: the internal provider key (dict keys, auth state,
   function names). Renaming breaks stored logins; it is invisible.
 
 ## Remaining gaps (evidence, not guesses)
 
-- hermes_cli/gateway_windows.py (1959 lines): watcher import guarded.
-  Needs its own slice.
-- hermes_cli/proxy_cli.py (903 lines) + agent/proxy_sources/iron_proxy:
-  slash_exec egress guarded. Needs its own slice.
+- The upstream Windows gateway module (1959 lines): watcher import
+  guarded. Needs its own slice.
+- The upstream proxy CLI module (903 lines) plus the proxy sources
+  package: slash_exec egress guarded. Needs its own slice.
 - Upstream keeps decomposing god-files (Sep 2026 facade pattern):
-  hermes_cli/auth_* (13 files), hermes_cli/cli_*_mixin (8 files),
-  hermes_state_* (17 files). Xavani covers these AREAS natively in its
+  auth_* (13 files), cli_*_mixin (8 files), state_* (17 files).
+  Xavani covers these AREAS natively in its
   monoliths (cli.py 16161 lines, auth.py 7478 lines with 100+ hits per
   provider family, xavani_state.py 3857 lines). File absence is
   architecture difference, not proven feature absence. Per-area diffs
@@ -122,24 +122,22 @@ targeted tests green.
 Owner: Xavani ships the agent, not inference/portal services. No
 Enternovate service hosts exist, so portal/inference URL defaults are
 empty strings. Portal commands fail closed with clear messages.
-Portal fetchers were already fail-open. Provider key `nous` stays as
-inert plumbing for stored logins; no traffic can reach Nous (no URLs
-remain) and no Enternovate hosts are invented.
+Portal fetchers were already fail-open. The provider key stays as
+inert plumbing for stored logins; no traffic can reach any vendor (no
+URLs remain) and no Enternovate hosts are invented.
 - Login page brand reads Xavani Agent.
-- debug --nous private-upload path deleted (was a dead flag).
+- The vendor debug flag's private-upload path deleted (was a dead flag).
 - web_dist bundle still embeds old strings: generated artifact,
   refreshes on next frontend rebuild. Never hand-edited.
 - Kept: MIT attribution (LICENSE/README/AGENTS.md), identity
-  disclaimers ("NOT Hermes"), data-compat keys, scrub regex.
+  disclaimers, data-compat keys, and the scrub guard.
 
 ## Subscription scrapped (2026-09-07, commit 79d9f415)
 
-Owner: no subscription product exists. Deleted 7 modules
-(billing_view, billing_usage, subscription_view, nous_billing,
-nous_account, nous_subscription, cli_billing_mixin) plus 4 port
-tests, 6039 lines removed. Subscription prompt returns "".
-Portal tools/status fail closed. Setup/tools/status run direct
-paths via an inert features helper. 461 unit plus 122 integration
+Owner: no subscription product exists. Deleted 7 subscription/billing
+modules plus 4 port tests, 6039 lines removed. Subscription prompt
+returns "". Portal tools/status fail closed. Setup/tools/status run
+direct paths via an inert features helper. 461 unit plus 122 integration
 tests green on touched files.
 
 ## Suite

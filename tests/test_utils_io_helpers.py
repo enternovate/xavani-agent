@@ -1,4 +1,4 @@
-"""Tests for utils IO helpers ported from Hermes."""
+"""Tests for utils IO helpers ported from the upstream project."""
 
 from utils import _preserve_file_owner, atomic_write_text, fast_safe_load
 

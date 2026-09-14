@@ -80,7 +80,7 @@ _SECRET_PATTERNS = (
 
 
 def _detect_scrub(context: Dict[str, Any]) -> Verdict:
-    """Flag any upstream (Xavani/Hermes) reference in the supplied text/diff."""
+    """Flag any upstream-brand reference in the supplied text/diff."""
     text = _text_of(context)
     hits = sorted({m.group(0) for m in _SCRUB_RE.finditer(text)})
     return Verdict(

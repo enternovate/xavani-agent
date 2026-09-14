@@ -4,7 +4,7 @@
 
 """Reliability tests for MemoryManager background-executor machinery.
 
-Covers the Hermes-ported reliability surface:
+Covers the ported reliability surface:
 
 * ``_submit_background`` / ``_get_sync_executor`` — background writes on a
   named, daemon ``xavani-memory-*`` thread pool,

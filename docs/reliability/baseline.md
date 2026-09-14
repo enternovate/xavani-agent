@@ -41,7 +41,7 @@ Do not replace that environment to execute this program.
 - JavaScript test file: 1 passed.
 - Internal semver assertions: 6 passed.
 - Syntax: main.js, preload.js, and renderer app.js pass.
-- Existing changes: README.md, CHANGELOG.md, and .hermes/.
+- Existing changes: modified README.md; untracked CHANGELOG.md; an untracked plans directory.
 - Current package version: 0.3.0.
 - Remote maximum observed release tag: v0.4.0.
 - The package at v0.4.0 declares 0.4.0.

@@ -48,7 +48,7 @@ from upstream with attribution) ships separately.
 ## [0.2.0] - 2026-08-22 — "The Big Bang"
 
 Minor release across ten workstreams: approval-gate hardening, the loop
-engine, an expanded eval harness, harness cost hardening, oh-my-pi ports,
+engine, an expanded eval harness, harness cost hardening, reliability ports,
 an overlooked-feature pack, CLI polish, workflow packs, and release
 engineering. No breaking changes.
 
@@ -65,7 +65,7 @@ engineering. No breaking changes.
 - Harness hardening: model roles (default/smol/slow/plan/advisor) with
   config overrides; fallback chains, parallel tool execution, cache-hit
   telemetry, budget governor audited as already present in 0.1.x.
-- Ports from oh-my-pi, implemented better: advisor reviewer role with
+- Reliability ports, implemented better: advisor reviewer role with
   inline severity notes (/advisor), agent hub roster with steer/kill/
   revive (/hub), atomic commit splitter with cycle rejection, conflict
   resolver, magic keywords (ultrathink/orchestrate/workflowz), NDJSON
@@ -315,5 +315,5 @@ G Autonomy & Proactivity (10). Highlights:
 - PyPI wheel (`pip install xavani-agent`), Homebrew formula, Docker image
   with HEALTHCHECK, Nix flake + Cachix cache, Windows portable installer,
   one-line installers (`curl -fsSL https://get.xavani.dev | bash`).
-- MIT licensed. Derived from Hermes Agent by Nous Research (MIT) with
-  attribution; maintained independently by Enternovate.
+- MIT licensed. See LICENSE for upstream attribution and notices;
+  maintained independently by Enternovate.
