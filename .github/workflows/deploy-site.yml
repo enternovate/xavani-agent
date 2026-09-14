@@ -123,7 +123,7 @@ jobs:
         # than a build failure — the artifact is already uploaded and can
         # be re-deployed once Pages is turned on by re-running the workflow.
         continue-on-error: true
-        uses: actions/deploy-pages@cd2ce8fcbc39b97be8ca5fce6e763baed58fa128  #v4  # v4
+        uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346  #v4  # v4
 
       - name: Warn if Pages deploy failed
         if: steps.deploy.outcome == 'failure'
