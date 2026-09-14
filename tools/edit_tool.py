@@ -128,18 +128,17 @@ def _backend_is_local(task_id: str = "default") -> bool:
     backend (docker/modal/singularity/daytona/vercel_sandbox/ssh) the paths
     a model names refer to the sandbox filesystem, not the host one this
     process writes; the caller must fail fast instead of editing the wrong
-    file.  Fails open (returns True) when the config cannot be read so a
-    broken env setup cannot disable editing entirely.
+    file.  Fails closed (returns False) when the config cannot be read or
+    does not name an explicit ``local`` backend, so an unknown backend is
+    never mistaken for the host filesystem.
     """
     try:
         from tools.terminal_tool import _get_env_config
+
+        config = _get_env_config()
     except Exception:
-        return True
-    try:
-        env_type = _get_env_config().get("env_type") or "local"
-    except Exception:
-        return True
-    return env_type == "local"
+        return False
+    return isinstance(config, dict) and config.get("env_type") == "local"
 
 
 # ---------------------------------------------------------------------------
