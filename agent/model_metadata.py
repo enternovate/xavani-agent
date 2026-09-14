@@ -1520,7 +1520,7 @@ def get_model_context_length(
                 logger.info(
                     "Dropping stale Kimi cache entry %s@%s -> %s (OpenRouter underreport); "
                     "re-resolving via hardcoded defaults",
-                    model, base_url, f"{cached:,}",
+                    model, base_url, f"{cached:,}",  # nosec B105 - model name, base_url and cached context length; no credentials
                 )
                 _invalidate_cached_context_length(model, base_url)
             # Xavani Portal: the portal /v1/models endpoint is authoritative.

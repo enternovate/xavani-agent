@@ -2010,12 +2010,12 @@ class CLICommandsMixin:
                 print("  " + "-" * 63)
                 for job in jobs:
                     repeat_str = job.get("repeat", "?")
-                    print(f"    {job['job_id'][:12]:<12} | {job['schedule']:<15} | {repeat_str:<8}")
+                    print(f"    {job['job_id'][:12]:<12} | {job['schedule']:<15} | {repeat_str:<8}")  # nosec B105 - cron job id/schedule/repeat; not a credential
                     if job.get("skills"):
-                        print(f"      Skills: {', '.join(job['skills'])}")
-                    print(f"      {job.get('prompt_preview', '')}")
+                        print(f"      Skills: {', '.join(job['skills'])}")  # nosec B105 - cron job skills list; not a credential
+                    print(f"      {job.get('prompt_preview', '')}")  # nosec B105 - cron job prompt preview; not a credential
                     if job.get("next_run_at"):
-                        print(f"      Next: {job['next_run_at']}")
+                        print(f"      Next: {job['next_run_at']}")  # nosec B105 - cron job next-run timestamp; not a credential
                     print()
             else:
                 print("  No scheduled jobs. Use '/cron add' to create one.")
@@ -2038,14 +2038,14 @@ class CLICommandsMixin:
             print("Scheduled Jobs:")
             print("-" * 80)
             for job in jobs:
-                print(f"  ID: {job['job_id']}")
-                print(f"  Name: {job['name']}")
-                print(f"  State: {job.get('state', '?')}")
-                print(f"  Schedule: {job['schedule']} ({job.get('repeat', '?')})")
-                print(f"  Next run: {job.get('next_run_at', 'N/A')}")
+                print(f"  ID: {job['job_id']}")  # nosec B105 - cron job id; not a credential
+                print(f"  Name: {job['name']}")  # nosec B105 - cron job name; not a credential
+                print(f"  State: {job.get('state', '?')}")  # nosec B105 - cron job state; not a credential
+                print(f"  Schedule: {job['schedule']} ({job.get('repeat', '?')})")  # nosec B105 - cron job schedule/repeat; not a credential
+                print(f"  Next run: {job.get('next_run_at', 'N/A')}")  # nosec B105 - cron job next-run timestamp; not a credential
                 if job.get("skills"):
-                    print(f"  Skills: {', '.join(job['skills'])}")
-                print(f"  Prompt: {job.get('prompt_preview', '')}")
+                    print(f"  Skills: {', '.join(job['skills'])}")  # nosec B105 - cron job skills list; not a credential
+                print(f"  Prompt: {job.get('prompt_preview', '')}")  # nosec B105 - cron job prompt preview; not a credential
                 if job.get("last_run_at"):
                     status = job.get("last_status") or "?"
                     # delivery_failed: the agent ran fine but the output never
@@ -2053,7 +2053,7 @@ class CLICommandsMixin:
                     # lives in last_delivery_error (last_error is None).
                     if status == "delivery_failed" and job.get("last_delivery_error"):
                         status = f"delivery_failed: {job['last_delivery_error']}"
-                    print(f"  Last run: {job['last_run_at']} ({status})")
+                    print(f"  Last run: {job['last_run_at']} ({status})")  # nosec B105 - cron last-run timestamp/status; not a credential
                 print()
             return
 
@@ -2078,13 +2078,13 @@ class CLICommandsMixin:
                 skills=skills or None,
             )
             if result.get("success"):
-                print(f"(^_^)b Created job: {result['job_id']}")
-                print(f"  Schedule: {result['schedule']}")
+                print(f"(^_^)b Created job: {result['job_id']}")  # nosec B105 - created cron job id; not a credential
+                print(f"  Schedule: {result['schedule']}")  # nosec B105 - created cron job schedule; not a credential
                 if result.get("skills"):
-                    print(f"  Skills: {', '.join(result['skills'])}")
-                print(f"  Next run: {result['next_run_at']}")
+                    print(f"  Skills: {', '.join(result['skills'])}")  # nosec B105 - created cron job skills list; not a credential
+                print(f"  Next run: {result['next_run_at']}")  # nosec B105 - created cron job next-run timestamp; not a credential
             else:
-                print(f"(x_x) Failed to create job: {result.get('error')}")
+                print(f"(x_x) Failed to create job: {result.get('error')}")  # nosec B105 - cron create error string; not a credential
             return
 
         if subcommand == "edit":
@@ -2125,14 +2125,14 @@ class CLICommandsMixin:
             )
             if result.get("success"):
                 job = result["job"]
-                print(f"(^_^)b Updated job: {job['job_id']}")
-                print(f"  Schedule: {job['schedule']}")
+                print(f"(^_^)b Updated job: {job['job_id']}")  # nosec B105 - updated cron job id; not a credential
+                print(f"  Schedule: {job['schedule']}")  # nosec B105 - updated cron job schedule; not a credential
                 if job.get("skills"):
-                    print(f"  Skills: {', '.join(job['skills'])}")
+                    print(f"  Skills: {', '.join(job['skills'])}")  # nosec B105 - updated cron job skills list; not a credential
                 else:
                     print("  Skills: none")
             else:
-                print(f"(x_x) Failed to update job: {result.get('error')}")
+                print(f"(x_x) Failed to update job: {result.get('error')}")  # nosec B105 - cron update error string; not a credential
             return
 
         if subcommand in {"pause", "resume", "run", "remove", "rm", "delete"}:
@@ -2144,19 +2144,19 @@ class CLICommandsMixin:
             action = "remove" if subcommand in {"remove", "rm", "delete"} else subcommand
             result = _cron_api(action=action, job_id=job_id, reason="paused from /cron" if action == "pause" else None)
             if not result.get("success"):
-                print(f"(x_x) Failed to {action} job: {result.get('error')}")
+                print(f"(x_x) Failed to {action} job: {result.get('error')}")  # nosec B105 - cron action error string; not a credential
                 return
             if action == "pause":
-                print(f"(^_^)b Paused job: {result['job']['name']} ({job_id})")
+                print(f"(^_^)b Paused job: {result['job']['name']} ({job_id})")  # nosec B105 - paused cron job name/id; not a credential
             elif action == "resume":
-                print(f"(^_^)b Resumed job: {result['job']['name']} ({job_id})")
-                print(f"  Next run: {result['job'].get('next_run_at')}")
+                print(f"(^_^)b Resumed job: {result['job']['name']} ({job_id})")  # nosec B105 - resumed cron job name/id; not a credential
+                print(f"  Next run: {result['job'].get('next_run_at')}")  # nosec B105 - cron job next-run timestamp; not a credential
             elif action == "run":
-                print(f"(^_^)b Triggered job: {result['job']['name']} ({job_id})")
+                print(f"(^_^)b Triggered job: {result['job']['name']} ({job_id})")  # nosec B105 - triggered cron job name/id; not a credential
                 print("  It will run on the next scheduler tick.")
             else:
                 removed = result.get("removed_job", {})
-                print(f"(^_^)b Removed job: {removed.get('name', job_id)} ({job_id})")
+                print(f"(^_^)b Removed job: {removed.get('name', job_id)} ({job_id})")  # nosec B105 - removed cron job name/id; not a credential
             return
 
         print(f"(._.) Unknown cron command: {subcommand}")
@@ -3562,12 +3562,23 @@ class CLICommandsMixin:
                 fh.write(header)
                 if initial_text:
                     fh.write(initial_text)
+            # Launch the editor in argv form only — never via a shell, so
+            # nothing in $EDITOR can be interpreted as shell syntax. Try the
+            # argv-split value first, then the whole value as a single
+            # executable; a failure to launch is swallowed so the caller sees
+            # the documented "editor could not be launched" empty buffer.
+            candidates = []
             try:
-                subprocess.call([*shlex.split(editor), path])
-            except Exception:
-                # Fall back to a bare invocation (editor value may not be a
-                # simple argv-splittable string on some platforms).
-                subprocess.call(f"{editor} {shlex.quote(path)}", shell=True)
+                candidates.append([*shlex.split(editor), path])
+            except ValueError:
+                pass  # not argv-splittable (e.g. unbalanced quotes)
+            candidates.append([editor, path])
+            for argv in candidates:
+                try:
+                    subprocess.call(argv)
+                    break
+                except OSError:
+                    continue
             with open(path, "r", encoding="utf-8") as fh:
                 raw = fh.read()
         finally:

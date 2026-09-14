@@ -397,7 +397,7 @@ def compress_context(
     logger.info(
         "context compression started: session=%s messages=%d tokens=~%s model=%s focus=%r",
         agent.session_id or "none", _pre_msg_count,
-        f"{approx_tokens:,}" if approx_tokens else "unknown", agent.model,
+        f"{approx_tokens:,}" if approx_tokens else "unknown", agent.model,  # nosec B105 - compression diagnostic (token counts, model name); no credentials
         focus_topic,
     )
 

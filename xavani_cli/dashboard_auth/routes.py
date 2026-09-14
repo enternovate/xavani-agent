@@ -217,6 +217,12 @@ async def auth_login(request: Request, provider: str, next: str = ""):
         login_url = f"{_prefix(request)}/login"
         if safe_next:
             login_url = f"{login_url}?next={quote(safe_next, safe='')}"
+        # Scheme/host validation before the redirect (CodeQL
+        # py/url-redirection): every input above is already a normalised
+        # same-origin path, but re-assert the shape here so a future
+        # refactor cannot smuggle an absolute URL into the Location header.
+        if not _is_same_origin_path(login_url):
+            login_url = "/login"
         return RedirectResponse(url=login_url, status_code=302)
 
     try:
@@ -228,9 +234,13 @@ async def auth_login(request: Request, provider: str, next: str = ""):
             reason="provider_unreachable",
             ip=_client_ip(request),
         )
+        # Log the provider detail server-side only; the 503 body stays
+        # generic so no internal error text reaches the client (CodeQL
+        # py/stack-trace-exposure).
+        _log.warning("auth login: provider %r unreachable: %r", provider, e)
         raise HTTPException(
             status_code=503,
-            detail=f"Provider unreachable: {e}",
+            detail="Provider unreachable",
         )
 
     audit_log(
@@ -535,9 +545,13 @@ async def auth_callback(
             reason="provider_unreachable",
             ip=_client_ip(request),
         )
+        # Same leak class as the login handler above: provider exception
+        # text is logged server-side only, never interpolated into the 503
+        # body (CodeQL py/stack-trace-exposure).
+        _log.warning("auth callback: provider %r unreachable: %r", provider_name, e)
         raise HTTPException(
             status_code=503,
-            detail=f"Provider unreachable: {e}",
+            detail="Provider unreachable",
         )
 
     audit_log(
@@ -620,6 +634,20 @@ async def auth_callback(
     # so it never lingers to suppress a future silent attempt after logout.
     clear_sso_attempt_cookie(resp, prefix=_prefix(request))
     return resp
+
+
+def _is_same_origin_path(url: str) -> bool:
+    """True when *url* is a bare same-origin path (no scheme, no host).
+
+    Redirect-sink guard: a value that parses with a scheme or netloc
+    (``https://evil.example``, ``//evil.example``) is not same-origin, so
+    it must never reach ``RedirectResponse``.
+    """
+    if not url or not url.startswith("/") or url.startswith("//"):
+        return False
+    from urllib.parse import urlsplit
+    parts = urlsplit(url)
+    return not parts.scheme and not parts.netloc
 
 
 def _validate_post_login_target(raw: str) -> str:
