@@ -589,8 +589,9 @@ class _IdempotencyCache:
 _idem_cache = _IdempotencyCache()
 
 
-# Browser extension turn envelope (hermes.browser.turn.v2) constants.
-_BROWSER_TURN_PROTOCOL_ID = "hermes.browser.turn.v2"
+# Browser extension turn envelope constants. The suffix match also accepts
+# legacy envelope ids from older extension builds.
+_BROWSER_TURN_PROTOCOL_SUFFIX = ".browser.turn.v2"
 # The extension's BCP total serialized budget; human input alone is
 # clamped client-side to 6k, so anything wildly over that is malformed.
 _BROWSER_TURN_MAX_INPUT_CHARS = 48_000
@@ -602,7 +603,7 @@ def extract_browser_turn_text(body):
     Accepts:
       - plain string (legacy /v1/runs input)
       - dict with ``input`` key (standard runs/chat bodies)
-      - dict with ``protocol == hermes.browser.turn.v2``: pulls
+      - dict with a browser turn envelope (``protocol`` ending in ``.browser.turn.v2``): pulls
         ``human_input.text`` and appends attachment text items.
 
     Returns the prompt string, or None when no usable text exists.
@@ -613,7 +614,8 @@ def extract_browser_turn_text(body):
             return body
         if not isinstance(body, dict):
             return None
-        if body.get("protocol") != _BROWSER_TURN_PROTOCOL_ID:
+        protocol = body.get("protocol")
+        if not (isinstance(protocol, str) and protocol.endswith(_BROWSER_TURN_PROTOCOL_SUFFIX)):
             inner = body.get("input")
             if isinstance(inner, str):
                 return inner

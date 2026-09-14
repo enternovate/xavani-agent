@@ -49,15 +49,10 @@ def _frontmatter(text: str) -> dict[str, Any]:
 
 
 def _xavani_meta(fm: dict[str, Any]) -> dict[str, Any]:
-    """``metadata.hermes``/``metadata.xavani`` as a dict, tolerant of the
-    string-valued frontmatter that ``parse_frontmatter``'s malformed-YAML
-    fallback produces."""
+    """``metadata.xavani`` as a dict, tolerant of the skill frontmatter shape."""
     meta = fm.get("metadata")
     xavani = meta.get("xavani") if isinstance(meta, dict) else None
-    if isinstance(xavani, dict):
-        return xavani
-    hermes = meta.get("hermes") if isinstance(meta, dict) else None
-    return hermes if isinstance(hermes, dict) else {}
+    return xavani if isinstance(xavani, dict) else {}
 
 
 def _related(fm: dict[str, Any]) -> list[str]:

@@ -22,9 +22,8 @@
 
 ## Welcome to Xavani
 
-> **Attribution:** Xavani Agent is derived from [Hermes Agent by Nous Research](https://github.com/NousResearch/hermes-agent) ([MIT License](https://github.com/NousResearch/hermes-agent/blob/main/LICENSE)).
-> All original code, design, and architecture are the work of the Nous Research team and contributors.
-> Xavani Agent is maintained independently by [Enternovate](https://enternovate.com).
+> **Attribution:** Xavani Agent is an independent product by [Enternovate](https://enternovate.com).
+> Third-party license notices are included in [LICENSE](LICENSE).
 
 Xavani is an **open-source AI agent gateway** that runs entirely on your machine.
 Connect to any AI model — OpenAI, Anthropic, Google Gemini, DeepSeek, GLM, Qwen,

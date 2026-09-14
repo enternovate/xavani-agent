@@ -43,13 +43,16 @@ repos:
         language: system
         pass_filenames: false
         files: '^(agent/|tools/|xavani_learner/).*\.py$'
-      # Scrub: no new Nous/Hermes references may be committed (only LICENSE/README attribution).
+      # Scrub: no upstream-brand references may be committed. Documented
+      # exceptions: LICENSE (legal notices), detection/scrub guards,
+      # migration bridges for pre-rename installs, and third-party or
+      # dependency metadata files.
       - id: scrub-upstream-refs
-        name: scrub upstream references (Nous/Hermes)
-        entry: bash -c 'files=$(echo "$@" | tr " " "\n" | grep -vE "^(LICENSE|README)"); [ -z "$files" ] && exit 0; ! grep -rniE "\\b(nous|hermes)\\b" $files' --
+        name: scrub upstream references
+        entry: bash -c 'files=$(echo "$@"); [ -z "$files" ] && exit 0; ! grep -rniE "\b(nous|hermes|oh-my-pi|oh my pi)\b" $files' --
         language: system
         pass_filenames: true
-        exclude: '^(LICENSE|README.*|.*/ATTRIBUTION\.md|.*/NOTICE)$'
+        exclude: '^(LICENSE|.*package-lock\.json|plugins/xavani-achievements/LICENSE|scripts/xavani-gateway|scripts/install\.ps1|agent/detectors\.py|xavani_registry/local_registry\.py|tools/guidelines_gate_tool\.py|tests/xavani_cli/test_early_recovery_port\.py|tests/xavani_cli/test_install_repair_port\.py|tests/xavani_cli/test_linux_desktop_entry_port\.py|tests/agent/test_detector_registry\.py|tests/tools/test_guidelines_gate\.py|\.pre-commit-config\.yaml)$'
       # Lockfile guard: block staged uv.lock commits unless explicitly allowed.
       - id: guard-lockfile
         name: guard uv.lock commits (XAVANI_ALLOW_LOCKFILE_CHANGE=1 to override)
