@@ -3209,18 +3209,24 @@ class APIServerAdapter(BasePlatformAdapter):
                 if isinstance(result, dict) and result.get("failed"):
                     error_msg = result.get("error") or "agent run failed"
                     verification_state = result.get("verification_state") or "unverified"
+                    missing_checks = result.get("missing_checks") or []
+                    failed_checks = result.get("failed_checks") or []
                     q.put_nowait({
                         "event": "run.failed",
                         "run_id": run_id,
                         "timestamp": time.time(),
                         "error": error_msg,
                         "verification_state": verification_state,
+                        "missing_checks": missing_checks,
+                        "failed_checks": failed_checks,
                     })
                     self._set_run_status(
                         run_id,
                         "failed",
                         error=error_msg,
                         verification_state=verification_state,
+                        missing_checks=missing_checks,
+                        failed_checks=failed_checks,
                         last_event="run.failed",
                     )
                 else:
@@ -3253,6 +3259,9 @@ class APIServerAdapter(BasePlatformAdapter):
                 self._set_run_status(
                     run_id,
                     "cancelled",
+                    verification_state="unverified",
+                    missing_checks=[],
+                    failed_checks=[],
                     last_event="run.cancelled",
                 )
                 try:
@@ -3260,6 +3269,9 @@ class APIServerAdapter(BasePlatformAdapter):
                         "event": "run.cancelled",
                         "run_id": run_id,
                         "timestamp": time.time(),
+                        "verification_state": "unverified",
+                        "missing_checks": [],
+                        "failed_checks": [],
                     })
                 except Exception:
                     pass
@@ -3271,6 +3283,8 @@ class APIServerAdapter(BasePlatformAdapter):
                     "failed",
                     error=str(exc),
                     verification_state="unverified",
+                    missing_checks=[],
+                    failed_checks=[],
                     last_event="run.failed",
                 )
                 try:
@@ -3280,6 +3294,8 @@ class APIServerAdapter(BasePlatformAdapter):
                         "timestamp": time.time(),
                         "error": str(exc),
                         "verification_state": "unverified",
+                        "missing_checks": [],
+                        "failed_checks": [],
                     })
                 except Exception:
                     pass

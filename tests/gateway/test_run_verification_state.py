@@ -282,3 +282,55 @@ class TestRunVerificationStateEvents:
 
                 assert event["error"] == "x"
                 assert event["verification_state"] == "unverified"
+
+
+    @pytest.mark.asyncio
+    async def test_structured_failure_carries_check_lists_on_status_and_event(self, adapter):
+        app = _create_runs_app(adapter)
+        async with TestClient(TestServer(app)) as cli:
+            with patch.object(adapter, "_create_agent") as mock_create:
+                mock_create.return_value = _make_result_agent({
+                    "failed": True,
+                    "error": "x",
+                    "verification_state": "blocked",
+                    "missing_checks": ["unit"],
+                    "failed_checks": ["lint"],
+                })
+
+                resp = await cli.post("/v1/runs", json={"input": "hello"})
+                run_id = (await resp.json())["run_id"]
+
+                status = await _await_terminal_status(cli, run_id)
+                assert status["status"] == "failed"
+                assert status["verification_state"] == "blocked"
+                assert status["missing_checks"] == ["unit"]
+                assert status["failed_checks"] == ["lint"]
+
+                event = await _collect_events_until(cli, run_id, "run.failed")
+                assert event["verification_state"] == "blocked"
+                assert event["missing_checks"] == ["unit"]
+                assert event["failed_checks"] == ["lint"]
+
+    @pytest.mark.asyncio
+    async def test_exception_failure_defaults_check_lists(self, adapter):
+        app = _create_runs_app(adapter)
+        async with TestClient(TestServer(app)) as cli:
+            with patch.object(adapter, "_create_agent") as mock_create:
+                agent = MagicMock()
+                agent.run_conversation.side_effect = RuntimeError("boom")
+                agent.session_prompt_tokens = 0
+                agent.session_completion_tokens = 0
+                agent.session_total_tokens = 0
+                mock_create.return_value = agent
+
+                resp = await cli.post("/v1/runs", json={"input": "hello"})
+                run_id = (await resp.json())["run_id"]
+
+                status = await _await_terminal_status(cli, run_id)
+                assert status["verification_state"] == "unverified"
+                assert status["missing_checks"] == []
+                assert status["failed_checks"] == []
+
+                event = await _collect_events_until(cli, run_id, "run.failed")
+                assert event["missing_checks"] == []
+                assert event["failed_checks"] == []
