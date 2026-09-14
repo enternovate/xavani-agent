@@ -46,7 +46,7 @@ conversation loop previously capped inline at 120 s — unchanged behaviour).
 ## x-ratelimit-* headers
 
 `agent/rate_limit_tracker.py::parse_rate_limit_headers` parses the
-12-header Nous/OpenRouter schema (`x-ratelimit-limit/-remaining/-reset-*`
+12-header Xavani Portal/OpenRouter schema (`x-ratelimit-limit/-remaining/-reset-*`
 for requests/tokens per minute and per hour) and `run_agent.py` caches the
 result via `_capture_rate_limits` for the `/usage` command. These headers
 drive **display only** — the reset-seconds values are not currently used to
