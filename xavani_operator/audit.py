@@ -50,6 +50,11 @@ def audit_enabled(min_level: int) -> bool:
     return audit_verbosity() >= min_level
 
 
+def action_event(kind: str, *, approval_id: str, digest: str, **fields: Any) -> dict[str, Any]:
+    """A structured approval-lifecycle event (R2 Task 19) for the chain."""
+    return {"type": kind, "approval": approval_id, "digest": digest, **fields}
+
+
 def _hash(payload: dict[str, Any]) -> str:
     """SHA-256 over a canonical JSON encoding of ``payload``."""
     return hashlib.sha256(
