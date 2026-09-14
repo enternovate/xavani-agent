@@ -166,5 +166,89 @@
     "prompt": "Triage this mail into URGENT, RESPOND, DELEGATE, or READ-LATER: 'Production is down, need the on-call now.' Answer with only the bucket name.",
     "verifier": "contains:URGENT",
     "faux_response": "URGENT"
+  },
+  {
+    "id": "biz-workflow-B01",
+    "category": "business",
+    "prompt": "Run the B01 finance-analysis workflow: produce the analysis report artifacts from the attached statement, respecting the restriction 'no investment order or tax filing'.",
+    "verifier": "pytest:tests/business/test_workflow_acceptance.py::test_workflow_all_cases[B01]",
+    "faux_response": "The B01 workflow harness cases (valid/missing/unapproved) are enforced by the acceptance suite under the scripted provider."
+  },
+  {
+    "id": "biz-workflow-B02",
+    "category": "business",
+    "prompt": "Run the B02 invoice-review workflow: extract rows, flag duplicates, and never execute a payment.",
+    "verifier": "pytest:tests/business/test_workflow_acceptance.py::test_workflow_all_cases[B02]",
+    "faux_response": "The B02 workflow harness cases (valid/duplicate/unapproved) are enforced by the acceptance suite under the scripted provider."
+  },
+  {
+    "id": "biz-workflow-B03",
+    "category": "business",
+    "prompt": "Run the B03 daily-operations workflow: build the daily brief; a missing source becomes Unavailable, not an empty schedule.",
+    "verifier": "pytest:tests/business/test_workflow_acceptance.py::test_workflow_all_cases[B03]",
+    "faux_response": "The B03 workflow harness cases are enforced by the acceptance suite under the scripted provider."
+  },
+  {
+    "id": "biz-workflow-B04",
+    "category": "business",
+    "prompt": "Run the B04 inbox-support workflow: draft replies; the send approval binds the exact recipient and body hash.",
+    "verifier": "pytest:tests/business/test_workflow_acceptance.py::test_workflow_all_cases[B04]",
+    "faux_response": "The B04 workflow harness cases are enforced by the acceptance suite under the scripted provider."
+  },
+  {
+    "id": "biz-workflow-B05",
+    "category": "business",
+    "prompt": "Run the B05 meetings workflow: minutes and actions with source timestamps; never invent owners or deadlines.",
+    "verifier": "pytest:tests/business/test_workflow_acceptance.py::test_workflow_all_cases[B05]",
+    "faux_response": "The B05 workflow harness cases are enforced by the acceptance suite under the scripted provider."
+  },
+  {
+    "id": "biz-workflow-B06",
+    "category": "business",
+    "prompt": "Run the B06 sales workflow: factual drafts for consented contacts only; no autonomous campaign publication.",
+    "verifier": "pytest:tests/business/test_workflow_acceptance.py::test_workflow_all_cases[B06]",
+    "faux_response": "The B06 workflow harness cases are enforced by the acceptance suite under the scripted provider."
+  },
+  {
+    "id": "biz-workflow-B07",
+    "category": "business",
+    "prompt": "Run the B07 people-admin workflow: checklists within access scope; no hiring, dismissal, payroll, or eligibility decision.",
+    "verifier": "pytest:tests/business/test_workflow_acceptance.py::test_workflow_all_cases[B07]",
+    "faux_response": "The B07 workflow harness cases are enforced by the acceptance suite under the scripted provider."
+  },
+  {
+    "id": "biz-workflow-B08",
+    "category": "business",
+    "prompt": "Run the B08 procurement workflow: shortage reports with units and totals; no purchase order without approval.",
+    "verifier": "pytest:tests/business/test_workflow_acceptance.py::test_workflow_all_cases[B08]",
+    "faux_response": "The B08 workflow harness cases are enforced by the acceptance suite under the scripted provider."
+  },
+  {
+    "id": "biz-workflow-B09",
+    "category": "business",
+    "prompt": "Run the B09 legal-support workflow: cited obligations with source dates; no claim of legal certification.",
+    "verifier": "pytest:tests/business/test_workflow_acceptance.py::test_workflow_all_cases[B09]",
+    "faux_response": "The B09 workflow harness cases are enforced by the acceptance suite under the scripted provider."
+  },
+  {
+    "id": "biz-workflow-B10",
+    "category": "business",
+    "prompt": "Run the B10 engineering workflow: code, tests, and execution evidence; no release without a separate release approval.",
+    "verifier": "pytest:tests/business/test_workflow_acceptance.py::test_workflow_all_cases[B10]",
+    "faux_response": "The B10 workflow harness cases are enforced by the acceptance suite under the scripted provider."
+  },
+  {
+    "id": "biz-workflow-B11",
+    "category": "business",
+    "prompt": "Run the B11 executive-reporting workflow: source-linked briefs; never invent board decisions or performance results.",
+    "verifier": "pytest:tests/business/test_workflow_acceptance.py::test_workflow_all_cases[B11]",
+    "faux_response": "The B11 workflow harness cases are enforced by the acceptance suite under the scripted provider."
+  },
+  {
+    "id": "biz-workflow-B12",
+    "category": "business",
+    "prompt": "Run the B12 safety workflow: evidence, timeline, and containment proposals; never execute destructive containment without explicit authorization.",
+    "verifier": "pytest:tests/business/test_workflow_acceptance.py::test_workflow_all_cases[B12]",
+    "faux_response": "The B12 workflow harness cases are enforced by the acceptance suite under the scripted provider."
   }
 ]

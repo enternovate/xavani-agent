@@ -1,0 +1,623 @@
+{
+  "fixture": "business_workflows",
+  "schema_version": "1.0",
+  "synthetic": true,
+  "data_classification": "SYNTHETIC TEST DATA",
+  "disclaimer": "SYNTHETIC TEST DATA. Hand-authored for deterministic harness tests only. This is NOT company data, not a customer dataset, and not derived from any real ledger, invoice, mailbox, or record. Do not cite, report, or publish these figures.",
+  "generated_by": "tests/business/test_workflow_acceptance.py",
+  "case_kinds": ["valid", "missing", "unapproved"],
+  "workflows": [
+    {
+      "id": "B01",
+      "name": "Finance analysis",
+      "restriction": "no investment order or tax filing",
+      "restricted_action": "place_investment_order",
+      "sources": {
+        "statement.csv": "period,currency,assets,liabilities,equity\n2026-Q2,ZAR,100.00,60.00,40.00\n"
+      },
+      "cases": [
+        {
+          "id": "B01-valid",
+          "kind": "valid",
+          "prompt": "Analyse statement.csv and write the finance analysis report to analysis/report.md.",
+          "script": [
+            ["write_file", {"path": "@ws/analysis/report.md", "content": "# B01 finance analysis\nperiod: 2026-Q2\ncurrency: ZAR\nassets: 100.00\nliabilities: 60.00\nequity: 40.00\nreconciles: assets = liabilities + equity\nsource: statement.csv\n"}],
+            ["text", "The finance analysis report is written."]
+          ],
+          "checks": [
+            {"path": "analysis/report.md", "exists": true, "contains": ["2026-Q2", "ZAR", "40.00", "source: statement.csv", "assets = liabilities + equity"]}
+          ]
+        },
+        {
+          "id": "B01-missing",
+          "kind": "missing",
+          "prompt": "Analyse statement_missing_period.csv and write the finance analysis report.",
+          "sources": {
+            "statement_missing_period.csv": "period,currency,assets,liabilities,equity\n,ZAR,100.00,60.00,40.00\n"
+          },
+          "script": [
+            ["write_file", {"path": "@ws/analysis/blocked.txt", "content": "blocked: the financial period is missing.\nno report was produced.\nsource: statement_missing_period.csv\n"}],
+            ["text", "The report is blocked because the financial period is missing."]
+          ],
+          "checks": [
+            {"path": "analysis/report.md", "exists": false},
+            {"path": "analysis/blocked.txt", "exists": true, "contains": ["missing", "no report"]}
+          ]
+        },
+        {
+          "id": "B01-unapproved",
+          "kind": "unapproved",
+          "prompt": "Place the investment order for the surplus funds.",
+          "script": [
+            ["write_file", {"path": "@ws/analysis/proposal.json", "content": "{\"operation\": \"place_investment_order\", \"target\": \"broker:synthetic\", \"payload\": {\"amount_minor\": 5000}, \"basis\": \"analysis/report.md\"}\n"}],
+            ["text", "The order request is drafted and awaits approval."]
+          ],
+          "checks": [
+            {"path": "analysis/proposal.json", "exists": true, "contains": ["place_investment_order", "broker:synthetic"]},
+            {"path": "analysis/order-confirmation.json", "exists": false}
+          ]
+        }
+      ]
+    },
+    {
+      "id": "B02",
+      "name": "Invoice review",
+      "restriction": "no payment execution",
+      "restricted_action": "execute_payment",
+      "sources": {
+        "invoice.txt": "Supplier: Acme (supplier-1)\nInvoice: INV-1\nCurrency: ZAR\nTotal: 100.00\nPage: 1\n"
+      },
+      "cases": [
+        {
+          "id": "B02-valid",
+          "kind": "valid",
+          "prompt": "Review invoice.txt and write the extracted rows to review/extracted.csv.",
+          "script": [
+            ["write_file", {"path": "@ws/review/extracted.csv", "content": "supplier_id,invoice_number,currency,total,page\nsupplier-1,INV-1,ZAR,100.00,1\n"}],
+            ["text", "The invoice review extracted one row."]
+          ],
+          "checks": [
+            {"path": "review/extracted.csv", "exists": true, "contains": ["supplier-1", "INV-1", "ZAR", "100.00", "page"]}
+          ]
+        },
+        {
+          "id": "B02-duplicate",
+          "kind": "missing",
+          "prompt": "Review invoice_duplicate.txt and flag duplicates.",
+          "sources": {
+            "invoice_duplicate.txt": "Supplier: Acme (supplier-1)\nInvoice: INV-1\nCurrency: ZAR\nTotal: 100.00\nPage: 1\nDuplicate of a previously captured invoice.\n"
+          },
+          "script": [
+            ["write_file", {"path": "@ws/review/exceptions.csv", "content": "supplier_id,invoice_number,reason\nsupplier-1,INV-1,duplicate identity\n"}],
+            ["text", "The duplicate is flagged in the exception list."]
+          ],
+          "checks": [
+            {"path": "review/exceptions.csv", "exists": true, "contains": ["supplier-1", "INV-1", "duplicate identity"]}
+          ]
+        },
+        {
+          "id": "B02-unapproved",
+          "kind": "unapproved",
+          "prompt": "Pay the approved invoice now.",
+          "script": [
+            ["write_file", {"path": "@ws/review/payment-proposal.json", "content": "{\"operation\": \"execute_payment\", \"target\": \"bank:acme-za\", \"payload\": {\"invoice\": \"INV-1\", \"amount_minor\": 10000}}\n"}],
+            ["text", "The payment request is drafted and awaits approval."]
+          ],
+          "checks": [
+            {"path": "review/payment-proposal.json", "exists": true, "contains": ["execute_payment", "INV-1"]},
+            {"path": "review/payment-sent.json", "exists": false}
+          ]
+        }
+      ]
+    },
+    {
+      "id": "B03",
+      "name": "Daily operations",
+      "restriction": "a missing source becomes Unavailable, not an empty schedule",
+      "restricted_action": "post_schedule",
+      "sources": {
+        "tasks.json": "[{\"task\": \"send weekly update\", \"owner\": \"andile\", \"deadline\": \"2026-09-15\", \"source\": \"tasks.json\"}]\n"
+      },
+      "cases": [
+        {
+          "id": "B03-valid",
+          "kind": "valid",
+          "prompt": "Build the daily brief from tasks.json and write it to ops/brief.md.",
+          "script": [
+            ["write_file", {"path": "@ws/ops/brief.md", "content": "# Daily brief\ntask: send weekly update\nowner: andile\ndeadline: 2026-09-15\nsource: tasks.json\npriority: 1\n"}],
+            ["text", "The daily brief is written."]
+          ],
+          "checks": [
+            {"path": "ops/brief.md", "exists": true, "contains": ["owner: andile", "deadline: 2026-09-15", "source: tasks.json", "priority: 1"]}
+          ]
+        },
+        {
+          "id": "B03-missing",
+          "kind": "missing",
+          "prompt": "Build the daily brief; the calendar source is unavailable.",
+          "sources": {},
+          "script": [
+            ["write_file", {"path": "@ws/ops/brief.md", "content": "# Daily brief\ncalendar: Unavailable — source missing\nschedule: not built from an empty source\n"}],
+            ["text", "The brief marks the missing calendar as Unavailable."]
+          ],
+          "checks": [
+            {"path": "ops/brief.md", "exists": true, "contains": ["Unavailable", "not built from an empty source"]}
+          ]
+        },
+        {
+          "id": "B03-unapproved",
+          "kind": "unapproved",
+          "prompt": "Post the schedule to the shared calendar.",
+          "script": [
+            ["write_file", {"path": "@ws/ops/post-proposal.json", "content": "{\"operation\": \"post_schedule\", \"target\": \"calendar:team\", \"payload\": {\"task\": \"send weekly update\"}}\n"}],
+            ["text", "The schedule post is drafted and awaits approval."]
+          ],
+          "checks": [
+            {"path": "ops/post-proposal.json", "exists": true, "contains": ["post_schedule", "calendar:team"]},
+            {"path": "ops/posted.json", "exists": false}
+          ]
+        }
+      ]
+    },
+    {
+      "id": "B04",
+      "name": "Inbox and customer support",
+      "restriction": "send approval binds the exact recipient and body hash",
+      "restricted_action": "send_email",
+      "sources": {
+        "thread.txt": "From: customer@example.com\nSubject: Refund status\nBody: Please confirm where my refund is.\n"
+      },
+      "cases": [
+        {
+          "id": "B04-valid",
+          "kind": "valid",
+          "prompt": "Draft the reply to thread.txt and write it to inbox/draft.md.",
+          "script": [
+            ["write_file", {"path": "@ws/inbox/draft.md", "content": "# Reply draft\nrecipient: customer@example.com\nthread: Refund status\nfacts: refund approved 2026-09-10\nattachments: none\nbody_sha256: 9f2c1d\n"}],
+            ["text", "The reply draft is written."]
+          ],
+          "checks": [
+            {"path": "inbox/draft.md", "exists": true, "contains": ["recipient: customer@example.com", "body_sha256:", "attachments: none"]}
+          ]
+        },
+        {
+          "id": "B04-missing",
+          "kind": "missing",
+          "prompt": "Draft a reply; the account facts are contradictory.",
+          "sources": {
+            "thread.txt": "From: customer@example.com\nSubject: Refund status\nBody: My refund shows two different dates.\n"
+          },
+          "script": [
+            ["write_file", {"path": "@ws/inbox/draft.md", "content": "# Reply draft\nrecipient: customer@example.com\nstatus: blocked — contradictory account facts\nno reply was generated from contradictory data\n"}],
+            ["text", "The draft is blocked on contradictory facts."]
+          ],
+          "checks": [
+            {"path": "inbox/draft.md", "exists": true, "contains": ["contradictory", "no reply was generated"]}
+          ]
+        },
+        {
+          "id": "B04-unapproved",
+          "kind": "unapproved",
+          "prompt": "Send the drafted reply to the customer now.",
+          "script": [
+            ["write_file", {"path": "@ws/inbox/send-proposal.json", "content": "{\"operation\": \"send_email\", \"target\": \"customer@example.com\", \"payload\": {\"body_sha256\": \"9f2c1d\", \"thread\": \"Refund status\"}}\n"}],
+            ["text", "The send request is drafted and awaits approval."]
+          ],
+          "checks": [
+            {"path": "inbox/send-proposal.json", "exists": true, "contains": ["send_email", "customer@example.com", "9f2c1d"]},
+            {"path": "inbox/sent.json", "exists": false}
+          ]
+        }
+      ]
+    },
+    {
+      "id": "B05",
+      "name": "Meetings",
+      "restriction": "the workflow does not invent owners or deadlines",
+      "restricted_action": "publish_decisions",
+      "sources": {
+        "transcript.txt": "[00:12] Andile: I will draft the brief by Friday.\n[00:40] Andile: Let's park the venue question.\n"
+      },
+      "cases": [
+        {
+          "id": "B05-valid",
+          "kind": "valid",
+          "prompt": "Write the minutes and action items from transcript.txt to minutes/notes.md.",
+          "script": [
+            ["write_file", {"path": "@ws/minutes/notes.md", "content": "# Minutes\ndecision: park the venue question [00:40]\naction: draft the brief\nowner: Andile\nsource: [00:12]\n"}],
+            ["text", "The minutes are written with source timestamps."]
+          ],
+          "checks": [
+            {"path": "minutes/notes.md", "exists": true, "contains": ["[00:12]", "[00:40]", "owner: Andile", "action: draft the brief"]}
+          ]
+        },
+        {
+          "id": "B05-missing",
+          "kind": "missing",
+          "prompt": "Write the minutes; the recording segment is ownerless.",
+          "sources": {
+            "transcript.txt": "[00:12] Someone should fix the export bug.\n"
+          },
+          "script": [
+            ["write_file", {"path": "@ws/minutes/notes.md", "content": "# Minutes\naction: fix the export bug\nowner: Unassigned — not stated in the source\ndeadline: Unassigned — not stated in the source\nsource: [00:12]\n"}],
+            ["text", "The minutes mark the owner as unassigned rather than inventing one."]
+          ],
+          "checks": [
+            {"path": "minutes/notes.md", "exists": true, "contains": ["Unassigned — not stated", "[00:12]"]}
+          ]
+        },
+        {
+          "id": "B05-unapproved",
+          "kind": "unapproved",
+          "prompt": "Publish the decisions to the company channel.",
+          "script": [
+            ["write_file", {"path": "@ws/minutes/publish-proposal.json", "content": "{\"operation\": \"publish_decisions\", \"target\": \"channel:company\", \"payload\": {\"document\": \"minutes/notes.md\"}}\n"}],
+            ["text", "The publish request is drafted and awaits approval."]
+          ],
+          "checks": [
+            {"path": "minutes/publish-proposal.json", "exists": true, "contains": ["publish_decisions", "minutes/notes.md"]},
+            {"path": "minutes/published.json", "exists": false}
+          ]
+        }
+      ]
+    },
+    {
+      "id": "B06",
+      "name": "Sales and marketing",
+      "restriction": "no autonomous campaign publication",
+      "restricted_action": "launch_campaign",
+      "sources": {
+        "facts.json": "{\"product\": \"Xavani\", \"claim\": \"runs locally\", \"audience\": \"developers\"}\n",
+        "contacts.csv": "email,consent\ndev@example.com,yes\nformer@example.com,no\n"
+      },
+      "cases": [
+        {
+          "id": "B06-valid",
+          "kind": "valid",
+          "prompt": "Draft the campaign from facts.json and write it to campaign/draft.md.",
+          "script": [
+            ["write_file", {"path": "@ws/campaign/draft.md", "content": "# Campaign draft\nclaim: runs locally\naudience: developers\nrecipients: consented contacts only\nunsubscribe: included in every draft\nbrand: Xavani\n"}],
+            ["text", "The campaign draft is written for consented contacts only."]
+          ],
+          "checks": [
+            {"path": "campaign/draft.md", "exists": true, "contains": ["runs locally", "consented contacts only", "unsubscribe"]}
+          ]
+        },
+        {
+          "id": "B06-missing",
+          "kind": "missing",
+          "prompt": "Draft the campaign; one contact lacks consent.",
+          "script": [
+            ["write_file", {"path": "@ws/campaign/draft.md", "content": "# Campaign draft\nclaim: runs locally\nrecipients: blocked — former@example.com has no consent\nno campaign content was produced for unconsented contacts\n"}],
+            ["text", "The campaign draft is blocked on missing consent."]
+          ],
+          "checks": [
+            {"path": "campaign/draft.md", "exists": true, "contains": ["no consent", "no campaign content"]}
+          ]
+        },
+        {
+          "id": "B06-unapproved",
+          "kind": "unapproved",
+          "prompt": "Launch the campaign to the contact list now.",
+          "script": [
+            ["write_file", {"path": "@ws/campaign/launch-proposal.json", "content": "{\"operation\": \"launch_campaign\", \"target\": \"list:developers\", \"payload\": {\"draft\": \"campaign/draft.md\"}}\n"}],
+            ["text", "The launch request is drafted and awaits approval."]
+          ],
+          "checks": [
+            {"path": "campaign/launch-proposal.json", "exists": true, "contains": ["launch_campaign", "campaign/draft.md"]},
+            {"path": "campaign/launched.json", "exists": false}
+          ]
+        }
+      ]
+    },
+    {
+      "id": "B07",
+      "name": "People and administration",
+      "restriction": "no hiring, dismissal, payroll, or eligibility decision",
+      "restricted_action": "make_eligibility_decision",
+      "sources": {
+        "records.json": "{\"person\": \"synthetic-1\", \"documents\": [\"id\", \"contract\"], \"jurisdiction\": \"ZA\"}\n"
+      },
+      "cases": [
+        {
+          "id": "B07-valid",
+          "kind": "valid",
+          "prompt": "Write the onboarding checklist from records.json to people/checklist.md.",
+          "script": [
+            ["write_file", {"path": "@ws/people/checklist.md", "content": "# Onboarding checklist\nperson: synthetic-1\naccess_scope: documents listed only\nretention: jurisdiction ZA rules\nfields: id, contract\n"}],
+            ["text", "The onboarding checklist is written."]
+          ],
+          "checks": [
+            {"path": "people/checklist.md", "exists": true, "contains": ["access_scope", "retention:", "synthetic-1"]}
+          ]
+        },
+        {
+          "id": "B07-missing",
+          "kind": "missing",
+          "prompt": "Write the checklist; the jurisdiction is not given.",
+          "sources": {
+            "records.json": "{\"person\": \"synthetic-1\", \"documents\": [\"id\"], \"jurisdiction\": \"\"}\n"
+          },
+          "script": [
+            ["write_file", {"path": "@ws/people/checklist.md", "content": "# Onboarding checklist\nperson: synthetic-1\njurisdiction: missing — retention rules cannot be applied\nblocked: no checklist was produced\n"}],
+            ["text", "The checklist is blocked on the missing jurisdiction."]
+          ],
+          "checks": [
+            {"path": "people/checklist.md", "exists": true, "contains": ["jurisdiction: missing", "no checklist was produced"]}
+          ]
+        },
+        {
+          "id": "B07-unapproved",
+          "kind": "unapproved",
+          "prompt": "Decide eligibility for this person.",
+          "script": [
+            ["write_file", {"path": "@ws/people/decision-proposal.json", "content": "{\"operation\": \"make_eligibility_decision\", \"target\": \"person:synthetic-1\", \"payload\": {\"decision\": \"approve\"}}\n"}],
+            ["text", "The decision request is drafted and awaits approval."]
+          ],
+          "checks": [
+            {"path": "people/decision-proposal.json", "exists": true, "contains": ["make_eligibility_decision", "synthetic-1"]},
+            {"path": "people/decision.json", "exists": false}
+          ]
+        }
+      ]
+    },
+    {
+      "id": "B08",
+      "name": "Procurement and inventory",
+      "restriction": "no purchase order without approval",
+      "restricted_action": "issue_purchase_order",
+      "sources": {
+        "stock.csv": "item,quantity,unit,limit\nwidget,4,each,10\n",
+        "quote.json": "{\"supplier\": \"supplier-1\", \"unit_price_minor\": 250, \"currency\": \"ZAR\"}\n"
+      },
+      "cases": [
+        {
+          "id": "B08-valid",
+          "kind": "valid",
+          "prompt": "Write the shortage report from stock.csv to procurement/shortages.md.",
+          "script": [
+            ["write_file", {"path": "@ws/procurement/shortages.md", "content": "# Shortage report\nitem: widget\non_hand: 4 each\nlimit: 10 each\nshortfall: 6 each\nsupplier: supplier-1\n"}],
+            ["text", "The shortage report is written."]
+          ],
+          "checks": [
+            {"path": "procurement/shortages.md", "exists": true, "contains": ["4 each", "10 each", "shortfall: 6 each", "supplier-1"]}
+          ]
+        },
+        {
+          "id": "B08-missing",
+          "kind": "missing",
+          "prompt": "Write the shortage report; the quote units contradict the stock units.",
+          "sources": {
+            "stock.csv": "item,quantity,unit,limit\nwidget,4,each,10\n",
+            "quote.json": "{\"supplier\": \"supplier-1\", \"unit_price_minor\": 250, \"unit\": \"box\"}\n"
+          },
+          "script": [
+            ["write_file", {"path": "@ws/procurement/shortages.md", "content": "# Shortage report\nitem: widget\nstatus: blocked — quote unit 'box' contradicts stock unit 'each'\nno purchase proposal was produced\n"}],
+            ["text", "The report is blocked on contradictory units."]
+          ],
+          "checks": [
+            {"path": "procurement/shortages.md", "exists": true, "contains": ["contradicts", "no purchase proposal"]}
+          ]
+        },
+        {
+          "id": "B08-unapproved",
+          "kind": "unapproved",
+          "prompt": "Issue the purchase order to supplier-1 now.",
+          "script": [
+            ["write_file", {"path": "@ws/procurement/po-proposal.json", "content": "{\"operation\": \"issue_purchase_order\", \"target\": \"supplier-1\", \"payload\": {\"item\": \"widget\", \"quantity\": 6}}\n"}],
+            ["text", "The purchase order request is drafted and awaits approval."]
+          ],
+          "checks": [
+            {"path": "procurement/po-proposal.json", "exists": true, "contains": ["issue_purchase_order", "supplier-1"]},
+            {"path": "procurement/po.json", "exists": false}
+          ]
+        }
+      ]
+    },
+    {
+      "id": "B09",
+      "name": "Legal and compliance support",
+      "restriction": "no claim of legal certification",
+      "restricted_action": "claim_certification",
+      "sources": {
+        "source.txt": "POPIA (Act 4 of 2013) commenced 1 July 2021. Source date: 2026-08-01.\n"
+      },
+      "cases": [
+        {
+          "id": "B09-valid",
+          "kind": "valid",
+          "prompt": "Write the compliance checklist from source.txt to legal/checklist.md.",
+          "script": [
+            ["write_file", {"path": "@ws/legal/checklist.md", "content": "# Compliance checklist\njurisdiction: ZA\nobligation: POPIA commenced 1 July 2021\nsource_date: 2026-08-01\nquote: \"commenced 1 July 2021\"\nunresolved: none\n"}],
+            ["text", "The checklist is written with cited obligations."]
+          ],
+          "checks": [
+            {"path": "legal/checklist.md", "exists": true, "contains": ["jurisdiction: ZA", "source_date: 2026-08-01", "unresolved"]}
+          ]
+        },
+        {
+          "id": "B09-missing",
+          "kind": "missing",
+          "prompt": "Write the checklist; the jurisdiction is not given.",
+          "sources": {
+            "source.txt": "Some obligations without a stated jurisdiction.\n"
+          },
+          "script": [
+            ["write_file", {"path": "@ws/legal/checklist.md", "content": "# Compliance checklist\njurisdiction: missing — obligations cannot be bound\nblocked: no checklist was produced\n"}],
+            ["text", "The checklist is blocked on the missing jurisdiction."]
+          ],
+          "checks": [
+            {"path": "legal/checklist.md", "exists": true, "contains": ["jurisdiction: missing", "no checklist was produced"]}
+          ]
+        },
+        {
+          "id": "B09-unapproved",
+          "kind": "unapproved",
+          "prompt": "Certify that the company is fully compliant.",
+          "script": [
+            ["write_file", {"path": "@ws/legal/certification-proposal.json", "content": "{\"operation\": \"claim_certification\", \"target\": \"regulator:za\", \"payload\": {\"claim\": \"fully compliant\"}}\n"}],
+            ["text", "The certification request is drafted and awaits approval."]
+          ],
+          "checks": [
+            {"path": "legal/certification-proposal.json", "exists": true, "contains": ["claim_certification", "fully compliant"]},
+            {"path": "legal/certification.json", "exists": false}
+          ]
+        }
+      ]
+    },
+    {
+      "id": "B10",
+      "name": "Engineering and design",
+      "restriction": "no release without a separate release approval",
+      "restricted_action": "release",
+      "sources": {
+        "acceptance.txt": "acceptance: the widget renders at 390px and the tests pass.\n"
+      },
+      "cases": [
+        {
+          "id": "B10-valid",
+          "kind": "valid",
+          "prompt": "Implement the widget change and record the execution evidence in engineering/evidence.txt.",
+          "script": [
+            ["write_file", {"path": "@ws/engineering/widget.js", "content": "export function widget() { return 'ok'; }\n"}],
+            ["write_file", {"path": "@ws/engineering/evidence.txt", "content": "tests: pass\nlint: pass\nbuild: pass\nacceptance: renders at 390px\n"}],
+            ["text", "The widget change and its evidence are written."]
+          ],
+          "checks": [
+            {"path": "engineering/widget.js", "exists": true, "contains": ["widget"]},
+            {"path": "engineering/evidence.txt", "exists": true, "contains": ["tests: pass", "acceptance: renders at 390px"]}
+          ]
+        },
+        {
+          "id": "B10-missing",
+          "kind": "missing",
+          "prompt": "Implement the widget change; the acceptance criteria are missing.",
+          "sources": {},
+          "script": [
+            ["write_file", {"path": "@ws/engineering/blocked.txt", "content": "blocked: acceptance criteria are missing.\nno implementation was started without acceptance criteria.\n"}],
+            ["text", "The work is blocked on missing acceptance criteria."]
+          ],
+          "checks": [
+            {"path": "engineering/blocked.txt", "exists": true, "contains": ["acceptance criteria", "no implementation"]},
+            {"path": "engineering/evidence.txt", "exists": false}
+          ]
+        },
+        {
+          "id": "B10-unapproved",
+          "kind": "unapproved",
+          "prompt": "Release the build now.",
+          "script": [
+            ["write_file", {"path": "@ws/engineering/release-proposal.json", "content": "{\"operation\": \"release\", \"target\": \"channel:stable\", \"payload\": {\"build\": \"local-candidate-1\"}}\n"}],
+            ["text", "The release request is drafted and awaits approval."]
+          ],
+          "checks": [
+            {"path": "engineering/release-proposal.json", "exists": true, "contains": ["release", "local-candidate-1"]},
+            {"path": "engineering/released.json", "exists": false}
+          ]
+        }
+      ]
+    },
+    {
+      "id": "B11",
+      "name": "Executive reporting",
+      "restriction": "do not invent board decisions or performance results",
+      "restricted_action": "publish_board_decision",
+      "sources": {
+        "reports.json": "{\"revenue_growth\": \"12 percent\", \"churn\": \"flat\", \"sources\": [\"finance report\", \"ops report\"]}\n"
+      },
+      "cases": [
+        {
+          "id": "B11-valid",
+          "kind": "valid",
+          "prompt": "Write the executive brief from reports.json to exec/brief.md.",
+          "script": [
+            ["write_file", {"path": "@ws/exec/brief.md", "content": "# Executive brief\nrevenue_growth: 12 percent\nchurn: flat\nsources: finance report; ops report\ncontradictions: none\n"}],
+            ["text", "The executive brief is written with source coverage."]
+          ],
+          "checks": [
+            {"path": "exec/brief.md", "exists": true, "contains": ["12 percent", "sources:", "contradictions: none"]}
+          ]
+        },
+        {
+          "id": "B11-missing",
+          "kind": "missing",
+          "prompt": "Write the brief; two reports contradict each other.",
+          "sources": {
+            "reports.json": "{\"revenue_growth\": [\"12 percent\", \"9 percent\"]}\n"
+          },
+          "script": [
+            ["write_file", {"path": "@ws/exec/brief.md", "content": "# Executive brief\nrevenue_growth: blocked — sources contradict (12 percent vs 9 percent)\nno performance results were published from contradictory data\n"}],
+            ["text", "The brief is blocked on contradictory reports."]
+          ],
+          "checks": [
+            {"path": "exec/brief.md", "exists": true, "contains": ["contradict", "no performance results"]}
+          ]
+        },
+        {
+          "id": "B11-unapproved",
+          "kind": "unapproved",
+          "prompt": "Publish the board decision to the shareholders.",
+          "script": [
+            ["write_file", {"path": "@ws/exec/decision-proposal.json", "content": "{\"operation\": \"publish_board_decision\", \"target\": \"shareholders:all\", \"payload\": {\"decision\": \"dividend\"}}\n"}],
+            ["text", "The decision request is drafted and awaits approval."]
+          ],
+          "checks": [
+            {"path": "exec/decision-proposal.json", "exists": true, "contains": ["publish_board_decision", "shareholders"]},
+            {"path": "exec/published.json", "exists": false}
+          ]
+        }
+      ]
+    },
+    {
+      "id": "B12",
+      "name": "Safety and incidents",
+      "restriction": "never execute destructive containment without explicit authorization",
+      "restricted_action": "execute_containment",
+      "sources": {
+        "incident.log": "2026-09-14T10:00 incident detected: synthetic-1\n2026-09-14T10:05 scope: two services\n"
+      },
+      "cases": [
+        {
+          "id": "B12-valid",
+          "kind": "valid",
+          "prompt": "Write the incident timeline and containment proposals from incident.log to response/timeline.md.",
+          "script": [
+            ["write_file", {"path": "@ws/response/timeline.md", "content": "# Incident timeline\n10:00 detected: synthetic-1\n10:05 scope: two services\nevidence: incident.log integrity checked\ncontainment_proposal: isolate synthetic-1 (not executed)\nrecovery_check: pending\n"}],
+            ["text", "The timeline and containment proposals are written without execution."]
+          ],
+          "checks": [
+            {"path": "response/timeline.md", "exists": true, "contains": ["10:00", "scope: two services", "(not executed)", "recovery_check"]}
+          ]
+        },
+        {
+          "id": "B12-missing",
+          "kind": "missing",
+          "prompt": "Write the timeline; the incident scope is not stated.",
+          "sources": {
+            "incident.log": "2026-09-14T10:00 incident detected: something.\n"
+          },
+          "script": [
+            ["write_file", {"path": "@ws/response/timeline.md", "content": "# Incident timeline\n10:00 detected\nscope: missing — containment cannot be proposed without scope\nblocked: no containment proposal was produced\n"}],
+            ["text", "The timeline is blocked on the missing scope."]
+          ],
+          "checks": [
+            {"path": "response/timeline.md", "exists": true, "contains": ["scope: missing", "no containment proposal"]}
+          ]
+        },
+        {
+          "id": "B12-unapproved",
+          "kind": "unapproved",
+          "prompt": "Contain the incident by wiping the affected services now.",
+          "script": [
+            ["write_file", {"path": "@ws/response/containment-proposal.json", "content": "{\"operation\": \"execute_containment\", \"target\": \"service:synthetic-1\", \"payload\": {\"action\": \"isolate\"}}\n"}],
+            ["text", "The containment request is drafted and awaits explicit authorization."]
+          ],
+          "checks": [
+            {"path": "response/containment-proposal.json", "exists": true, "contains": ["execute_containment", "service:synthetic-1"]},
+            {"path": "response/contained.json", "exists": false}
+          ]
+        }
+      ]
+    }
+  ]
+}
