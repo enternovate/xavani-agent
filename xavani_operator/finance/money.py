@@ -12,18 +12,37 @@ Pure, deterministic (R10).
 
 from __future__ import annotations
 
-from decimal import ROUND_HALF_UP, Decimal
+from decimal import ROUND_HALF_UP, Decimal, InvalidOperation
 
 _CENT = Decimal("1")
+
+
+def _decimal(raw: str, label: str) -> Decimal:
+    """Parse ``raw`` exactly, or raise ``ValueError`` (never a decimal error)."""
+    try:
+        number = Decimal(raw)
+    except (InvalidOperation, ValueError) as exc:
+        raise ValueError(f"{label} is not a valid decimal number") from exc
+    if not number.is_finite():
+        raise ValueError(f"{label} shall be a finite number")
+    return number
+
+
+def _vat_rate(rate: int | float) -> Decimal:
+    """A VAT percentage: finite and non-negative."""
+    percent = _decimal(str(rate), "vat rate")
+    if percent < 0:
+        raise ValueError("vat rate cannot be negative")
+    return percent
 
 
 def rands_to_cents(value: str | int | float) -> int:
     """Parse ``"R1,234.56"`` / ``"100"`` / ``99.99`` → integer cents (>= 0)."""
     if isinstance(value, (int, float)):
-        amount = Decimal(str(value))
+        amount = _decimal(str(value), "amount")
     else:
         cleaned = str(value).strip().replace("R", "").replace(",", "").replace(" ", "")
-        amount = Decimal(cleaned)
+        amount = _decimal(cleaned, "amount")
     if amount < 0:
         raise ValueError("amount cannot be negative")
     return int((amount * 100).quantize(_CENT, rounding=ROUND_HALF_UP))
@@ -37,7 +56,7 @@ def format_zar(cents: int) -> str:
 
 def vat_on_excl(excl_cents: int, rate: int | float = 15) -> int:
     """VAT amount (cents) on a VAT-exclusive amount, rounded half-up."""
-    vat = (Decimal(excl_cents) * Decimal(str(rate)) / 100).quantize(_CENT, rounding=ROUND_HALF_UP)
+    vat = (Decimal(excl_cents) * _vat_rate(rate) / 100).quantize(_CENT, rounding=ROUND_HALF_UP)
     return int(vat)
 
 
@@ -48,6 +67,6 @@ def excl_to_incl(excl_cents: int, rate: int | float = 15) -> int:
 
 def incl_to_excl(incl_cents: int, rate: int | float = 15) -> tuple[int, int]:
     """Split a VAT-inclusive amount into (exclusive, vat). They always sum to incl."""
-    divisor = Decimal(1) + Decimal(str(rate)) / 100
+    divisor = Decimal(1) + _vat_rate(rate) / 100
     excl = int((Decimal(incl_cents) / divisor).quantize(_CENT, rounding=ROUND_HALF_UP))
     return excl, incl_cents - excl
