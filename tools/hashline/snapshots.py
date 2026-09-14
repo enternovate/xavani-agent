@@ -24,22 +24,40 @@ Design (mirrors ``InMemorySnapshotStore`` in omp):
 Session scoping: an agent session creates one :class:`SnapshotStore` and
 holds it on the agent/session object; :data:`default_store` is the
 module-level singleton for CLI/tool use outside a session.
+
+Task scoping: :class:`TaskSnapshotStores` mints one :class:`SnapshotStore`
+per explicit task identity and refuses the anonymous ``'default'``
+identity, so concurrent subagents cannot authorize an edit from each
+other's reads.  :data:`task_stores` is the process-wide registry the file
+tools use.
 """
 
 from __future__ import annotations
 
 import hashlib
+import threading
 import time
 from collections import OrderedDict
 from dataclasses import dataclass, field
 from typing import Iterable, Optional, Tuple
 
-__all__ = ["Snapshot", "SnapshotStore", "compute_tag", "default_store"]
+__all__ = [
+    "Snapshot",
+    "SnapshotStore",
+    "TaskSnapshotStores",
+    "compute_tag",
+    "default_store",
+    "task_stores",
+]
 
 #: Default maximum distinct paths tracked at once (LRU eviction).
 DEFAULT_MAX_PATHS = 30
 #: Default maximum full-file versions retained per path (oldest dropped first).
 DEFAULT_MAX_VERSIONS_PER_PATH = 4
+#: Default maximum task identities tracked at once (LRU eviction).
+DEFAULT_MAX_TASKS = 32
+#: Task identities that carry no provenance (anonymous/CLI-less callers).
+RESERVED_TASK_IDS = ("default",)
 
 
 def normalize_content(content: str) -> str:
@@ -223,3 +241,75 @@ class SnapshotStore:
 
 #: Module-level default store for CLI/tool use outside an agent session.
 default_store = SnapshotStore()
+
+
+class TaskSnapshotStores:
+    """Registry of one bounded :class:`SnapshotStore` per task identity.
+
+    Hashline tags authorize edits, so snapshots must be scoped to the task
+    that OBSERVED the lines: sharing one store across concurrent subagents
+    would let one child edit lines only another child ever read.  The
+    registry is bounded — at most ``max_tasks`` identities, least-recently
+    used evicted first — so a long-lived gateway process cannot grow
+    without bound.
+    """
+
+    def __init__(self, max_tasks: int = DEFAULT_MAX_TASKS) -> None:
+        self._max_tasks = max_tasks
+        self._lock = threading.Lock()
+        self._stores: "OrderedDict[str, SnapshotStore]" = OrderedDict()
+
+    def for_task(self, task_id: str) -> SnapshotStore:
+        """Store for *task_id*, created on first use.
+
+        Raises :class:`ValueError` for a missing/blank identity or the
+        reserved ``'default'`` identity — an anonymous caller has no
+        provenance to authorize an edit with.
+        """
+        key = self._normalize(task_id)
+        with self._lock:
+            store = self._stores.get(key)
+            if store is None:
+                store = SnapshotStore()
+                self._stores[key] = store
+            self._stores.move_to_end(key)
+            while len(self._stores) > self._max_tasks:
+                self._stores.popitem(last=False)
+            return store
+
+    def discard(self, task_id: str) -> None:
+        """Drop *task_id*'s store, if any (no-op for unknown ids)."""
+        try:
+            key = self._normalize(task_id)
+        except ValueError:
+            return
+        with self._lock:
+            self._stores.pop(key, None)
+
+    @staticmethod
+    def _normalize(task_id: str) -> str:
+        if not isinstance(task_id, str) or not task_id.strip():
+            raise ValueError(
+                "task-scoped snapshot stores require an explicit task identity"
+            )
+        key = task_id.strip()
+        if key in RESERVED_TASK_IDS:
+            raise ValueError(
+                f"task identity {key!r} carries no snapshot provenance; "
+                "use an explicit task identity"
+            )
+        return key
+
+    def __len__(self) -> int:
+        with self._lock:
+            return len(self._stores)
+
+    def __contains__(self, task_id: object) -> bool:
+        if not isinstance(task_id, str) or not task_id.strip():
+            return False
+        with self._lock:
+            return task_id.strip() in self._stores
+
+
+#: Process-wide task-scoped store registry used by the file tools.
+task_stores = TaskSnapshotStores()

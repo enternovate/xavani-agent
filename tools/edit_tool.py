@@ -15,19 +15,14 @@ or configured resolution:
   ``patch`` directly.
 * ``hashline`` — parses the payload with :mod:`tools.hashline.parse` and
   applies it via :func:`tools.hashline.apply.apply_sections` against the
-  module-level default snapshot store (:data:`tools.hashline.snapshots.default_store`).
-  Requires ``[path#TAG]`` sections whose tag matches the recorded snapshot
-  for that path (the tag a future read tool will emit).  LIMITATION: the
-  read tool does not yet emit tags (Task 12/15 follow-up), so callers must
-  obtain the current tag from a prior ``hashline`` edit result or accept
-  the auto-record behaviour below.  To keep the mode usable today, a path
-  with no recorded snapshot is auto-recorded from its current on-disk
-  content (full visible ranges) before applying, so ``[path#TAG]`` works
-  when TAG is the fresh tag of the current content; a stale/unknown tag is
-  rejected with an error string (nothing is written — fail-fast).  Because
-  the read tool cannot supply the tag, that error re-reads the on-disk
-  content itself and returns the fresh ``[path#TAG]`` to re-issue with —
-  the first-edit loop is an explicit re-read flow, not an error-leak retry.
+  snapshot store of the CALLING TASK
+  (:func:`tools.hashline.snapshots.TaskSnapshotStores.for_task`), so a
+  subagent can never edit lines another subagent read.  Requires
+  ``[path#TAG]`` sections whose tag matches a snapshot the current task
+  OBSERVED — the header ``read_file`` / ``search_files`` emitted for the
+  lines they displayed.  The edit path never records or authorizes: a
+  missing or stale tag writes nothing and returns the read-first contract
+  (plus the header a fresh read will emit for the current content).
 * ``replace`` — minimal exact old/new string substitution over one file
   (read, replace, write) using ``path`` / ``old_string`` / ``new_string``.
 
@@ -69,6 +64,20 @@ PER_MODEL_EDIT_MODE: Dict[str, str] = {}
 
 DEFAULT_EDIT_MODE = "patch"
 VALID_MODES = ("hashline", "patch", "replace")
+
+#: ApplyError substrings that mean "this task has no usable observed snapshot".
+_STALE_SNAPSHOT_MARKERS = (
+    "no snapshot recorded",
+    "no longer available",
+    "recovery cannot prove",
+    "the file changed since your read",
+)
+
+#: Contract message when a task edits lines it never observed.
+_READ_FIRST_MESSAGE = (
+    "Read the target lines before the edit. The current task has no "
+    "observed snapshot for this file."
+)
 
 
 # ---------------------------------------------------------------------------
@@ -156,27 +165,20 @@ def _dispatch_patch(args: dict, task_id: str) -> str:
     return _handle_patch({"mode": "patch", "patch": payload}, task_id=task_id)
 
 
-def _full_ranges(content: str) -> Tuple[Tuple[int, int], ...]:
-    """Visible-ranges tuple covering the whole file (used when auto-recording)."""
-    lines = content.split("\n")
-    if content.endswith("\n"):
-        lines = lines[:-1]
-    return ((1, len(lines)),) if lines else ()
+def _hashline_tag_guidance(sections: List, msg: str, task_id: str) -> str:
+    """Lead a missing/stale-snapshot ApplyError with the read-first contract.
 
-
-def _hashline_tag_guidance(sections: List, msg: str) -> str:
-    """Augment a stale/unknown-tag ApplyError with first-edit guidance.
-
-    ``read_file`` does not emit ``[path#TAG]`` tags yet, so a bare
-    "re-read the file" error is not actionable on a first edit.  The edit
-    tool re-reads the on-disk content itself, records it (so the retry can
-    resolve its tag), and returns the fresh ``[path#TAG]`` header(s) the
-    model should re-issue with.  *msg* is returned unchanged when it is not
-    a missing/stale-tag error.
+    The tag is minted by the read tool, so the model must observe the target
+    lines before editing.  When the file is readable its current header is
+    included: the single re-read the model is told to perform returns exactly
+    that header, making the retry one read away.  Nothing is recorded or
+    authorized here.  *msg* is returned unchanged when it is not a
+    missing/stale-snapshot error (e.g. a line outside the seen window).
     """
-    if not any(k in msg for k in ("snapshot tag", "no snapshot recorded", "re-read")):
+    if not any(k in msg for k in _STALE_SNAPSHOT_MARKERS):
         return msg
-    from tools.hashline.snapshots import default_store
+    from tools.file_tools import _resolve_path_for_task
+    from tools.hashline.snapshots import compute_tag
 
     hints: List[str] = []
     for sec in sections:
@@ -185,22 +187,22 @@ def _hashline_tag_guidance(sections: List, msg: str) -> str:
                 content = f.read()
         except OSError:
             continue
-        fresh_tag = default_store.record(sec.path, content, ranges=_full_ranges(content))
-        if fresh_tag != sec.tag:
-            hints.append(f"[{sec.path}#{fresh_tag}]")
-    if not hints:
-        return msg
-    return (
-        f"{msg}\n"
-        "NOTE: read_file does not emit [path#TAG] tags yet, so the edit "
-        "tool re-read the file(s) on disk for you. Re-issue your edit with "
-        f"{', '.join(hints)} to retry immediately (or read the file via "
-        "read_file first, then edit with the tag above)."
-    )
+        try:
+            shown = str(_resolve_path_for_task(sec.path, task_id))
+        except Exception:
+            shown = sec.path
+        hints.append(f"[{shown}#{compute_tag(content)}]")
+    out = [f"{_READ_FIRST_MESSAGE}\n{msg}"]
+    if hints:
+        out.append(
+            "Read the file with read_file first — for the current content it "
+            f"returns {', '.join(hints)}; re-issue the edit with that header."
+        )
+    return "\n".join(out)
 
 
 def _apply_hashline(args: dict, task_id: str) -> str:
-    """Apply a hashline payload via the default snapshot store; never raises."""
+    """Apply a hashline payload via the calling task's snapshot store."""
     from contextlib import ExitStack
 
     from tools import file_state, fs_scan_cache
@@ -212,11 +214,19 @@ def _apply_hashline(args: dict, task_id: str) -> str:
     )
     from tools.hashline import ParseError, parse
     from tools.hashline.apply import ApplyError, apply_sections
-    from tools.hashline.snapshots import default_store
+    from tools.hashline.snapshots import task_stores
 
     payload = args.get("input")
     if payload is None or not isinstance(payload, str) or not payload.strip():
         return tool_error("edit: mode='hashline' requires a non-empty 'input' payload")
+
+    # Snapshots are per-task observations: an anonymous caller has no
+    # provenance to authorize an edit with, and a shared store would let one
+    # subagent edit lines only another subagent read.
+    try:
+        store = task_stores.for_task(task_id)
+    except ValueError:
+        return tool_error("edit hashline requires an explicit task identity.")
 
     # Local-only writes: hashline applies via plain open() on this host's
     # filesystem, so a non-local terminal backend must refuse up front.
@@ -242,7 +252,7 @@ def _apply_hashline(args: dict, task_id: str) -> str:
 
     # Resolve + lock every section path in sorted order (mirrors
     # tools.file_tools.patch_tool) so concurrent subagents cannot interleave
-    # between our auto-record reads, apply, and writes.  Unresolvable paths
+    # between the tag resolution, apply, and writes.  Unresolvable paths
     # degrade to an unlocked no-op.
     resolved_paths: list = []
     _seen: set = set()
@@ -273,28 +283,12 @@ def _apply_hashline(args: dict, task_id: str) -> str:
             if _sw:
                 stale_warnings.append(_sw)
 
-        # Auto-record on-disk content for paths with no recorded snapshot, so
-        # a [path#TAG] section whose tag matches the current content applies
-        # even though read_file does not emit tags yet (Task 12/15 follow-up).
-        for sec in sections:
-            if default_store.get(sec.path) is not None:
-                continue
-            try:
-                with open(sec.path, encoding="utf-8") as f:
-                    content = f.read()
-            except FileNotFoundError:
-                # Leave unrecorded; apply_sections reports the missing snapshot.
-                continue
-            except OSError as exc:
-                return tool_error(f"edit hashline: cannot read {sec.path}: {exc}")
-            default_store.record(sec.path, content, ranges=_full_ranges(content))
-
         try:
-            result = apply_sections(sections, default_store)
+            result = apply_sections(sections, store)
         except ApplyError as exc:
-            # First-edit flow: read_file cannot supply the tag, so hand back
-            # the fresh one the model can re-issue with (see docstring).
-            return tool_error(_hashline_tag_guidance(sections, str(exc)))
+            # Nothing observed for this file/tag: hand back the read-first
+            # contract (the tag is minted by the read tool, never here).
+            return tool_error(_hashline_tag_guidance(sections, str(exc), task_id))
 
         if result.error:
             return tool_error(f"edit hashline apply error: {result.error}")
@@ -487,9 +481,9 @@ EDIT_SCHEMA = {
     "description": (
         "Unified file-edit tool with mode selection. "
         "Modes: 'patch' (default, same as the patch tool: V4A multi-file patches "
-        "with fuzzy matching), 'hashline' (line-anchored [path#TAG] sections; "
-        "LIMITATION: read_file does not emit tags yet, so use the tag from a "
-        "prior edit result or a fresh [path#TAG] against current content), and "
+        "with fuzzy matching), 'hashline' (line-anchored [path#TAG] sections "
+        "whose tag must come from a read_file/search_files header THIS task "
+        "observed; edits may only target lines the current task was shown), and "
         "'replace' (exact old/new string substitution via path/old_string/new_string). "
         "The mode can be overridden per call; otherwise it resolves from the model "
         "variant, XAVANI_EDIT_MODE, config edit.mode, or defaults to 'patch'."

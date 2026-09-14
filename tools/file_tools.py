@@ -80,6 +80,14 @@ _SUMMARY_MIN_LINES = 100
 _SUMMARY_HEAD_LINES = 25
 _SUMMARY_TAIL_LINES = 25
 
+# Suffix the backend appends to a line it cut at the per-line length cap, so
+# a rendered window can mark which lines were never fully displayed.
+_LINE_TRUNCATION_MARKER = "... [truncated]"
+
+# Per-match body cap the search backend applies (tools.file_operations), so a
+# match of exactly this length may have been cut and is not fully displayed.
+_SEARCH_MATCH_CHARS = 500
+
 # ---------------------------------------------------------------------------
 # Device path blocklist — reading these hangs the process (infinite output
 # or blocking on input).  Checked by path only (no I/O).
@@ -528,6 +536,82 @@ def _build_summarized_content(path: str, content: str, total_lines: int, tag: st
     return "\n".join(body)
 
 
+def _merge_line_ranges(lines: list[int]) -> tuple[tuple[int, int], ...]:
+    """Merge 1-indexed line numbers into contiguous inclusive ranges."""
+    ranges: list[list[int]] = []
+    for line in lines:
+        if ranges and line == ranges[-1][1] + 1:
+            ranges[-1][1] = line
+        else:
+            ranges.append([line, line])
+    return tuple((start, end) for start, end in ranges)
+
+
+def _displayed_line_ranges(rendered: str) -> tuple[tuple[int, int], ...] | None:
+    """1-indexed ranges of the numbered lines ``rendered`` actually displayed.
+
+    Labels the backend truncated (``... [truncated]``) are dropped — their
+    content was cut, so the model never observed the whole line.  Returns
+    ``None`` when the window carries content but no parseable label, i.e. the
+    displayed output cannot be turned into exact ranges (callers then record
+    nothing rather than guess).
+    """
+    if not rendered.strip():
+        return ()
+    seen: list[int] = []
+    for raw in rendered.split("\n"):
+        label, sep, rest = raw.partition("|")
+        if not sep or not label.strip().isdigit():
+            continue
+        if rest.endswith(_LINE_TRUNCATION_MARKER):
+            continue
+        seen.append(int(label.strip()))
+    if not seen:
+        return None
+    return _merge_line_ranges(seen)
+
+
+def _record_search_sightings(task_id: str, matches) -> None:
+    """Record the matched lines a search displayed into this task's store.
+
+    Only files whose displayed matches carry an exact line number AND a
+    complete line body are recorded, so a search can never authorize an edit
+    for a line the model did not see in full.  Best-effort by design: a
+    search must not fail because provenance bookkeeping could not run.
+    """
+    try:
+        from tools.hashline.snapshots import task_stores
+
+        store = task_stores.for_task(task_id)
+        file_ops = _get_file_ops(task_id)
+    except Exception:
+        return
+    by_path: dict[str, list[int]] = {}
+    for match in matches:
+        path = getattr(match, "path", None)
+        line = getattr(match, "line_number", None)
+        content = getattr(match, "content", None)
+        if not isinstance(path, str) or not path:
+            return
+        if not isinstance(line, int) or line < 1:
+            return
+        if not isinstance(content, str) or len(content) >= _SEARCH_MATCH_CHARS:
+            # The backend caps match bodies; a capped line was cut.
+            continue
+        by_path.setdefault(path, []).append(line)
+    for raw_path, lines in by_path.items():
+        if not lines:
+            continue
+        try:
+            resolved = str(_resolve_path_for_task(raw_path, task_id))
+            full_content = _read_full_content(file_ops, resolved)
+            if not full_content:
+                continue
+            store.record(resolved, full_content, ranges=_merge_line_ranges(lines))
+        except Exception:
+            continue
+
+
 def read_file_tool(path: str, offset: int = 1, limit: int = 500, task_id: str = "default", full: bool = False) -> str:
     """Read a file with pagination and line numbers."""
     try:
@@ -653,18 +737,20 @@ def read_file_tool(path: str, offset: int = 1, limit: int = 500, task_id: str = 
             }, ensure_ascii=False)
 
         # ── Hashline snapshot + tag header / summarization ──────────
-        # Record the full file content in the snapshot store so the
-        # [path#TAG] header the model sees is resolvable by the hashline
-        # edit tool.  Large files on the default whole-window read are
-        # summarized (first/last windows + elision footer with concrete
-        # re-read ranges); explicit offset/limit windows and full=true
-        # stay verbatim.  Any failure degrades to the plain window.
+        # Record the full file content in THIS TASK's snapshot store so the
+        # [path#TAG] header the model sees is resolvable by the hashline edit
+        # tool — recording only the line ranges this read actually displayed.
+        # Large files on the default whole-window read are summarized
+        # (first/last windows + elision footer with concrete re-read ranges);
+        # explicit offset/limit windows and full=true stay verbatim.  Any
+        # failure degrades to the plain window: a read never fails because of
+        # provenance bookkeeping, and no header means nothing is authorized.
         try:
             total_lines = result_dict.get("total_lines", 0) or 0
             if result.content and total_lines > 0:
                 full_content = _read_full_content(file_ops, path)
                 if full_content is not None:
-                    from tools.hashline.snapshots import default_store
+                    from tools.hashline.snapshots import compute_tag, task_stores
 
                     summarize = _should_summarize(offset, limit, full, total_lines)
                     # Canonical line count from the actual content bytes we
@@ -676,23 +762,27 @@ def read_file_tool(path: str, offset: int = 1, limit: int = 500, task_id: str = 
                     if full_content.endswith("\n"):
                         n -= 1
                     if summarize:
-                        visible_ranges = (
+                        ranges = (
                             (1, min(_SUMMARY_HEAD_LINES, n)),
                             (max(n - _SUMMARY_TAIL_LINES + 1, 1), n),
                         )
                     else:
-                        visible_ranges = (
-                            (offset, min(offset + limit - 1, n)),
+                        ranges = _displayed_line_ranges(result.content)
+                    if ranges is not None:
+                        resolved = str(_resolve_path_for_task(path, task_id))
+                        tag = compute_tag(full_content)
+                        body = (
+                            _build_summarized_content(resolved, full_content, n, tag)
+                            if summarize
+                            else f"[{resolved}#{tag}]\n{result.content}"
                         )
-                    tag = default_store.record(path, full_content, ranges=visible_ranges)
-                    if summarize:
-                        result.content = _build_summarized_content(
-                            path, full_content, n, tag
+                        task_stores.for_task(task_id).record(
+                            resolved, full_content, ranges=ranges
                         )
-                        result_dict["_summarized"] = True
-                    else:
-                        result.content = f"[{path}#{tag}]\n{result.content}"
-                    result_dict["content"] = result.content
+                        result.content = body
+                        result_dict["content"] = body
+                        if summarize:
+                            result_dict["_summarized"] = True
         except Exception:
             logger.debug("hashline snapshot/summarize failed for %s", path, exc_info=True)
 
@@ -1123,6 +1213,10 @@ def search_tool(pattern: str, target: str = "content", path: str = ".",
             limit=limit, offset=offset, output_mode=output_mode, context=context
         )
         if hasattr(result, 'matches'):
+            # Record the matched lines this search DISPLAYED (before redaction,
+            # which rewrites bodies) so the current task may edit exactly the
+            # lines it was shown — nothing more.
+            _record_search_sightings(task_id, result.matches)
             for m in result.matches:
                 if hasattr(m, 'content') and m.content:
                     m.content = redact_sensitive_text(m.content, code_file=True)
