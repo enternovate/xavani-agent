@@ -33,8 +33,10 @@ Key capabilities:
 
 ## Setup
 
-:::tip Nous Subscribers
-If you have a paid [Nous Portal](https://portal.nousresearch.com) subscription, you can use browser automation through the **[Tool Gateway](tool-gateway.md)** without any separate API keys. Run `xavani model` or `xavani tools` to enable it.
+:::tip Xavani Portal subscribers
+> Note: this integration is not available in current Xavani builds; portal services are disabled.
+
+If you have a paid Xavani Portal subscription, you can use browser automation through the **[Tool Gateway](tool-gateway.md)** without any separate API keys. Run `xavani model` or `xavani tools` to enable it.
 :::
 
 ### Browserbase cloud mode

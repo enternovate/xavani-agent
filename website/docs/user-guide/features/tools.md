@@ -32,8 +32,10 @@ High-level categories:
 
 For the authoritative code-derived registry, see [Built-in Tools Reference](/docs/reference/tools-reference) and [Toolsets Reference](/docs/reference/toolsets-reference).
 
-:::tip Nous Tool Gateway
-Paid [Nous Portal](https://portal.nousresearch.com) subscribers can use web search, image generation, TTS, and browser automation through the **[Tool Gateway](tool-gateway.md)** — no separate API keys needed. Run `xavani model` to enable it, or configure individual tools with `xavani tools`.
+:::tip Xavani Tool Gateway
+> Note: this integration is not available in current Xavani builds; portal services are disabled.
+
+Paid Xavani Portal subscribers can use web search, image generation, TTS, and browser automation through the **[Tool Gateway](tool-gateway.md)** — no separate API keys needed. Run `xavani model` to enable it, or configure individual tools with `xavani tools`.
 :::
 
 ## Using Toolsets
