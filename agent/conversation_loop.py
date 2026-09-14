@@ -110,6 +110,12 @@ def _run_verification_gate(agent, messages, final_response, task_id):
         logger.warning("verification gate failed: %s", exc)
         decision = CompletionDecision("blocked", failed_checks=tuple(contract.required_checks))
     agent._verification_last_decision = decision
+    try:
+        from agent.work_timeline import record_event
+
+        record_event(agent, "verification.completed", state=decision.state)
+    except Exception:
+        pass
     if decision.state in {"passed", "not_required"}:
         return final_response
     if (

@@ -2919,11 +2919,26 @@ class APIServerAdapter(BasePlatformAdapter):
             if agent_ref is not None:
                 agent_ref[0] = agent
             effective_task_id = session_id or str(uuid.uuid4())
+            try:
+                from agent.work_timeline import record_event
+
+                record_event(agent, "task.started", summary=str(user_message)[:120])
+            except Exception:
+                pass
             result = agent.run_conversation(
                 user_message=user_message,
                 conversation_history=conversation_history,
                 task_id=effective_task_id,
             )
+            try:
+                from agent.work_timeline import record_event
+
+                if result.get("completed"):
+                    record_event(agent, "task.completed", summary=str(user_message)[:120])
+                else:
+                    record_event(agent, "task.blocked", summary=str(user_message)[:120])
+            except Exception:
+                pass
             usage = {
                 "input_tokens": getattr(agent, "session_prompt_tokens", 0) or 0,
                 "output_tokens": getattr(agent, "session_completion_tokens", 0) or 0,

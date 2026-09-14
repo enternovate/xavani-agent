@@ -119,10 +119,26 @@ def _note_work_change(agent, function_name: str) -> None:
         note_work_change(agent)
     except Exception:
         logger.debug("verification revision note failed", exc_info=True)
+    try:
+        from agent.work_timeline import record_event
+
+        record_event(agent, "artifact.changed", tool=function_name)
+    except Exception:
+        pass
 
 
 def _record_tool_metric(agent, function_name, started_at, duration, is_error, error_class=""):
     """Record one tool call in the session metrics (harness item 2)."""
+    try:
+        from agent.work_timeline import record_event
+
+        # Both timeline events are emitted when the call finishes so the
+        # started event can carry its true start time from the metric hook.
+        record_event(agent, "tool.started", tool=function_name, at=started_at)
+        record_event(agent, "tool.completed",
+                     tool=function_name, duration=round(float(duration), 3), error=bool(is_error))
+    except Exception:
+        pass
     try:
         from agent.tool_metrics import ToolCallRecord, record_call
 

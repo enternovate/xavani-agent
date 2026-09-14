@@ -683,6 +683,12 @@ def select_workflow_for_agent(
         context_window_tokens=context_window_tokens,
     )
     record_selection(agent, selection)
+    try:
+        from agent.work_timeline import record_event
+
+        record_event(agent, "skill.loaded", workflow=workflow_id, skills=len(selection.skills), mode=mode)
+    except Exception:
+        pass
     if selection.consequential:
         ensure_workflow_skills_loaded(agent)
     return {
