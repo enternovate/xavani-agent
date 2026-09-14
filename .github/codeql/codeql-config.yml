@@ -79,6 +79,10 @@ query_filters:
   # from the checkout), which is the TOCTOU mitigation this suppression
   # covers. Rule ids below are the ones GitHub actually emits (verified via
   # the code-scanning alerts API, 2026-09-14: alerts 1300/1301).
+  - exclude:
+      id: actions/untrusted-checkout/high
+  - exclude:
+      id: actions/untrusted-checkout-toctou/high
 
   # ── functionality-from-untrusted-source ──────────────────────────────
   # MITIGATION: External CDN scripts use Subresource Integrity (SRI) hashes.
