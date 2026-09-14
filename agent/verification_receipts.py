@@ -40,10 +40,19 @@ _MAX_PAYLOAD_BYTES = 65536
 def _decode(payload: str) -> CheckReceipt:
     try:
         values = json.loads(payload)
-        values["command_argv"] = tuple(values["command_argv"])
-        values["artifact_hashes"] = tuple(
-            tuple(pair) for pair in values["artifact_hashes"]
-        )
+        if not isinstance(values, dict):
+            raise TypeError("receipt payload shall be an object")
+        argv = values["command_argv"]
+        hashes = values["artifact_hashes"]
+        if not isinstance(argv, (list, tuple)):
+            raise TypeError("command_argv shall be a sequence")
+        if not isinstance(hashes, (list, tuple)):
+            raise TypeError("artifact_hashes shall be a sequence")
+        for pair in hashes:
+            if not isinstance(pair, (list, tuple)) or len(pair) != 2:
+                raise TypeError("artifact hashes shall be pairs")
+        values["command_argv"] = tuple(argv)
+        values["artifact_hashes"] = tuple(tuple(pair) for pair in hashes)
         return CheckReceipt(**values)
     except (json.JSONDecodeError, KeyError, TypeError) as error:
         raise ValueError("The stored receipt payload is malformed.") from error

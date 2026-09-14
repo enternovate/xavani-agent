@@ -6,6 +6,7 @@
 
 import json
 import sqlite3
+from dataclasses import asdict
 
 import pytest
 
@@ -140,6 +141,22 @@ class TestReadFailures:
         store = ReceiptStore(path)
         store.append(make_receipt())
         insert_raw_payload(path, "receipt-bad", json.dumps({"receipt_id": "receipt-bad"}))
+        with pytest.raises(ValueError):
+            store.for_contract("contract-1")
+
+    @pytest.mark.parametrize("field,value", [
+        ("command_argv", "python3"),
+        ("artifact_hashes", "not-a-list"),
+        ("artifact_hashes", ["ab"]),
+    ])
+    def test_well_shaped_row_with_wrongly_typed_fields_raises(self, tmp_path, field, value):
+        path = tmp_path / "receipts.sqlite3"
+        store = ReceiptStore(path)
+        store.append(make_receipt())
+        payload = asdict(make_receipt())
+        payload["receipt_id"] = "receipt-bad"
+        payload[field] = value
+        insert_raw_payload(path, "receipt-bad", json.dumps(payload))
         with pytest.raises(ValueError):
             store.for_contract("contract-1")
 

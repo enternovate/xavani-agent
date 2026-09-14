@@ -24,6 +24,9 @@ from tools.edit_tool import _backend_is_local
         ({"env_type": "ssh"}, False),
         ({}, False),
         ({"env_type": None}, False),
+        (None, False),
+        ("local", False),
+        (["local"], False),
     ],
 )
 def test_backend_resolution_by_env_type(monkeypatch, config, expected):
