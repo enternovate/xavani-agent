@@ -646,6 +646,54 @@ def build_workflow_skill_message(
     return "\n".join(parts)
 
 
+def select_workflow_for_agent(
+    agent: Any,
+    workflow_id: str,
+    *,
+    mode: str = "ask",
+    step_index: int = 0,
+    context_window_tokens: int | None = None,
+) -> Dict[str, Any]:
+    """Select a business workflow for *agent*: load, record, and format.
+
+    R2 Task 21 wiring — the selector entry. It loads the workflow's declared
+    skills into a real message, records the loaded content hashes on the
+    agent's receipt store, and returns the message plus the current receipt
+    block (for injection into the turn messages; never the system prompt).
+    A consequential selection also reloads any pruned bodies first so the
+    workflow does not start on stale receipts.
+    """
+    from agent.workflow_skills import (
+        ensure_workflow_skills_loaded,
+        record_selection,
+        select_workflow,
+        workflow_context_block,
+    )
+
+    selection = select_workflow(
+        workflow_id,
+        mode=mode,
+        step_index=step_index,
+        context_window_tokens=context_window_tokens,
+    )
+    message = build_workflow_skill_message(
+        workflow_id,
+        mode=mode,
+        step_index=step_index,
+        context_window_tokens=context_window_tokens,
+    )
+    record_selection(agent, selection)
+    if selection.consequential:
+        ensure_workflow_skills_loaded(agent)
+    return {
+        "workflow_id": workflow_id,
+        "message": message,
+        "context_block": workflow_context_block(agent),
+        "consequential": selection.consequential,
+        "blocked": selection.blocked,
+    }
+
+
 def build_preloaded_skills_prompt(
     skill_identifiers: list[str],
     task_id: str | None = None,

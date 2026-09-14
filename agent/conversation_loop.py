@@ -294,6 +294,37 @@ def prefetch_memory_context(agent, query: str) -> str:
     return cache
 
 
+def _apply_workflow_boundary(agent, messages: list) -> None:
+    """R2 Task 21 — refresh loaded workflow skills at the task boundary.
+
+    Applies on-disk skill edits, then surfaces the receipt block (with the
+    reload instruction when every body is pruned) exactly once per store
+    revision or content change. Strict no-op when no workflow is selected,
+    so unrelated sessions are untouched. Never part of the system prompt.
+    """
+    try:
+        from agent.workflow_skills import (
+            refresh_workflow_skills_at_boundary,
+            workflow_context_block,
+            workflow_state,
+        )
+
+        state = workflow_state(agent)
+        if state is None or not state.receipts():
+            return
+        changed = refresh_workflow_skills_at_boundary(agent)
+        revision_changed = getattr(agent, "_workflow_block_revision", None) != state.revision
+        if not (changed or revision_changed):
+            return
+        block = workflow_context_block(agent)
+        if not block:
+            return
+        messages.append({"role": "user", "content": block})
+        agent._workflow_block_revision = state.revision
+    except Exception:
+        logger.debug("workflow boundary refresh failed", exc_info=True)
+
+
 def run_conversation(
     agent,
     user_message: str,
@@ -525,6 +556,7 @@ def run_conversation(
     # Add user message
     user_msg = {"role": "user", "content": user_message}
     messages.append(user_msg)
+    _apply_workflow_boundary(agent, messages)
     current_turn_user_idx = len(messages) - 1
     agent._persist_user_message_idx = current_turn_user_idx
     

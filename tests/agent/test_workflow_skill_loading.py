@@ -510,3 +510,91 @@ def test_agent_init_attaches_the_workflow_receipt_store():
     assert isinstance(agent._workflow_skill_state, WorkflowSkillState)
     assert workflow_state(agent) is agent._workflow_skill_state
     assert workflow_state(agent).receipts() == ()
+
+
+# ── Task 21 wiring: selector entry + loop boundary hook ────────────────────
+
+
+def test_selector_entry_loads_records_and_formats(skills_root):
+    from agent.skill_commands import select_workflow_for_agent
+
+    agent = _StubAgent()
+    result = select_workflow_for_agent(agent, "finance", mode="ask")
+
+    assert result["workflow_id"] == "finance"
+    assert "Finance analysis" in result["message"]
+    assert "finance body 0" in result["message"]
+    assert result["blocked"] is False
+    receipts = _receipts_by_path(agent)
+    assert set(receipts) == set(FINANCE_SKILLS)
+    assert result["context_block"].startswith("[Workflow skill receipt")
+    assert agent._workflow_skill_state.revision == 1
+
+
+def test_boundary_hook_is_a_noop_without_a_selection(skills_root):
+    from agent.conversation_loop import _apply_workflow_boundary
+
+    agent = _StubAgent()
+    messages = []
+    _apply_workflow_boundary(agent, messages)
+    assert messages == []
+
+
+def test_boundary_hook_injects_once_and_surfaces_edits(skills_root):
+    from agent.conversation_loop import _apply_workflow_boundary
+    from agent.skill_commands import select_workflow_for_agent
+
+    agent = _StubAgent()
+    messages = []
+    select_workflow_for_agent(agent, "finance", mode="ask")
+
+    _apply_workflow_boundary(agent, messages)
+    assert len(messages) == 1
+    assert messages[0]["role"] == "user"
+    assert messages[0]["content"].startswith("[Workflow skill receipt")
+
+    # Unchanged store: no repeat injection on the next boundary.
+    _apply_workflow_boundary(agent, messages)
+    assert len(messages) == 1
+
+    # An on-disk edit is applied and re-surfaced at the boundary.
+    _write_skill(skills_root, FINANCE_SKILLS[0], "finance body 0 v2")
+    _apply_workflow_boundary(agent, messages)
+    assert len(messages) == 2
+    receipts = _receipts_by_path(agent)
+    assert receipts[FINANCE_SKILLS[0]].sha256 == _sha256(skills_root / FINANCE_SKILLS[0])
+
+
+def test_boundary_hook_leaves_compression_retention_to_the_compression_path(skills_root):
+    from agent.conversation_loop import _apply_workflow_boundary
+    from agent.skill_commands import select_workflow_for_agent
+
+    agent = _StubAgent()
+    messages = []
+    select_workflow_for_agent(agent, "finance", mode="ask")
+    _apply_workflow_boundary(agent, messages)
+    assert len(messages) == 1
+
+    # Compression prunes the bodies and injects its own receipt+instruction;
+    # the next task boundary must not spam another copy.
+    retained: list = []
+    retain_workflow_receipts(agent, retained)
+    assert any(RELOAD_INSTRUCTION in m["content"] for m in retained)
+    _apply_workflow_boundary(agent, messages)
+    assert len(messages) == 1  # nothing new injected
+    # The refresh re-reads reloadable bodies, so the store self-heals.
+    assert agent._workflow_skill_state.all_pruned() is False
+
+
+def test_consequential_selection_reloads_pruned_bodies(skills_root):
+    from agent.skill_commands import select_workflow_for_agent
+
+    agent = _StubAgent()
+    select_workflow_for_agent(agent, "finance", mode="ask")
+    agent._workflow_skill_state.mark_pruned()
+    assert agent._workflow_skill_state.all_pruned() is True
+
+    result = select_workflow_for_agent(agent, "finance", mode="build")
+    assert result["consequential"] is True
+    assert result["blocked"] is False
+    assert agent._workflow_skill_state.all_pruned() is False
