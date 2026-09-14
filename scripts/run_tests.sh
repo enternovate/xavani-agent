@@ -123,6 +123,7 @@ echo "  (TZ=UTC LANG=C.UTF-8 PYTHONHASHSEED=0; all credential env vars unset)"
 # --dist=loadscope (A04): keep a module's tests on one worker to reduce
 # cross-worker subsystem state poisoning (approval, tirith, cron share
 # module-level state). Matches the Windows CI job's ordering.
+# ${ARGS[@]+...} keeps the empty-args case safe under bash 3.2 + set -u.
 exec "$PYTHON" -m pytest \
   -o "addopts=" \
   -n "$WORKERS" \
@@ -130,4 +131,4 @@ exec "$PYTHON" -m pytest \
   --ignore=tests/integration \
   --ignore=tests/e2e \
   -m "not integration" \
-  "${ARGS[@]}"
+  ${ARGS[@]+"${ARGS[@]}"}
