@@ -3208,32 +3208,45 @@ class APIServerAdapter(BasePlatformAdapter):
                 # block below never fires — issue #15561).
                 if isinstance(result, dict) and result.get("failed"):
                     error_msg = result.get("error") or "agent run failed"
+                    verification_state = result.get("verification_state") or "unverified"
                     q.put_nowait({
                         "event": "run.failed",
                         "run_id": run_id,
                         "timestamp": time.time(),
                         "error": error_msg,
+                        "verification_state": verification_state,
                     })
                     self._set_run_status(
                         run_id,
                         "failed",
                         error=error_msg,
+                        verification_state=verification_state,
                         last_event="run.failed",
                     )
                 else:
-                    final_response = result.get("final_response", "") if isinstance(result, dict) else ""
+                    result_dict = result if isinstance(result, dict) else {}
+                    final_response = result_dict.get("final_response", "")
+                    verification_state = result_dict.get("verification_state") or "not_required"
+                    missing_checks = result_dict.get("missing_checks") or []
+                    failed_checks = result_dict.get("failed_checks") or []
                     q.put_nowait({
                         "event": "run.completed",
                         "run_id": run_id,
                         "timestamp": time.time(),
                         "output": final_response,
                         "usage": usage,
+                        "verification_state": verification_state,
+                        "missing_checks": missing_checks,
+                        "failed_checks": failed_checks,
                     })
                     self._set_run_status(
                         run_id,
                         "completed",
                         output=final_response,
                         usage=usage,
+                        verification_state=verification_state,
+                        missing_checks=missing_checks,
+                        failed_checks=failed_checks,
                         last_event="run.completed",
                     )
             except asyncio.CancelledError:
@@ -3257,6 +3270,7 @@ class APIServerAdapter(BasePlatformAdapter):
                     run_id,
                     "failed",
                     error=str(exc),
+                    verification_state="unverified",
                     last_event="run.failed",
                 )
                 try:
@@ -3265,6 +3279,7 @@ class APIServerAdapter(BasePlatformAdapter):
                         "run_id": run_id,
                         "timestamp": time.time(),
                         "error": str(exc),
+                        "verification_state": "unverified",
                     })
                 except Exception:
                     pass
