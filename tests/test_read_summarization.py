@@ -323,3 +323,19 @@ def test_unterminated_file_labels_and_ranges_use_split_count(tmp_path, monkeypat
     snap = task_stores.for_task("t-unterm").get(str(f))
     assert snap is not None
     assert snap.visible_ranges == ((1, 25), (126, 150)), snap.visible_ranges
+
+
+def test_anonymous_read_still_summarizes(tmp_path, monkeypatch):
+    """The default identity loses only the header, never summarization."""
+    f, content = _make_file(tmp_path, "anon_big.py", 200)
+    ops = _FakeFileOps(content)
+    ops.path = str(f)
+    monkeypatch.setattr(file_tools, "_get_file_ops", lambda tid="default": ops)
+
+    result = json.loads(read_file_tool(str(f), task_id="default"))
+
+    body = result["content"]
+    assert body.startswith("1|line 1")
+    assert "lines elided" in body
+    assert result.get("_summarized") is True
+    assert not body.startswith("[")

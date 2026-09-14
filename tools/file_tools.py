@@ -768,21 +768,32 @@ def read_file_tool(path: str, offset: int = 1, limit: int = 500, task_id: str = 
                         )
                     else:
                         ranges = _displayed_line_ranges(result.content)
+                    tag = compute_tag(full_content)
+                    # Registration needs an explicit task identity.  An
+                    # anonymous caller still gets summarization (context
+                    # safety) — without a header, since a tag it cannot
+                    # resolve would authorize nothing anyway.
+                    registered = None
                     if ranges is not None:
-                        resolved = str(_resolve_path_for_task(path, task_id))
-                        tag = compute_tag(full_content)
-                        body = (
-                            _build_summarized_content(resolved, full_content, n, tag)
-                            if summarize
-                            else f"[{resolved}#{tag}]\n{result.content}"
+                        try:
+                            registered = str(_resolve_path_for_task(path, task_id))
+                            task_stores.for_task(task_id).record(
+                                registered, full_content, ranges=ranges
+                            )
+                        except Exception:
+                            registered = None
+                    if summarize:
+                        body = _build_summarized_content(
+                            registered or str(path), full_content, n, tag
                         )
-                        task_stores.for_task(task_id).record(
-                            resolved, full_content, ranges=ranges
-                        )
+                        if registered is None and "\n" in body:
+                            body = body.split("\n", 1)[1]
                         result.content = body
                         result_dict["content"] = body
-                        if summarize:
-                            result_dict["_summarized"] = True
+                        result_dict["_summarized"] = True
+                    elif registered is not None:
+                        result.content = f"[{registered}#{tag}]\n{result.content}"
+                        result_dict["content"] = result.content
         except Exception:
             logger.debug("hashline snapshot/summarize failed for %s", path, exc_info=True)
 

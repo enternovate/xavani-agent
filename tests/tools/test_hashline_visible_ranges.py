@@ -383,3 +383,24 @@ def test_search_records_nothing_when_match_content_is_capped(tmp_path, monkeypat
     assert "error" in out, out
     assert READ_FIRST in out["error"], out
     assert f.read_text(encoding="utf-8").splitlines()[1] == "line 2"
+
+def test_successful_edit_does_not_widen_observation(tmp_path, monkeypatch):
+    """A successful edit must not authorize lines the task never saw."""
+    f = _write(tmp_path, "narrow.py", [f"line {i}" for i in range(1, 11)])
+    _install_ops(monkeypatch, _FakeFileOps(f.read_text(encoding="utf-8")))
+
+    _, header = _read(f, "task-a", offset=1, limit=3)
+    tag = _tag_of(header)
+
+    first = _edit(f, tag, "PUT 2.=2:\n+FIRST\n", task_id="task-a")
+    assert first.get("ok") is True, first
+    snap = task_stores.for_task("task-a").get(str(f))
+    assert snap is not None
+    assert snap.visible_ranges == ()
+
+    # Line 8 was never displayed; the fresh tag after the edit must not
+    # authorize it, so a successful edit cannot widen the observed window.
+    unseen = _edit(f, snap.tag, "PUT 8.=8:\n+SNEAK\n", task_id="task-a")
+    assert "error" in unseen, unseen
+    assert NOT_SEEN in unseen["error"], unseen
+    assert f.read_text(encoding="utf-8").splitlines()[7] == "line 8"
