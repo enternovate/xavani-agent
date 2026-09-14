@@ -37,6 +37,7 @@ import os
 import socket as _socket
 import re
 import sqlite3
+import threading
 import time
 import uuid
 from typing import Any, Dict, List, Optional
@@ -727,6 +728,10 @@ class APIServerAdapter(BasePlatformAdapter):
         self._run_streams: Dict[str, "asyncio.Queue[Optional[Dict]]"] = {}
         # Creation timestamps for orphaned-run TTL sweep
         self._run_streams_created: Dict[str, float] = {}
+        # run_id -> last event seq assigned.  Guarded by a lock because tool
+        # completion callbacks fire from parallel executor threads.
+        self._run_event_seq: Dict[str, int] = {}
+        self._run_event_seq_lock = threading.Lock()
         # Active run agent/task references for stop support
         self._active_run_agents: Dict[str, Any] = {}
         self._active_run_tasks: Dict[str, "asyncio.Task"] = {}
@@ -2957,6 +2962,49 @@ class APIServerAdapter(BasePlatformAdapter):
         self._run_statuses[run_id] = current
         return current
 
+    def _next_run_event_seq(self, run_id: str) -> int:
+        """Reserve the next event sequence number for a run."""
+        with self._run_event_seq_lock:
+            seq = self._run_event_seq.get(run_id, 0) + 1
+            self._run_event_seq[run_id] = seq
+        return seq
+
+    def _discard_run_event_seq(self, run_id: str) -> None:
+        with self._run_event_seq_lock:
+            self._run_event_seq.pop(run_id, None)
+
+    def _stamp_run_event(self, run_id: str, event: Dict[str, Any]) -> Dict[str, Any]:
+        """Attach the run-scoped envelope (schema_version, seq, event_id)."""
+        seq = self._next_run_event_seq(run_id)
+        event["schema_version"] = 1
+        event["seq"] = seq
+        event["event_id"] = f"{run_id}:{seq}"
+        return event
+
+    def _push_run_event(
+        self,
+        run_id: str,
+        event: Dict[str, Any],
+        loop: "Optional[asyncio.AbstractEventLoop]" = None,
+    ) -> None:
+        """Stamp and queue one run event.
+
+        Pass ``loop`` when calling from outside the run's event loop thread;
+        the seq is claimed before the hand-off so parallel tool completions
+        never collide with each other.
+        """
+        payload = self._stamp_run_event(run_id, dict(event))
+        q = self._run_streams.get(run_id)
+        if q is None:
+            return
+        try:
+            if loop is None:
+                q.put_nowait(payload)
+            else:
+                loop.call_soon_threadsafe(q.put_nowait, payload)
+        except Exception:
+            pass
+
     def _make_run_event_callback(self, run_id: str, loop: "asyncio.AbstractEventLoop"):
         """Return a tool_progress_callback that pushes structured events to the run's SSE queue."""
         def _push(event: Dict[str, Any]) -> None:
@@ -2965,16 +3013,11 @@ class APIServerAdapter(BasePlatformAdapter):
                 self._run_statuses.get(run_id, {}).get("status", "running"),
                 last_event=event.get("event"),
             )
-            q = self._run_streams.get(run_id)
-            if q is None:
-                return
-            try:
-                loop.call_soon_threadsafe(q.put_nowait, event)
-            except Exception:
-                pass
+            self._push_run_event(run_id, event, loop)
 
         def _callback(event_type: str, tool_name: str = None, preview: str = None, args=None, **kwargs):
             ts = time.time()
+            tool_call_id = kwargs.get("tool_call_id")
             if event_type == "tool.started":
                 _push({
                     "event": "tool.started",
@@ -2982,6 +3025,8 @@ class APIServerAdapter(BasePlatformAdapter):
                     "timestamp": ts,
                     "tool": tool_name,
                     "preview": preview,
+                    "tool_call_id": tool_call_id,
+                    **({"path": kwargs["path"]} if kwargs.get("path") else {}),
                 })
             elif event_type == "tool.completed":
                 _push({
@@ -2991,6 +3036,7 @@ class APIServerAdapter(BasePlatformAdapter):
                     "tool": tool_name,
                     "duration": round(kwargs.get("duration", 0), 3),
                     "error": kwargs.get("is_error", False),
+                    "tool_call_id": tool_call_id,
                     **({"diff": kwargs["diff"]} if kwargs.get("diff") else {}),
                     **({"path": kwargs["path"]} if kwargs.get("path") else {}),
                 })
@@ -3106,15 +3152,12 @@ class APIServerAdapter(BasePlatformAdapter):
         def _text_cb(delta: Optional[str]) -> None:
             if delta is None:
                 return
-            try:
-                loop.call_soon_threadsafe(q.put_nowait, {
-                    "event": "message.delta",
-                    "run_id": run_id,
-                    "timestamp": time.time(),
-                    "delta": delta,
-                })
-            except Exception:
-                pass
+            self._push_run_event(run_id, {
+                "event": "message.delta",
+                "run_id": run_id,
+                "timestamp": time.time(),
+                "delta": delta,
+            }, loop)
 
         self._set_run_status(
             run_id,
@@ -3149,10 +3192,7 @@ class APIServerAdapter(BasePlatformAdapter):
                         "waiting_for_approval",
                         last_event="approval.request",
                     )
-                    try:
-                        loop.call_soon_threadsafe(q.put_nowait, event)
-                    except Exception:
-                        pass
+                    self._push_run_event(run_id, event, loop)
 
                 def _run_sync():
                     from gateway.session_context import clear_session_vars, set_session_vars
@@ -3211,7 +3251,7 @@ class APIServerAdapter(BasePlatformAdapter):
                     verification_state = result.get("verification_state") or "unverified"
                     missing_checks = result.get("missing_checks") or []
                     failed_checks = result.get("failed_checks") or []
-                    q.put_nowait({
+                    self._push_run_event(run_id, {
                         "event": "run.failed",
                         "run_id": run_id,
                         "timestamp": time.time(),
@@ -3235,7 +3275,7 @@ class APIServerAdapter(BasePlatformAdapter):
                     verification_state = result_dict.get("verification_state") or "not_required"
                     missing_checks = result_dict.get("missing_checks") or []
                     failed_checks = result_dict.get("failed_checks") or []
-                    q.put_nowait({
+                    self._push_run_event(run_id, {
                         "event": "run.completed",
                         "run_id": run_id,
                         "timestamp": time.time(),
@@ -3265,7 +3305,7 @@ class APIServerAdapter(BasePlatformAdapter):
                     last_event="run.cancelled",
                 )
                 try:
-                    q.put_nowait({
+                    self._push_run_event(run_id, {
                         "event": "run.cancelled",
                         "run_id": run_id,
                         "timestamp": time.time(),
@@ -3288,7 +3328,7 @@ class APIServerAdapter(BasePlatformAdapter):
                     last_event="run.failed",
                 )
                 try:
-                    q.put_nowait({
+                    self._push_run_event(run_id, {
                         "event": "run.failed",
                         "run_id": run_id,
                         "timestamp": time.time(),
@@ -3319,6 +3359,7 @@ class APIServerAdapter(BasePlatformAdapter):
                 self._active_run_agents.pop(run_id, None)
                 self._active_run_tasks.pop(run_id, None)
                 self._run_approval_sessions.pop(run_id, None)
+                self._discard_run_event_seq(run_id)
 
         task = asyncio.create_task(_run_and_close())
         self._active_run_tasks[run_id] = task
@@ -3471,18 +3512,13 @@ class APIServerAdapter(BasePlatformAdapter):
             )
 
         self._set_run_status(run_id, "running", last_event="approval.responded")
-        q = self._run_streams.get(run_id)
-        if q is not None:
-            try:
-                q.put_nowait({
-                    "event": "approval.responded",
-                    "run_id": run_id,
-                    "timestamp": time.time(),
-                    "choice": choice,
-                    "resolved": resolved,
-                })
-            except Exception:
-                pass
+        self._push_run_event(run_id, {
+            "event": "approval.responded",
+            "run_id": run_id,
+            "timestamp": time.time(),
+            "choice": choice,
+            "resolved": resolved,
+        })
 
         return web.json_response({
             "object": "xavani.run.approval_response",
@@ -3556,6 +3592,7 @@ class APIServerAdapter(BasePlatformAdapter):
                 self._active_run_agents.pop(run_id, None)
                 self._active_run_tasks.pop(run_id, None)
                 self._run_approval_sessions.pop(run_id, None)
+                self._discard_run_event_seq(run_id)
 
             stale_statuses = [
                 run_id
