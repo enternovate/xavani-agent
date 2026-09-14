@@ -63,21 +63,93 @@ class TestGuidelinesGate:
         checks = [f["check"] for f in result["failures"]]
         assert "scrub" in checks
 
-    def test_stubs_catches_skills_hub_edit(self):
-        """A diff editing skills_hub.py fails the stubs check."""
-        diff = "diff --git a/tools/skills_hub.py b/tools/skills_hub.py\n+new line\n"
-        result = run_guidelines_gate(diff_text=diff, goal="fix stub")
-        assert result["ok"] is False
-        checks = [f["check"] for f in result["failures"]]
-        assert "stubs_intact" in checks
+    def test_skills_hub_edit_is_no_longer_a_path_ban(self):
+        """The implemented skills hub is no longer treated as a stub (Task 24a).
 
-    def test_stubs_catches_weixin_edit(self):
-        """A diff editing weixin.py fails the stubs check."""
+        Contract change: this replaces the old
+        ``test_stubs_catches_skills_hub_edit`` assertion, which encoded the
+        stale ``_STUB_FILES`` path ban. skills_hub.py is a shipped module, so
+        editing it must not fail the gate.
+        """
+        diff = "diff --git a/tools/skills_hub.py b/tools/skills_hub.py\n+new line\n"
+        result = run_guidelines_gate(diff_text=diff, goal="extend the skills hub, latency: 5ms → 3ms")
+        checks = [f["check"] for f in result["failures"]]
+        assert "prohibited_services" not in checks
+        assert "stubs_intact" not in checks
+        assert result["ok"] is True
+
+    def test_weixin_platform_edit_is_no_longer_a_path_ban(self):
+        """The weixin platform adapter is shipped code, not a stub (Task 24a).
+
+        Contract change: this replaces the old
+        ``test_stubs_catches_weixin_edit`` assertion.
+        """
         diff = "diff --git a/gateway/platforms/weixin.py b/gateway/platforms/weixin.py\n+new line\n"
-        result = run_guidelines_gate(diff_text=diff, goal="fix weixin")
+        result = run_guidelines_gate(diff_text=diff, goal="extend the weixin adapter, latency: 5ms → 3ms")
+        checks = [f["check"] for f in result["failures"]]
+        assert "stubs_intact" not in checks
+        assert result["ok"] is True
+
+    def test_prohibited_services_flags_an_upstream_portal_host(self):
+        """A diff adding an upstream subscription/portal host fails (Code Pack Q)."""
+        diff = '+PORTAL = "https://portal.nousresearch.com/checkout"\n'
+        result = run_guidelines_gate(diff_text=diff, goal="add a product button, latency: 5ms → 3ms")
         assert result["ok"] is False
         checks = [f["check"] for f in result["failures"]]
-        assert "stubs_intact" in checks
+        assert "prohibited_services" in checks
+
+    def test_prohibited_services_flags_default_telemetry(self):
+        """A diff enabling telemetry by default fails."""
+        diff = "+telemetry_enabled = True\n"
+        result = run_guidelines_gate(diff_text=diff, goal="add feature, latency: 5ms → 3ms")
+        assert result["ok"] is False
+        checks = [f["check"] for f in result["failures"]]
+        assert "prohibited_services" in checks
+
+    def test_prohibited_services_flags_an_unopted_upstream_update_target(self):
+        """A diff pointing an update check at an upstream host fails."""
+        diff = '+update_url = "https://portal.nousresearch.com/latest"\n'
+        result = run_guidelines_gate(diff_text=diff, goal="add update check, latency: 5ms → 3ms")
+        checks = [f["check"] for f in result["failures"]]
+        assert "prohibited_services" in checks
+
+    def test_prohibited_services_warns_on_an_undeclared_network_call(self):
+        """A new network call to an undeclared host is flagged for review."""
+        diff = '+requests.get("https://tracker.example.net/collect")\n'
+        result = run_guidelines_gate(diff_text=diff, goal="add a client, latency: 5ms → 3ms")
+        warning_checks = [w["check"] for w in result["warnings"]]
+        assert "prohibited_services" in warning_checks
+
+    def test_prohibited_services_allows_an_explicit_provider_selection(self):
+        """A user-selected provider endpoint is not a product surface (Code Pack Q)."""
+        diff = '+base_url = "https://api.openai.com/v1"\n'
+        result = run_guidelines_gate(diff_text=diff, goal="add provider, latency: 5ms → 3ms")
+        checks = [f["check"] for f in result["failures"] + result["warnings"]]
+        assert "prohibited_services" not in checks
+
+    def test_prohibited_services_exempts_legal_attribution(self):
+        """Legal files may retain upstream attribution (Task 24a)."""
+        diff = (
+            "diff --git a/THIRD_PARTY_NOTICES.md b/THIRD_PARTY_NOTICES.md\n"
+            "+Copyright (c) 2025 Nous Research — https://github.com/NousResearch/hermes-agent\n"
+        )
+        result = run_guidelines_gate(diff_text=diff, goal="add notices, latency: 5ms → 3ms")
+        checks = [f["check"] for f in result["failures"] + result["warnings"]]
+        assert "prohibited_services" not in checks
+
+    def test_prohibited_services_allows_owned_hosts(self):
+        """An owned release page stays allowed."""
+        diff = '+URL = "https://github.com/enternovate/xavani-agent/releases/tag/v0.4.0"\n'
+        result = run_guidelines_gate(diff_text=diff, goal="add release link, latency: 5ms → 3ms")
+        checks = [f["check"] for f in result["failures"] + result["warnings"]]
+        assert "prohibited_services" not in checks
+
+    def test_prohibited_apex_domains_match_the_boundary_scanner(self):
+        """The gate and the Task 24a scanner share one prohibited-host list."""
+        from scripts import check_product_boundary as boundary
+        from tools.guidelines_gate_tool import PROHIBITED_APEX_DOMAINS
+
+        assert PROHIBITED_APEX_DOMAINS == boundary.UPSTREAM_APEX_DOMAINS
 
     def test_vague_goal_warns_measurement(self):
         """A vague goal produces a measurement warning."""
@@ -116,7 +188,7 @@ class TestGuidelinesGate:
         assert "scrub" in all_checks
         assert "eval_present" in all_checks
         # The gate always runs all 6 checks — failures+warnings should cover
-        # at least the ones that triggered
+        # at least the ones that triggered (scrub, eval_present, prohibited_services)
         assert len(all_checks) >= 2
 
     def test_empty_diff(self):

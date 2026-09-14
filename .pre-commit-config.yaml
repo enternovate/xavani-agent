@@ -44,15 +44,16 @@ repos:
         pass_filenames: false
         files: '^(agent/|tools/|xavani_learner/).*\.py$'
       # Scrub: no upstream-brand references may be committed. Documented
-      # exceptions: LICENSE (legal notices), detection/scrub guards,
-      # migration bridges for pre-rename installs, and third-party or
-      # dependency metadata files.
+      # exceptions: LICENSE and THIRD_PARTY_NOTICES.md (legal notices), the
+      # product-boundary scanner and detection/scrub guards (they must contain
+      # the banned words to block them), migration bridges for pre-rename
+      # installs, and third-party or dependency metadata files.
       - id: scrub-upstream-refs
         name: scrub upstream references
         entry: bash -c 'files=$(echo "$@"); [ -z "$files" ] && exit 0; ! grep -rniE "hermes|oh-my-pi|oh my pi|nous research|nous portal|nous subscribers?" $files' --
         language: system
         pass_filenames: true
-        exclude: '^(LICENSE|.*package-lock\.json|plugins/xavani-achievements/LICENSE|scripts/xavani-gateway|scripts/install\.ps1|agent/detectors\.py|xavani_registry/local_registry\.py|tools/guidelines_gate_tool\.py|\.pre-commit-config\.yaml|tests/|website/|skills/|oag_skills/|optional-skills/)$'
+        exclude: '^(LICENSE|THIRD_PARTY_NOTICES\.md|.*package-lock\.json|plugins/xavani-achievements/LICENSE|scripts/xavani-gateway|scripts/install\.ps1|scripts/check_product_boundary\.py|agent/detectors\.py|xavani_registry/local_registry\.py|tools/guidelines_gate_tool\.py|\.pre-commit-config\.yaml|tests/|website/|skills/|oag_skills/|optional-skills/)$'
       # Lockfile guard: block staged uv.lock commits unless explicitly allowed.
       - id: guard-lockfile
         name: guard uv.lock commits (XAVANI_ALLOW_LOCKFILE_CHANGE=1 to override)
