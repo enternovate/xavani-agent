@@ -236,12 +236,27 @@ def test_notices_name_the_upstream_ported_project_holders():
         assert holder in text, f"missing upstream copyright holder: {holder}"
 
 
-def test_every_bundled_notice_is_declared_in_the_notices_file():
+def test_every_bundled_notice_on_disk_is_declared_in_the_notices_file():
     notices = (REPO_ROOT / "THIRD_PARTY_NOTICES.md").read_text(encoding="utf-8")
-    assert boundary.BUNDLED_NOTICES
-    for rel_path, component in boundary.BUNDLED_NOTICES:
-        assert (REPO_ROOT / rel_path).is_file(), f"{component} notice missing at {rel_path}"
-        assert rel_path in notices, f"{component} ({rel_path}) not declared in the notices file"
+    discovered = boundary.discover_bundled_notices(REPO_ROOT)
+    assert len(discovered) >= 10, discovered
+    for rel_path in discovered:
+        assert rel_path in notices, f"{rel_path} is not declared in the notices file"
+
+
+def test_undeclared_notice_file_is_flagged(tmp_path):
+    import shutil
+
+    shutil.copy(REPO_ROOT / "LICENSE", tmp_path / "LICENSE")
+    shutil.copy(REPO_ROOT / "THIRD_PARTY_NOTICES.md", tmp_path / "THIRD_PARTY_NOTICES.md")
+    demo = tmp_path / "skills" / "demo"
+    demo.mkdir(parents=True)
+    (demo / "LICENSE").write_text("MIT License", encoding="utf-8")
+    findings = boundary.scan_legal(tmp_path)
+    assert any(
+        finding.rule == "L3" and "skills/demo/LICENSE" in finding.path
+        for finding in findings
+    )
 
 
 # ── default behaviors as shipped ────────────────────────────────────────────
@@ -334,7 +349,7 @@ def test_injected_upstream_link_fails_the_scan(tmp_path, monkeypatch):
     monkeypatch.setattr(boundary, "PRODUCT_SURFACES", (("banner.py", "runtime"),))
     monkeypatch.setattr(boundary, "DEFAULT_SERVICES", ())
     monkeypatch.setattr(boundary, "SOURCE_PROBES", ())
-    monkeypatch.setattr(boundary, "BUNDLED_NOTICES", ())
+    monkeypatch.setattr(boundary, "REQUIRED_BUNDLED_NOTICES", ())
     monkeypatch.setattr(boundary, "REQUIRED_ATTRIBUTION", ())
 
     findings = boundary.scan_repo(tmp_path)

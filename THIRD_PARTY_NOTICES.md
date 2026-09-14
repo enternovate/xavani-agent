@@ -41,9 +41,9 @@ Parts of this repository are ports of behavior from the **oh-my-pi** project
 (<https://github.com/can1357/oh-my-pi>), licensed under the MIT License. The
 copyright holders named in the oh-my-pi license are:
 
-> Copyright (c) Mario Zechner
-> Copyright (c) Can Bölük
-> Copyright (c) Stencil Labs, Inc.
+> Copyright (c) 2025 Mario Zechner
+> Copyright (c) 2025-2026 Can Bölük
+> Copyright (c) 2026 Stencil Labs, Inc.
 
 The MIT License text governing those ports is the same MIT License reproduced in
 [`LICENSE`](LICENSE).
@@ -59,6 +59,8 @@ notice file on disk, which remains the authoritative copy.
 | `humanizer` skill | MIT | Copyright (c) 2025 Siqi Chen | `skills/creative/humanizer/LICENSE` (mirrored at `oag_skills/creative/humanizer/LICENSE`) |
 | `powerpoint` skill | Anthropic materials license | © 2025 Anthropic, PBC. All rights reserved. | `skills/productivity/powerpoint/LICENSE.txt` (mirrored at `oag_skills/productivity/powerpoint/LICENSE.txt`) |
 | Cybersecurity skills (adapted for the Xavani skill loader) | Apache License, Version 2.0 | Copyright (c) mukul975/Anthropic-Cybersecurity-Skills — source commit `9a588e643e36694dc1dafe7acc64589d246cb280`, 754 skills | `optional-skills/cybersecurity/NOTICE` (full details in `optional-skills/cybersecurity/ATTRIBUTION.md`) |
+| `pixel-art` skill (code ported from Synero/pixel-art-studio) | MIT | Copyright: © Synero, MIT-licensed contributors | `skills/creative/pixel-art/ATTRIBUTION.md` (mirrored at `oag_skills/creative/pixel-art/ATTRIBUTION.md`) |
+| `ponytail` skill (vendored from DietrichGebert/ponytail) | MIT | Copyright (c) 2026 DietrichGebert | `oag_skills/ponytail/ATTRIBUTION.md` |
 
 For the Apache-2.0 component, the upstream `NOTICE` file is retained unchanged
 at `optional-skills/cybersecurity/NOTICE` and the full license details are in

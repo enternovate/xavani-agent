@@ -98,6 +98,19 @@ class TestGuidelinesGate:
         checks = [f["check"] for f in result["failures"]]
         assert "prohibited_services" in checks
 
+    def test_prohibited_services_ignores_a_mere_mention_of_disabled(self):
+        """`# not disabled` must not exempt an enabled default (review probe)."""
+        diff = "+telemetry = true  # not disabled\n"
+        result = run_guidelines_gate(diff_text=diff, goal="add feature")
+        checks = [f["check"] for f in result["failures"]]
+        assert "prohibited_services" in checks
+
+    def test_prohibited_services_allows_an_explicit_disable(self):
+        diff = "+telemetry = false\n"
+        result = run_guidelines_gate(diff_text=diff, goal="add feature")
+        checks = [f["check"] for f in result["failures"]]
+        assert "prohibited_services" not in checks
+
     def test_prohibited_services_flags_default_telemetry(self):
         """A diff enabling telemetry by default fails."""
         diff = "+telemetry_enabled = True\n"

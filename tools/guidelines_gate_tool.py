@@ -87,7 +87,15 @@ _DEFAULT_SERVICE_ENABLED_RE = re.compile(
     r"\s*[:=]\s*(?:true|1|\"1\"|'1'|enabled)\b"
 )
 _SERVICE_DISABLED_RE = re.compile(
-    r"(?i)\b(?:disable[sd]?|no[_-]?telemetry|do[_-]?not[_-]?track|false|off|opt[_-]?in)\b"
+    r"(?i)(?:"
+    r"\b(?:disable[sd]?|no|without|do[ _-]?not)[ _-]?"
+    r"(?:track(?:ing)?|telemetry|analytics|updates?|inference|managed[ _-]?tools)\b"
+    r"|\b(?:telemetry|analytics|remote[_-]?inference|managed[_-]?tools"
+    r"|check[_-]?for[_-]?updates|auto[_-]?update|update[_-]?checks?)\w*"
+    r"\s*[:=]\s*(?:false|0|\"0\"|'0'|off|disabled)\b"
+    r"|\b(?:telemetry|analytics|remote[_-]?inference|managed[_-]?tools"
+    r"|check[_-]?for[_-]?updates|auto[_-]?update|update[_-]?checks?)[_-]?disabled\b"
+    r")"
 )
 
 #: Paths whose purpose is to contain these strings, or that are not product

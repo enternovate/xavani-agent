@@ -20,7 +20,7 @@ not just encouraged:
   It never hides a needed tool: with no clear intent it returns the full set, and
   essentials are always included.
 - **Detector registry** (`agent/detectors.py`) — a uniform home for pure-Python
-  checks: scrub (no prohibited references), stub-guard, and a secret-leak heuristic.
+  checks: scrub (no prohibited references), service-guard, and a secret-leak heuristic.
 - **Deterministic skill routing** — the existing skill orchestrator ranks skills by
   keyword/n-gram overlap, with no embeddings and no model call.
 

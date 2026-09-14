@@ -524,14 +524,40 @@ REQUIRED_ATTRIBUTION: Tuple[Tuple[str, str, str], ...] = (
     ("THIRD_PARTY_NOTICES.md", r"Stencil Labs, Inc\.", "upstream ported-project copyright holder"),
 )
 
-#: Bundled third-party components that ship their own license/notice file. Each
-#: path is present in this repository and must be declared in the notices file.
-BUNDLED_NOTICES: Tuple[Tuple[str, str], ...] = (
+#: Bundled third-party components whose notice file must exist on disk. The
+#: declaredness check below is discovery-based, so a newly vendored component
+#: cannot slip past it; this list guards against silent deletion of the known
+#: ones. Mirrored trees list every copy.
+REQUIRED_BUNDLED_NOTICES: Tuple[Tuple[str, str], ...] = (
     ("plugins/xavani-achievements/LICENSE", "xavani-achievements plugin"),
     ("skills/creative/humanizer/LICENSE", "humanizer skill"),
+    ("oag_skills/creative/humanizer/LICENSE", "humanizer skill (mirror)"),
     ("skills/productivity/powerpoint/LICENSE.txt", "powerpoint skill"),
+    ("oag_skills/productivity/powerpoint/LICENSE.txt", "powerpoint skill (mirror)"),
+    ("skills/creative/pixel-art/ATTRIBUTION.md", "pixel-art skill"),
+    ("oag_skills/creative/pixel-art/ATTRIBUTION.md", "pixel-art skill (mirror)"),
+    ("oag_skills/ponytail/ATTRIBUTION.md", "ponytail skill"),
     ("optional-skills/cybersecurity/NOTICE", "cybersecurity skills"),
+    ("optional-skills/cybersecurity/ATTRIBUTION.md", "cybersecurity skills attribution"),
 )
+
+#: Trees that can bundle third-party notice files. Discovery is dynamic so a
+#: newly vendored component cannot slip past the L3 declaration check.
+_NOTICE_TREES: Tuple[str, ...] = ("skills", "oag_skills", "optional-skills", "plugins")
+_NOTICE_NAME_RE = re.compile(r"(?i)^(?:LICENSE|LICENCE|NOTICE|ATTRIBUTION|COPYING)(?:\..+)?$")
+
+
+def discover_bundled_notices(root: Path = REPO_ROOT) -> List[str]:
+    """Every notice-like file under the bundled trees, as repo-relative paths."""
+    found: List[str] = []
+    for tree in _NOTICE_TREES:
+        base = root / tree
+        if not base.is_dir():
+            continue
+        for path in sorted(base.rglob("*")):
+            if path.is_file() and _NOTICE_NAME_RE.match(path.name):
+                found.append(path.relative_to(root).as_posix())
+    return found
 
 
 def scan_legal(root: Path = REPO_ROOT) -> List[Finding]:
@@ -561,19 +587,19 @@ def scan_legal(root: Path = REPO_ROOT) -> List[Finding]:
 
     notices_path = root / "THIRD_PARTY_NOTICES.md"
     notices = notices_path.read_text(encoding="utf-8") if notices_path.is_file() else ""
-    for bundle_path, component in BUNDLED_NOTICES:
+    for bundle_path, component in REQUIRED_BUNDLED_NOTICES:
         if not (root / bundle_path).is_file():
             findings.append(
                 Finding("L3", "legal", bundle_path, f"bundled notice for {component} is missing on disk")
             )
-            continue
+    for bundle_path in discover_bundled_notices(root):
         if bundle_path not in notices:
             findings.append(
                 Finding(
                     "L3",
                     "legal",
                     bundle_path,
-                    f"bundled notice for {component} is not declared in THIRD_PARTY_NOTICES.md",
+                    "bundled notice file is not declared in THIRD_PARTY_NOTICES.md",
                 )
             )
     return findings
