@@ -105,6 +105,22 @@ def _extract_edit_diff(function_name: str, function_args: dict | None, function_
     return None
 
 
+# Tools whose success can change work products. A successful call clears
+# current verification receipts until the checks run again.
+_REVISION_INVALIDATING_TOOLS = frozenset({"write_file", "patch", "edit", "terminal"})
+
+
+def _note_work_change(agent, function_name: str) -> None:
+    if function_name not in _REVISION_INVALIDATING_TOOLS:
+        return
+    try:
+        from agent.verification_runner import note_work_change
+
+        note_work_change(agent)
+    except Exception:
+        logger.debug("verification revision note failed", exc_info=True)
+
+
 def _record_tool_metric(agent, function_name, started_at, duration, is_error, error_class=""):
     """Record one tool call in the session metrics (harness item 2)."""
     try:
@@ -357,6 +373,8 @@ def execute_tool_calls_concurrent(agent, assistant_message, messages: list, effe
         else:
             logger.info("tool %s completed (%.2fs, %d chars)", function_name, duration, len(result))
         _record_tool_metric(agent, function_name, start, duration, is_error, tool_error_class)
+        if not is_error:
+            _note_work_change(agent, function_name)
         results[index] = (function_name, function_args, result, duration, is_error, False)
         # Tear down worker-tid tracking.  Clear any interrupt bit we may
         # have set so the next task scheduled onto this recycled tid
@@ -939,6 +957,8 @@ def execute_tool_calls_sequential(agent, assistant_message, messages: list, effe
             logger.info("tool %s completed (%.2fs, %d chars)", function_name, tool_duration, _result_len)
 
         _record_tool_metric(agent, function_name, tool_start_time, tool_duration, _is_error_result)
+        if not _is_error_result:
+            _note_work_change(agent, function_name)
 
         # Track file-mutation outcome for the turn-end verifier.  See
         # the concurrent path for the rationale; both paths must feed

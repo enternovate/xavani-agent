@@ -999,6 +999,15 @@ def init_agent(
     agent._memory_nudge_interval = 10
     agent._turns_since_memory = 0
     agent._iters_since_skill = 0
+    # Completion-contract verification state. Empty until a host attaches
+    # an approved contract via agent.verification_runner.
+    agent._completion_contract = None
+    agent._verification_check_commands = {}
+    agent._verification_execute = None
+    agent._verification_store = None
+    agent._verification_repair_attempts = 0
+    agent._verification_revision_serial = 0
+    agent._verification_last_decision = None
     agent._turn_bank_interval = 0
     agent._turn_bank_completed_count = 0
     agent._turn_bank_pending = []

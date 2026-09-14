@@ -93,6 +93,48 @@ def _ra():
     return run_agent
 
 
+def _run_verification_gate(agent, messages, final_response, task_id):
+    """Enforce the active completion contract before a turn may finish.
+
+    Returns ``None`` after appending a repair nudge (the caller continues
+    the loop), otherwise returns the response text to finalize.
+    """
+    from agent.completion_contract import CompletionDecision, decide_completion
+    from agent.verification_runner import current_revision, run_required_checks
+
+    contract = agent._completion_contract
+    try:
+        receipts = run_required_checks(agent, task_id)
+        decision = decide_completion(contract, receipts, current_revision(agent))
+    except Exception as exc:
+        logger.warning("verification gate failed: %s", exc)
+        decision = CompletionDecision("blocked", failed_checks=tuple(contract.required_checks))
+    agent._verification_last_decision = decision
+    if decision.state in {"passed", "not_required"}:
+        return final_response
+    if (
+        decision.state in {"unverified", "failed"}
+        and agent._verification_repair_attempts < 2
+        and not agent._interrupt_requested
+    ):
+        agent._verification_repair_attempts += 1
+        missing = ", ".join(decision.missing_checks) or "none"
+        failed = ", ".join(decision.failed_checks) or "none"
+        messages.append({
+            "role": "user",
+            "content": (
+                "[System: verification is not complete for the active work contract. "
+                f"Missing checks: {missing}. Failed checks: {failed}. "
+                "Run the required checks with the approved commands, fix any failures, "
+                "then finish again.]"
+            ),
+            "_verification_nudge": True,
+        })
+        agent._session_messages = messages
+        return None
+    return final_response
+
+
 def _maybe_self_critique(agent, answer):
     """Run the config-gated self-critique pass on a final answer.
 
@@ -628,6 +670,7 @@ def run_conversation(
     # present are surfaced in an advisory footer so the model cannot
     # over-claim success while the file is actually unchanged on disk.
     agent._turn_failed_file_mutations: Dict[str, Dict[str, Any]] = {}
+    agent._verification_last_decision = None
     
     # Record the execution thread so interrupt()/clear_interrupt() can
     # scope the tool-level interrupt signal to THIS agent's thread only.
@@ -3607,6 +3650,18 @@ def run_conversation(
                 # No tool calls - this is the final response
                 final_response = _maybe_self_critique(agent, assistant_message.content or "")
 
+                # ── Completion-contract verification gate ─────────────
+                if (
+                    agent._completion_contract is not None
+                    and not interrupted
+                    and agent._has_content_after_think_block(final_response)
+                ):
+                    final_response = _run_verification_gate(
+                        agent, messages, final_response, effective_task_id,
+                    )
+                    if final_response is None:
+                        continue
+
                 # ── Kanban worker terminal-tool stop guard ─────────────
                 # Workers must end with kanban_complete / kanban_block.
                 # Models sometimes narrate the next step ("Let me write the
@@ -4285,6 +4340,15 @@ def run_conversation(
         "cost_status": agent.session_cost_status,
         "cost_source": agent.session_cost_source,
     }
+    _decision = getattr(agent, "_verification_last_decision", None)
+    if agent._completion_contract is None:
+        result["verification_state"] = "not_required"
+        result["missing_checks"] = []
+        result["failed_checks"] = []
+    else:
+        result["verification_state"] = getattr(_decision, "state", None) or "unverified"
+        result["missing_checks"] = list(getattr(_decision, "missing_checks", ()) or ())
+        result["failed_checks"] = list(getattr(_decision, "failed_checks", ()) or ())
     if agent._tool_guardrail_halt_decision is not None:
         result["guardrail"] = agent._tool_guardrail_halt_decision.to_metadata()
     # If a /steer landed after the final assistant turn (no more tool
