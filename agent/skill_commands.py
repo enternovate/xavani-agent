@@ -563,6 +563,89 @@ def build_skill_invocation_message(
     )
 
 
+def build_workflow_skill_message(
+    workflow_id: str,
+    *,
+    mode: str = "ask",
+    step_index: int = 0,
+    context_window_tokens: int | None = None,
+) -> Optional[str]:
+    """Load a business workflow's declared skills into real context.
+
+    Skill selection produces loaded bodies, not a suggestion list: each
+    declared skill's content (with its canonical path and content hash) is
+    inlined so the model works from the actual instructions.
+
+    Args:
+        workflow_id: Catalog key (e.g. ``"finance"``).
+        mode: ``ask`` / ``plan`` / ``build`` / ``review``.  A build-mode
+            selection raises
+            :class:`agent.workflow_skills.WorkflowSkillError` when a required
+            skill is unavailable or disabled.
+        step_index: Current step; with a small context window only this step's
+            skill is loaded and the rest are deferred.
+        context_window_tokens: Active context window, used to decide whether
+            to load the full workflow or just the current step.
+
+    Returns:
+        The formatted message, or None when the workflow has nothing to load.
+    """
+    from agent.workflow_skills import select_workflow
+
+    selection = select_workflow(
+        workflow_id,
+        mode=mode,
+        step_index=step_index,
+        context_window_tokens=context_window_tokens,
+    )
+    if not selection.skills and not selection.missing:
+        return None
+
+    checks = ", ".join(selection.checks) or "none"
+    parts = [
+        f'[IMPORTANT: The selected business workflow "{selection.name}" requires '
+        "the skills loaded below. Follow their instructions for this task. "
+        f"Mode: {selection.mode}. Objective checks: {checks}.]"
+    ]
+
+    for skill in selection.skills:
+        parts.append("")
+        parts.append(f"## Skill: {skill.path} (sha256 {skill.sha256})")
+        parts.append(skill.content.strip())
+        skill_dir = Path(skill.resolved).parent if skill.resolved else None
+        if skill_dir:
+            parts.append("")
+            parts.append(f"[Skill directory: {skill_dir}]")
+            parts.append(
+                "Resolve any relative paths in this skill (e.g. `scripts/foo.js`, "
+                "`templates/config.yaml`) against that directory, then run them "
+                "with the terminal tool using the absolute path."
+            )
+
+    if selection.skills:
+        parts.append("")
+        parts.append("[Host receipt — recorded after loading this workflow's skills:]")
+        for skill in selection.skills:
+            parts.append(f"- {skill.path} sha256:{skill.sha256}")
+
+    if selection.missing:
+        parts.append("")
+        parts.append(f"[Workflow prerequisite: {selection.explanation()}]")
+
+    if selection.deferred:
+        parts.append("")
+        parts.append(
+            "[Workflow skills deferred for the current step because the active "
+            f"context window is small. Step {selection.step_index} loaded its own "
+            "skill only. Load the next step's skill with skill_view when you "
+            "reach it:]"
+        )
+        for identifier in selection.deferred:
+            parts.append(f"- {identifier}")
+
+    return "\n".join(parts)
+
+
 def build_preloaded_skills_prompt(
     skill_identifiers: list[str],
     task_id: str | None = None,
