@@ -308,6 +308,8 @@ def run_task(
     model: str = "",
     faux: bool = False,
     resolve_runtime: bool = False,
+    api_mode: Optional[str] = None,
+    base_url: Optional[str] = None,
 ) -> Dict[str, Any]:
     from run_agent import AIAgent
 
@@ -372,6 +374,12 @@ def run_task(
                     api_mode=runtime.get("api_mode"),
                     credential_pool=runtime.get("credential_pool"),
                 )
+            if api_mode:
+                # Per-model protocol override (e.g. a gateway that serves a
+                # model on the Responses protocol only).
+                init_kwargs["api_mode"] = api_mode
+            if base_url:
+                init_kwargs["base_url"] = base_url
             agent = AIAgent(**init_kwargs)
 
         error: Optional[str] = None
@@ -495,6 +503,8 @@ def run_benchmark(
     faux: bool = False,
     runs: int = 1,
     resolve_runtime: bool = False,
+    api_mode: Optional[str] = None,
+    base_url: Optional[str] = None,
 ) -> Dict[str, Any]:
     """Run the suite ``runs`` times; flag tasks unstable across runs.
 
@@ -505,7 +515,7 @@ def run_benchmark(
     all_results = [
         run_task(
             task, provider=provider, model=model, faux=faux,
-            resolve_runtime=resolve_runtime,
+            resolve_runtime=resolve_runtime, api_mode=api_mode, base_url=base_url,
         )
         for task in tasks
     ]
@@ -515,7 +525,7 @@ def run_benchmark(
     repeat_results = [
         run_task(
             task, provider=provider, model=model, faux=faux,
-            resolve_runtime=resolve_runtime,
+            resolve_runtime=resolve_runtime, api_mode=api_mode, base_url=base_url,
         )
         for task in tasks
         for _ in range(runs - 1)
@@ -571,6 +581,17 @@ def main(argv: Optional[List[str]] = None) -> int:
         "active config (mirrors the CLI; needed for custom Anthropic-protocol endpoints)",
     )
     parser.add_argument(
+        "--api-mode",
+        default=None,
+        help="override the runtime api_mode (e.g. codex_responses for a "
+        "Responses-protocol model)",
+    )
+    parser.add_argument(
+        "--base-url",
+        default=None,
+        help="override the runtime base URL",
+    )
+    parser.add_argument(
         "--save",
         action="store_true",
         help=f"write results under {RESULTS_DIR} with a config fingerprint name",
@@ -596,6 +617,7 @@ def main(argv: Optional[List[str]] = None) -> int:
     bench = run_benchmark(
         tasks, provider=args.provider, model=args.model, faux=args.faux,
         runs=max(1, args.runs), resolve_runtime=args.resolve_runtime,
+        api_mode=args.api_mode, base_url=args.base_url,
     )
     payload = {
         "tasks_file": str(tasks_path),
@@ -604,6 +626,8 @@ def main(argv: Optional[List[str]] = None) -> int:
         "model": args.model or None,
         "runs": max(1, args.runs),
         "resolve_runtime": bool(args.resolve_runtime),
+        "api_mode_override": args.api_mode,
+        "base_url_override": args.base_url,
         **bench,
     }
 
@@ -636,7 +660,7 @@ def config_fingerprint(payload: Dict[str, Any]) -> str:
         {
             k: payload.get(k)
             for k in ("tasks_file", "mode", "provider", "model", "runs",
-                      "resolve_runtime")
+                      "resolve_runtime", "api_mode_override", "base_url_override")
         },
         sort_keys=True,
     )

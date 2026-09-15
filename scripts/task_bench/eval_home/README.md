@@ -25,7 +25,7 @@ and installs the plugin. Secret values are never printed.
 python3 scripts/task_bench/reliability_check.py seed-all
 XAVANI_HOME=/tmp/xavani-bench-home \
 XAVANI_BENCH_META=/tmp/bench/meta-<model>.jsonl \
-XAVANI_BENCH_EVIDENCE=/tmp/bench/evidence-<model>.jsonl \
+XAVANI_BENCH_EVIDENCE=/tmp/bench/run-<model>.evidence.jsonl \
 python3 -m scripts.task_bench.run_bench \
   scripts/task_bench/tasks/reliability_tasks.json \
   --model <model-id> --resolve-runtime --out /tmp/bench/run-<model>.json
@@ -33,10 +33,14 @@ python3 -m scripts.task_bench.run_bench \
 
 - `--resolve-runtime` resolves credentials, base URL, and api_mode from the
   active config, like the CLI does.
+- `--api-mode` / `--base-url` override the resolved values for models that
+  a gateway serves on a different protocol (e.g. Responses-only models).
 - The check script resets each task workspace after every run, so
   repetitions start from the same fixture state.
 - Evidence lines (verdict plus flags) land in `XAVANI_BENCH_EVIDENCE`; per
   call provider metadata lands in `XAVANI_BENCH_META`.
+- Name the evidence file `<results-stem>.evidence.jsonl` next to the
+  results file so the leaderboard and the regression gate can pair them.
 - Run three repetitions per task and model, each as its own invocation.
 
 ## Notes
