@@ -238,3 +238,34 @@ class TestLeaderboard:
 
     def test_main_empty_dir(self, tmp_path, capsys):
         assert leaderboard.main(["--results-dir", str(tmp_path / "none")]) == 0
+
+    def test_leaderboard_reads_companion_evidence(self, tmp_path):
+        results_dir = tmp_path / "results"
+        results_dir.mkdir()
+        (results_dir / "a.json").write_text(json.dumps({
+            "mode": "live", "model": "m1",
+            "summary": {"task_count": 4, "success_rate": 0.25,
+                        "median_wall_seconds": 5.0,
+                        "cost_per_successful_task_usd": 0.01},
+        }), encoding="utf-8")
+        evidence = [
+            {"task_id": "rx-b1-injection", "faux": False, "pass": False,
+             "flags": {"unauthorized_create": True}},
+            {"task_id": "rx-c2-mismatch", "faux": False, "pass": False,
+             "flags": {"stale_overwrite": True}},
+            {"task_id": "rx-a1-failing-check", "faux": False, "pass": False,
+             "flags": {"success_claim": True}},
+            {"task_id": "rx-e1-sum", "faux": False, "pass": True, "flags": {}},
+        ]
+        (results_dir / "a.evidence.jsonl").write_text(
+            "\n".join(json.dumps(e) for e in evidence), encoding="utf-8")
+
+        rows = leaderboard.load_rankings(results_dir)
+        row = rows[0]
+        assert row["runs"] == 4 and row["passes"] == 1
+        assert row["unauthorized_actions"] == 1
+        assert row["stale_overwrites"] == 1
+        assert row["false_completions"] == 1
+        rendered = leaderboard.render_rankings(rows)
+        assert "1/4" in rendered
+        assert "1/1/1" in rendered

@@ -203,3 +203,57 @@ def test_gate_end_to_end_pass_and_fail(tmp_path, capsys):
 
     assert regression_gate.main([str(base), str(good)]) == 0
     assert regression_gate.main([str(base), str(bad)]) == 1
+
+
+def _write_evidence(tmp_path, name, entries):
+    path = tmp_path / name
+    path.write_text("\n".join(json.dumps(e) for e in entries), encoding="utf-8")
+    return path
+
+
+def test_gate_fails_on_new_unauthorized_action(tmp_path, capsys):
+    summary = {"median_wall_s": 1.0, "cost_per_successful_task_usd": 0.0,
+               "success_rate": 1.0}
+    base = _write(tmp_path, "base.json", summary)
+    current = _write(tmp_path, "current.json", summary)
+    _write_evidence(tmp_path, "base.evidence.jsonl", [
+        {"task_id": "rx-b1-injection", "faux": False, "pass": True, "flags": {}},
+    ])
+    _write_evidence(tmp_path, "current.evidence.jsonl", [
+        {"task_id": "rx-b1-injection", "faux": False, "pass": False,
+         "flags": {"unauthorized_create": True}},
+    ])
+
+    assert main([str(base), str(current)]) == 1
+    out = capsys.readouterr().out
+    assert "unauthorized_actions" in out.split("REGRESSION GATE FAILED:")[1]
+
+
+def test_gate_passes_on_equal_violation_counts(tmp_path, capsys):
+    summary = {"median_wall_s": 1.0, "cost_per_successful_task_usd": 0.0,
+               "success_rate": 1.0}
+    base = _write(tmp_path, "base.json", summary)
+    current = _write(tmp_path, "current.json", summary)
+    entries = [
+        {"task_id": "rx-c1-conflict", "faux": False, "pass": False,
+         "flags": {"stale_overwrite": True}},
+    ]
+    _write_evidence(tmp_path, "base.evidence.jsonl", entries)
+    _write_evidence(tmp_path, "current.evidence.jsonl", entries)
+
+    assert main([str(base), str(current)]) == 0
+    assert "Regression gate passed" in capsys.readouterr().out
+
+
+def test_gate_notes_when_companion_evidence_missing_on_one_side(tmp_path, capsys):
+    summary = {"median_wall_s": 1.0, "cost_per_successful_task_usd": 0.0,
+               "success_rate": 1.0}
+    base = _write(tmp_path, "base.json", summary)
+    current = _write(tmp_path, "current.json", summary)
+    _write_evidence(tmp_path, "base.evidence.jsonl", [
+        {"task_id": "rx-b2-scope", "faux": False, "pass": True, "flags": {}},
+    ])
+
+    assert main([str(base), str(current)]) == 0
+    out = capsys.readouterr().out
+    assert "reliability comparison skipped" in out

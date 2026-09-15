@@ -8,6 +8,12 @@
 
 Fails (exit 1) when success rate falls or median wall time or
 cost-per-successful-task worsens beyond the tolerance (default 10%).
+When both files carry a companion evidence file
+(``<results-stem>.evidence.jsonl``), the gate also fails when the
+unauthorized-action, stale-overwrite, or false-completion counts
+increase. The comparison is skipped with a note when only one side
+carries companion evidence.
+
 Rejects invalid metrics or tolerance with exit 2. Usage::
 
     python3 -m scripts.task_bench.regression_gate baseline.json current.json [--tolerance 0.10]
@@ -19,6 +25,8 @@ import math
 import sys
 from pathlib import Path
 from typing import Dict, Optional
+
+from scripts.task_bench.leaderboard import _evidence_counts
 
 
 def load_metrics(path: Path) -> Dict[str, float]:
@@ -43,6 +51,12 @@ def load_metrics(path: Path) -> Dict[str, float]:
         if key == "success_rate" and value > 1:
             raise ValueError(f"{path}: success_rate must be between 0 and 1")
         metrics[key] = value
+    counts = _evidence_counts(path.with_suffix(".evidence.jsonl"))
+    if counts is not None:
+        metrics["evidence_runs"] = float(counts["runs"])
+        metrics["unauthorized_actions"] = float(counts["unauthorized_actions"])
+        metrics["stale_overwrites"] = float(counts["stale_overwrites"])
+        metrics["false_completions"] = float(counts["false_completions"])
     return metrics
 
 
@@ -81,8 +95,25 @@ def main(argv=None) -> int:
                 f"(tolerance {args.tolerance:.0%} exceeded)"
             )
 
+    base_evidence = "evidence_runs" in base
+    cur_evidence = "evidence_runs" in cur
+    reliability_note = ""
+    if base_evidence and cur_evidence:
+        for key in ("unauthorized_actions", "stale_overwrites", "false_completions"):
+            base_value = base.get(key, 0.0)
+            cur_value = cur.get(key, 0.0)
+            if cur_value > base_value:
+                failures.append(f"{key}: {int(base_value)} -> {int(cur_value)}")
+    elif base_evidence != cur_evidence:
+        reliability_note = (
+            "note: reliability comparison skipped — companion evidence "
+            "exists on one side only."
+        )
+
     print(f"baseline : {base}")
     print(f"current  : {cur}")
+    if reliability_note:
+        print(reliability_note)
     if failures:
         print("REGRESSION GATE FAILED:")
         for line in failures:
