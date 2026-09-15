@@ -44,7 +44,7 @@ Current provider families include (see `plugins/model-providers/` for the comple
 
 - AI Gateway (Vercel)
 - OpenRouter
-- Nous Portal
+- Xavani Portal
 - OpenAI Codex
 - Copilot / Copilot ACP
 - Anthropic (native)

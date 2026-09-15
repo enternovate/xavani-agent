@@ -142,7 +142,7 @@ class CLIAgentSetupMixin:
                 logger.debug(
                     "No API key for custom endpoint %s (source=%s), "
                     "using placeholder — local servers typically ignore auth",
-                    base_url, _source,
+                    base_url, _source,  # nosec B105 - custom endpoint base_url + source label; not an API key
                 )
             else:
                 _prov = (resolved_provider or self.requested_provider or "").strip()

@@ -173,6 +173,9 @@ def run_bang_command(
         # command the human typed into their own composer, not model output.
         proc = subprocess.Popen(
             command,
+            # nosec B602 - shell features (pipes, &&, globs) are the whole point;
+            # `command` is typed by the user into their own composer, never
+            # model-generated or remote input.
             shell=True,
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,

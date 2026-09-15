@@ -281,7 +281,7 @@ def show_status(args):
     if xai_oauth_status.get("last_refresh"):
         print(f"    Refreshed:  {_format_iso_timestamp(xai_oauth_status.get('last_refresh'))}")
     if xai_oauth_status.get("error") and not xai_oauth_logged_in:
-        print(f"    Error:      {xai_oauth_status.get('error')}")
+        print(f"    Error:      {xai_oauth_status.get('error')}")  # nosec B105 - xAI OAuth status error string; no token
 
 
     # =========================================================================

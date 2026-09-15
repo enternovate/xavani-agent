@@ -1,7 +1,7 @@
 # SESSION HANDOFF — Xavani 0.3.0 build-out
 
 Date: 2026-08-23. Author: ox-alpha session for Andile.
-Plan of record: ~/.hermes/plans/20260823-100423-xavani-030-completeness.md
+Plan of record: the Xavani 0.3.0 completeness plan.
 Prior handoff: planning/SESSION_HANDOFF_0.2.0.md
 
 ## STATE AT HANDOVER

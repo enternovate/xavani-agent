@@ -58,7 +58,7 @@ if str(_REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT))
 
 from tools.edit_tool import VALID_MODES, _handle_edit  # noqa: E402
-from tools.hashline.snapshots import compute_tag, default_store  # noqa: E402
+from tools.hashline.snapshots import compute_tag, task_stores  # noqa: E402
 
 DEFAULT_TASKS = Path(__file__).resolve().parent / "tasks.jsonl"
 
@@ -169,10 +169,10 @@ def apply_payload(mode: str, payload, root: Path) -> dict:
             result["applied"] += 1
         return result
     if mode == "hashline":
-        # Invalidate every path we are about to touch so auto-record in
-        # _apply_hashline re-records the on-disk (original) content.
-        for path in _task_abs_paths_from_payload(payload):
-            default_store.invalidate(path)
+        # The edit path never records snapshots: the harness plays the
+        # reader's role by observing the on-disk (original) content for the
+        # task it edits as, exactly like a read_file would.
+        _observe_originals("edit_benchmark", _task_abs_paths_from_payload(payload))
         return json.loads(_handle_edit({"mode": "hashline", "input": payload}, task_id="edit_benchmark"))
     # patch mode: the tool reports {"success": true/false}; normalize to the
     # {"ok": bool} contract the caller uses.
@@ -184,6 +184,21 @@ def apply_payload(mode: str, payload, root: Path) -> dict:
 
 def _task_abs_paths_from_payload(payload: str) -> list[str]:
     return re.findall(r"^\[([^#\]]+)#[0-9A-F]{4}\]", payload, re.MULTILINE)
+
+
+def _observe_originals(task_id: str, paths: list[str]) -> None:
+    """Record each path's current content as this task's observed snapshot."""
+    store = task_stores.for_task(task_id)
+    for path in paths:
+        try:
+            with open(path, encoding="utf-8") as f:
+                content = f.read()
+        except OSError:
+            continue
+        lines = content.split("\n")
+        if content.endswith("\n"):
+            lines = lines[:-1]
+        store.record(path, content, ranges=((1, len(lines)),) if lines else ())
 
 
 def files_match_targets(task: dict, root: Path) -> str | None:

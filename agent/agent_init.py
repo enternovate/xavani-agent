@@ -943,6 +943,14 @@ def init_agent(
     
     # Cached system prompt -- built once per session, only rebuilt on compression
     agent._cached_system_prompt: Optional[str] = None
+
+    # Explicit workflow skill loading: receipt store for the skill bodies the
+    # host loaded for the selected business workflow.  Receipts hold the
+    # content hash so a compressed (pruned) body can be reloaded before a
+    # consequential action.  Workflow bodies are injected into turn messages,
+    # never into the cached system prompt.
+    from agent.workflow_skills import WorkflowSkillState
+    agent._workflow_skill_state = WorkflowSkillState()
     
     # Filesystem checkpoint manager (transparent — not a tool)
     from tools.checkpoint_manager import CheckpointManager
@@ -999,6 +1007,15 @@ def init_agent(
     agent._memory_nudge_interval = 10
     agent._turns_since_memory = 0
     agent._iters_since_skill = 0
+    # Completion-contract verification state. Empty until a host attaches
+    # an approved contract via agent.verification_runner.
+    agent._completion_contract = None
+    agent._verification_check_commands = {}
+    agent._verification_execute = None
+    agent._verification_store = None
+    agent._verification_repair_attempts = 0
+    agent._verification_revision_serial = 0
+    agent._verification_last_decision = None
     agent._turn_bank_interval = 0
     agent._turn_bank_completed_count = 0
     agent._turn_bank_pending = []

@@ -14,21 +14,133 @@ Checks performed:
   * No unearned abstraction — flags new base classes with single callers.
   * Measurement stated — agent provided a concrete before/after signal.
   * Scrub — diff introduces no new prohibited brand references (R1).
-  * Stubs intact — diff does not modify skills_hub.py/weixin.py bodies (R2).
+  * Prohibited services — diff introduces no prohibited default service:
+    an upstream subscription/portal/telemetry host, telemetry enabled by
+    default, an un-opted update check against a non-owned host, or a new
+    network call to an undeclared host (R1 / Task 24a, Code Pack Q).
+
+The former ``Stubs intact`` path ban on ``tools/skills_hub.py`` and
+``gateway/platforms/weixin.py`` was removed: both modules are implemented and
+shipped, so banning their paths blocked legitimate work. The behavioral rule
+above replaces it.
 """
 
 from __future__ import annotations
 
 import json
 import re
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
+
+# ---------------------------------------------------------------------------
+# Prohibited default services (Task 24a / Code Pack Q)
+# ---------------------------------------------------------------------------
+
+# One source of truth for the prohibited-host list: the Task 24a boundary
+# scanner. ``tests/tools/test_guidelines_gate.py`` asserts the two sets match.
+try:
+    from scripts.check_product_boundary import (
+        UPSTREAM_APEX_DOMAINS as PROHIBITED_APEX_DOMAINS,
+        classify_host as _classify_host,
+        host_of as _host_of,
+        is_prohibited_host as _is_prohibited_host,
+    )
+except ImportError:  # installed layouts may not ship scripts/
+    from urllib.parse import urlsplit as _urlsplit
+
+    PROHIBITED_APEX_DOMAINS = frozenset({"nousresearch.com"})
+
+    def _host_of(url: str) -> str:
+        try:
+            return (_urlsplit(url).hostname or "").lower()
+        except ValueError:
+            return ""
+
+    def _is_prohibited_host(host: str) -> bool:
+        host = (host or "").lower()
+        return any(host == apex or host.endswith("." + apex) for apex in PROHIBITED_APEX_DOMAINS)
+
+    _classify_host = None  # type: ignore[assignment]
+
+#: Hosts a diff may call without discussion when the scanner is unavailable.
+_ALLOWED_CALL_HOSTS = frozenset(
+    {
+        "enternovate.com",
+        "www.enternovate.com",
+        "enternovate.co.za",
+        "www.enternovate.co.za",
+    }
+)
+
+_URL_RE = re.compile(r"https?://[^\s\"'`<>\\)\]}]+")
+_PROHIBITED_HOST_RE = re.compile(
+    r"(?i)\b(?:[a-z0-9-]+\.)*(?:"
+    + "|".join(re.escape(apex) for apex in sorted(PROHIBITED_APEX_DOMAINS))
+    + r")\b"
+)
+_NETWORK_CALL_RE = re.compile(
+    r"(?i)\b(?:requests|httpx|aiohttp|session)\.(?:get|post|put|patch|delete|head|request)\("
+    r"|\burlopen\(|\burlretrieve\("
+)
+_DEFAULT_SERVICE_ENABLED_RE = re.compile(
+    r"(?i)\b(?:telemetry|analytics|remote[_-]?inference|managed[_-]?tools"
+    r"|check[_-]?for[_-]?updates|auto[_-]?update|update[_-]?checks?)\w*"
+    r"\s*[:=]\s*(?:true|1|\"1\"|'1'|enabled)\b"
+)
+_SERVICE_DISABLED_RE = re.compile(
+    r"(?i)(?:"
+    r"\b(?:disable[sd]?|no|without|do[ _-]?not)[ _-]?"
+    r"(?:track(?:ing)?|telemetry|analytics|updates?|inference|managed[ _-]?tools)\b"
+    r"|\b(?:telemetry|analytics|remote[_-]?inference|managed[_-]?tools"
+    r"|check[_-]?for[_-]?updates|auto[_-]?update|update[_-]?checks?)\w*"
+    r"\s*[:=]\s*(?:false|0|\"0\"|'0'|off|disabled)\b"
+    r"|\b(?:telemetry|analytics|remote[_-]?inference|managed[_-]?tools"
+    r"|check[_-]?for[_-]?updates|auto[_-]?update|update[_-]?checks?)[_-]?disabled\b"
+    r")"
+)
+
+#: Paths whose purpose is to contain these strings, or that are not product
+#: surfaces. Legal files must retain upstream attribution; provider catalogs
+#: list user-selected endpoints; guard modules and tests carry the detectors.
+_EXEMPT_PATHS = frozenset(
+    {
+        "LICENSE",
+        "THIRD_PARTY_NOTICES.md",
+        "cli-config.yaml.example",
+        "tools/guidelines_gate_tool.py",
+        "xavani_registry/local_registry.py",
+        "scripts/check_product_boundary.py",
+    }
+)
+_EXEMPT_PREFIXES = ("tests/",)
+
+
+def _is_exempt_path(path: str) -> bool:
+    """True when this path is not a product surface for this rule."""
+    if not path:
+        return False
+    if path in _EXEMPT_PATHS:
+        return True
+    return any(path.startswith(prefix) for prefix in _EXEMPT_PREFIXES)
+
+
+def _host_is_declared(host: str) -> bool:
+    """True when a new network call may target ``host`` unreviewed."""
+    if not host:
+        return True
+    if _is_prohibited_host(host):
+        return False
+    if host in _ALLOWED_CALL_HOSTS:
+        return True
+    if _classify_host is None:
+        return False
+    return str(_classify_host(host)) not in {"undeclared", "prohibited"}
+
 
 # ---------------------------------------------------------------------------
 # Check implementations
 # ---------------------------------------------------------------------------
 
 _SCRUB_PATTERN = re.compile(r"(?i)\b(nous|hermes[-_]?agent)\b")
-_STUB_FILES = {"tools/skills_hub.py", "gateway/platforms/weixin.py"}
 
 
 def _check_surgical(diff_text: str, goal: str) -> Dict[str, Any]:
@@ -138,20 +250,59 @@ def _check_scrub(diff_text: str) -> Dict[str, Any]:
     return {"check": "scrub", "status": "pass", "reason": ""}
 
 
-def _check_stubs_intact(diff_text: str) -> Dict[str, Any]:
-    """Check that diff does not modify the stub file bodies."""
+def _check_prohibited_services(diff_text: str) -> Dict[str, Any]:
+    """Check that the diff introduces no prohibited default service.
+
+    Behavioral replacement for the removed stub path ban (Task 24a, Code Pack
+    Q). Fails on an upstream subscription/portal/telemetry host, an enabled
+    default service, or an un-opted check against a non-owned host; warns on a
+    new network call to an undeclared host.
+    """
+    current_file = ""
+    failure: Optional[str] = None
+    warning: Optional[str] = None
+
     for line in diff_text.splitlines():
         if line.startswith("diff --git"):
-            for stub in _STUB_FILES:
-                if stub in line:
-                    # Check if the diff actually modifies content (not just whitespace)
-                    # We flag any change to the stub files
-                    return {
-                        "check": "stubs_intact",
-                        "status": "fail",
-                        "reason": f"Diff modifies stub file {stub}. Stubs must remain unchanged (R2).",
-                    }
-    return {"check": "stubs_intact", "status": "pass", "reason": ""}
+            parts = line.split()
+            current_file = parts[3].lstrip("b/") if len(parts) >= 4 else ""
+            continue
+        if not line.startswith("+") or line.startswith("+++"):
+            continue
+        if _is_exempt_path(current_file):
+            continue
+        added = line[1:].strip()
+        if not added:
+            continue
+
+        if _PROHIBITED_HOST_RE.search(added):
+            failure = failure or (
+                f"prohibited default service host: {added[:120]} (in {current_file or 'diff'})"
+            )
+            continue
+
+        if _SERVICE_DISABLED_RE.search(added):
+            continue
+
+        if _DEFAULT_SERVICE_ENABLED_RE.search(added):
+            failure = failure or f"enables a prohibited default service: {added[:120]}"
+            continue
+
+        if _NETWORK_CALL_RE.search(added):
+            for match in _URL_RE.finditer(added):
+                host = _host_of(match.group(0))
+                if host and not _host_is_declared(host):
+                    warning = warning or (
+                        f"new network call targets an undeclared host '{host}' — declare "
+                        f"it or drop it: {added[:120]}"
+                    )
+                    break
+
+    if failure:
+        return {"check": "prohibited_services", "status": "fail", "reason": failure}
+    if warning:
+        return {"check": "prohibited_services", "status": "warn", "reason": warning}
+    return {"check": "prohibited_services", "status": "pass", "reason": ""}
 
 
 # ---------------------------------------------------------------------------
@@ -178,7 +329,7 @@ def run_guidelines_gate(
         _check_no_unearned_abstraction(diff_text),
         _check_measurement_stated(goal),
         _check_scrub(diff_text),
-        _check_stubs_intact(diff_text),
+        _check_prohibited_services(diff_text),
     ]
 
     failures = [c for c in checks if c["status"] == "fail"]
@@ -214,7 +365,9 @@ GUIDELINES_GATE_SCHEMA: Dict[str, Any] = {
         "Pass the working diff (git diff + git diff --cached) and a short "
         "goal statement. Returns a structured verdict (ok/fail/warn) checking: "
         "surgical changes, eval presence, no unearned abstraction, "
-        "measurement stated, scrub (no prohibited brand references), stubs intact."
+        "measurement stated, scrub (no prohibited brand references), "
+        "prohibited services (no upstream subscription/portal/telemetry host, "
+        "default telemetry, un-opted update target, or undeclared network call)."
     ),
     "parameters": {
         "type": "object",

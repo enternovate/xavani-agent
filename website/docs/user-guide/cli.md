@@ -25,7 +25,7 @@ xavani chat -q "Hello"
 xavani chat --model "anthropic/claude-sonnet-4"
 
 # With a specific provider
-xavani chat --provider nous        # Use Nous Portal
+xavani chat --provider nous        # Use Xavani Portal
 xavani chat --provider openrouter  # Force OpenRouter
 
 # With specific toolsets

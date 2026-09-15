@@ -13,7 +13,7 @@ from agent import detectors
 
 
 def test_builtin_detectors_registered():
-    assert {"scrub", "stub_guard", "secret_leak"} <= set(detectors.names())
+    assert {"scrub", "service_guard", "secret_leak"} <= set(detectors.names())
 
 
 def test_scrub_detector_flags_upstream_reference():
@@ -23,11 +23,14 @@ def test_scrub_detector_flags_upstream_reference():
     assert good.ok is True and not good.findings
 
 
-def test_stub_guard_flags_stub_edit():
-    diff = "diff --git a/tools/skills_hub.py b/tools/skills_hub.py\n+def crawl(): ..."
-    v = detectors.run("stub_guard", {"diff": diff})
+def test_service_guard_flags_prohibited_service_host():
+    diff = 'diff --git a/x.py b/x.py\n+url = "https://portal.nousresearch.com/v1"\n'
+    v = detectors.run("service_guard", {"diff": diff})
     assert v.ok is False and v.findings
-    clean = detectors.run("stub_guard", {"diff": "diff --git a/tools/foo.py b/tools/foo.py\n+x=1"})
+    clean = detectors.run(
+        "service_guard",
+        {"diff": 'diff --git a/x.py b/x.py\n+url = "https://enternovate.com/docs"\n'},
+    )
     assert clean.ok is True
 
 

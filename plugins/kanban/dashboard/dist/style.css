@@ -1,5 +1,5 @@
 /*
- * Hermes Kanban — dashboard plugin styles.
+ * Xavani Kanban — dashboard plugin styles.
  *
  * All colors reference theme CSS vars so the board reskins with the
  * active dashboard theme. No hardcoded palette.
@@ -1292,15 +1292,15 @@
 .xavani-kanban-attention,
 .xavani-kanban-warning-badge,
 .xavani-kanban-attention-row {
-  --hermes-diag-warning: #ff9e3b;
-  --hermes-diag-error:   #ff6b3d;
-  --hermes-diag-critical: #ff4d4d;
+  --xavani-diag-warning: #ff9e3b;
+  --xavani-diag-error:   #ff6b3d;
+  --xavani-diag-critical: #ff4d4d;
 }
 
 /* Warning-badge severity variants (overrides the base colour). */
-.xavani-kanban-warning-badge--warning { color: var(--hermes-diag-warning); }
-.xavani-kanban-warning-badge--error   { color: var(--hermes-diag-error); font-weight: 700; }
-.xavani-kanban-warning-badge--critical { color: var(--hermes-diag-critical); font-weight: 700; }
+.xavani-kanban-warning-badge--warning { color: var(--xavani-diag-warning); }
+.xavani-kanban-warning-badge--error   { color: var(--xavani-diag-error); font-weight: 700; }
+.xavani-kanban-warning-badge--critical { color: var(--xavani-diag-critical); font-weight: 700; }
 
 /* Attention-strip severity variants. */
 .xavani-kanban-attention--warning {
@@ -1315,8 +1315,8 @@
   border-color: rgba(255, 77, 77, 0.55);
   background: rgba(255, 77, 77, 0.10);
 }
-.xavani-kanban-attention--error .xavani-kanban-attention-icon { color: var(--hermes-diag-error); }
-.xavani-kanban-attention--critical .xavani-kanban-attention-icon { color: var(--hermes-diag-critical); }
+.xavani-kanban-attention--error .xavani-kanban-attention-icon { color: var(--xavani-diag-error); }
+.xavani-kanban-attention--critical .xavani-kanban-attention-icon { color: var(--xavani-diag-critical); }
 
 /* Per-row severity marker in the expanded attention list. */
 .xavani-kanban-attention-row-sev {
@@ -1324,9 +1324,9 @@
   min-width: 1.5rem;
   font-weight: 600;
 }
-.xavani-kanban-attention-row--warning .xavani-kanban-attention-row-sev { color: var(--hermes-diag-warning); }
-.xavani-kanban-attention-row--error    .xavani-kanban-attention-row-sev { color: var(--hermes-diag-error); font-weight: 700; }
-.xavani-kanban-attention-row--critical .xavani-kanban-attention-row-sev { color: var(--hermes-diag-critical); font-weight: 700; }
+.xavani-kanban-attention-row--warning .xavani-kanban-attention-row-sev { color: var(--xavani-diag-warning); }
+.xavani-kanban-attention-row--error    .xavani-kanban-attention-row-sev { color: var(--xavani-diag-error); font-weight: 700; }
+.xavani-kanban-attention-row--critical .xavani-kanban-attention-row-sev { color: var(--xavani-diag-critical); font-weight: 700; }
 
 /* Individual diagnostic card inside the drawer's Diagnostics section. */
 .xavani-kanban-diag-list {
@@ -1335,7 +1335,7 @@
   gap: 0.6rem;
 }
 .xavani-kanban-diag {
-  border-left: 3px solid var(--hermes-diag-warning);
+  border-left: 3px solid var(--xavani-diag-warning);
   background: rgba(255, 158, 59, 0.05);
   border-radius: 0.35rem;
   padding: 0.6rem 0.75rem;
@@ -1344,11 +1344,11 @@
   gap: 0.4rem;
 }
 .xavani-kanban-diag--error {
-  border-left-color: var(--hermes-diag-error);
+  border-left-color: var(--xavani-diag-error);
   background: rgba(255, 107, 61, 0.06);
 }
 .xavani-kanban-diag--critical {
-  border-left-color: var(--hermes-diag-critical);
+  border-left-color: var(--xavani-diag-critical);
   background: rgba(255, 77, 77, 0.07);
 }
 .xavani-kanban-diag-header {
@@ -1360,9 +1360,9 @@
   font-weight: 700;
   min-width: 1.5rem;
 }
-.xavani-kanban-diag--warning .xavani-kanban-diag-sev { color: var(--hermes-diag-warning); }
-.xavani-kanban-diag--error    .xavani-kanban-diag-sev { color: var(--hermes-diag-error); }
-.xavani-kanban-diag--critical .xavani-kanban-diag-sev { color: var(--hermes-diag-critical); }
+.xavani-kanban-diag--warning .xavani-kanban-diag-sev { color: var(--xavani-diag-warning); }
+.xavani-kanban-diag--error    .xavani-kanban-diag-sev { color: var(--xavani-diag-error); }
+.xavani-kanban-diag--critical .xavani-kanban-diag-sev { color: var(--xavani-diag-critical); }
 .xavani-kanban-diag-title {
   font-weight: 600;
   font-size: 0.875rem;

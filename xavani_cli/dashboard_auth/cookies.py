@@ -349,7 +349,7 @@ def set_pkce_cookie(
     # earlier wire formats during a rolling upgrade.
     response.set_cookie(
         _resolved_name(PKCE_COOKIE, use_https=use_https, prefix=prefix),
-        encode_pkce_payload(payload),
+        encode_pkce_payload(payload),  # nosec B105 - value is base64url(JSON), a strict subset of RFC 6265 cookie-octets
         max_age=_PKCE_MAX_AGE,
         **_pkce_attrs(use_https=use_https, prefix=prefix),
     )

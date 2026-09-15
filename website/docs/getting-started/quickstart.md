@@ -92,7 +92,7 @@ Good defaults:
 
 | Provider | What it is | How to set up |
 |----------|-----------|---------------|
-| **Nous Portal** | Subscription-based, zero-config | OAuth login via `xavani model` |
+| **Xavani Portal** | Subscription-based, zero-config | OAuth login via `xavani model` |
 | **OpenAI Codex** | ChatGPT OAuth, uses Codex models | Device code auth via `xavani model` |
 | **Anthropic** | Claude models directly — Max plan + extra usage credits (OAuth), or API key for pay-per-token | `xavani model` → OAuth login (requires Max + extra credits), or an Anthropic API key |
 | **OpenRouter** | Multi-provider routing across many models | Enter your API key |

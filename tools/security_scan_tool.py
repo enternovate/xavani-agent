@@ -7,7 +7,7 @@
 """
 security_scan — heuristic security scanner for local files and directories.
 
-Concept adapted from oh-my-pi's security_scan tool. Walks a target path
+Concept adapted from public agent security-scan designs. Walks a target path
 (skipping VCS/vendor/cache directories and binary files) and applies regex
 heuristics for common vulnerability patterns: hardcoded secrets, eval/exec,
 unsafe deserialization, shell=True subprocesses, SQL string construction,

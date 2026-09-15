@@ -3,7 +3,7 @@
 This file is AUTO-GENERATED. Do not edit by hand.
 Regenerate with: `python3 scripts/generate_env_docs.py`
 
-Scanned: 753 environment variables.
+Scanned: 811 environment variables.
 
 ## `AGENT_BROWSER_ENGINE`
 
@@ -20,13 +20,13 @@ Scanned: 753 environment variables.
 ## `AI_GATEWAY_API_KEY`
 
 **Used at:**
-- `xavani_cli/main.py:2615`
-- `xavani_cli/models.py:3149`
+- `xavani_cli/main.py:2633`
+- `xavani_cli/models.py:3216`
 
 ## `AI_GATEWAY_BASE_URL`
 
 **Used at:**
-- `xavani_cli/models.py:3152`
+- `xavani_cli/models.py:3219`
 
 ## `ALL_PROXY`
 
@@ -44,6 +44,11 @@ Scanned: 753 environment variables.
 - `optional-skills/finance/stocks/scripts/stocks_client.py:252`
 - `optional-skills/finance/stocks/scripts/stocks_client.py:386`
 
+## `ALSO_NOT`
+
+**Used at:**
+- `tests/scripts/test_generate_env_docs.py:88`
+
 ## `ANTHROPIC_API_KEY`
 
 **Purpose:** This remains as a compatibility fallback for pre-migration Xavani configs.
@@ -53,10 +58,10 @@ Scanned: 753 environment variables.
 - `mini_swe_runner.py:222`
 - `oag_skills/red-teaming/godmode/scripts/auto_jailbreak.py:349`
 - `skills/red-teaming/godmode/scripts/auto_jailbreak.py:349`
-- `tests/tools/test_code_execution_modes.py:405`
-- `tests/tools/test_code_execution_modes.py:423`
-- `tests/xavani_cli/test_env_loader.py:56`
-- `tests/xavani_cli/test_non_ascii_credential.py:136`
+- `tests/tools/test_code_execution_modes.py:407`
+- `tests/tools/test_code_execution_modes.py:425`
+- `tests/xavani_cli/test_env_loader.py:59`
+- `tests/xavani_cli/test_non_ascii_credential.py:138`
 - ... and 2 more
 
 ## `ANTHROPIC_TOKEN`
@@ -65,8 +70,8 @@ Scanned: 753 environment variables.
 
 **Used at:**
 - `agent/anthropic_adapter.py:1114`
-- `xavani_cli/config.py:3668`
-- `xavani_cli/web_server.py:1505`
+- `xavani_cli/config.py:3675`
+- `xavani_cli/web_server.py:1508`
 
 ## `API_BASE_URL`
 
@@ -80,7 +85,7 @@ Scanned: 753 environment variables.
 
 **Used at:**
 - `gateway/config.py:1527`
-- `gateway/platforms/api_server.py:658`
+- `gateway/platforms/api_server.py:718`
 
 ## `API_SERVER_ENABLED`
 
@@ -93,25 +98,27 @@ Scanned: 753 environment variables.
 
 **Used at:**
 - `gateway/config.py:1529`
-- `gateway/platforms/api_server.py:651`
+- `gateway/platforms/api_server.py:711`
+- `xavani_cli/security_audit_startup.py:211`
 
 ## `API_SERVER_KEY`
 
 **Used at:**
 - `gateway/config.py:1526`
-- `gateway/platforms/api_server.py:656`
+- `gateway/platforms/api_server.py:716`
+- `xavani_cli/security_audit_startup.py:212`
 
 ## `API_SERVER_MODEL_NAME`
 
 **Used at:**
 - `gateway/config.py:1547`
-- `gateway/platforms/api_server.py:661`
+- `gateway/platforms/api_server.py:721`
 
 ## `API_SERVER_PORT`
 
 **Used at:**
 - `gateway/config.py:1528`
-- `gateway/platforms/api_server.py:654`
+- `gateway/platforms/api_server.py:714`
 
 ## `API_TIMEOUT_SECONDS`
 
@@ -203,29 +210,29 @@ Scanned: 753 environment variables.
 ## `AWS_ACCESS_KEY_ID`
 
 **Used at:**
-- `xavani_cli/model_switch.py:1094`
+- `xavani_cli/model_switch.py:1108`
 
 ## `AWS_BEARER_TOKEN_BEDROCK`
 
 **Purpose:** Prompt for API key
 
 **Used at:**
-- `xavani_cli/main.py:4927`
-- `xavani_cli/model_switch.py:1091`
+- `xavani_cli/main.py:4936`
+- `xavani_cli/model_switch.py:1105`
 
 ## `AWS_EC2_METADATA_DISABLED`
 
 **Purpose:** never the legitimate source for `xavani doctor`.
 
 **Used at:**
-- `xavani_cli/doctor.py:1752`
-- `xavani_cli/doctor.py:1753`
-- `xavani_cli/doctor.py:1766`
+- `xavani_cli/doctor.py:1852`
+- `xavani_cli/doctor.py:1853`
+- `xavani_cli/doctor.py:1866`
 
 ## `AWS_SECRET_ACCESS_KEY`
 
 **Used at:**
-- `xavani_cli/model_switch.py:1095`
+- `xavani_cli/model_switch.py:1109`
 
 ## `AZURE_ANTHROPIC_KEY`
 
@@ -236,24 +243,24 @@ Scanned: 753 environment variables.
 ## `AZURE_CLIENT_ID`
 
 **Used at:**
-- `agent/azure_identity_adapter.py:383`
+- `agent/azure_identity_adapter.py:385`
 
 ## `AZURE_CLIENT_SECRET`
 
 **Used at:**
-- `agent/azure_identity_adapter.py:384`
+- `agent/azure_identity_adapter.py:386`
 
 ## `AZURE_FEDERATED_TOKEN_FILE`
 
 **Used at:**
-- `agent/azure_identity_adapter.py:381`
+- `agent/azure_identity_adapter.py:383`
 
 ## `AZURE_FOUNDRY_API_KEY`
 
 **Used at:**
-- `xavani_cli/auth.py:5703`
-- `xavani_cli/auth.py:5705`
-- `xavani_cli/main.py:3644`
+- `xavani_cli/auth.py:5752`
+- `xavani_cli/auth.py:5754`
+- `xavani_cli/main.py:3653`
 - `xavani_cli/runtime_provider.py:885`
 - `xavani_cli/runtime_provider.py:889`
 
@@ -267,14 +274,14 @@ Scanned: 753 environment variables.
 **Purpose:** standard ``AZURE_*`` env vars; surface them below.
 
 **Used at:**
-- `agent/azure_identity_adapter.py:376`
-- `agent/azure_identity_adapter.py:385`
+- `agent/azure_identity_adapter.py:378`
+- `agent/azure_identity_adapter.py:387`
 
 ## `BLUEBUBBLES_HOME_CHANNEL`
 
 **Used at:**
 - `gateway/config.py:1768`
-- `xavani_cli/setup.py:2535`
+- `xavani_cli/setup.py:2534`
 
 ## `BLUEBUBBLES_HOME_CHANNEL_NAME`
 
@@ -308,8 +315,8 @@ Scanned: 753 environment variables.
 **Used at:**
 - `gateway/config.py:1754`
 - `gateway/platforms/bluebubbles.py:159`
-- `xavani_cli/setup.py:2359`
-- `xavani_cli/setup.py:2535`
+- `xavani_cli/setup.py:2358`
+- `xavani_cli/setup.py:2534`
 
 ## `BLUEBUBBLES_WEBHOOK_HOST`
 
@@ -335,6 +342,11 @@ Scanned: 753 environment variables.
 - `gateway/config.py:1764`
 - `gateway/platforms/bluebubbles.py:168`
 
+## `BROWSER`
+
+**Used at:**
+- `xavani_cli/auth.py:2925`
+
 ## `BROWSERBASE_ADVANCED_STEALTH`
 
 **Used at:**
@@ -344,10 +356,7 @@ Scanned: 753 environment variables.
 
 **Used at:**
 - `plugins/browser/browserbase/provider.py:78`
-- `xavani_cli/nous_subscription.py:296`
-- `xavani_cli/nous_subscription.py:544`
-- `xavani_cli/nous_subscription.py:584`
-- `xavani_cli/setup.py:2846`
+- `xavani_cli/setup.py:2845`
 
 ## `BROWSERBASE_KEEP_ALIVE`
 
@@ -358,8 +367,6 @@ Scanned: 753 environment variables.
 
 **Used at:**
 - `plugins/browser/browserbase/provider.py:79`
-- `xavani_cli/nous_subscription.py:296`
-- `xavani_cli/nous_subscription.py:584`
 
 ## `BROWSERBASE_PROXIES`
 
@@ -378,15 +385,15 @@ Scanned: 753 environment variables.
 **Purpose:** Env preserved; nothing reaped.
 
 **Used at:**
-- `cli.py:8604`
-- `cli.py:8704`
+- `cli.py:9070`
+- `cli.py:9170`
 - `tests/test_tui_gateway_server.py:3903`
 - `tests/test_tui_gateway_server.py:3907`
 - `tests/test_tui_gateway_server.py:3922`
 - `tests/test_tui_gateway_server.py:3931`
 - `tests/test_tui_gateway_server.py:3955`
 - `tests/test_tui_gateway_server.py:4018`
-- ... and 20 more
+- ... and 22 more
 
 ## `BROWSER_INACTIVITY_TIMEOUT`
 
@@ -397,13 +404,10 @@ Scanned: 753 environment variables.
 
 ## `BROWSER_USE_API_KEY`
 
-**Purpose:** managed Nous gateway via ``tool_gateway.browser: gateway``.
+**Purpose:** managed Xavani Portal gateway via ``tool_gateway.browser: gateway``.
 
 **Used at:**
 - `plugins/browser/browser_use/provider.py:146`
-- `xavani_cli/nous_subscription.py:297`
-- `xavani_cli/nous_subscription.py:543`
-- `xavani_cli/nous_subscription.py:583`
 
 ## `CAMOFOX_SESSION_KEY`
 
@@ -414,7 +418,6 @@ Scanned: 753 environment variables.
 
 **Used at:**
 - `tools/browser_camofox.py:62`
-- `xavani_cli/nous_subscription.py:295`
 
 ## `CAMOFOX_USER_ID`
 
@@ -436,7 +439,7 @@ Scanned: 753 environment variables.
 ## `CI`
 
 **Used at:**
-- `tests/tools/test_local_shell_init.py:191`
+- `tests/tools/test_local_shell_init.py:193`
 
 ## `CLAUDE_CODE_OAUTH_TOKEN`
 
@@ -444,12 +447,12 @@ Scanned: 753 environment variables.
 
 **Used at:**
 - `agent/anthropic_adapter.py:1122`
-- `xavani_cli/web_server.py:1505`
+- `xavani_cli/web_server.py:1508`
 
 ## `CODEX_HOME`
 
 **Used at:**
-- `xavani_cli/auth.py:3275`
+- `xavani_cli/auth.py:3323`
 - `xavani_cli/codex_models.py:184`
 
 ## `COLORFGBG`
@@ -457,7 +460,7 @@ Scanned: 753 environment variables.
 **Purpose:** 4. COLORFGBG (xterm/Konsole/urxvt)
 
 **Used at:**
-- `cli.py:1439`
+- `cli.py:1441`
 
 ## `COMFY_CLOUD_API_KEY`
 
@@ -471,8 +474,8 @@ Scanned: 753 environment variables.
 
 **Used at:**
 - `agent/copilot_acp_client.py:63`
-- `xavani_cli/auth.py:5574`
-- `xavani_cli/auth.py:5771`
+- `xavani_cli/auth.py:5623`
+- `xavani_cli/auth.py:5820`
 
 ## `COPILOT_GH_HOST`
 
@@ -488,7 +491,7 @@ Scanned: 753 environment variables.
 ## `CUSTOM_API_KEY`
 
 **Used at:**
-- `xavani_cli/models.py:2264`
+- `xavani_cli/models.py:2331`
 
 ## `CUSTOM_BASE_URL`
 
@@ -501,17 +504,17 @@ Scanned: 753 environment variables.
 
 **Used at:**
 - `tests/integration/test_daytona_terminal.py:21`
-- `tools/terminal_tool.py:2257`
-- `xavani_cli/config.py:5123`
-- `xavani_cli/doctor.py:1140`
-- `xavani_cli/setup.py:1650`
+- `tools/terminal_tool.py:2331`
+- `xavani_cli/config.py:5233`
+- `xavani_cli/doctor.py:1216`
+- `xavani_cli/setup.py:1649`
 
 ## `DBUS_SESSION_BUS_ADDRESS`
 
 **Used at:**
-- `tests/xavani_cli/test_gateway_service.py:1421`
-- `tests/xavani_cli/test_gateway_service.py:1430`
-- `xavani_cli/gateway.py:1417`
+- `tests/xavani_cli/test_gateway_service.py:1423`
+- `tests/xavani_cli/test_gateway_service.py:1432`
+- `xavani_cli/gateway.py:1418`
 
 ## `DEEPSEEK_API_KEY`
 
@@ -519,10 +522,10 @@ Scanned: 753 environment variables.
 
 **Used at:**
 - `tests/run_agent/test_deepseek_v4_thinking_live.py:26`
-- `tests/xavani_cli/test_prompt_api_key.py:52`
-- `tests/xavani_cli/test_prompt_api_key.py:94`
-- `tests/xavani_cli/test_prompt_api_key.py:107`
-- `tests/xavani_cli/test_prompt_api_key.py:119`
+- `tests/xavani_cli/test_prompt_api_key.py:54`
+- `tests/xavani_cli/test_prompt_api_key.py:96`
+- `tests/xavani_cli/test_prompt_api_key.py:109`
+- `tests/xavani_cli/test_prompt_api_key.py:121`
 
 ## `DELEGATION_CHILD_TIMEOUT_SECONDS`
 
@@ -557,8 +560,8 @@ Scanned: 753 environment variables.
 - `gateway/config.py:452`
 - `gateway/config.py:1624`
 - `gateway/platforms/dingtalk.py:150`
-- `xavani_cli/gateway.py:3994`
-- `xavani_cli/gateway.py:4036`
+- `xavani_cli/gateway.py:3995`
+- `xavani_cli/gateway.py:4037`
 
 ## `DINGTALK_CLIENT_SECRET`
 
@@ -633,7 +636,7 @@ Scanned: 753 environment variables.
 
 **Used at:**
 - `gateway/platforms/discord.py:654`
-- `gateway/run.py:6257`
+- `gateway/run.py:6340`
 
 ## `DISCORD_ALLOWED_USERS`
 
@@ -643,7 +646,7 @@ Scanned: 753 environment variables.
 - `gateway/platforms/discord.py:645`
 - `gateway/platforms/discord.py:2857`
 - `scripts/discord-voice-doctor.py:203`
-- `xavani_cli/setup.py:2054`
+- `xavani_cli/setup.py:2053`
 
 ## `DISCORD_ALLOW_ANY_ATTACHMENT`
 
@@ -681,11 +684,11 @@ Scanned: 753 environment variables.
 - `gateway/config.py:1328`
 - `gateway/session.py:228`
 - `scripts/discord-voice-doctor.py:195`
-- `tests/xavani_cli/test_non_ascii_credential.py:74`
+- `tests/xavani_cli/test_non_ascii_credential.py:76`
 - `tools/discord_tool.py:64`
-- `xavani_cli/config.py:5188`
-- `xavani_cli/setup.py:2050`
-- `xavani_cli/setup.py:2529`
+- `xavani_cli/config.py:5298`
+- `xavani_cli/setup.py:2049`
+- `xavani_cli/setup.py:2528`
 - ... and 1 more
 
 ## `DISCORD_COMMAND_SYNC_POLICY`
@@ -827,14 +830,15 @@ Scanned: 753 environment variables.
 
 **Used at:**
 - `tools/mcp_oauth.py:159`
-- `xavani_cli/web_server.py:4785`
+- `xavani_cli/auth.py:2931`
+- `xavani_cli/web_server.py:4788`
 
 ## `DO_NOT_TRACK`
 
 **Used at:**
 - `oag_cli.py:56`
 - `oag_cli.py:141`
-- `xavani.py:51`
+- `xavani.py:108`
 
 ## `E2E_MATRIX_HS`
 
@@ -846,10 +850,12 @@ Scanned: 753 environment variables.
 **Purpose:** a working program on Windows (it defaults to /usr/bin/nano).
 
 **Used at:**
-- `tests/tools/test_windows_native_support.py:106`
-- `tests/tools/test_windows_native_support.py:121`
-- `tests/tools/test_windows_native_support.py:137`
-- `xavani_cli/config.py:5231`
+- `tests/tools/test_windows_native_support.py:108`
+- `tests/tools/test_windows_native_support.py:123`
+- `tests/tools/test_windows_native_support.py:139`
+- `xavani_cli/cli_commands_mixin.py:3551`
+- `xavani_cli/config.py:5341`
+- `xavani_cli/journey.py:354`
 - `xavani_cli/stdio.py:131`
 - `xavani_cli/stdio.py:132`
 
@@ -861,10 +867,9 @@ Scanned: 753 environment variables.
 - `tools/tts_tool.py:1927`
 - `tools/tts_tool.py:2064`
 - `tools/tts_tool.py:2250`
-- `xavani_cli/nous_subscription.py:294`
-- `xavani_cli/nous_subscription.py:537`
-- `xavani_cli/nous_subscription.py:580`
-- ... and 3 more
+- `xavani_cli/setup.py:489`
+- `xavani_cli/setup.py:1238`
+- `xavani_cli/setup.py:2843`
 
 ## `EMAIL_ADDRESS`
 
@@ -906,7 +911,7 @@ Scanned: 753 environment variables.
 - `gateway/config.py:1488`
 - `gateway/platforms/email.py:115`
 - `gateway/platforms/email.py:262`
-- `xavani_cli/gateway.py:3800`
+- `xavani_cli/gateway.py:3801`
 
 ## `EMAIL_IMAP_PORT`
 
@@ -922,7 +927,7 @@ Scanned: 753 environment variables.
 - `gateway/platforms/email.py:114`
 - `gateway/platforms/email.py:261`
 - `tools/send_message_tool.py:1498`
-- `xavani_cli/gateway.py:3799`
+- `xavani_cli/gateway.py:3800`
 
 ## `EMAIL_POLL_INTERVAL`
 
@@ -938,7 +943,7 @@ Scanned: 753 environment variables.
 - `gateway/platforms/email.py:116`
 - `gateway/platforms/email.py:264`
 - `tools/send_message_tool.py:1499`
-- `xavani_cli/gateway.py:3801`
+- `xavani_cli/gateway.py:3802`
 
 ## `EMAIL_SMTP_PORT`
 
@@ -962,12 +967,6 @@ Scanned: 753 environment variables.
 - `optional-skills/research/darwinian-evolver/scripts/parrot_openrouter.py:39`
 - `optional-skills/research/darwinian-evolver/templates/custom_problem_template.py:47`
 
-## `EXA_API_KEY`
-
-**Used at:**
-- `xavani_cli/nous_subscription.py:287`
-- `xavani_cli/nous_subscription.py:575`
-
 ## `FAL_IMAGE_MODEL`
 
 **Used at:**
@@ -978,8 +977,9 @@ Scanned: 753 environment variables.
 **Used at:**
 - `plugins/video_gen/fal/__init__.py:331`
 - `plugins/video_gen/fal/__init__.py:402`
-- `tools/tool_backend_helpers.py:138`
-- `tools/tool_backend_helpers.py:145`
+- `tools/tool_backend_helpers.py:158`
+- `tools/tool_backend_helpers.py:165`
+- `xavani_cli/doctor_live.py:171`
 
 ## `FAL_VIDEO_MODEL`
 
@@ -1016,14 +1016,14 @@ Scanned: 753 environment variables.
 **Used at:**
 - `gateway/config.py:1644`
 - `gateway/platforms/feishu.py:1521`
-- `xavani_cli/gateway.py:4361`
+- `xavani_cli/gateway.py:4362`
 
 ## `FEISHU_APP_SECRET`
 
 **Used at:**
 - `gateway/config.py:1645`
 - `gateway/platforms/feishu.py:1522`
-- `xavani_cli/gateway.py:4362`
+- `xavani_cli/gateway.py:4363`
 
 ## `FEISHU_BOT_NAME`
 
@@ -1127,10 +1127,8 @@ Scanned: 753 environment variables.
 - `plugins/browser/firecrawl/provider.py:68`
 - `plugins/browser/firecrawl/provider.py:78`
 - `tools/web_tools.py:1382`
-- `xavani_cli/nous_subscription.py:288`
-- `xavani_cli/nous_subscription.py:529`
-- `xavani_cli/nous_subscription.py:571`
-- `xavani_cli/setup.py:2848`
+- `xavani_cli/doctor_live.py:161`
+- `xavani_cli/setup.py:2847`
 
 ## `FIRECRAWL_API_URL`
 
@@ -1138,20 +1136,22 @@ Scanned: 753 environment variables.
 - `plugins/browser/firecrawl/provider.py:75`
 - `tools/web_tools.py:1383`
 - `tools/web_tools.py:1403`
-- `xavani_cli/nous_subscription.py:288`
-- `xavani_cli/nous_subscription.py:530`
-- `xavani_cli/nous_subscription.py:572`
 
 ## `FIRECRAWL_BROWSER_TTL`
 
 **Used at:**
 - `plugins/browser/firecrawl/provider.py:90`
 
+## `FOO`
+
+**Used at:**
+- `tests/scripts/test_generate_env_docs.py:24`
+
 ## `GATEWAY_ALLOWED_USERS`
 
 **Used at:**
-- `gateway/run.py:6273`
-- `gateway/run.py:6418`
+- `gateway/run.py:6356`
+- `gateway/run.py:6501`
 
 ## `GATEWAY_ALLOW_ALL_USERS`
 
@@ -1160,7 +1160,7 @@ Scanned: 753 environment variables.
 **Used at:**
 - `gateway/platforms/telegram.py:542`
 - `gateway/run.py:3740`
-- `gateway/run.py:6277`
+- `gateway/run.py:6360`
 - `tests/gateway/test_allowlist_startup_check.py:23`
 
 ## `GATEWAY_HEALTH_TIMEOUT`
@@ -1168,31 +1168,36 @@ Scanned: 753 environment variables.
 **Defaults:** 3
 
 **Used at:**
-- `xavani_cli/web_server.py:491`
-- `xavani_cli/web_server.py:495`
+- `xavani_cli/web_server.py:494`
+- `xavani_cli/web_server.py:498`
 
 ## `GATEWAY_HEALTH_URL`
 
 **Used at:**
-- `xavani_cli/web_server.py:489`
+- `xavani_cli/web_server.py:492`
+
+## `GATEWAY_MULTIPLEX_PROFILES`
+
+**Used at:**
+- `xavani_cli/container_boot.py:154`
 
 ## `GATEWAY_PROXY_KEY`
 
 **Used at:**
-- `gateway/run.py:15215`
+- `gateway/run.py:15295`
 
 ## `GATEWAY_PROXY_URL`
 
 **Used at:**
-- `gateway/run.py:15164`
+- `gateway/run.py:15244`
 
 ## `GEMINI_API_KEY`
 
 **Used at:**
 - `tools/tts_tool.py:1207`
 - `tools/tts_tool.py:1946`
-- `xavani_cli/setup.py:500`
-- `xavani_cli/setup.py:1349`
+- `xavani_cli/setup.py:499`
+- `xavani_cli/setup.py:1348`
 
 ## `GEMINI_BASE_URL`
 
@@ -1204,7 +1209,7 @@ Scanned: 753 environment variables.
 **Used at:**
 - `oag_skills/devops/watchers/scripts/watch_github.py:122`
 - `optional-skills/devops/watchers/scripts/watch_github.py:122`
-- `xavani_cli/doctor.py:1843`
+- `xavani_cli/doctor.py:1943`
 
 ## `GITHUB_TOKEN`
 
@@ -1213,28 +1218,30 @@ Scanned: 753 environment variables.
 **Used at:**
 - `oag_skills/devops/watchers/scripts/watch_github.py:122`
 - `optional-skills/devops/watchers/scripts/watch_github.py:122`
-- `tests/tools/test_code_execution_modes.py:424`
+- `tests/tools/test_code_execution_modes.py:426`
+- `tools/skills_hub.py:115`
+- `tools/skills_hub.py:126`
 - `tools/tirith_security.py:274`
-- `xavani_cli/doctor.py:1843`
-- `xavani_cli/setup.py:548`
+- `xavani_cli/doctor.py:1943`
+- `xavani_cli/setup.py:547`
 
 ## `GLM_BASE_URL`
 
 **Purpose:** The garbage value should NOT have been saved
 
 **Used at:**
-- `tests/xavani_cli/test_model_provider_persistence.py:352`
-- `tests/xavani_cli/test_model_provider_persistence.py:376`
-- `tests/xavani_cli/test_model_provider_persistence.py:398`
+- `tests/xavani_cli/test_model_provider_persistence.py:354`
+- `tests/xavani_cli/test_model_provider_persistence.py:378`
+- `tests/xavani_cli/test_model_provider_persistence.py:400`
 
 ## `GOOGLE_API_KEY`
 
 **Used at:**
-- `tests/xavani_cli/test_non_ascii_credential.py:102`
+- `tests/xavani_cli/test_non_ascii_credential.py:104`
 - `tools/tts_tool.py:1207`
 - `tools/tts_tool.py:1946`
-- `xavani_cli/setup.py:500`
-- `xavani_cli/setup.py:1349`
+- `xavani_cli/setup.py:499`
+- `xavani_cli/setup.py:1348`
 
 ## `GOOGLE_APPLICATION_CREDENTIALS`
 
@@ -1347,8 +1354,8 @@ Scanned: 753 environment variables.
 - `tools/homeassistant_tool.py:44`
 - `tools/homeassistant_tool.py:355`
 - `tools/send_message_tool.py:1717`
-- `xavani_cli/setup.py:535`
-- `xavani_cli/tools_config.py:1134`
+- `xavani_cli/setup.py:534`
+- `xavani_cli/tools_config.py:1131`
 - ... and 1 more
 
 ## `HASS_URL`
@@ -1452,7 +1459,7 @@ Scanned: 753 environment variables.
 - `tests/stress/test_atypical_scenarios.py:605`
 - `tests/stress/test_atypical_scenarios.py:697`
 - `tests/stress/test_benchmarks.py:63`
-- ... and 16 more
+- ... and 19 more
 
 ## `HONCHO_API_KEY`
 
@@ -1494,14 +1501,14 @@ Scanned: 753 environment variables.
 ## `IDENTITY_ENDPOINT`
 
 **Used at:**
-- `agent/azure_identity_adapter.py:387`
+- `agent/azure_identity_adapter.py:389`
 
 ## `INVOCATION_ID`
 
 **Purpose:** exits when the gateway dies, taking the detached helper with it).
 
 **Used at:**
-- `gateway/run.py:9782`
+- `gateway/run.py:9861`
 - `gateway/shutdown_forensics.py:141`
 - `gateway/shutdown_forensics.py:343`
 
@@ -1520,7 +1527,7 @@ Scanned: 753 environment variables.
 - `plugins/platforms/irc/adapter.py:656`
 - `plugins/platforms/irc/adapter.py:674`
 - `plugins/platforms/irc/adapter.py:755`
-- `tests/xavani_cli/test_setup_irc.py:28`
+- `tests/xavani_cli/test_setup_irc.py:30`
 
 ## `IRC_HOME_CHANNEL`
 
@@ -1573,7 +1580,7 @@ Scanned: 753 environment variables.
 - `plugins/platforms/irc/adapter.py:655`
 - `plugins/platforms/irc/adapter.py:673`
 - `plugins/platforms/irc/adapter.py:754`
-- `tests/xavani_cli/test_setup_irc.py:28`
+- `tests/xavani_cli/test_setup_irc.py:30`
 
 ## `IRC_SERVER_PASSWORD`
 
@@ -1593,10 +1600,24 @@ Scanned: 753 environment variables.
 - `plugins/platforms/irc/adapter.py:690`
 - `plugins/platforms/irc/adapter.py:766`
 
+## `ITERM_SESSION_ID`
+
+**Purpose:** iTerm2 inline images
+
+**Used at:**
+- `agent/pet/render.py:81`
+
 ## `JOURNAL_STREAM`
 
 **Used at:**
 - `gateway/shutdown_forensics.py:144`
+
+## `KITTY_WINDOW_ID`
+
+**Purpose:** kitty graphics protocol
+
+**Used at:**
+- `agent/pet/render.py:71`
 
 ## `LINEAR_API_KEY`
 
@@ -1694,24 +1715,24 @@ Scanned: 753 environment variables.
 **Purpose:** Gate: don't probe 127.0.0.1 on every keystroke for users who don't use LM Studio.
 
 **Used at:**
-- `tests/xavani_cli/test_prompt_api_key.py:145`
-- `tests/xavani_cli/test_prompt_api_key.py:161`
-- `xavani_cli/commands.py:1112`
-- `xavani_cli/commands.py:1127`
-- `xavani_cli/model_switch.py:1144`
-- `xavani_cli/model_switch.py:1156`
-- `xavani_cli/status.py:355`
+- `tests/xavani_cli/test_prompt_api_key.py:147`
+- `tests/xavani_cli/test_prompt_api_key.py:163`
+- `xavani_cli/commands.py:1194`
+- `xavani_cli/commands.py:1209`
+- `xavani_cli/model_switch.py:1158`
+- `xavani_cli/model_switch.py:1170`
+- `xavani_cli/status.py:318`
 
 ## `LM_BASE_URL`
 
 **Purpose:** Gate: don't probe 127.0.0.1 on every keystroke for users who don't use LM Studio.
 
 **Used at:**
-- `xavani_cli/commands.py:1112`
-- `xavani_cli/commands.py:1128`
-- `xavani_cli/model_switch.py:1144`
-- `xavani_cli/model_switch.py:1150`
-- `xavani_cli/status.py:353`
+- `xavani_cli/commands.py:1194`
+- `xavani_cli/commands.py:1210`
+- `xavani_cli/model_switch.py:1158`
+- `xavani_cli/model_switch.py:1164`
+- `xavani_cli/status.py:316`
 
 ## `LOCALAPPDATA`
 
@@ -1727,10 +1748,10 @@ Scanned: 753 environment variables.
 ## `LOGNAME`
 
 **Used at:**
-- `xavani_cli/auth.py:3023`
-- `xavani_cli/gateway.py:1802`
-- `xavani_cli/gateway.py:1832`
-- `xavani_cli/gateway.py:1898`
+- `xavani_cli/auth.py:3071`
+- `xavani_cli/gateway.py:1803`
+- `xavani_cli/gateway.py:1833`
+- `xavani_cli/gateway.py:1899`
 - `xavani_cli/gateway_windows.py:277`
 
 ## `MATRIX_ACCESS_TOKEN`
@@ -1742,7 +1763,7 @@ Scanned: 753 environment variables.
 - `gateway/platforms/matrix.py:241`
 - `gateway/platforms/matrix.py:340`
 - `tools/send_message_tool.py:1617`
-- `xavani_cli/setup.py:2229`
+- `xavani_cli/setup.py:2228`
 
 ## `MATRIX_ALLOWED_ROOMS`
 
@@ -1788,7 +1809,7 @@ Scanned: 753 environment variables.
 - `gateway/config.py:1460`
 - `gateway/platforms/matrix.py:282`
 - `gateway/platforms/matrix.py:349`
-- `xavani_cli/gateway.py:3811`
+- `xavani_cli/gateway.py:3812`
 
 ## `MATRIX_FREE_RESPONSE_ROOMS`
 
@@ -1806,7 +1827,7 @@ Scanned: 753 environment variables.
 - `gateway/platforms/matrix.py:243`
 - `gateway/platforms/matrix.py:338`
 - `tools/send_message_tool.py:1616`
-- `xavani_cli/gateway.py:3808`
+- `xavani_cli/gateway.py:3809`
 
 ## `MATRIX_HOME_ROOM`
 
@@ -1831,9 +1852,9 @@ Scanned: 753 environment variables.
 - `gateway/config.py:1445`
 - `gateway/config.py:1457`
 - `gateway/platforms/matrix.py:242`
-- `xavani_cli/gateway.py:3809`
-- `xavani_cli/setup.py:2229`
-- `xavani_cli/setup.py:2261`
+- `xavani_cli/gateway.py:3810`
+- `xavani_cli/setup.py:2228`
+- `xavani_cli/setup.py:2260`
 
 ## `MATRIX_RECOVERY_KEY`
 
@@ -1912,7 +1933,7 @@ Scanned: 753 environment variables.
 - `gateway/platforms/mattermost.py:64`
 - `gateway/platforms/mattermost.py:90`
 - `tools/send_message_tool.py:1589`
-- `xavani_cli/setup.py:2315`
+- `xavani_cli/setup.py:2314`
 
 ## `MATTERMOST_URL`
 
@@ -1941,7 +1962,7 @@ Scanned: 753 environment variables.
 
 **Used at:**
 - `gateway/run.py:797`
-- `xavani_cli/config.py:3562`
+- `xavani_cli/config.py:3569`
 
 ## `MIGRATION_JSON_OUTPUT`
 
@@ -1957,8 +1978,8 @@ Scanned: 753 environment variables.
 - `tools/tts_tool.py:992`
 - `tools/tts_tool.py:1937`
 - `tools/tts_tool.py:2256`
-- `xavani_cli/setup.py:496`
-- `xavani_cli/setup.py:1325`
+- `xavani_cli/setup.py:495`
+- `xavani_cli/setup.py:1324`
 
 ## `MINIMAX_GROUP_ID`
 
@@ -1968,7 +1989,7 @@ Scanned: 753 environment variables.
 ## `MINIMAX_PORTAL_BASE_URL`
 
 **Used at:**
-- `xavani_cli/web_server.py:2082`
+- `xavani_cli/web_server.py:2085`
 
 ## `MISTRAL_API_KEY`
 
@@ -1978,9 +1999,8 @@ Scanned: 753 environment variables.
 - `tools/transcription_tools.py:684`
 - `tools/tts_tool.py:1112`
 - `tools/tts_tool.py:1950`
-- `xavani_cli/nous_subscription.py:364`
-- `xavani_cli/setup.py:498`
-- `xavani_cli/setup.py:1337`
+- `xavani_cli/setup.py:497`
+- `xavani_cli/setup.py:1336`
 
 ## `MOCK_LSP_SCRIPT`
 
@@ -1993,17 +2013,17 @@ Scanned: 753 environment variables.
 
 **Used at:**
 - `tests/integration/test_modal_terminal.py:74`
-- `tools/tool_backend_helpers.py:66`
-- `xavani_cli/config.py:5119`
-- `xavani_cli/setup.py:1540`
-- `xavani_cli/setup.py:1551`
-- `xavani_cli/setup.py:1595`
+- `tools/tool_backend_helpers.py:86`
+- `xavani_cli/config.py:5229`
+- `xavani_cli/setup.py:1539`
+- `xavani_cli/setup.py:1550`
+- `xavani_cli/setup.py:1594`
 
 ## `MODAL_TOKEN_SECRET`
 
 **Used at:**
-- `tools/tool_backend_helpers.py:66`
-- `xavani_cli/setup.py:1551`
+- `tools/tool_backend_helpers.py:86`
+- `xavani_cli/setup.py:1550`
 
 ## `MSGRAPH_WEBHOOK_ACCEPTED_RESOURCES`
 
@@ -2035,7 +2055,7 @@ Scanned: 753 environment variables.
 ## `MSI_ENDPOINT`
 
 **Used at:**
-- `agent/azure_identity_adapter.py:387`
+- `agent/azure_identity_adapter.py:389`
 
 ## `MY_CUSTOM_UNRELATED_VAR`
 
@@ -2048,7 +2068,7 @@ Scanned: 753 environment variables.
 **Purpose:** Not a credential suffix — should be left alone
 
 **Used at:**
-- `tests/xavani_cli/test_non_ascii_credential.py:82`
+- `tests/xavani_cli/test_non_ascii_credential.py:84`
 
 ## `NOTIFY_SOCKET`
 
@@ -2065,26 +2085,26 @@ Scanned: 753 environment variables.
 
 **Used at:**
 - `agent/auxiliary_client.py:1268`
-- `xavani_cli/auth.py:4927`
-- `xavani_cli/auth.py:7105`
+- `xavani_cli/auth.py:4976`
+- `xavani_cli/auth.py:7155`
 
 ## `NOUS_PORTAL_BASE_URL`
 
 **Used at:**
-- `xavani_cli/auth.py:4580`
-- `xavani_cli/auth.py:4922`
-- `xavani_cli/auth.py:7100`
-- `xavani_cli/web_server.py:1986`
+- `xavani_cli/auth.py:4628`
+- `xavani_cli/auth.py:4970`
+- `xavani_cli/auth.py:7149`
+- `xavani_cli/web_server.py:1989`
 
 ## `NOVITA_API_KEY`
 
 **Used at:**
-- `xavani_cli/models.py:1570`
+- `xavani_cli/models.py:1571`
 
 ## `NOVITA_BASE_URL`
 
 **Used at:**
-- `xavani_cli/models.py:1574`
+- `xavani_cli/models.py:1575`
 
 ## `NO_COLOR`
 
@@ -2100,7 +2120,7 @@ Scanned: 753 environment variables.
 ## `OAG_GATEWAY`
 
 **Used at:**
-- `xavani.py:448`
+- `xavani.py:541`
 
 ## `OAG_HOME`
 
@@ -2121,31 +2141,31 @@ Scanned: 753 environment variables.
 ## `OLLAMA_API_KEY`
 
 **Used at:**
-- `agent/chat_completion_helpers.py:759`
-- `tests/xavani_cli/test_ollama_cloud_auth.py:285`
-- `tests/xavani_cli/test_ollama_cloud_auth.py:626`
-- `tests/xavani_cli/test_ollama_cloud_auth.py:645`
-- `tests/xavani_cli/test_ollama_cloud_auth.py:659`
-- `xavani_cli/models.py:3281`
+- `agent/chat_completion_helpers.py:779`
+- `tests/xavani_cli/test_ollama_cloud_auth.py:287`
+- `tests/xavani_cli/test_ollama_cloud_auth.py:628`
+- `tests/xavani_cli/test_ollama_cloud_auth.py:647`
+- `tests/xavani_cli/test_ollama_cloud_auth.py:661`
+- `xavani_cli/models.py:3348`
 - `xavani_cli/runtime_provider.py:700`
 
 ## `OLLAMA_BASE_URL`
 
 **Used at:**
-- `xavani_cli/models.py:3283`
+- `xavani_cli/models.py:3350`
 
 ## `OPENAI_API_KEY`
 
 **Used at:**
 - `agent/auxiliary_client.py:1725`
 - `agent/auxiliary_client.py:3285`
-- `cli.py:2772`
-- `cli.py:2774`
+- `cli.py:2809`
+- `cli.py:2811`
 - `mini_swe_runner.py:223`
 - `oag_skills/red-teaming/godmode/scripts/auto_jailbreak.py:351`
 - `plugins/google_meet/meet_bot.py:463`
 - `plugins/image_gen/openai/__init__.py:145`
-- ... and 20 more
+- ... and 22 more
 
 ## `OPENAI_BASE_URL`
 
@@ -2154,12 +2174,12 @@ Scanned: 753 environment variables.
 **Used at:**
 - `agent/auxiliary_client.py:1724`
 - `agent/auxiliary_client.py:2916`
-- `tests/xavani_cli/test_clear_stale_base_url.py:38`
-- `tests/xavani_cli/test_clear_stale_base_url.py:50`
-- `tests/xavani_cli/test_clear_stale_base_url.py:77`
-- `tests/xavani_cli/test_env_loader.py:24`
-- `tests/xavani_cli/test_env_loader.py:37`
-- `tests/xavani_cli/test_env_loader.py:73`
+- `tests/xavani_cli/test_clear_stale_base_url.py:41`
+- `tests/xavani_cli/test_clear_stale_base_url.py:53`
+- `tests/xavani_cli/test_clear_stale_base_url.py:80`
+- `tests/xavani_cli/test_env_loader.py:27`
+- `tests/xavani_cli/test_env_loader.py:40`
+- `tests/xavani_cli/test_env_loader.py:76`
 - ... and 10 more
 
 ## `OPENAI_IMAGE_MODEL`
@@ -2182,8 +2202,8 @@ Scanned: 753 environment variables.
 - `agent/auxiliary_client.py:1522`
 - `agent/auxiliary_client.py:1539`
 - `agent/auxiliary_client.py:3966`
-- `cli.py:2772`
-- `cli.py:2774`
+- `cli.py:2809`
+- `cli.py:2811`
 - `mini_swe_runner.py:236`
 - `oag_skills/red-teaming/godmode/scripts/auto_jailbreak.py:347`
 - `oag_skills/red-teaming/godmode/scripts/auto_jailbreak.py:353`
@@ -2192,7 +2212,7 @@ Scanned: 753 environment variables.
 ## `OPENROUTER_BASE_URL`
 
 **Used at:**
-- `cli.py:2766`
+- `cli.py:2803`
 - `xavani_cli/runtime_provider.py:652`
 - `xavani_cli/runtime_provider.py:1141`
 
@@ -2235,15 +2255,12 @@ Scanned: 753 environment variables.
 ## `OTHER_VAR`
 
 **Used at:**
-- `tests/xavani_cli/test_prompt_api_key.py:120`
+- `tests/xavani_cli/test_prompt_api_key.py:122`
 
 ## `PARALLEL_API_KEY`
 
 **Used at:**
 - `tests/integration/test_web_tools.py:584`
-- `xavani_cli/nous_subscription.py:289`
-- `xavani_cli/nous_subscription.py:527`
-- `xavani_cli/nous_subscription.py:573`
 
 ## `PATH`
 
@@ -2252,13 +2269,13 @@ Scanned: 753 environment variables.
 **Used at:**
 - `tests/stress/test_subprocess_e2e.py:43`
 - `tests/stress/test_subprocess_e2e.py:76`
-- `xavani_cli/doctor.py:1051`
-- `xavani_cli/gateway.py:2037`
-- `xavani_cli/gateway.py:2815`
+- `xavani_cli/_install_repair.py:178`
+- `xavani_cli/doctor.py:1127`
+- `xavani_cli/gateway.py:2038`
+- `xavani_cli/gateway.py:2816`
 - `xavani_cli/kanban_db.py:5043`
 - `xavani_cli/main.py:1023`
-- `xavani_cli/main.py:1036`
-- ... and 3 more
+- ... and 4 more
 
 ## `PATHEXT`
 
@@ -2276,9 +2293,11 @@ Scanned: 753 environment variables.
 
 **Used at:**
 - `agent/skill_utils.py:106`
-- `xavani_cli/doctor.py:997`
+- `xavani_cli/_startup_fast.py:67`
+- `xavani_cli/doctor.py:1073`
+- `xavani_cli/linux_desktop_entry.py:476`
 - `xavani_cli/uninstall.py:153`
-- `xavani_constants.py:295`
+- `xavani_constants.py:334`
 
 ## `PULSE_SERVER`
 
@@ -2296,20 +2315,20 @@ Scanned: 753 environment variables.
 **Used at:**
 - `xavani_cli/auth.py:818`
 - `xavani_cli/auth.py:883`
-- `xavani_cli/auth.py:4011`
+- `xavani_cli/auth.py:4059`
 
 ## `PYTHONHASHSEED`
 
 **Used at:**
-- `tests/conftest.py:1266`
+- `tests/conftest.py:1273`
 
 ## `PYTHONIOENCODING`
 
 **Used at:**
 - `tests/test_xavani_bootstrap.py:64`
 - `tests/test_xavani_bootstrap.py:144`
-- `tests/tools/test_windows_native_support.py:102`
-- `tests/tools/test_windows_native_support.py:150`
+- `tests/tools/test_windows_native_support.py:104`
+- `tests/tools/test_windows_native_support.py:152`
 - `xavani_bootstrap.py:29`
 
 ## `PYTHONPATH`
@@ -2328,7 +2347,7 @@ Scanned: 753 environment variables.
 **Used at:**
 - `tests/test_xavani_bootstrap.py:63`
 - `tests/test_xavani_bootstrap.py:133`
-- `tests/tools/test_windows_native_support.py:103`
+- `tests/tools/test_windows_native_support.py:105`
 - `xavani_bootstrap.py:27`
 
 ## `ProgramFiles`
@@ -2342,7 +2361,7 @@ Scanned: 753 environment variables.
 
 **Used at:**
 - `gateway/config.py:1795`
-- `xavani_cli/setup.py:2538`
+- `xavani_cli/setup.py:2537`
 
 ## `QQBOT_HOME_CHANNEL_NAME`
 
@@ -2369,9 +2388,9 @@ Scanned: 753 environment variables.
 - `gateway/config.py:1778`
 - `gateway/platforms/qqbot/adapter.py:214`
 - `tools/send_message_tool.py:1934`
-- `xavani_cli/gateway.py:4533`
-- `xavani_cli/setup.py:2537`
-- `xavani_cli/tools_config.py:1023`
+- `xavani_cli/gateway.py:4534`
+- `xavani_cli/setup.py:2536`
+- `xavani_cli/tools_config.py:1020`
 
 ## `QQ_CLIENT_SECRET`
 
@@ -2379,7 +2398,7 @@ Scanned: 753 environment variables.
 - `gateway/config.py:1779`
 - `gateway/platforms/qqbot/adapter.py:216`
 - `tools/send_message_tool.py:1936`
-- `xavani_cli/gateway.py:4534`
+- `xavani_cli/gateway.py:4535`
 
 ## `QQ_GROUP_ALLOWED_USERS`
 
@@ -2392,8 +2411,8 @@ Scanned: 753 environment variables.
 
 **Used at:**
 - `gateway/config.py:1799`
-- `xavani_cli/setup.py:2538`
-- `xavani_cli/status.py:441`
+- `xavani_cli/setup.py:2537`
+- `xavani_cli/status.py:404`
 
 ## `QQ_HOME_CHANNEL_THREAD_ID`
 
@@ -2423,10 +2442,15 @@ Scanned: 753 environment variables.
 **Used at:**
 - `gateway/platforms/qqbot/adapter.py:2080`
 
+## `REAL_VAR`
+
+**Used at:**
+- `tests/scripts/test_generate_env_docs.py:91`
+
 ## `REQUESTS_CA_BUNDLE`
 
 **Used at:**
-- `xavani_cli/auth.py:3780`
+- `xavani_cli/auth.py:3828`
 
 ## `RETAINDB_API_KEY`
 
@@ -2446,11 +2470,15 @@ Scanned: 753 environment variables.
 **Used at:**
 - `plugins/memory/retaindb/__init__.py:504`
 
+## `S6_PROFILE_GATEWAY_SCANDIR`
+
+**Used at:**
+- `xavani_cli/container_boot.py:614`
+
 ## `SEARXNG_URL`
 
 **Used at:**
 - `tools/web_tools.py:1397`
-- `xavani_cli/nous_subscription.py:291`
 
 ## `SEC_USER_AGENT`
 
@@ -2481,13 +2509,18 @@ Scanned: 753 environment variables.
 **Used at:**
 - `tools/environments/local.py:234`
 
+## `SHOULD_NOT_APPEAR`
+
+**Used at:**
+- `tests/scripts/test_generate_env_docs.py:84`
+
 ## `SIGNAL_ACCOUNT`
 
 **Used at:**
 - `gateway/config.py:1403`
 - `gateway/platforms/signal.py:176`
-- `xavani_cli/gateway.py:3792`
-- `xavani_cli/gateway.py:4643`
+- `xavani_cli/gateway.py:3793`
+- `xavani_cli/gateway.py:4644`
 
 ## `SIGNAL_ALLOWED_USERS`
 
@@ -2497,7 +2530,7 @@ Scanned: 753 environment variables.
 
 **Used at:**
 - `gateway/platforms/signal.py:218`
-- `xavani_cli/gateway.py:4718`
+- `xavani_cli/gateway.py:4719`
 
 ## `SIGNAL_GROUP_ALLOWED_USERS`
 
@@ -2505,8 +2538,8 @@ Scanned: 753 environment variables.
 
 **Used at:**
 - `gateway/platforms/signal.py:201`
-- `xavani_cli/gateway.py:4733`
-- `xavani_cli/gateway.py:4746`
+- `xavani_cli/gateway.py:4734`
+- `xavani_cli/gateway.py:4747`
 
 ## `SIGNAL_HOME_CHANNEL`
 
@@ -2532,7 +2565,7 @@ Scanned: 753 environment variables.
 **Used at:**
 - `gateway/config.py:1402`
 - `gateway/platforms/signal.py:176`
-- `xavani_cli/gateway.py:4642`
+- `xavani_cli/gateway.py:4643`
 
 ## `SIGNAL_IGNORE_STORIES`
 
@@ -2617,9 +2650,9 @@ Scanned: 753 environment variables.
 
 **Used at:**
 - `gateway/config.py:1374`
-- `xavani_cli/setup.py:2118`
-- `xavani_cli/setup.py:2533`
-- `xavani_cli/tools_config.py:1019`
+- `xavani_cli/setup.py:2117`
+- `xavani_cli/setup.py:2532`
+- `xavani_cli/tools_config.py:1016`
 
 ## `SLACK_FREE_RESPONSE_CHANNELS`
 
@@ -2633,7 +2666,7 @@ Scanned: 753 environment variables.
 
 **Used at:**
 - `gateway/config.py:1392`
-- `xavani_cli/setup.py:2533`
+- `xavani_cli/setup.py:2532`
 
 ## `SLACK_HOME_CHANNEL_NAME`
 
@@ -2714,7 +2747,7 @@ Scanned: 753 environment variables.
 ## `SOME_TOKEN`
 
 **Used at:**
-- `tests/xavani_cli/test_send_cmd.py:369`
+- `tests/xavani_cli/test_send_cmd.py:371`
 
 ## `SPOTIFY_CLIENT_ID`
 
@@ -2749,7 +2782,7 @@ Scanned: 753 environment variables.
 **Used at:**
 - `tools/mcp_oauth.py:148`
 - `tools/mcp_oauth.py:418`
-- `xavani_cli/auth.py:2920`
+- `xavani_cli/auth.py:2968`
 
 ## `SSH_TTY`
 
@@ -2758,7 +2791,7 @@ Scanned: 753 environment variables.
 **Used at:**
 - `tools/mcp_oauth.py:148`
 - `tools/mcp_oauth.py:418`
-- `xavani_cli/auth.py:2920`
+- `xavani_cli/auth.py:2968`
 
 ## `SSL_CERT_FILE`
 
@@ -2804,15 +2837,15 @@ Scanned: 753 environment variables.
 ## `SUDO_PASSWORD`
 
 **Used at:**
-- `tools/terminal_tool.py:869`
-- `xavani_cli/setup.py:1466`
-- `xavani_cli/status.py:405`
+- `tools/terminal_tool.py:871`
+- `xavani_cli/setup.py:1465`
+- `xavani_cli/status.py:368`
 
 ## `SUDO_USER`
 
 **Used at:**
-- `xavani_cli/gateway.py:1802`
-- `xavani_cli/gateway.py:1832`
+- `xavani_cli/gateway.py:1803`
+- `xavani_cli/gateway.py:1833`
 
 ## `SUPERMEMORY_API_KEY`
 
@@ -2826,13 +2859,6 @@ Scanned: 753 environment variables.
 
 **Used at:**
 - `plugins/memory/supermemory/__init__.py:499`
-
-## `TAVILY_API_KEY`
-
-**Used at:**
-- `xavani_cli/nous_subscription.py:290`
-- `xavani_cli/nous_subscription.py:528`
-- `xavani_cli/nous_subscription.py:574`
 
 ## `TEAMS_ALLOWED_USERS`
 
@@ -2952,7 +2978,7 @@ Scanned: 753 environment variables.
 - `gateway/config.py:1072`
 - `gateway/config.py:1075`
 - `gateway/platforms/telegram.py:536`
-- `xavani_cli/setup.py:1984`
+- `xavani_cli/setup.py:1983`
 
 ## `TELEGRAM_BOT_TOKEN`
 
@@ -2960,11 +2986,11 @@ Scanned: 753 environment variables.
 
 **Used at:**
 - `gateway/config.py:1296`
-- `tests/xavani_cli/test_env_loader.py:55`
-- `xavani_cli/config.py:5187`
-- `xavani_cli/setup.py:1979`
-- `xavani_cli/setup.py:2525`
-- `xavani_cli/tools_config.py:1015`
+- `tests/xavani_cli/test_env_loader.py:58`
+- `xavani_cli/config.py:5297`
+- `xavani_cli/setup.py:1978`
+- `xavani_cli/setup.py:2524`
+- `xavani_cli/tools_config.py:1012`
 
 ## `TELEGRAM_CRON_THREAD_ID`
 
@@ -3017,8 +3043,8 @@ Scanned: 753 environment variables.
 
 **Used at:**
 - `gateway/config.py:1318`
-- `tests/xavani_cli/test_send_cmd.py:370`
-- `tests/xavani_cli/test_send_cmd.py:390`
+- `tests/xavani_cli/test_send_cmd.py:372`
+- `tests/xavani_cli/test_send_cmd.py:392`
 
 ## `TELEGRAM_HOME_CHANNEL_NAME`
 
@@ -3112,20 +3138,22 @@ Scanned: 753 environment variables.
 ## `TENOR_API_KEY`
 
 **Used at:**
-- `tests/xavani_cli/test_config.py:256`
+- `tests/xavani_cli/test_config.py:259`
 
 ## `TERM`
 
 **Used at:**
+- `agent/pet/render.py:56`
 - `xavani_cli/colors.py:19`
-- `xavani_cli/main.py:7879`
+- `xavani_cli/main.py:7927`
+- `xavani_cli/update_cmd.py:4870`
 
 ## `TERMINAL_CONTAINER_DISK`
 
 **Defaults:** 51200
 
 **Used at:**
-- `xavani_cli/doctor.py:1176`
+- `xavani_cli/doctor.py:1252`
 
 ## `TERMINAL_CONTAINER_PERSISTENT`
 
@@ -3136,56 +3164,56 @@ Scanned: 753 environment variables.
 **Used at:**
 - `tests/integration/test_daytona_terminal.py:101`
 - `tests/integration/test_daytona_terminal.py:113`
-- `tools/terminal_tool.py:1099`
-- `xavani_cli/doctor.py:1217`
-- `xavani_cli/status.py:389`
+- `tools/terminal_tool.py:1173`
+- `xavani_cli/doctor.py:1293`
+- `xavani_cli/status.py:352`
 
 ## `TERMINAL_CWD`
 
 **Purpose:** other dev files — inflating token usage by ~10k for no benefit.
 
 **Used at:**
-- `agent/agent_init.py:1435`
+- `agent/agent_init.py:1460`
 - `agent/prompt_builder.py:699`
 - `agent/system_prompt.py:238`
-- `agent/tool_executor.py:127`
-- `agent/tool_executor.py:595`
-- `cli.py:2017`
-- `cli.py:4710`
-- `cli.py:5047`
-- ... and 29 more
+- `agent/tool_executor.py:232`
+- `agent/tool_executor.py:731`
+- `cli.py:2019`
+- `cli.py:4883`
+- `cli.py:5219`
+- ... and 33 more
 
 ## `TERMINAL_DAYTONA_IMAGE`
 
 **Defaults:** nikolaik/python-nodejs:python3.11-nodejs20
 
 **Used at:**
-- `tools/terminal_tool.py:1074`
-- `tools/terminal_tool.py:2310`
-- `xavani_cli/status.py:385`
+- `tools/terminal_tool.py:1148`
+- `tools/terminal_tool.py:2384`
+- `xavani_cli/status.py:348`
 
 ## `TERMINAL_DOCKER_IMAGE`
 
 **Defaults:** python:3.11-slim
 
 **Used at:**
-- `tools/terminal_tool.py:1070`
-- `tools/terminal_tool.py:2307`
-- `xavani_cli/status.py:382`
+- `tools/terminal_tool.py:1144`
+- `tools/terminal_tool.py:2381`
+- `xavani_cli/status.py:345`
 
 ## `TERMINAL_DOCKER_MOUNT_CWD_TO_WORKSPACE`
 
 **Defaults:** false
 
 **Used at:**
-- `tools/terminal_tool.py:1025`
+- `tools/terminal_tool.py:1089`
 
 ## `TERMINAL_DOCKER_RUN_AS_HOST_USER`
 
 **Defaults:** false
 
 **Used at:**
-- `tools/terminal_tool.py:1102`
+- `tools/terminal_tool.py:1176`
 
 ## `TERMINAL_DOCKER_VOLUMES`
 
@@ -3201,7 +3229,7 @@ Scanned: 753 environment variables.
 **Used at:**
 - `agent/prompt_builder.py:793`
 - `batch_runner.py:277`
-- `cli.py:5824`
+- `cli.py:6068`
 - `gateway/run.py:1667`
 - `tests/tools/test_code_execution.py:26`
 - `tests/tools/test_code_execution_modes.py:29`
@@ -3214,40 +3242,40 @@ Scanned: 753 environment variables.
 **Defaults:** 300
 
 **Used at:**
-- `tools/terminal_tool.py:2315`
+- `tools/terminal_tool.py:2389`
 
 ## `TERMINAL_LOCAL_PERSISTENT`
 
 **Defaults:** false
 
 **Used at:**
-- `tools/terminal_tool.py:1093`
+- `tools/terminal_tool.py:1167`
 
 ## `TERMINAL_MODAL_IMAGE`
 
 **Used at:**
-- `tools/terminal_tool.py:1073`
-- `tools/terminal_tool.py:2309`
+- `tools/terminal_tool.py:1147`
+- `tools/terminal_tool.py:2383`
 
 ## `TERMINAL_MODAL_MODE`
 
 **Defaults:** auto
 
 **Used at:**
-- `tools/terminal_tool.py:1069`
+- `tools/terminal_tool.py:1143`
 
 ## `TERMINAL_PERSISTENT_SHELL`
 
 **Defaults:** true
 
 **Used at:**
-- `tools/terminal_tool.py:1091`
+- `tools/terminal_tool.py:1165`
 
 ## `TERMINAL_SANDBOX_DIR`
 
 **Used at:**
 - `tools/environments/base.py:96`
-- `tools/terminal_tool.py:2313`
+- `tools/terminal_tool.py:2387`
 
 ## `TERMINAL_SCRATCH_DIR`
 
@@ -3257,8 +3285,8 @@ Scanned: 753 environment variables.
 ## `TERMINAL_SINGULARITY_IMAGE`
 
 **Used at:**
-- `tools/terminal_tool.py:1072`
-- `tools/terminal_tool.py:2308`
+- `tools/terminal_tool.py:1146`
+- `tools/terminal_tool.py:2382`
 
 ## `TERMINAL_SSH_HOST`
 
@@ -3267,24 +3295,24 @@ Scanned: 753 environment variables.
 **Defaults:** not set
 
 **Used at:**
-- `cli.py:5862`
-- `tests/tools/test_file_sync_perf.py:34`
-- `tests/tools/test_ssh_environment.py:17`
-- `tools/terminal_tool.py:1082`
-- `xavani_cli/config.py:5129`
-- `xavani_cli/doctor.py:1104`
-- `xavani_cli/setup.py:1710`
-- `xavani_cli/status.py:377`
+- `cli.py:6106`
+- `tests/tools/test_file_sync_perf.py:36`
+- `tests/tools/test_ssh_environment.py:19`
+- `tools/terminal_tool.py:1156`
+- `xavani_cli/config.py:5239`
+- `xavani_cli/doctor.py:1180`
+- `xavani_cli/setup.py:1709`
+- `xavani_cli/status.py:340`
 
 ## `TERMINAL_SSH_KEY`
 
 **Purpose:** SSH key
 
 **Used at:**
-- `tests/tools/test_ssh_environment.py:20`
-- `tools/terminal_tool.py:1085`
-- `xavani_cli/doctor.py:1108`
-- `xavani_cli/setup.py:1728`
+- `tests/tools/test_ssh_environment.py:22`
+- `tools/terminal_tool.py:1159`
+- `xavani_cli/doctor.py:1184`
+- `xavani_cli/setup.py:1727`
 
 ## `TERMINAL_SSH_PORT`
 
@@ -3293,10 +3321,10 @@ Scanned: 753 environment variables.
 **Defaults:** 22
 
 **Used at:**
-- `cli.py:5864`
-- `tests/tools/test_ssh_environment.py:19`
-- `xavani_cli/doctor.py:1107`
-- `xavani_cli/setup.py:1722`
+- `cli.py:6108`
+- `tests/tools/test_ssh_environment.py:21`
+- `xavani_cli/doctor.py:1183`
+- `xavani_cli/setup.py:1721`
 
 ## `TERMINAL_SSH_USER`
 
@@ -3305,24 +3333,24 @@ Scanned: 753 environment variables.
 **Defaults:** not set
 
 **Used at:**
-- `cli.py:5863`
-- `tests/tools/test_file_sync_perf.py:35`
-- `tests/tools/test_ssh_environment.py:18`
-- `tools/terminal_tool.py:1083`
-- `xavani_cli/config.py:5130`
-- `xavani_cli/doctor.py:1106`
-- `xavani_cli/setup.py:1716`
-- `xavani_cli/status.py:378`
+- `cli.py:6107`
+- `tests/tools/test_file_sync_perf.py:37`
+- `tests/tools/test_ssh_environment.py:20`
+- `tools/terminal_tool.py:1157`
+- `xavani_cli/config.py:5240`
+- `xavani_cli/doctor.py:1182`
+- `xavani_cli/setup.py:1715`
+- `xavani_cli/status.py:341`
 
 ## `TERMINAL_TIMEOUT`
 
 **Defaults:** 180, 60
 
 **Used at:**
-- `cli.py:5826`
-- `tests/xavani_cli/test_kanban_core_functionality.py:2790`
+- `cli.py:6070`
+- `tests/xavani_cli/test_kanban_core_functionality.py:2792`
 - `tools/process_registry.py:1018`
-- `tools/terminal_tool.py:2314`
+- `tools/terminal_tool.py:2388`
 - `xavani_cli/kanban_db.py:5453`
 - `xavani_cli/kanban_db.py:5455`
 
@@ -3332,30 +3360,45 @@ Scanned: 753 environment variables.
 
 **Used at:**
 - `tests/cli/test_cli_init.py:482`
-- `tests/xavani_cli/test_setup.py:525`
-- `tools/terminal_tool.py:1075`
-- `xavani_cli/doctor.py:1163`
-- `xavani_cli/status.py:388`
+- `tests/xavani_cli/test_setup.py:481`
+- `tools/terminal_tool.py:1149`
+- `xavani_cli/doctor.py:1239`
+- `xavani_cli/status.py:351`
 
 ## `TERMINAL_X`
 
 **Used at:**
-- `tests/tools/test_terminal_config_env_sync.py:123`
+- `tests/tools/test_terminal_config_env_sync.py:126`
 
 ## `TERMUX_VERSION`
 
 **Used at:**
 - `agent/skill_utils.py:106`
-- `xavani_cli/doctor.py:998`
+- `xavani_cli/_startup_fast.py:69`
+- `xavani_cli/doctor.py:1074`
 - `xavani_cli/uninstall.py:154`
-- `xavani_constants.py:296`
+- `xavani_constants.py:335`
 
 ## `TERM_PROGRAM`
 
 **Purpose:** 6. TERM_PROGRAM allow-list (currently empty)
 
 **Used at:**
-- `cli.py:1460`
+- `agent/pet/render.py:57`
+- `agent/pet/render.py:103`
+- `cli.py:1462`
+
+## `TEST_API_KEY`
+
+**Defaults:** default-key
+
+**Used at:**
+- `tests/scripts/test_generate_env_docs.py:67`
+
+## `TEST_PLATFORM`
+
+**Used at:**
+- `tests/scripts/test_generate_env_docs.py:69`
 
 ## `TEST_RELOAD_VAR`
 
@@ -3363,6 +3406,11 @@ Scanned: 753 environment variables.
 - `tests/xavani_cli/test_web_server.py:40`
 - `tests/xavani_cli/test_web_server.py:48`
 - `tests/xavani_cli/test_web_server.py:53`
+
+## `TEST_TOKEN`
+
+**Used at:**
+- `tests/scripts/test_generate_env_docs.py:68`
 
 ## `TIRITH_BIN`
 
@@ -3425,10 +3473,10 @@ Scanned: 753 environment variables.
 **Used at:**
 - `plugins/memory/honcho/cli.py:428`
 - `tools/environments/singularity.py:92`
-- `xavani_cli/auth.py:3023`
-- `xavani_cli/gateway.py:1802`
-- `xavani_cli/gateway.py:1832`
-- `xavani_cli/gateway.py:1898`
+- `xavani_cli/auth.py:3071`
+- `xavani_cli/gateway.py:1803`
+- `xavani_cli/gateway.py:1833`
+- `xavani_cli/gateway.py:1899`
 - `xavani_cli/gateway_windows.py:277`
 - `xavani_cli/kanban_decompose.py:176`
 - ... and 3 more
@@ -3452,34 +3500,34 @@ Scanned: 753 environment variables.
 
 **Used at:**
 - `tools/terminal_tool.py:168`
-- `xavani_cli/config.py:5127`
+- `xavani_cli/config.py:5237`
 
 ## `VERCEL_PROJECT_ID`
 
 **Used at:**
-- `tests/xavani_cli/test_setup.py:528`
-- `tests/xavani_cli/test_setup.py:574`
+- `tests/xavani_cli/test_setup.py:484`
+- `tests/xavani_cli/test_setup.py:530`
 - `tools/terminal_tool.py:170`
-- `xavani_cli/config.py:5127`
-- `xavani_cli/setup.py:747`
+- `xavani_cli/config.py:5237`
+- `xavani_cli/setup.py:746`
 
 ## `VERCEL_TEAM_ID`
 
 **Used at:**
-- `tests/xavani_cli/test_setup.py:529`
-- `tests/xavani_cli/test_setup.py:575`
+- `tests/xavani_cli/test_setup.py:485`
+- `tests/xavani_cli/test_setup.py:531`
 - `tools/terminal_tool.py:171`
-- `xavani_cli/config.py:5127`
-- `xavani_cli/setup.py:751`
+- `xavani_cli/config.py:5237`
+- `xavani_cli/setup.py:750`
 
 ## `VERCEL_TOKEN`
 
 **Used at:**
-- `tests/xavani_cli/test_setup.py:527`
-- `tests/xavani_cli/test_setup.py:573`
+- `tests/xavani_cli/test_setup.py:483`
+- `tests/xavani_cli/test_setup.py:529`
 - `tools/terminal_tool.py:169`
-- `xavani_cli/config.py:5127`
-- `xavani_cli/setup.py:744`
+- `xavani_cli/config.py:5237`
+- `xavani_cli/setup.py:743`
 
 ## `VIRTUAL_ENV`
 
@@ -3487,25 +3535,32 @@ Scanned: 753 environment variables.
 
 **Used at:**
 - `agent/lsp/servers.py:272`
-- `tests/tools/test_code_execution_modes.py:335`
-- `xavani_cli/gateway.py:1983`
+- `tests/tools/test_code_execution_modes.py:337`
+- `xavani_cli/gateway.py:1984`
 
 ## `VISUAL`
 
 **Purpose:** Find editor
 
 **Used at:**
-- `tests/tools/test_windows_native_support.py:138`
-- `xavani_cli/config.py:5231`
+- `tests/tools/test_windows_native_support.py:140`
+- `xavani_cli/cli_commands_mixin.py:3551`
+- `xavani_cli/config.py:5341`
+- `xavani_cli/journey.py:354`
 - `xavani_cli/stdio.py:131`
 
 ## `VOICE_TOOLS_OPENAI_KEY`
 
 **Used at:**
-- `tools/tool_backend_helpers.py:110`
-- `xavani_cli/setup.py:493`
-- `xavani_cli/setup.py:1210`
-- `xavani_cli/setup.py:1251`
+- `tools/tool_backend_helpers.py:130`
+- `xavani_cli/setup.py:492`
+- `xavani_cli/setup.py:1209`
+- `xavani_cli/setup.py:1250`
+
+## `WARP_CLI_AGENT_PROTOCOL_VERSION`
+
+**Used at:**
+- `xavani_cli/terminal_notify.py:77`
 
 ## `WATCHDOG_USEC`
 
@@ -3524,9 +3579,10 @@ Scanned: 753 environment variables.
 
 **Used at:**
 - `tools/mcp_oauth.py:159`
+- `xavani_cli/auth.py:2931`
 - `xavani_cli/clipboard.py:62`
 - `xavani_cli/clipboard.py:318`
-- `xavani_cli/web_server.py:4786`
+- `xavani_cli/web_server.py:4789`
 
 ## `WEBHOOK_ENABLED`
 
@@ -3534,7 +3590,7 @@ Scanned: 753 environment variables.
 
 **Used at:**
 - `gateway/config.py:1552`
-- `xavani_cli/setup.py:2430`
+- `xavani_cli/setup.py:2429`
 
 ## `WEBHOOK_PORT`
 
@@ -3558,7 +3614,7 @@ Scanned: 753 environment variables.
 **Used at:**
 - `gateway/config.py:1672`
 - `gateway/platforms/wecom.py:164`
-- `xavani_cli/gateway.py:4045`
+- `xavani_cli/gateway.py:4046`
 
 ## `WECOM_CALLBACK_AGENT_ID`
 
@@ -3637,7 +3693,7 @@ Scanned: 753 environment variables.
 **Used at:**
 - `gateway/config.py:1673`
 - `gateway/platforms/wecom.py:165`
-- `xavani_cli/gateway.py:4046`
+- `xavani_cli/gateway.py:4047`
 
 ## `WECOM_WEBSOCKET_URL`
 
@@ -3650,7 +3706,7 @@ Scanned: 753 environment variables.
 **Used at:**
 - `gateway/config.py:1713`
 - `tools/send_message_tool.py:237`
-- `xavani_cli/gateway.py:4233`
+- `xavani_cli/gateway.py:4234`
 
 ## `WEIXIN_ALLOWED_USERS`
 
@@ -3668,7 +3724,7 @@ Scanned: 753 environment variables.
 **Used at:**
 - `gateway/config.py:1726`
 - `tools/send_message_tool.py:246`
-- `xavani_cli/gateway.py:4282`
+- `xavani_cli/gateway.py:4283`
 
 ## `WEIXIN_DM_POLICY`
 
@@ -3715,8 +3771,16 @@ Scanned: 753 environment variables.
 **Used at:**
 - `gateway/config.py:1712`
 - `tools/send_message_tool.py:236`
-- `xavani_cli/gateway.py:3818`
-- `xavani_cli/gateway.py:4234`
+- `xavani_cli/gateway.py:3819`
+- `xavani_cli/gateway.py:4235`
+
+## `WEZTERM_PANE`
+
+**Purpose:** WezTerm speaks both kitty and iterm; prefer kitty (richer placement).
+
+**Used at:**
+- `agent/pet/render.py:77`
+- `agent/pet/render.py:104`
 
 ## `WHATSAPP_ALLOWED_USERS`
 
@@ -3726,6 +3790,41 @@ Scanned: 753 environment variables.
 - `gateway/config.py:1118`
 - `gateway/config.py:1121`
 - `xavani_cli/main.py:1612`
+
+## `WHATSAPP_CLOUD_ACCESS_TOKEN`
+
+**Used at:**
+- `xavani_cli/setup_whatsapp_cloud.py:302`
+
+## `WHATSAPP_CLOUD_ALLOWED_USERS`
+
+**Used at:**
+- `xavani_cli/setup_whatsapp_cloud.py:445`
+
+## `WHATSAPP_CLOUD_APP_ID`
+
+**Used at:**
+- `xavani_cli/setup_whatsapp_cloud.py:374`
+
+## `WHATSAPP_CLOUD_APP_SECRET`
+
+**Used at:**
+- `xavani_cli/setup_whatsapp_cloud.py:343`
+
+## `WHATSAPP_CLOUD_PHONE_NUMBER_ID`
+
+**Used at:**
+- `xavani_cli/setup_whatsapp_cloud.py:273`
+
+## `WHATSAPP_CLOUD_VERIFY_TOKEN`
+
+**Used at:**
+- `xavani_cli/setup_whatsapp_cloud.py:413`
+
+## `WHATSAPP_CLOUD_WABA_ID`
+
+**Used at:**
+- `xavani_cli/setup_whatsapp_cloud.py:391`
 
 ## `WHATSAPP_DM_POLICY`
 
@@ -3745,7 +3844,7 @@ Scanned: 753 environment variables.
 - `gateway/config.py:1353`
 - `xavani_cli/main.py:1608`
 - `xavani_cli/main.py:1703`
-- `xavani_cli/tools_config.py:1021`
+- `xavani_cli/tools_config.py:1018`
 
 ## `WHATSAPP_FREE_RESPONSE_CHATS`
 
@@ -3828,7 +3927,7 @@ Scanned: 753 environment variables.
 ## `WSL_DISTRO_NAME`
 
 **Used at:**
-- `cli.py:2231`
+- `cli.py:2233`
 
 ## `WSS_PROXY`
 
@@ -3838,18 +3937,18 @@ Scanned: 753 environment variables.
 ## `WT_SESSION`
 
 **Used at:**
-- `cli.py:2229`
+- `cli.py:2231`
 
 ## `XAI_API_KEY`
 
 **Used at:**
 - `plugins/video_gen/xai/__init__.py:97`
-- `tests/tools/test_transcription_dotenv_fallback.py:242`
+- `tests/tools/test_transcription_dotenv_fallback.py:244`
 - `tools/xai_http.py:79`
-- `xavani_cli/setup.py:1268`
-- `xavani_cli/tools_config.py:128`
-- `xavani_cli/tools_config.py:132`
-- `xavani_cli/tools_config.py:954`
+- `xavani_cli/setup.py:1267`
+- `xavani_cli/tools_config.py:125`
+- `xavani_cli/tools_config.py:129`
+- `xavani_cli/tools_config.py:951`
 
 ## `XAI_BASE_URL`
 
@@ -3858,8 +3957,8 @@ Scanned: 753 environment variables.
 - `plugins/video_gen/xai/__init__.py:100`
 - `tools/tts_tool.py:929`
 - `tools/xai_http.py:80`
-- `xavani_cli/auth.py:3727`
-- `xavani_cli/auth.py:6559`
+- `xavani_cli/auth.py:3775`
+- `xavani_cli/auth.py:6608`
 
 ## `XAI_IMAGE_MODEL`
 
@@ -3880,6 +3979,11 @@ Scanned: 753 environment variables.
 - `agent/shell_hooks.py:774`
 - `xavani_cli/oneshot.py:176`
 
+## `XAVANI_ACTION_ID`
+
+**Used at:**
+- `xavani_cli/update_cmd.py:1665`
+
 ## `XAVANI_AGENT_NOTIFY_INTERVAL`
 
 **Used at:**
@@ -3897,6 +4001,16 @@ Scanned: 753 environment variables.
 - `tests/gateway/test_gateway_inactivity_timeout.py:248`
 - `tests/gateway/test_gateway_inactivity_timeout.py:254`
 
+## `XAVANI_ALLOW_AUTO_INSTALL`
+
+**Purpose:** consent is the CLI flow's job, tested separately).
+
+**Used at:**
+- `tests/tools/test_tirith_security.py:31`
+- `tests/tools/test_tirith_security.py:32`
+- `tests/tools/test_tirith_security.py:40`
+- `tools/tirith_security.py:363`
+
 ## `XAVANI_ALLOW_PRIVATE_URLS`
 
 **Purpose:** 1. Env var override (highest priority)
@@ -3907,23 +4021,29 @@ Scanned: 753 environment variables.
 ## `XAVANI_ALLOW_ROOT_GATEWAY`
 
 **Used at:**
-- `xavani_cli/gateway.py:3127`
+- `xavani_cli/gateway.py:3128`
+
+## `XAVANI_API_BASE`
+
+**Used at:**
+- `scripts/edit_benchmark/runner.py:247`
 
 ## `XAVANI_API_CALL_STALE_TIMEOUT`
 
 **Used at:**
-- `run_agent.py:913`
+- `run_agent.py:948`
 
 ## `XAVANI_API_KEY`
 
 **Used at:**
+- `scripts/edit_benchmark/runner.py:241`
 - `tui_gateway/server.py:6294`
 
 ## `XAVANI_API_TIMEOUT`
 
 **Used at:**
-- `agent/chat_completion_helpers.py:1293`
-- `run_agent.py:893`
+- `agent/chat_completion_helpers.py:1313`
+- `run_agent.py:928`
 - `tests/agent/test_local_stream_timeout.py:37`
 - `tests/agent/test_local_stream_timeout.py:46`
 - `tests/agent/test_local_stream_timeout.py:62`
@@ -3945,6 +4065,11 @@ Scanned: 753 environment variables.
 - `gateway/run.py:330`
 - `gateway/run.py:723`
 
+## `XAVANI_AUTO_DEP_PR`
+
+**Used at:**
+- `scripts/scan_deps.py:106`
+
 ## `XAVANI_BACKGROUND_NOTIFICATIONS`
 
 **Used at:**
@@ -3955,6 +4080,11 @@ Scanned: 753 environment variables.
 **Used at:**
 - `tui_gateway/server.py:6296`
 
+## `XAVANI_BENCH_JUDGE_MODEL`
+
+**Used at:**
+- `scripts/task_bench/run_bench.py:101`
+
 ## `XAVANI_BIN`
 
 **Used at:**
@@ -3963,12 +4093,12 @@ Scanned: 753 environment variables.
 ## `XAVANI_BUNDLED_PLUGINS`
 
 **Used at:**
-- `xavani_cli/plugins.py:66`
+- `xavani_cli/plugins.py:68`
 
 ## `XAVANI_BUNDLED_SKILLS`
 
 **Used at:**
-- `xavani_constants.py:190`
+- `xavani_constants.py:229`
 
 ## `XAVANI_BUNDLES_DIR`
 
@@ -3978,8 +4108,8 @@ Scanned: 753 environment variables.
 ## `XAVANI_CA_BUNDLE`
 
 **Used at:**
-- `xavani_cli/auth.py:3778`
-- `xavani_cli/auth.py:7224`
+- `xavani_cli/auth.py:3826`
+- `xavani_cli/auth.py:7274`
 
 ## `XAVANI_CHECKPOINT_TIMEOUT`
 
@@ -3990,20 +4120,37 @@ Scanned: 753 environment variables.
 **Used at:**
 - `tools/checkpoint_manager.py:151`
 
+## `XAVANI_CJK_FTS`
+
+**Defaults:** 1
+
+**Used at:**
+- `xavani_state.py:3489`
+
 ## `XAVANI_CODEX_BASE_URL`
 
 **Used at:**
-- `xavani_cli/auth.py:3334`
-- `xavani_cli/auth.py:6181`
-- `xavani_cli/auth.py:6707`
-- `xavani_cli/web_server.py:2404`
+- `xavani_cli/auth.py:3382`
+- `xavani_cli/auth.py:6230`
+- `xavani_cli/auth.py:6756`
+- `xavani_cli/web_server.py:2407`
 
 ## `XAVANI_CODEX_REFRESH_TIMEOUT_SECONDS`
 
 **Defaults:** 20
 
 **Used at:**
-- `xavani_cli/auth.py:3313`
+- `xavani_cli/auth.py:3361`
+
+## `XAVANI_COMPRESS_CHECKPOINT`
+
+**Used at:**
+- `agent/conversation_compression.py:341`
+
+## `XAVANI_COMPRESS_CHECKPOINT_DIR`
+
+**Used at:**
+- `agent/conversation_compression.py:267`
 
 ## `XAVANI_COMPUTER_USE`
 
@@ -4028,15 +4175,20 @@ Scanned: 753 environment variables.
 
 **Used at:**
 - `agent/copilot_acp_client.py:69`
-- `xavani_cli/auth.py:5577`
-- `xavani_cli/auth.py:5774`
+- `xavani_cli/auth.py:5626`
+- `xavani_cli/auth.py:5823`
 
 ## `XAVANI_COPILOT_ACP_COMMAND`
 
 **Used at:**
 - `agent/copilot_acp_client.py:62`
-- `xavani_cli/auth.py:5573`
-- `xavani_cli/auth.py:5770`
+- `xavani_cli/auth.py:5622`
+- `xavani_cli/auth.py:5819`
+
+## `XAVANI_COST_PER_MINUTE_ALERT`
+
+**Used at:**
+- `xavani_observability/cost_alerts.py:97`
 
 ## `XAVANI_CRON_AUTO_DELIVER_CHAT_ID`
 
@@ -4107,10 +4259,26 @@ Scanned: 753 environment variables.
 **Used at:**
 - `tools/computer_use/cua_backend.py:57`
 
+## `XAVANI_DASHBOARD_OAUTH_CLIENT_ID`
+
+**Used at:**
+- `xavani_cli/dashboard_register.py:287`
+
+## `XAVANI_DASHBOARD_PORTAL_URL`
+
+**Used at:**
+- `xavani_cli/dashboard_register.py:358`
+
+## `XAVANI_DASHBOARD_PUBLIC_URL`
+
+**Used at:**
+- `xavani_cli/dashboard_auth/prefix.py:223`
+- `xavani_cli/dashboard_register.py:409`
+
 ## `XAVANI_DASHBOARD_TUI`
 
 **Used at:**
-- `xavani_cli/main.py:10036`
+- `xavani_cli/main.py:10151`
 
 ## `XAVANI_DEBUG_INTERRUPT`
 
@@ -4120,9 +4288,22 @@ Scanned: 753 environment variables.
 - `tools/environments/base.py:41`
 - `tools/interrupt.py:36`
 
+## `XAVANI_DESKTOP_API`
+
+**Used at:**
+- `tools/preview_tool.py:29`
+
+## `XAVANI_DESKTOP_CHILD_PID`
+
+**Used at:**
+- `xavani_cli/dashboard_procs.py:413`
+- `xavani_cli/dashboard_procs.py:796`
+- `xavani_cli/security_audit_startup.py:119`
+
 ## `XAVANI_DEV`
 
 **Used at:**
+- `xavani_cli/_startup_fast.py:124`
 - `xavani_cli/config.py:367`
 
 ## `XAVANI_DISABLE_FILE_STATE_GUARD`
@@ -4130,13 +4311,18 @@ Scanned: 753 environment variables.
 **Purpose:** Re-read each call so tests can toggle via monkeypatch.setenv.
 
 **Used at:**
-- `tests/tools/test_file_state_registry.py:201`
+- `tests/tools/test_file_state_registry.py:204`
 - `tools/file_state.py:275`
 
 ## `XAVANI_DISABLE_LAZY_INSTALLS`
 
 **Used at:**
 - `tools/lazy_deps.py:237`
+
+## `XAVANI_DISABLE_PREFETCH`
+
+**Used at:**
+- `agent/context_prefetch.py:161`
 
 ## `XAVANI_DISABLE_TELEMETRY`
 
@@ -4145,7 +4331,7 @@ Scanned: 753 environment variables.
 **Used at:**
 - `oag_cli.py:55`
 - `oag_cli.py:140`
-- `xavani.py:50`
+- `xavani.py:107`
 
 ## `XAVANI_DISABLE_WINDOWS_UTF8`
 
@@ -4175,21 +4361,31 @@ Scanned: 753 environment variables.
 **Used at:**
 - `tools/environments/docker.py:126`
 
+## `XAVANI_EDIT_MODE`
+
+**Used at:**
+- `tools/edit_tool.py:98`
+
+## `XAVANI_EDIT_MODEL`
+
+**Used at:**
+- `scripts/edit_benchmark/runner.py:240`
+
 ## `XAVANI_ENABLE_PROJECT_PLUGINS`
 
 **Used at:**
-- `xavani_cli/web_server.py:4278`
+- `xavani_cli/web_server.py:4281`
 
 ## `XAVANI_EPHEMERAL_SYSTEM_PROMPT`
 
 **Used at:**
-- `cli.py:2820`
+- `cli.py:2857`
 - `gateway/run.py:2579`
 
 ## `XAVANI_EPISODIC_MEMORY`
 
 **Used at:**
-- `agent/agent_init.py:1000`
+- `agent/agent_init.py:1021`
 
 ## `XAVANI_EXEC_ASK`
 
@@ -4241,12 +4437,22 @@ Scanned: 753 environment variables.
 ## `XAVANI_FILE_MUTATION_VERIFIER`
 
 **Used at:**
-- `run_agent.py:1810`
+- `run_agent.py:1984`
+
+## `XAVANI_FS_CACHE_TTL_MS`
+
+**Used at:**
+- `tools/fs_scan_cache.py:52`
+
+## `XAVANI_FTS5_CJK_SO`
+
+**Used at:**
+- `xavani_state.py:3482`
 
 ## `XAVANI_FULL_TRACEBACK`
 
 **Used at:**
-- `cli.py:132`
+- `cli.py:129`
 
 ## `XAVANI_GATEWAY_ADAPTER_DISCONNECT_TIMEOUT`
 
@@ -4270,17 +4476,22 @@ Scanned: 753 environment variables.
 ## `XAVANI_GATEWAY_DETACHED`
 
 **Used at:**
-- `xavani_cli/gateway.py:1252`
+- `xavani_cli/gateway.py:1253`
 
 ## `XAVANI_GATEWAY_EXIT_DIAG`
 
 **Used at:**
-- `xavani_cli/gateway.py:3243`
+- `xavani_cli/gateway.py:3244`
 
 ## `XAVANI_GATEWAY_LOCK_DIR`
 
 **Used at:**
 - `gateway/status.py:69`
+
+## `XAVANI_GATEWAY_NO_SUPERVISE`
+
+**Used at:**
+- `xavani_cli/container_boot.py:246`
 
 ## `XAVANI_GATEWAY_PLATFORM_CONNECT_TIMEOUT`
 
@@ -4301,7 +4512,7 @@ Scanned: 753 environment variables.
 - `tests/gateway/test_approve_deny_commands.py:526`
 - `tests/gateway/test_approve_deny_commands.py:580`
 - `tests/test_tui_gateway_server.py:1506`
-- `tests/tools/test_approval_heartbeat.py:52`
+- `tests/tools/test_approval_heartbeat.py:55`
 - `tools/tirith_security.py:47`
 - ... and 1 more
 
@@ -4320,7 +4531,10 @@ Scanned: 753 environment variables.
 
 **Purpose:** ---------------------------------------------------------------------------
 
+**Defaults:** /tmp
+
 **Used at:**
+- `agent/learn_prompt.py:108`
 - `agent/lsp/install.py:124`
 - `gateway/oag_proxy.py:51`
 - `gateway/protocol_bridge.py:45`
@@ -4328,8 +4542,7 @@ Scanned: 753 environment variables.
 - `mcp_serve.py:72`
 - `mcp_serve.py:109`
 - `mcp_serve.py:372`
-- `oag_cli.py:136`
-- ... and 109 more
+- ... and 138 more
 
 ## `XAVANI_HOME_MODE`
 
@@ -4367,12 +4580,12 @@ Scanned: 753 environment variables.
 **Purpose:** AGENTS.md/SOUL.md/.cursorrules and persistent memory are not loaded.
 
 **Used at:**
-- `cli.py:2816`
-- `tests/xavani_cli/test_ignore_user_config_flags.py:136`
-- `tests/xavani_cli/test_ignore_user_config_flags.py:145`
-- `tests/xavani_cli/test_ignore_user_config_flags.py:153`
-- `tests/xavani_cli/test_ignore_user_config_flags.py:168`
-- `tests/xavani_cli/test_ignore_user_config_flags.py:181`
+- `cli.py:2853`
+- `tests/xavani_cli/test_ignore_user_config_flags.py:138`
+- `tests/xavani_cli/test_ignore_user_config_flags.py:147`
+- `tests/xavani_cli/test_ignore_user_config_flags.py:155`
+- `tests/xavani_cli/test_ignore_user_config_flags.py:170`
+- `tests/xavani_cli/test_ignore_user_config_flags.py:183`
 - `tui_gateway/server.py:1936`
 - `tui_gateway/server.py:1937`
 - ... and 1 more
@@ -4382,11 +4595,17 @@ Scanned: 753 environment variables.
 **Purpose:** config as a fallback so defaults stay sensible).
 
 **Used at:**
-- `cli.py:330`
-- `tests/xavani_cli/test_ignore_user_config_flags.py:166`
-- `tests/xavani_cli/test_ignore_user_config_flags.py:180`
-- `tests/xavani_cli/test_ignore_user_config_flags.py:193`
+- `cli.py:327`
+- `tests/xavani_cli/test_ignore_user_config_flags.py:168`
+- `tests/xavani_cli/test_ignore_user_config_flags.py:182`
+- `tests/xavani_cli/test_ignore_user_config_flags.py:195`
 - `xavani_cli/main.py:1457`
+
+## `XAVANI_INFERENCE_BASE_URL`
+
+**Used at:**
+- `xavani_cli/auth.py:4975`
+- `xavani_cli/auth.py:7154`
 
 ## `XAVANI_INFERENCE_MODEL`
 
@@ -4405,14 +4624,14 @@ Scanned: 753 environment variables.
 **Purpose:** provider override so chat uses the endpoint the user last saved.
 
 **Used at:**
-- `cli.py:2755`
+- `cli.py:2792`
 - `gateway/run.py:870`
 - `tests/test_tui_gateway_server.py:1743`
 - `tests/test_tui_gateway_server.py:1798`
-- `tests/xavani_cli/test_env_loader.py:93`
+- `tests/xavani_cli/test_env_loader.py:96`
 - `tui_gateway/server.py:822`
 - `tui_gateway/server.py:1161`
-- `xavani_cli/main.py:1851`
+- `xavani_cli/main.py:1869`
 - ... and 2 more
 
 ## `XAVANI_INTERACTIVE`
@@ -4423,11 +4642,11 @@ Scanned: 753 environment variables.
 - `acp_adapter/server.py:1455`
 - `acp_adapter/server.py:1456`
 - `acp_adapter/server.py:1480`
-- `cli.py:14409`
+- `cli.py:15901`
 - `oag_cli.py:368`
 - `tests/test_tui_gateway_server.py:1508`
-- `tests/tools/test_command_guards.py:92`
-- `tests/tools/test_command_guards.py:120`
+- `tests/tools/test_command_guards.py:94`
+- `tests/tools/test_command_guards.py:122`
 - ... and 12 more
 
 ## `XAVANI_KANBAN_BOARD`
@@ -4435,9 +4654,9 @@ Scanned: 753 environment variables.
 **Purpose:** relies on the env var.
 
 **Used at:**
-- `gateway/run.py:5316`
-- `gateway/run.py:5318`
-- `gateway/run.py:5364`
+- `gateway/run.py:5399`
+- `gateway/run.py:5401`
+- `gateway/run.py:5447`
 - `plugins/kanban/dashboard/plugin_api.py:1390`
 - `plugins/kanban/dashboard/plugin_api.py:1392`
 - `plugins/kanban/dashboard/plugin_api.py:1405`
@@ -4465,7 +4684,7 @@ Scanned: 753 environment variables.
 ## `XAVANI_KANBAN_DISPATCH_IN_GATEWAY`
 
 **Used at:**
-- `gateway/run.py:5041`
+- `gateway/run.py:5124`
 
 ## `XAVANI_KANBAN_HOME`
 
@@ -4495,14 +4714,14 @@ Scanned: 753 environment variables.
 **Purpose:** itself — we must do it on its behalf.
 
 **Used at:**
-- `agent/conversation_loop.py:3546`
-- `agent/conversation_loop.py:3953`
+- `agent/conversation_loop.py:3700`
+- `agent/conversation_loop.py:4107`
 - `agent/kanban_stop.py:34`
 - `agent/kanban_stop.py:88`
-- `model_tools.py:308`
-- `model_tools.py:345`
-- `tests/xavani_cli/test_kanban_notify.py:517`
-- `tests/xavani_cli/test_kanban_notify.py:599`
+- `model_tools.py:356`
+- `model_tools.py:393`
+- `tests/xavani_cli/test_kanban_notify.py:519`
+- `tests/xavani_cli/test_kanban_notify.py:601`
 - ... and 11 more
 
 ## `XAVANI_KANBAN_WORKSPACE`
@@ -4520,6 +4739,12 @@ Scanned: 753 environment variables.
 **Used at:**
 - `agent/i18n.py:208`
 
+## `XAVANI_LEARN_RATE`
+
+**Used at:**
+- `tests/tools/test_learning_rate_limits.py:85`
+- `tools/learning_rate_limits.py:82`
+
 ## `XAVANI_LIVE_TESTS`
 
 **Used at:**
@@ -4531,11 +4756,26 @@ Scanned: 753 environment variables.
 **Used at:**
 - `tools/transcription_tools.py:745`
 
+## `XAVANI_LOOPS_DIR`
+
+**Used at:**
+- `xavani_cli/loop_runner.py:29`
+
+## `XAVANI_MACROS_DIR`
+
+**Used at:**
+- `xavani_cli/macros.py:28`
+
 ## `XAVANI_MANAGED`
 
 **Used at:**
 - `xavani_cli/config.py:217`
 - `xavani_cli/config.py:322`
+
+## `XAVANI_MANAGED_DIR`
+
+**Used at:**
+- `xavani_cli/managed_scope.py:65`
 
 ## `XAVANI_MATRIX_TEXT_BATCH_DELAY_SECONDS`
 
@@ -4558,14 +4798,14 @@ Scanned: 753 environment variables.
 **Defaults:** 90
 
 **Used at:**
-- `cli.py:2782`
-- `cli.py:2784`
-- `gateway/platforms/api_server.py:896`
+- `cli.py:2819`
+- `cli.py:2821`
+- `gateway/platforms/api_server.py:960`
 - `gateway/run.py:594`
 - `gateway/run.py:713`
 - `gateway/run.py:3619`
-- `gateway/run.py:11457`
-- `gateway/run.py:16164`
+- `gateway/run.py:11537`
+- `gateway/run.py:16244`
 - ... and 2 more
 
 ## `XAVANI_MEET_AUTH_STATE`
@@ -4630,6 +4870,16 @@ Scanned: 753 environment variables.
 **Used at:**
 - `plugins/google_meet/meet_bot.py:452`
 
+## `XAVANI_MEMORY_BANK`
+
+**Used at:**
+- `xavani_cli/memory_tools.py:31`
+
+## `XAVANI_MEMORY_FTS5`
+
+**Used at:**
+- `xavani_memory/manager.py:307`
+
 ## `XAVANI_MODEL`
 
 **Used at:**
@@ -4651,7 +4901,7 @@ Scanned: 753 environment variables.
 **Used at:**
 - `agent/auxiliary_client.py:1287`
 - `agent/auxiliary_client.py:2685`
-- `run_agent.py:2673`
+- `run_agent.py:2847`
 - `xavani_cli/runtime_provider.py:982`
 - `xavani_cli/runtime_provider.py:1176`
 - `xavani_cli/runtime_provider.py:1198`
@@ -4663,7 +4913,7 @@ Scanned: 753 environment variables.
 **Used at:**
 - `agent/auxiliary_client.py:1288`
 - `agent/auxiliary_client.py:2686`
-- `run_agent.py:2674`
+- `run_agent.py:2848`
 - `xavani_cli/runtime_provider.py:983`
 - `xavani_cli/runtime_provider.py:1199`
 
@@ -4686,10 +4936,15 @@ Scanned: 753 environment variables.
 **Used at:**
 - `agent/auxiliary_client.py:369`
 
+## `XAVANI_OPTIONAL_MCPS`
+
+**Used at:**
+- `xavani_constants.py:209`
+
 ## `XAVANI_OPTIONAL_SKILLS`
 
 **Used at:**
-- `xavani_constants.py:170`
+- `xavani_constants.py:192`
 
 ## `XAVANI_OSINT_CACHE`
 
@@ -4702,6 +4957,21 @@ Scanned: 753 environment variables.
 **Used at:**
 - `oag_skills/research/osint-investigation/scripts/_http.py:45`
 - `optional-skills/research/osint-investigation/scripts/_http.py:45`
+
+## `XAVANI_OUTPUT_MODE`
+
+**Used at:**
+- `xavani_cli/output_mode.py:47`
+
+## `XAVANI_PARENT_PID`
+
+**Used at:**
+- `xavani_cli/process_identity.py:261`
+
+## `XAVANI_PARENT_START_MARKER`
+
+**Used at:**
+- `xavani_cli/process_identity.py:266`
 
 ## `XAVANI_PERF_LOG`
 
@@ -4719,8 +4989,8 @@ Scanned: 753 environment variables.
 
 **Used at:**
 - `agent/prompt_builder.py:1053`
-- `agent/skill_commands.py:55`
-- `agent/skill_commands.py:59`
+- `agent/skill_commands.py:137`
+- `agent/skill_commands.py:141`
 - `agent/skill_utils.py:191`
 - `tests/agent/test_skill_commands.py:171`
 - `tests/agent/test_skill_commands.py:233`
@@ -4732,22 +5002,27 @@ Scanned: 753 environment variables.
 **Purpose:** mid-process can call ``_install_plugin_debug_handler(force=True)``.
 
 **Used at:**
-- `xavani_cli/plugins.py:98`
-- `xavani_cli/plugins.py:112`
+- `xavani_cli/plugins.py:120`
+- `xavani_cli/plugins.py:134`
 
 ## `XAVANI_PORTAL_BASE_URL`
 
 **Used at:**
-- `xavani_cli/auth.py:4579`
-- `xavani_cli/auth.py:4921`
-- `xavani_cli/auth.py:7099`
-- `xavani_cli/web_server.py:1985`
+- `xavani_cli/auth.py:4627`
+- `xavani_cli/auth.py:4969`
+- `xavani_cli/auth.py:7148`
+- `xavani_cli/web_server.py:1988`
 
 ## `XAVANI_PREFILL_MESSAGES_FILE`
 
 **Used at:**
 - `cron/scheduler.py:1458`
 - `gateway/run.py:2542`
+
+## `XAVANI_PRIVILEGE_RECHECK`
+
+**Used at:**
+- `tools/privilege_recheck.py:39`
 
 ## `XAVANI_PROFILE`
 
@@ -4775,7 +5050,7 @@ Scanned: 753 environment variables.
 **Purpose:** Env var takes precedence
 
 **Used at:**
-- `xavani_observability/prometheus.py:107`
+- `xavani_observability/prometheus.py:126`
 
 ## `XAVANI_PYTHON_SRC_ROOT`
 
@@ -4810,13 +5085,13 @@ Scanned: 753 environment variables.
 
 **Used at:**
 - `agent/redact.py:76`
-- `cli.py:651`
-- `cli.py:11994`
+- `cli.py:648`
+- `cli.py:13478`
 - `gateway/run.py:741`
 - `gateway/run.py:3633`
-- `tests/xavani_cli/test_debug.py:352`
-- `tests/xavani_cli/test_redact_config_bridge.py:56`
-- `tests/xavani_cli/test_redact_config_bridge.py:142`
+- `tests/xavani_cli/test_debug.py:354`
+- `tests/xavani_cli/test_redact_config_bridge.py:59`
+- `tests/xavani_cli/test_redact_config_bridge.py:145`
 - ... and 2 more
 
 ## `XAVANI_RESTART_DRAIN_TIMEOUT`
@@ -4824,23 +5099,33 @@ Scanned: 753 environment variables.
 **Used at:**
 - `gateway/run.py:721`
 - `gateway/run.py:2744`
-- `xavani_cli/gateway.py:2444`
+- `xavani_cli/gateway.py:2445`
+
+## `XAVANI_RESUME_TAIL`
+
+**Used at:**
+- `cli.py:4787`
 
 ## `XAVANI_REVISION`
 
 **Used at:**
 - `xavani_cli/banner.py:242`
 
+## `XAVANI_RISK_BUDGET`
+
+**Used at:**
+- `tools/risk_budget.py:97`
+
 ## `XAVANI_RPC_DIR`
 
 **Used at:**
-- `tests/tools/test_code_execution.py:128`
+- `tests/tools/test_code_execution.py:130`
 - `tools/code_execution_tool.py:385`
 
 ## `XAVANI_RUNAWAY_MAX_REPEATS`
 
 **Used at:**
-- `agent/conversation_loop.py:307`
+- `agent/conversation_loop.py:408`
 
 ## `XAVANI_SESSION_CHAT_ID`
 
@@ -4853,7 +5138,7 @@ Scanned: 753 environment variables.
 - `tests/gateway/test_session_env.py:291`
 - `tools/cronjob_tools.py:155`
 - `tools/yuanbao_tools.py:240`
-- ... and 1 more
+- ... and 3 more
 
 ## `XAVANI_SESSION_CHAT_NAME`
 
@@ -4863,11 +5148,13 @@ Scanned: 753 environment variables.
 - `tests/gateway/test_session_env.py:107`
 - `tests/gateway/test_session_env.py:155`
 - `tools/cronjob_tools.py:166`
+- `xavani_cli/blueprint_cmd.py:71`
+- `xavani_cli/suggestions_cmd.py:58`
 
 ## `XAVANI_SESSION_EXPIRE_DAYS`
 
 **Used at:**
-- `xavani_state.py:3236`
+- `xavani_state.py:3266`
 
 ## `XAVANI_SESSION_ID`
 
@@ -4877,12 +5164,12 @@ Scanned: 753 environment variables.
 - `acp_adapter/server.py:1462`
 - `acp_adapter/server.py:1463`
 - `acp_adapter/server.py:1485`
-- `agent/agent_init.py:917`
-- `agent/conversation_compression.py:380`
+- `agent/agent_init.py:926`
+- `agent/conversation_compression.py:493`
+- `agent/conversation_compression.py:783`
 - `tests/acp/test_server.py:1117`
 - `tests/acp/test_server.py:1136`
-- `tests/acp/test_server.py:1155`
-- ... and 6 more
+- ... and 7 more
 
 ## `XAVANI_SESSION_KEY`
 
@@ -4891,7 +5178,7 @@ Scanned: 753 environment variables.
 **Defaults:** default
 
 **Used at:**
-- `gateway/run.py:16161`
+- `gateway/run.py:16241`
 - `tests/gateway/test_approve_deny_commands.py:398`
 - `tests/gateway/test_approve_deny_commands.py:445`
 - `tests/gateway/test_approve_deny_commands.py:486`
@@ -4899,7 +5186,7 @@ Scanned: 753 environment variables.
 - `tests/gateway/test_approve_deny_commands.py:582`
 - `tests/gateway/test_approve_deny_commands.py:642`
 - `tests/gateway/test_session_env.py:175`
-- ... and 15 more
+- ... and 16 more
 
 ## `XAVANI_SESSION_PLATFORM`
 
@@ -4907,23 +5194,24 @@ Scanned: 753 environment variables.
 
 **Used at:**
 - `agent/prompt_builder.py:1054`
-- `agent/skill_commands.py:56`
+- `agent/skill_commands.py:138`
 - `agent/skill_utils.py:192`
 - `gateway/session_context.py:36`
 - `gateway/session_context.py:40`
 - `tests/agent/test_skill_commands.py:234`
 - `tests/cron/test_cron_script.py:546`
 - `tests/cron/test_scheduler.py:2277`
-- ... and 23 more
+- ... and 27 more
 
 ## `XAVANI_SESSION_SOURCE`
 
 **Used at:**
-- `agent/background_review.py:320`
-- `agent/conversation_compression.py:391`
-- `cli.py:6050`
-- `cli.py:6450`
-- `run_agent.py:527`
+- `agent/background_review.py:323`
+- `agent/conversation_compression.py:504`
+- `cli.py:6294`
+- `cli.py:6714`
+- `run_agent.py:545`
+- `xavani_cli/cli_commands_mixin.py:1589`
 - `xavani_cli/main.py:1467`
 
 ## `XAVANI_SESSION_THREAD_ID`
@@ -4935,6 +5223,8 @@ Scanned: 753 environment variables.
 - `tests/gateway/test_session_env.py:110`
 - `tests/gateway/test_session_env.py:156`
 - `tools/cronjob_tools.py:157`
+- `xavani_cli/blueprint_cmd.py:72`
+- `xavani_cli/suggestions_cmd.py:59`
 
 ## `XAVANI_SESSION_USER_ID`
 
@@ -4954,15 +5244,15 @@ Scanned: 753 environment variables.
 ## `XAVANI_SHARED_AUTH_DIR`
 
 **Used at:**
-- `xavani_cli/auth.py:3996`
+- `xavani_cli/auth.py:4044`
 
 ## `XAVANI_SIGTERM_GRACE`
 
 **Defaults:** 1.5
 
 **Used at:**
-- `cli.py:14079`
-- `cli.py:14544`
+- `cli.py:15570`
+- `cli.py:16051`
 
 ## `XAVANI_SKILL_AUDIT`
 
@@ -4995,8 +5285,8 @@ Scanned: 753 environment variables.
 
 **Used at:**
 - `agent/display.py:723`
-- `tools/approval.py:939`
-- `tools/terminal_tool.py:470`
+- `tools/approval.py:1021`
+- `tools/terminal_tool.py:472`
 
 ## `XAVANI_SPOTIFY_ACCOUNTS_BASE_URL`
 
@@ -5021,7 +5311,7 @@ Scanned: 753 environment variables.
 ## `XAVANI_STREAM_READ_TIMEOUT`
 
 **Used at:**
-- `agent/chat_completion_helpers.py:1300`
+- `agent/chat_completion_helpers.py:1320`
 - `tests/agent/test_local_stream_timeout.py:38`
 - `tests/agent/test_local_stream_timeout.py:47`
 - `tests/agent/test_local_stream_timeout.py:63`
@@ -5030,20 +5320,20 @@ Scanned: 753 environment variables.
 ## `XAVANI_STREAM_RETRIES`
 
 **Used at:**
-- `agent/chat_completion_helpers.py:1654`
-- `tests/run_agent/test_streaming.py:1146`
-- `tests/run_agent/test_streaming.py:1147`
-- `tests/run_agent/test_streaming.py:1154`
-- `tests/run_agent/test_streaming.py:1204`
-- `tests/run_agent/test_streaming.py:1205`
-- `tests/run_agent/test_streaming.py:1212`
-- `tests/run_agent/test_streaming.py:1292`
+- `agent/chat_completion_helpers.py:1674`
+- `tests/run_agent/test_streaming.py:1148`
+- `tests/run_agent/test_streaming.py:1149`
+- `tests/run_agent/test_streaming.py:1156`
+- `tests/run_agent/test_streaming.py:1206`
+- `tests/run_agent/test_streaming.py:1207`
+- `tests/run_agent/test_streaming.py:1214`
+- `tests/run_agent/test_streaming.py:1294`
 - ... and 8 more
 
 ## `XAVANI_STREAM_STALE_TIMEOUT`
 
 **Used at:**
-- `agent/chat_completion_helpers.py:1915`
+- `agent/chat_completion_helpers.py:1935`
 
 ## `XAVANI_TELEGRAM_DISABLE_FALLBACK_IPS`
 
@@ -5055,7 +5345,7 @@ Scanned: 753 environment variables.
 **Defaults:** 3.0
 
 **Used at:**
-- `gateway/run.py:7032`
+- `gateway/run.py:7111`
 
 ## `XAVANI_TELEGRAM_MEDIA_BATCH_DELAY_SECONDS`
 
@@ -5071,7 +5361,7 @@ Scanned: 753 environment variables.
 **Purpose:** push notifications.  Supports ENV override for quick testing.
 
 **Used at:**
-- `gateway/run.py:5954`
+- `gateway/run.py:6037`
 
 ## `XAVANI_TENANT`
 
@@ -5082,6 +5372,11 @@ Scanned: 753 environment variables.
 
 **Used at:**
 - `agent/transports/codex_app_server_session.py:189`
+
+## `XAVANI_TERMUX_DISABLE_FAST_CLI`
+
+**Used at:**
+- `xavani_cli/_startup_fast.py:264`
 
 ## `XAVANI_TIMEZONE`
 
@@ -5101,18 +5396,19 @@ Scanned: 753 environment variables.
 ## `XAVANI_TOKEN_BUDGET`
 
 **Used at:**
-- `agent/agent_init.py:1458`
+- `agent/agent_init.py:1483`
+- `tests/scripts/test_generate_env_docs.py:38`
 
 ## `XAVANI_TOOL_PROGRESS`
 
 **Used at:**
-- `xavani_cli/config.py:3632`
+- `xavani_cli/config.py:3639`
 
 ## `XAVANI_TOOL_PROGRESS_MODE`
 
 **Used at:**
-- `gateway/run.py:15532`
-- `xavani_cli/config.py:3633`
+- `gateway/run.py:15612`
+- `xavani_cli/config.py:3640`
 
 ## `XAVANI_TUI`
 
@@ -5124,7 +5420,7 @@ Scanned: 753 environment variables.
 **Purpose:** 3. Explicit bg hex
 
 **Used at:**
-- `cli.py:1432`
+- `cli.py:1434`
 
 ## `XAVANI_TUI_CHECKPOINTS`
 
@@ -5196,7 +5492,7 @@ Scanned: 753 environment variables.
 **Purpose:** 2. Theme hint
 
 **Used at:**
-- `cli.py:1423`
+- `cli.py:1425`
 
 ## `XAVANI_TUI_TOOLSETS`
 
@@ -5207,6 +5503,13 @@ Scanned: 753 environment variables.
 
 **Used at:**
 - `tui_gateway/server.py:899`
+
+## `XAVANI_UNTRUSTED_REPO_SANDBOX`
+
+**Defaults:** 1
+
+**Used at:**
+- `tools/terminal_tool.py:1137`
 
 ## `XAVANI_USER_EMAIL`
 
@@ -5239,6 +5542,11 @@ Scanned: 753 environment variables.
 - `tui_gateway/server.py:5680`
 - `tui_gateway/server.py:5784`
 
+## `XAVANI_WATCHDOG_PASS_TIMEOUT`
+
+**Used at:**
+- `xavani_cli/loop_watchdog.py:28`
+
 ## `XAVANI_WECOM_TEXT_BATCH_DELAY_SECONDS`
 
 **Purpose:** WeCom clients split long messages around 4000 chars.
@@ -5255,6 +5563,11 @@ Scanned: 753 environment variables.
 **Used at:**
 - `gateway/platforms/wecom.py:191`
 
+## `XAVANI_WRITE_JOURNAL_DIR`
+
+**Used at:**
+- `tools/write_journal.py:28`
+
 ## `XAVANI_WRITE_SAFE_ROOT`
 
 **Used at:**
@@ -5264,40 +5577,45 @@ Scanned: 753 environment variables.
 
 **Used at:**
 - `agent/auxiliary_client.py:1332`
-- `xavani_cli/auth.py:3726`
-- `xavani_cli/auth.py:6558`
+- `xavani_cli/auth.py:3774`
+- `xavani_cli/auth.py:6607`
 
 ## `XAVANI_XAI_REFRESH_TIMEOUT_SECONDS`
 
 **Defaults:** 20
 
 **Used at:**
-- `xavani_cli/auth.py:3667`
+- `xavani_cli/auth.py:3715`
 
 ## `XAVANI_YOLO_MODE`
 
 **Purpose:** we just verify the mechanism exists
 
 **Used at:**
-- `cli.py:3465`
-- `cli.py:3520`
-- `cli.py:9231`
-- `cli.py:9239`
+- `cli.py:3544`
+- `cli.py:3601`
+- `cli.py:9708`
+- `cli.py:9716`
 - `tests/gateway/test_yolo_command.py:60`
 - `tests/gateway/test_yolo_command.py:66`
 - `tests/test_tui_gateway_server.py:1328`
-- `tests/tools/test_yolo_mode.py:118`
+- `tests/tools/test_yolo_mode.py:142`
 - ... and 11 more
+
+## `XDG_DATA_HOME`
+
+**Used at:**
+- `xavani_cli/linux_desktop_entry.py:46`
 
 ## `XDG_RUNTIME_DIR`
 
 **Used at:**
-- `tests/xavani_cli/test_gateway_service.py:1407`
-- `tests/xavani_cli/test_gateway_service.py:1429`
-- `xavani_cli/gateway.py:1378`
-- `xavani_cli/gateway.py:1384`
-- `xavani_cli/gateway.py:1411`
-- `xavani_cli/gateway.py:1414`
+- `tests/xavani_cli/test_gateway_service.py:1409`
+- `tests/xavani_cli/test_gateway_service.py:1431`
+- `xavani_cli/gateway.py:1379`
+- `xavani_cli/gateway.py:1385`
+- `xavani_cli/gateway.py:1412`
+- `xavani_cli/gateway.py:1415`
 
 ## `XDG_STATE_HOME`
 
@@ -5398,7 +5716,7 @@ Scanned: 753 environment variables.
 **Purpose:** where it was already set correctly by gateway/run.py's config bridge.
 
 **Used at:**
-- `cli.py:574`
+- `cli.py:571`
 - `gateway/run.py:547`
 
 ## `all_proxy`

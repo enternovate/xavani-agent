@@ -307,6 +307,9 @@ def run_task(
     provider: Optional[str] = None,
     model: str = "",
     faux: bool = False,
+    resolve_runtime: bool = False,
+    api_mode: Optional[str] = None,
+    base_url: Optional[str] = None,
 ) -> Dict[str, Any]:
     from run_agent import AIAgent
 
@@ -356,6 +359,27 @@ def run_task(
             }
             if provider:
                 init_kwargs["provider"] = provider
+            if resolve_runtime and not provider:
+                # Mirror the CLI: resolve credentials, base URL, and API mode
+                # from the active config. Required for custom endpoints on the
+                # Anthropic Messages protocol (e.g. gateways without a
+                # /chat/completions route).
+                from xavani_cli.runtime_provider import resolve_runtime_provider
+
+                runtime = resolve_runtime_provider(target_model=model or None)
+                init_kwargs.update(
+                    provider=runtime.get("provider"),
+                    api_key=runtime.get("api_key"),
+                    base_url=runtime.get("base_url"),
+                    api_mode=runtime.get("api_mode"),
+                    credential_pool=runtime.get("credential_pool"),
+                )
+            if api_mode:
+                # Per-model protocol override (e.g. a gateway that serves a
+                # model on the Responses protocol only).
+                init_kwargs["api_mode"] = api_mode
+            if base_url:
+                init_kwargs["base_url"] = base_url
             agent = AIAgent(**init_kwargs)
 
         error: Optional[str] = None
@@ -386,6 +410,8 @@ def run_task(
             ),
             "api_calls": int(getattr(agent, "session_api_calls", 0) or 0),
             "response_chars": len(response),
+            "response_text": response[:8000],
+            "session_id": str(getattr(agent, "session_id", "") or ""),
             "error": error,
         }
     finally:
@@ -476,6 +502,9 @@ def run_benchmark(
     model: str = "",
     faux: bool = False,
     runs: int = 1,
+    resolve_runtime: bool = False,
+    api_mode: Optional[str] = None,
+    base_url: Optional[str] = None,
 ) -> Dict[str, Any]:
     """Run the suite ``runs`` times; flag tasks unstable across runs.
 
@@ -484,13 +513,20 @@ def run_benchmark(
     listed under ``unstable_ids``.
     """
     all_results = [
-        run_task(task, provider=provider, model=model, faux=faux) for task in tasks
+        run_task(
+            task, provider=provider, model=model, faux=faux,
+            resolve_runtime=resolve_runtime, api_mode=api_mode, base_url=base_url,
+        )
+        for task in tasks
     ]
     if runs <= 1:
         return {"results": all_results, "summary": summarize_results(all_results)}
 
     repeat_results = [
-        run_task(task, provider=provider, model=model, faux=faux)
+        run_task(
+            task, provider=provider, model=model, faux=faux,
+            resolve_runtime=resolve_runtime, api_mode=api_mode, base_url=base_url,
+        )
         for task in tasks
         for _ in range(runs - 1)
     ]
@@ -539,11 +575,32 @@ def main(argv: Optional[List[str]] = None) -> int:
         help="run the suite N times and drop tasks unstable across runs (flake check)",
     )
     parser.add_argument(
+        "--resolve-runtime",
+        action="store_true",
+        help="resolve provider credentials, base URL, and api_mode from the "
+        "active config (mirrors the CLI; needed for custom Anthropic-protocol endpoints)",
+    )
+    parser.add_argument(
+        "--api-mode",
+        default=None,
+        help="override the runtime api_mode (e.g. codex_responses for a "
+        "Responses-protocol model)",
+    )
+    parser.add_argument(
+        "--base-url",
+        default=None,
+        help="override the runtime base URL",
+    )
+    parser.add_argument(
         "--save",
         action="store_true",
         help=f"write results under {RESULTS_DIR} with a config fingerprint name",
     )
     args = parser.parse_args(argv)
+
+    # Expose the run context to verifier subprocesses (reliability checks).
+    os.environ["XAVANI_BENCH_FAUX"] = "1" if args.faux else "0"
+    os.environ["XAVANI_BENCH_MODEL"] = args.model or ""
 
     tasks_path = Path(args.tasks_file) if args.tasks_file else DEFAULT_TASKS_PATH
     try:
@@ -559,7 +616,8 @@ def main(argv: Optional[List[str]] = None) -> int:
 
     bench = run_benchmark(
         tasks, provider=args.provider, model=args.model, faux=args.faux,
-        runs=max(1, args.runs),
+        runs=max(1, args.runs), resolve_runtime=args.resolve_runtime,
+        api_mode=args.api_mode, base_url=args.base_url,
     )
     payload = {
         "tasks_file": str(tasks_path),
@@ -567,6 +625,9 @@ def main(argv: Optional[List[str]] = None) -> int:
         "provider": args.provider,
         "model": args.model or None,
         "runs": max(1, args.runs),
+        "resolve_runtime": bool(args.resolve_runtime),
+        "api_mode_override": args.api_mode,
+        "base_url_override": args.base_url,
         **bench,
     }
 
@@ -598,7 +659,8 @@ def config_fingerprint(payload: Dict[str, Any]) -> str:
     material = json.dumps(
         {
             k: payload.get(k)
-            for k in ("tasks_file", "mode", "provider", "model", "runs")
+            for k in ("tasks_file", "mode", "provider", "model", "runs",
+                      "resolve_runtime", "api_mode_override", "base_url_override")
         },
         sort_keys=True,
     )

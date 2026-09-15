@@ -1,7 +1,7 @@
 # Xavani Agent — Development Guide
 
 Built by [Enternovate](https://enternovate.com).
-Derived from Hermes Agent (MIT) — see LICENSE and README for full attribution.
+Third-party notices: see LICENSE.
 
 ## Quick Start
 

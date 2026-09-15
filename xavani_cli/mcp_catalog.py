@@ -473,7 +473,11 @@ def _run_bootstrap(cwd: Path, commands: List[str]) -> None:
     """
     for cmd in commands:
         print(color(f"  $ {cmd}", Colors.DIM))
-        proc = subprocess.run(cmd, cwd=str(cwd), shell=True)
+        # Bootstrap steps are shell snippets (they use `&&`) taken from the
+        # manifest.yaml of the install's own optional-mcps/ catalog — operator-
+        # controlled at most, via XAVANI_OPTIONAL_MCPS, never remote or model
+        # input, and only run on an explicit install command.
+        proc = subprocess.run(cmd, cwd=str(cwd), shell=True)  # nosec B602 - commands come from the local optional-mcps manifest, not remote input
         if proc.returncode != 0:
             raise CatalogError(
                 f"bootstrap step failed (exit {proc.returncode}): {cmd}"

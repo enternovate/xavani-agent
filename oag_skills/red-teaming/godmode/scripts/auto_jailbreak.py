@@ -183,7 +183,7 @@ MODEL_STRATEGIES = {
             ),
         },
     },
-    # Nous/Xavani models — already uncensored, just needs clean prompt
+    # Xavani models — already uncensored, just needs clean prompt
     "xavani": {
         "order": ["prefill_only"],
         "system_templates": {},

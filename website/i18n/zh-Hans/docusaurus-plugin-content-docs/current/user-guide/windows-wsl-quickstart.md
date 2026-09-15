@@ -46,7 +46,7 @@ Xavani 默认配置目录为 `~/.xavani/`（在 WSL 内即 Linux 家目录）。
 
 ## 4. 模型与 Tool Gateway
 
-1. 在 WSL 内运行 `xavani model`，按提示绑定 **Nous Portal**（或其他提供商）。  
+1. 在 WSL 内运行 `xavani model`，按提示绑定 **Xavani Portal**（或其他提供商）。  
 2. 付费订阅用户可启用 **[Tool Gateway](/user-guide/features/tool-gateway)**，用于网页搜索、文生图、TTS、浏览器自动化等，而无需单独配置 `FAL_KEY` / Firecrawl 等（详见该页）。  
 3. 文生图模型列表与计费说明见 **[文生图](/user-guide/features/image-generation)**。
 

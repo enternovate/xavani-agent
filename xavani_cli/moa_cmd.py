@@ -16,7 +16,7 @@ def _prompt_choice(title: str, rows: list[str], default: int = 0) -> int:
         return curses_radiolist(title, rows, selected=default, cancel_returns=default)
     except Exception:
         for idx, row in enumerate(rows, start=1):
-            print(f"{idx}. {row}")
+            print(f"{idx}. {row}")  # nosec B105 - numbered menu row; no credentials
         raw = input(f"{title} [{default + 1}]: ").strip()
         if not raw:
             return default
