@@ -53,6 +53,16 @@ jobs:
           OPENAI_API_KEY: ""
           NOUS_API_KEY: ""
 
+      - name: Bench faux gates (non-blocking)
+        # Mirrors the suite's philosophy: report red without blocking the
+        # channel. The promote gate still reads only the suite summary.
+        continue-on-error: true
+        run: |
+          source .venv/bin/activate
+          python scripts/task_bench/reliability_check.py seed-all
+          python -m scripts.task_bench.run_bench --faux
+          python -m scripts.task_bench.run_bench scripts/task_bench/tasks/reliability_tasks.json --faux
+
       - name: Build suite summary
         if: always()
         run: |

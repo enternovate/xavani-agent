@@ -17,6 +17,10 @@ on:
       - "tools/eval_harness_tool.py"
       - "tests/fixtures/golden-evals.json"
       - "scripts/run_golden_evals.py"
+      - "scripts/task_bench/**"
+      - "tests/xavani_cli/test_task_bench.py"
+      - "tests/xavani_cli/test_bench_expansion.py"
+      - "tests/xavani_cli/test_regression_gate.py"
 
 permissions:
   contents: read
@@ -36,8 +40,16 @@ jobs:
       - name: Install package (no extras)
         run: |
           pip install -e .
+          # The bench gates use pytest-based verifiers.
+          pip install "pytest==9.0.3"
 
       - name: Run golden eval gate
         run: |
           python scripts/run_golden_evals.py --evals tests/fixtures/golden-evals.json \
             --handler tests.eval_gate_handlers:golden_handler
+
+      - name: Run task_bench faux gates
+        run: |
+          python scripts/task_bench/reliability_check.py seed-all
+          python -m scripts.task_bench.run_bench --faux
+          python -m scripts.task_bench.run_bench scripts/task_bench/tasks/reliability_tasks.json --faux
