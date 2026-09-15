@@ -1,0 +1,7 @@
+name: bench-capture
+version: 1.0.0
+api_version: "0.1.0"
+description: "Records per-call provider response metadata for Xavani model evaluation runs. Writes JSONL to $XAVANI_BENCH_META (default: $XAVANI_HOME/bench-meta.jsonl)."
+author: Enternovate
+hooks:
+  - post_api_request
