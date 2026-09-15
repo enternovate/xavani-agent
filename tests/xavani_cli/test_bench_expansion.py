@@ -187,8 +187,15 @@ class TestCategoryFilterAndFingerprint:
         assert len(run_bench.config_fingerprint(payload)) == 8
 
     def test_save_writes_fingerprinted_file(self, tmp_path, monkeypatch, capsys):
+        # Scope the run to a tiny corpus: the default corpus includes
+        # subprocess verifiers that exceed the test time budget.
         monkeypatch.setattr(run_bench, "RESULTS_DIR", tmp_path / "results")
-        code = run_bench.main(["--faux", "--save"])
+        tasks_path = tmp_path / "tasks.json"
+        tasks_path.write_text(
+            json.dumps([{"id": "t1", "prompt": "say hi", "verifier": "contains:hi"}]),
+            encoding="utf-8",
+        )
+        code = run_bench.main(["--faux", "--save", str(tasks_path)])
         assert code == 0
         files = list((tmp_path / "results").glob("*.json"))
         assert len(files) == 1
