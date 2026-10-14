@@ -951,7 +951,26 @@ class APIServerAdapter(BasePlatformAdapter):
         from gateway.run import _resolve_runtime_agent_kwargs, _resolve_gateway_model, _load_gateway_config, GatewayRunner
         from xavani_cli.tools_config import _get_platform_tools
 
-        runtime_kwargs = _resolve_runtime_agent_kwargs()
+        if self._omera_mode:
+            from xavani_cli.runtime_provider import resolve_runtime_provider
+
+            try:
+                runtime = resolve_runtime_provider(
+                    requested=os.getenv("XAVANI_INFERENCE_PROVIDER"),
+                )
+            except Exception as exc:
+                raise RuntimeError("PRIMARY_PROVIDER_UNAVAILABLE") from exc
+            runtime_kwargs = {
+                "api_key": runtime.get("api_key"),
+                "base_url": runtime.get("base_url"),
+                "provider": runtime.get("provider"),
+                "api_mode": runtime.get("api_mode"),
+                "command": runtime.get("command"),
+                "args": list(runtime.get("args") or []),
+                "credential_pool": runtime.get("credential_pool"),
+            }
+        else:
+            runtime_kwargs = _resolve_runtime_agent_kwargs()
         reasoning_config = GatewayRunner._load_reasoning_config()
         model = _resolve_gateway_model()
 

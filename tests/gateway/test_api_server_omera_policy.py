@@ -44,7 +44,7 @@ def test_mode_requires_explicit_config(make_adapter, monkeypatch, extra, expecte
 def factory_spy(monkeypatch):
     import run_agent
     from gateway import run
-    from xavani_cli import tools_config
+    from xavani_cli import runtime_provider, tools_config
 
     signature = inspect.signature(run_agent.AIAgent)
     constructed = []
@@ -69,8 +69,13 @@ def factory_spy(monkeypatch):
     config_loader = Mock(return_value={})
     tools_loader = Mock(return_value={"web", "terminal"})
     fallback_loader = Mock(return_value=fallback)
-    monkeypatch.setattr(run_agent, "AIAgent", construct)
-    monkeypatch.setattr(run, "_resolve_runtime_agent_kwargs", lambda: runtime.copy())
+    real_gateway_resolver = run._resolve_runtime_agent_kwargs
+    gateway_resolver = Mock(side_effect=lambda: runtime.copy())
+    primary_resolver = Mock(side_effect=lambda **kwargs: runtime.copy())
+    constructor = Mock(side_effect=construct)
+    monkeypatch.setattr(run_agent, "AIAgent", constructor)
+    monkeypatch.setattr(run, "_resolve_runtime_agent_kwargs", gateway_resolver)
+    monkeypatch.setattr(runtime_provider, "resolve_runtime_provider", primary_resolver)
     monkeypatch.setattr(run, "_resolve_gateway_model", lambda: "actual-model")
     monkeypatch.setattr(run, "_load_gateway_config", config_loader)
     monkeypatch.setattr(tools_config, "_get_platform_tools", tools_loader)
@@ -79,10 +84,14 @@ def factory_spy(monkeypatch):
     monkeypatch.setattr(run.GatewayRunner, "_load_fallback_model",
                         staticmethod(fallback_loader))
     monkeypatch.setenv("XAVANI_MAX_ITERATIONS", "73")
+    monkeypatch.setenv("XAVANI_INFERENCE_PROVIDER", "custom")
     return SimpleNamespace(
         runtime=runtime, reasoning=reasoning, fallback=fallback,
         config_loader=config_loader, tools_loader=tools_loader,
         fallback_loader=fallback_loader, constructed=constructed,
+        constructor=constructor, primary_resolver=primary_resolver,
+        gateway_resolver=gateway_resolver,
+        real_gateway_resolver=real_gateway_resolver,
     )
 
 
@@ -101,6 +110,29 @@ def request_args():
         "tool_start_callback": object(),
         "tool_complete_callback": object(),
     }
+
+
+def test_restricted_primary_auth_failure_never_uses_fallback(
+        make_adapter, factory_spy, request_args, monkeypatch):
+    from gateway import run
+    from xavani_cli.auth import AuthError
+
+    adapter = make_adapter({"omera_mode": True})
+    failure = AuthError("SYNTHETIC_PRIVATE_AUTH_MARKER", provider="custom")
+    factory_spy.primary_resolver.side_effect = failure
+    monkeypatch.setattr(run, "_resolve_runtime_agent_kwargs",
+                        factory_spy.real_gateway_resolver)
+    fallback_resolver = Mock(side_effect=AssertionError("FALLBACK_MUST_NOT_RUN"))
+    monkeypatch.setattr(run, "_try_resolve_fallback_provider", fallback_resolver)
+
+    with pytest.raises(RuntimeError, match="^PRIMARY_PROVIDER_UNAVAILABLE$") as error:
+        adapter._create_agent(**request_args)
+
+    assert error.value.__cause__ is failure
+    factory_spy.primary_resolver.assert_called_once_with(requested="custom")
+    fallback_resolver.assert_not_called()
+    factory_spy.fallback_loader.assert_not_called()
+    factory_spy.constructor.assert_not_called()
 
 
 def test_restricted_constructor_policy(make_adapter, factory_spy, request_args,
@@ -139,6 +171,8 @@ def test_restricted_constructor_policy(make_adapter, factory_spy, request_args,
     factory_spy.config_loader.assert_not_called()
     factory_spy.tools_loader.assert_not_called()
     factory_spy.fallback_loader.assert_not_called()
+    factory_spy.primary_resolver.assert_called_once_with(requested="custom")
+    factory_spy.gateway_resolver.assert_not_called()
     assert factory_spy.constructed == [agent]
 
 
@@ -151,6 +185,63 @@ def test_restricted_agent_has_no_tools(make_adapter, factory_spy, request_args,
     assert agent.tools == []
     assert agent.valid_tool_names == set()
     session_db.assert_not_called()
+    factory_spy.primary_resolver.assert_called_once_with(requested="custom")
+    factory_spy.gateway_resolver.assert_not_called()
+
+
+@pytest.mark.parametrize("requested, args, expected_args", [
+    (None, None, []),
+    ("custom", ("--unit-arg",), ["--unit-arg"]),
+])
+def test_restricted_primary_result_keeps_only_provider_fields(
+        make_adapter, factory_spy, request_args, monkeypatch,
+        requested, args, expected_args):
+    if requested is None:
+        monkeypatch.delenv("XAVANI_INFERENCE_PROVIDER", raising=False)
+    else:
+        monkeypatch.setenv("XAVANI_INFERENCE_PROVIDER", requested)
+    factory_spy.primary_resolver.side_effect = None
+    factory_spy.primary_resolver.return_value = {
+        **factory_spy.runtime,
+        "args": args,
+        "model": "unexpected-provider-model",
+        "unexpected": "must-not-reach-constructor",
+        "max_iterations": 99,
+    }
+
+    agent = make_adapter({"omera_mode": True})._create_agent(**request_args)
+
+    assert agent.kwargs["model"] == "actual-model"
+    assert agent.kwargs["args"] == expected_args
+    assert agent.kwargs["max_iterations"] == 1
+    assert "unexpected" not in agent.kwargs
+    for key in factory_spy.runtime.keys() - {"args"}:
+        assert agent.kwargs[key] == factory_spy.runtime[key]
+    factory_spy.primary_resolver.assert_called_once_with(requested=requested)
+    factory_spy.gateway_resolver.assert_not_called()
+    factory_spy.fallback_loader.assert_not_called()
+    factory_spy.constructor.assert_called_once()
+
+
+def test_restricted_primary_non_auth_failure_is_neutral(
+        make_adapter, factory_spy, request_args, monkeypatch):
+    from gateway import run
+
+    failure = ValueError("SYNTHETIC_PRIVATE_PROVIDER_MARKER")
+    factory_spy.primary_resolver.side_effect = failure
+    monkeypatch.setattr(run, "_resolve_runtime_agent_kwargs",
+                        factory_spy.real_gateway_resolver)
+    fallback_resolver = Mock(side_effect=AssertionError("FALLBACK_MUST_NOT_RUN"))
+    monkeypatch.setattr(run, "_try_resolve_fallback_provider", fallback_resolver)
+
+    with pytest.raises(RuntimeError, match="^PRIMARY_PROVIDER_UNAVAILABLE$") as error:
+        make_adapter({"omera_mode": True})._create_agent(**request_args)
+
+    assert error.value.__cause__ is failure
+    factory_spy.primary_resolver.assert_called_once_with(requested="custom")
+    fallback_resolver.assert_not_called()
+    factory_spy.fallback_loader.assert_not_called()
+    factory_spy.constructor.assert_not_called()
 
 
 @pytest.mark.parametrize("extra", [{}, {"omera_mode": False}])
@@ -183,3 +274,5 @@ def test_ordinary_factory_compatibility(make_adapter, factory_spy, request_args,
     factory_spy.config_loader.assert_called_once_with()
     factory_spy.tools_loader.assert_called_once_with({}, "api_server")
     factory_spy.fallback_loader.assert_called_once_with()
+    factory_spy.gateway_resolver.assert_called_once_with()
+    factory_spy.primary_resolver.assert_not_called()
