@@ -708,6 +708,7 @@ class APIServerAdapter(BasePlatformAdapter):
     def __init__(self, config: PlatformConfig):
         super().__init__(config, Platform.API_SERVER)
         extra = config.extra or {}
+        self._omera_mode = _coerce_request_bool(extra.get("omera_mode"), default=False)
         self._host: str = extra.get("host", os.getenv("API_SERVER_HOST", DEFAULT_HOST))
         raw_port = extra.get("port")
         if raw_port is None:
@@ -954,14 +955,33 @@ class APIServerAdapter(BasePlatformAdapter):
         reasoning_config = GatewayRunner._load_reasoning_config()
         model = _resolve_gateway_model()
 
-        user_config = _load_gateway_config()
-        enabled_toolsets = sorted(_get_platform_tools(user_config, "api_server"))
-
-        max_iterations = int(os.getenv("XAVANI_MAX_ITERATIONS", "90"))
-
-        # Load fallback provider chain so the API server platform has the
-        # same fallback behaviour as Telegram/Discord/Slack (fixes #4954).
-        fallback_model = GatewayRunner._load_fallback_model()
+        if self._omera_mode:
+            enabled_toolsets = []
+            max_iterations = 1
+            fallback_model = None
+            session_db = None
+            session_id = None
+            gateway_session_key = None
+            tool_progress_callback = None
+            tool_start_callback = None
+            tool_complete_callback = None
+            service_kwargs = {
+                "max_tokens": 2048,
+                "skip_memory": True,
+                "skip_context_files": True,
+                "load_soul_identity": False,
+                "disabled_toolsets": ["all"],
+                "prefill_messages": [],
+                "save_trajectories": False,
+            }
+        else:
+            user_config = _load_gateway_config()
+            enabled_toolsets = sorted(_get_platform_tools(user_config, "api_server"))
+            max_iterations = int(os.getenv("XAVANI_MAX_ITERATIONS", "90"))
+            # Keep the ordinary provider fallback chain and shared sessions.
+            fallback_model = GatewayRunner._load_fallback_model()
+            session_db = self._ensure_session_db()
+            service_kwargs = {}
 
         agent = AIAgent(
             model=model,
@@ -972,16 +992,20 @@ class APIServerAdapter(BasePlatformAdapter):
             ephemeral_system_prompt=ephemeral_system_prompt or None,
             enabled_toolsets=enabled_toolsets,
             session_id=session_id,
-            platform="api_server",
+            platform="omera" if self._omera_mode else "api_server",
             stream_delta_callback=stream_delta_callback,
             tool_progress_callback=tool_progress_callback,
             tool_start_callback=tool_start_callback,
             tool_complete_callback=tool_complete_callback,
-            session_db=self._ensure_session_db(),
+            session_db=session_db,
             fallback_model=fallback_model,
             reasoning_config=reasoning_config,
             gateway_session_key=gateway_session_key,
+            **service_kwargs,
         )
+        if self._omera_mode:
+            agent.tools = []
+            agent.valid_tool_names = set()
         return agent
 
     # ------------------------------------------------------------------

@@ -1,0 +1,185 @@
+"""Check API agent construction policy without calling a model provider."""
+
+import inspect
+from types import SimpleNamespace
+from unittest.mock import Mock
+
+import pytest
+
+from gateway.config import PlatformConfig
+from gateway.platforms import api_server as api
+
+
+@pytest.fixture
+def make_adapter(monkeypatch):
+    store = api.ResponseStore
+    monkeypatch.setattr(api, "ResponseStore", lambda: store(db_path=":memory:"))
+    instances = []
+
+    def create(extra):
+        instance = api.APIServerAdapter(PlatformConfig(enabled=True, extra={
+            "key": "unit-service-key", "model_name": "omera", "port": 0,
+            **extra,
+        }))
+        instances.append(instance)
+        return instance
+
+    yield create
+    for instance in instances:
+        instance._response_store.close()
+
+
+@pytest.mark.parametrize("extra, expected", [
+    ({}, False),
+    ({"omera_mode": False}, False),
+    ({"omera_mode": True}, True),
+])
+def test_mode_requires_explicit_config(make_adapter, monkeypatch, extra, expected):
+    monkeypatch.setenv("API_SERVER_OMERA_MODE", "true")
+    adapter = make_adapter(extra)
+    assert adapter._omera_mode is expected
+
+
+@pytest.fixture
+def factory_spy(monkeypatch):
+    import run_agent
+    from gateway import run
+    from xavani_cli import tools_config
+
+    signature = inspect.signature(run_agent.AIAgent)
+    constructed = []
+
+    def construct(**kwargs):
+        signature.bind(**kwargs)
+        agent = SimpleNamespace(
+            kwargs=kwargs, tools=[{"name": "terminal"}],
+            valid_tool_names={"terminal"}, session_log_file="private.json",
+            _persist_disabled=False, _fallback_chain=[{"model": "other"}],
+        )
+        constructed.append(agent)
+        return agent
+
+    runtime = {
+        "api_key": "unit-model-key", "base_url": "https://model.invalid/v1",
+        "provider": "custom", "api_mode": "chat_completions",
+        "command": None, "args": [], "credential_pool": None,
+    }
+    reasoning = {"enabled": False}
+    fallback = {"model": "other"}
+    config_loader = Mock(return_value={})
+    tools_loader = Mock(return_value={"web", "terminal"})
+    fallback_loader = Mock(return_value=fallback)
+    monkeypatch.setattr(run_agent, "AIAgent", construct)
+    monkeypatch.setattr(run, "_resolve_runtime_agent_kwargs", lambda: runtime.copy())
+    monkeypatch.setattr(run, "_resolve_gateway_model", lambda: "actual-model")
+    monkeypatch.setattr(run, "_load_gateway_config", config_loader)
+    monkeypatch.setattr(tools_config, "_get_platform_tools", tools_loader)
+    monkeypatch.setattr(run.GatewayRunner, "_load_reasoning_config",
+                        staticmethod(lambda: reasoning))
+    monkeypatch.setattr(run.GatewayRunner, "_load_fallback_model",
+                        staticmethod(fallback_loader))
+    monkeypatch.setenv("XAVANI_MAX_ITERATIONS", "73")
+    return SimpleNamespace(
+        runtime=runtime, reasoning=reasoning, fallback=fallback,
+        config_loader=config_loader, tools_loader=tools_loader,
+        fallback_loader=fallback_loader, constructed=constructed,
+    )
+
+
+@pytest.fixture
+def request_args():
+    headers = {
+        "X-Xavani-Session-Id": "caller-session-id",
+        "X-Xavani-Session-Key": "caller-session-key",
+    }
+    return {
+        "ephemeral_system_prompt": "Business rules.",
+        "session_id": headers["X-Xavani-Session-Id"],
+        "gateway_session_key": headers["X-Xavani-Session-Key"],
+        "stream_delta_callback": object(),
+        "tool_progress_callback": object(),
+        "tool_start_callback": object(),
+        "tool_complete_callback": object(),
+    }
+
+
+def test_restricted_constructor_policy(make_adapter, factory_spy, request_args,
+                                       monkeypatch):
+    adapter = make_adapter({"omera_mode": True})
+    session_db = Mock(return_value=object())
+    monkeypatch.setattr(adapter, "_ensure_session_db", session_db)
+    agent = adapter._create_agent(**request_args)
+    assert agent.kwargs == {
+        **factory_spy.runtime,
+        "model": "actual-model",
+        "max_iterations": 1,
+        "max_tokens": 2048,
+        "quiet_mode": True,
+        "verbose_logging": False,
+        "save_trajectories": False,
+        "ephemeral_system_prompt": request_args["ephemeral_system_prompt"],
+        "enabled_toolsets": [],
+        "disabled_toolsets": ["all"],
+        "session_id": None,
+        "session_db": None,
+        "gateway_session_key": None,
+        "fallback_model": None,
+        "platform": "omera",
+        "skip_memory": True,
+        "skip_context_files": True,
+        "load_soul_identity": False,
+        "prefill_messages": [],
+        "stream_delta_callback": request_args["stream_delta_callback"],
+        "tool_progress_callback": None,
+        "tool_start_callback": None,
+        "tool_complete_callback": None,
+        "reasoning_config": factory_spy.reasoning,
+    }
+    session_db.assert_not_called()
+    factory_spy.config_loader.assert_not_called()
+    factory_spy.tools_loader.assert_not_called()
+    factory_spy.fallback_loader.assert_not_called()
+    assert factory_spy.constructed == [agent]
+
+
+def test_restricted_agent_has_no_tools(make_adapter, factory_spy, request_args,
+                                      monkeypatch):
+    adapter = make_adapter({"omera_mode": True})
+    session_db = Mock(return_value=object())
+    monkeypatch.setattr(adapter, "_ensure_session_db", session_db)
+    agent = adapter._create_agent(**request_args)
+    assert agent.tools == []
+    assert agent.valid_tool_names == set()
+    session_db.assert_not_called()
+
+
+@pytest.mark.parametrize("extra", [{}, {"omera_mode": False}])
+def test_ordinary_factory_compatibility(make_adapter, factory_spy, request_args,
+                                        monkeypatch, extra):
+    adapter = make_adapter(extra)
+    shared_db = object()
+    session_db = Mock(return_value=shared_db)
+    monkeypatch.setattr(adapter, "_ensure_session_db", session_db)
+    agent = adapter._create_agent(**request_args)
+    assert agent.kwargs == {
+        **factory_spy.runtime,
+        **request_args,
+        "model": "actual-model",
+        "max_iterations": 73,
+        "quiet_mode": True,
+        "verbose_logging": False,
+        "enabled_toolsets": ["terminal", "web"],
+        "platform": "api_server",
+        "session_db": shared_db,
+        "fallback_model": factory_spy.fallback,
+        "reasoning_config": factory_spy.reasoning,
+    }
+    assert agent.tools == [{"name": "terminal"}]
+    assert agent.valid_tool_names == {"terminal"}
+    assert agent.session_log_file == "private.json"
+    assert agent._persist_disabled is False
+    assert agent._fallback_chain == [{"model": "other"}]
+    session_db.assert_called_once_with()
+    factory_spy.config_loader.assert_called_once_with()
+    factory_spy.tools_loader.assert_called_once_with({}, "api_server")
+    factory_spy.fallback_loader.assert_called_once_with()
