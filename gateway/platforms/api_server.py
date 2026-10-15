@@ -1025,6 +1025,10 @@ class APIServerAdapter(BasePlatformAdapter):
         if self._omera_mode:
             agent.tools = []
             agent.valid_tool_names = set()
+            agent._persist_disabled = True
+            agent.session_log_file = None
+            agent._session_db = None
+            agent._fallback_chain = []
         return agent
 
     # ------------------------------------------------------------------

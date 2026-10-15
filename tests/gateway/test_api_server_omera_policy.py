@@ -276,3 +276,44 @@ def test_ordinary_factory_compatibility(make_adapter, factory_spy, request_args,
     factory_spy.fallback_loader.assert_called_once_with()
     factory_spy.gateway_resolver.assert_called_once_with()
     factory_spy.primary_resolver.assert_not_called()
+
+
+def make_persistence_agent(tmp_path, *, disabled):
+    from datetime import datetime, timezone
+    from threading import Lock
+    from run_agent import AIAgent
+
+    agent = object.__new__(AIAgent)
+    agent._persist_disabled = disabled
+    agent.session_log_file = tmp_path / "customer.json"
+    agent.session_id = "unit-customer-session"
+    agent.model = "unit-model"
+    agent.base_url = "https://model.invalid/v1"
+    agent.platform = "omera" if disabled else "api_server"
+    agent.session_start = datetime.now(timezone.utc)
+    agent._cached_system_prompt = "unit-system-prompt"
+    agent.tools = []
+    agent.verbose_logging = False
+    agent._session_messages = []
+    agent._session_db = SimpleNamespace(
+        create_session=Mock(), append_message=Mock(),
+    )
+    agent._session_db_created = False
+    agent._session_init_model_config = {}
+    agent._parent_session_id = None
+    agent._last_flushed_db_idx = 0
+    agent._session_persist_lock = Lock()
+    return agent
+
+
+def persistence_messages():
+    return [{"role": "user", "content": "SYNTHETIC_OMERA_PRIVACY_CANARY"}]
+
+
+def test_restricted_factory_disables_all_persistence(
+        make_adapter, factory_spy, request_args):
+    agent = make_adapter({"omera_mode": True})._create_agent(**request_args)
+    assert agent._persist_disabled is True
+    assert agent.session_log_file is None
+    assert agent._session_db is None
+    assert agent._fallback_chain == []
