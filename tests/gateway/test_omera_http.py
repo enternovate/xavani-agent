@@ -106,6 +106,51 @@ async def test_restricted_chat_enforces_chunked_body_limit():
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize("case", ["message_count", "single_text", "system_text", "total_text"])
+async def test_restricted_chat_accepts_exact_limits(case):
+    body = chat_body()
+    if case == "message_count":
+        body["messages"] = [body["messages"][0]] + [
+            {"role": "user", "content": "x"} for _ in range(40)
+        ]
+    elif case == "single_text":
+        body["messages"][1]["content"] = "x" * 8000
+    elif case == "system_text":
+        body["messages"][0]["content"] = "x" * 16000
+    else:
+        body["messages"] = [body["messages"][0]] + [
+            {"role": "user", "content": "x" * 8000} for _ in range(4)
+        ]
+    async with restricted_client() as (client, adapter):
+        response = await client.post("/v1/chat/completions", json=body)
+        assert response.status == 200
+        await response.read()
+        adapter._run_agent.assert_awaited_once()
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("case", ["message_count", "single_text", "system_text", "total_text"])
+async def test_restricted_chat_rejects_excess_limits(case):
+    body = chat_body()
+    if case == "message_count":
+        body["messages"] = [body["messages"][0]] + [
+            {"role": "user", "content": "x"} for _ in range(41)
+        ]
+    elif case == "single_text":
+        body["messages"][1]["content"] = "x" * 8001
+    elif case == "system_text":
+        body["messages"][0]["content"] = "x" * 16001
+    else:
+        body["messages"] = [body["messages"][0]] + [
+            {"role": "user", "content": "x" * 8000} for _ in range(4)
+        ] + [{"role": "user", "content": "x"}]
+    async with restricted_client() as (client, adapter):
+        response = await client.post("/v1/chat/completions", json=body)
+        assert response.status == 400
+        adapter._run_agent.assert_not_called()
+
+
+@pytest.mark.asyncio
 @pytest.mark.parametrize("change", [
     {"tools": []}, {"model": "other"}, {"stream": "false"},
     {"messages": []}, {"messages": ["not-a-message"]},
