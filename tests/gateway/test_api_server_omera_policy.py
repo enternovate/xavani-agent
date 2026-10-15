@@ -361,3 +361,20 @@ def test_disabled_persistence_drain_skips_all_processing(tmp_path, monkeypatch):
     for spy in spies.values():
         spy.assert_not_called()
     assert agent._session_messages == []
+
+
+def test_disabled_timeline_skips_path_lookup(tmp_path, monkeypatch):
+    from agent import work_timeline
+
+    agent = make_persistence_agent(tmp_path, disabled=True)
+    real_path = work_timeline.timeline_path
+    path_lookup = Mock(wraps=real_path)
+    monkeypatch.setattr(work_timeline, "timeline_path", path_lookup)
+    result = work_timeline.record_event(
+        agent, "task.started", summary="SYNTHETIC_OMERA_PRIVACY_CANARY",
+    )
+    assert result is None
+    path_lookup.assert_not_called()
+    assert real_path(agent) is None
+    assert not (tmp_path / "customer.json").exists()
+    assert list(tmp_path.glob("*.timeline.jsonl")) == []

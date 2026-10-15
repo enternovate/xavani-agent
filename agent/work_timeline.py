@@ -91,6 +91,8 @@ def _sanitize(fields: dict[str, Any]) -> dict[str, Any]:
 
 def timeline_path(agent) -> Path | None:
     """The timeline file beside the agent's session log, or None."""
+    if getattr(agent, "_persist_disabled", False):
+        return None
     log = getattr(agent, "session_log_file", None)
     if not log:
         return None
@@ -100,6 +102,8 @@ def timeline_path(agent) -> Path | None:
 
 def record_event(agent, event_type: str, **fields: Any) -> dict[str, Any] | None:
     """Append one sanitized timeline event; returns the record or None."""
+    if getattr(agent, "_persist_disabled", False):
+        return None
     if event_type not in EVENT_TYPES:
         raise ValueError(f"unknown timeline event: {event_type!r}")
     path = timeline_path(agent)
