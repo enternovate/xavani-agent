@@ -49,6 +49,21 @@ async def restricted_client():
 
 
 @pytest.mark.asyncio
+async def test_restricted_chat_enforces_chunked_body_limit():
+    async def chunks():
+        for _ in range(17):
+            yield b"x" * 16000
+
+    async with restricted_client() as (client, adapter):
+        response = await client.post(
+            "/v1/chat/completions", data=chunks(),
+            headers={"Content-Type": "application/json"},
+        )
+        assert response.status == 413
+        adapter._run_agent.assert_not_called()
+
+
+@pytest.mark.asyncio
 @pytest.mark.parametrize("change", [
     {"tools": []}, {"model": "other"}, {"stream": "false"},
     {"messages": []}, {"messages": ["not-a-message"]},
