@@ -1546,6 +1546,11 @@ class APIServerAdapter(BasePlatformAdapter):
                     status=500,
                 )
 
+        if self._omera_mode and _chat_stream_finish(result, require_completed=True) != "stop":
+            return web.json_response(
+                _openai_error("CHAT_UNAVAILABLE", err_type="server_error"), status=502,
+            )
+
         final_response = result.get("final_response") or ""
         is_partial = bool(result.get("partial"))
         is_failed = bool(result.get("failed"))

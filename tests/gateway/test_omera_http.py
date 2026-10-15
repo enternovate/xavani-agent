@@ -49,6 +49,23 @@ async def restricted_client():
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize("result", [
+    {"completed": False},
+    {"completed": True, "partial": True, "error": "SYNTHETIC_PRIVATE_PROVIDER_MARKER"},
+    {"completed": True, "failed": True, "error": "SYNTHETIC_PRIVATE_PROVIDER_MARKER"},
+    {"final_response": "No completion evidence."},
+])
+async def test_restricted_nonstream_requires_complete_result(result, caplog):
+    async with restricted_client() as (client, adapter):
+        adapter._run_agent.return_value = (result, {})
+        response = await client.post("/v1/chat/completions", json=chat_body())
+        text = await response.text()
+        assert response.status == 502
+        assert "SYNTHETIC_PRIVATE_PROVIDER_MARKER" not in text
+        assert "SYNTHETIC_PRIVATE_PROVIDER_MARKER" not in caplog.text
+
+
+@pytest.mark.asyncio
 async def test_restricted_exception_stays_out_of_response_and_logs(caplog):
     async with restricted_client() as (client, adapter):
         adapter._run_agent.side_effect = RuntimeError("SYNTHETIC_PRIVATE_PROVIDER_MARKER")
