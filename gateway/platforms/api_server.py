@@ -1753,17 +1753,25 @@ class APIServerAdapter(BasePlatformAdapter):
 
             # Get usage from completed agent
             usage = {"input_tokens": 0, "output_tokens": 0, "total_tokens": 0}
+            result = None
             try:
                 result, agent_usage = await agent_task
                 usage = agent_usage or usage
             except Exception as exc:
-                logger.warning("Agent task %s failed, usage data lost: %s", completion_id, exc)
+                if self._omera_mode:
+                    logger.warning("Omera stream failed.")
+                else:
+                    logger.warning("Agent task %s failed, usage data lost: %s", completion_id, exc)
+            finish_reason = (
+                _chat_stream_finish(result, require_completed=True)
+                if self._omera_mode else "stop"
+            )
 
             # Finish chunk
             finish_chunk = {
                 "id": completion_id, "object": "chat.completion.chunk",
                 "created": created, "model": model,
-                "choices": [{"index": 0, "delta": {}, "finish_reason": "stop"}],
+                "choices": [{"index": 0, "delta": {}, "finish_reason": finish_reason}],
                 "usage": {
                     "prompt_tokens": usage.get("input_tokens", 0),
                     "completion_tokens": usage.get("output_tokens", 0),
@@ -1794,7 +1802,10 @@ class APIServerAdapter(BasePlatformAdapter):
             # so the client gets a proper response instead of a
             # TransferEncodingError from incomplete chunked encoding.
             import traceback as _tb
-            logger.error("Agent crashed mid-stream for %s: %s", completion_id, _tb.format_exc()[:300])
+            if self._omera_mode:
+                logger.error("Omera stream failed.")
+            else:
+                logger.error("Agent crashed mid-stream for %s: %s", completion_id, _tb.format_exc()[:300])
             try:
                 error_chunk = {
                     "id": completion_id, "object": "chat.completion.chunk",
