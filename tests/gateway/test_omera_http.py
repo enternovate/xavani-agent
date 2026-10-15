@@ -49,6 +49,19 @@ async def restricted_client():
 
 
 @pytest.mark.asyncio
+async def test_restricted_identical_prompts_have_distinct_request_sessions():
+    async with restricted_client() as (client, adapter):
+        for _ in range(2):
+            response = await client.post("/v1/chat/completions", json=chat_body())
+            assert response.status == 200
+            assert "X-Xavani-Session-Id" not in response.headers
+            await response.read()
+        sessions = [call.kwargs["session_id"] for call in adapter._run_agent.call_args_list]
+        assert len(sessions) == 2
+        assert len(set(sessions)) == 2
+
+
+@pytest.mark.asyncio
 async def test_restricted_chat_enforces_chunked_body_limit():
     async def chunks():
         for _ in range(17):

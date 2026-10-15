@@ -1399,7 +1399,11 @@ class APIServerAdapter(BasePlatformAdapter):
                 if cm.get("role") == "user":
                     first_user = cm.get("content", "")
                     break
-            session_id = _derive_chat_session_id(system_prompt, first_user)
+            session_id = (
+                f"api-{uuid.uuid4().hex}"
+                if self._omera_mode
+                else _derive_chat_session_id(system_prompt, first_user)
+            )
             # history already set from request body above
 
         completion_id = f"chatcmpl-{uuid.uuid4().hex[:29]}"
@@ -1546,10 +1550,10 @@ class APIServerAdapter(BasePlatformAdapter):
         else:
             finish_reason = "stop"
 
-        response_headers = {
+        response_headers = {} if self._omera_mode else {
             "X-Xavani-Session-Id": result.get("session_id", session_id),
         }
-        if gateway_session_key:
+        if gateway_session_key and not self._omera_mode:
             response_headers["X-Xavani-Session-Key"] = gateway_session_key
 
         # Hard-fail path: no usable assistant text AND a real failure → 5xx
