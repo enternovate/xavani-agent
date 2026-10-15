@@ -49,6 +49,20 @@ async def restricted_client():
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize("name", [
+    "X-Xavani-Session-Id", "X-Xavani-Session-Key", "Idempotency-Key",
+])
+@pytest.mark.parametrize("value", ["caller-state", ""])
+async def test_restricted_requests_reject_state_headers(name, value):
+    async with restricted_client() as (client, adapter):
+        response = await client.post(
+            "/v1/chat/completions", json=chat_body(), headers={name: value},
+        )
+        assert response.status == 403
+        adapter._run_agent.assert_not_called()
+
+
+@pytest.mark.asyncio
 @pytest.mark.parametrize("method,path", [
     ("GET", "/health/detailed"),
     ("GET", "/v1/profiles"),
