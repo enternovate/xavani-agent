@@ -49,6 +49,60 @@ async def restricted_client():
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize("change", [
+    {"tools": []}, {"model": "other"}, {"stream": "false"},
+    {"messages": []}, {"messages": ["not-a-message"]},
+])
+async def test_restricted_chat_rejects_invalid_request(change):
+    async with restricted_client() as (client, adapter):
+        response = await client.post(
+            "/v1/chat/completions", json={**chat_body(), **change},
+        )
+        assert response.status == 400
+        adapter._run_agent.assert_not_called()
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("index,key,value", [
+    (0, "role", "user"),
+    (1, "role", "system"),
+    (1, "role", "assistant"),
+    (1, "role", []),
+    (1, "role", {"unexpected": "role"}),
+    (1, "content", []),
+    (1, "content", {"type": "text", "text": "nested"}),
+    (1, "content", ""),
+    (1, "content", "   "),
+])
+async def test_restricted_chat_rejects_invalid_message_values(index, key, value):
+    body = chat_body()
+    body["messages"][index][key] = value
+    async with restricted_client() as (client, adapter):
+        response = await client.post("/v1/chat/completions", json=body)
+        assert response.status == 400
+        adapter._run_agent.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_restricted_chat_rejects_unknown_message_fields():
+    body = chat_body()
+    body["messages"][1]["tool_calls"] = []
+    async with restricted_client() as (client, adapter):
+        response = await client.post("/v1/chat/completions", json=body)
+        assert response.status == 400
+        adapter._run_agent.assert_not_called()
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("body", [[], None, "invalid-root"])
+async def test_restricted_chat_rejects_invalid_roots(body):
+    async with restricted_client() as (client, adapter):
+        response = await client.post("/v1/chat/completions", json=body)
+        assert response.status == 400
+        adapter._run_agent.assert_not_called()
+
+
+@pytest.mark.asyncio
 @pytest.mark.parametrize("name", [
     "X-Xavani-Session-Id", "X-Xavani-Session-Key", "Idempotency-Key",
 ])
