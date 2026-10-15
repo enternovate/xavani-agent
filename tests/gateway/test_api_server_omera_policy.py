@@ -378,3 +378,17 @@ def test_disabled_timeline_skips_path_lookup(tmp_path, monkeypatch):
     assert real_path(agent) is None
     assert not (tmp_path / "customer.json").exists()
     assert list(tmp_path.glob("*.timeline.jsonl")) == []
+
+
+def test_disabled_request_dump_skips_helper(tmp_path, monkeypatch):
+    from agent import agent_runtime_helpers
+
+    agent = make_persistence_agent(tmp_path, disabled=True)
+    dump = Mock(return_value=tmp_path / "debug.json")
+    monkeypatch.setattr(agent_runtime_helpers, "dump_api_request_debug", dump)
+    result = agent._dump_api_request_debug(
+        {"messages": persistence_messages()}, reason="unit",
+    )
+    assert result is None
+    dump.assert_not_called()
+    assert not (tmp_path / "debug.json").exists()
