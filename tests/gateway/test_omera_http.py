@@ -49,6 +49,15 @@ async def restricted_client():
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize("path", ["/health", "/v1/models", "/v1/capabilities"])
+async def test_restricted_routes_require_auth(path):
+    async with restricted_client() as (client, adapter):
+        response = await client.get(path, headers={"Authorization": ""})
+        assert response.status == 401
+        adapter._run_agent.assert_not_called()
+
+
+@pytest.mark.asyncio
 @pytest.mark.parametrize("key", ["", "change-me"])
 async def test_restricted_start_rejects_missing_or_placeholder_key(key):
     adapter = api.APIServerAdapter(PlatformConfig(enabled=True, extra={

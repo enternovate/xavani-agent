@@ -697,6 +697,18 @@ except ImportError:
     _cron_trigger = None
 
 
+def _chat_stream_finish(result, *, require_completed=False):
+    if not isinstance(result, dict):
+        return "error"
+    if result.get("failed"):
+        return "error"
+    if result.get("partial"):
+        return "length"
+    if result.get("completed", not require_completed) is not True:
+        return "error"
+    return "stop"
+
+
 class APIServerAdapter(BasePlatformAdapter):
     """
     OpenAI-compatible HTTP API server adapter.
@@ -1036,6 +1048,64 @@ class APIServerAdapter(BasePlatformAdapter):
     # ------------------------------------------------------------------
     # HTTP Handlers
     # ------------------------------------------------------------------
+
+    async def _handle_omera_http(self, request, handler):
+        if not self._api_key:
+            return web.json_response(_openai_error("SERVICE_UNAVAILABLE"), status=503)
+        auth_error = self._check_auth(request)
+        if auth_error is not None:
+            return auth_error
+        allowed = {
+            ("GET", "/health"),
+            ("GET", "/v1/health"),
+            ("GET", "/v1/models"),
+            ("GET", "/v1/capabilities"),
+            ("POST", "/v1/chat/completions"),
+        }
+        if (request.method, request.path) not in allowed:
+            return web.json_response(_openai_error("NOT_AVAILABLE"), status=404)
+        headers = ("X-Xavani-Session-Id", "X-Xavani-Session-Key", "Idempotency-Key")
+        if any(name in request.headers for name in headers):
+            return web.json_response(_openai_error("STATEFUL_REQUEST_FORBIDDEN"), status=403)
+        if request.method == "POST":
+            try:
+                body = await request.json()
+            except web.HTTPRequestEntityTooLarge:
+                return web.json_response(_openai_error("REQUEST_TOO_LARGE"), status=413)
+            except Exception:
+                return web.json_response(_openai_error("INVALID_REQUEST"), status=400)
+            valid = isinstance(body, dict) and set(body) == {"model", "stream", "messages"}
+            if valid:
+                valid = body["model"] == self._model_name and type(body["stream"]) is bool
+            messages = body.get("messages") if isinstance(body, dict) else None
+            valid = valid and isinstance(messages, list) and 2 <= len(messages) <= 41
+            if valid:
+                for index, message in enumerate(messages):
+                    if not isinstance(message, dict) or set(message) != {"role", "content"}:
+                        valid = False
+                        break
+                    roles = {"system"} if index == 0 else {"user", "assistant"}
+                    role = message["role"]
+                    content = message["content"]
+                    limit = 16000 if index == 0 else 8000
+                    if (not isinstance(role, str) or role not in roles or not isinstance(content, str)
+                            or not content.strip() or len(content) > limit):
+                        valid = False
+                        break
+            if valid:
+                valid = messages[-1]["role"] == "user"
+                valid = valid and sum(len(item["content"]) for item in messages[1:]) <= 32000
+            if not valid:
+                return web.json_response(_openai_error("INVALID_REQUEST"), status=400)
+        try:
+            return await handler(request)
+        except asyncio.CancelledError:
+            raise
+        except web.HTTPException as exc:
+            return web.json_response(_openai_error("REQUEST_UNAVAILABLE"), status=exc.status)
+        except Exception:
+            logger.warning("Omera request failed.")
+            return web.json_response(_openai_error("CHAT_UNAVAILABLE"), status=502)
 
     async def _handle_health(self, request: "web.Request") -> "web.Response":
         """GET /health — simple health check."""
@@ -3686,7 +3756,16 @@ class APIServerAdapter(BasePlatformAdapter):
                     return False
 
             mws = [mw for mw in (cors_middleware, body_limit_middleware, security_headers_middleware) if mw is not None]
-            self._app = web.Application(middlewares=mws, client_max_size=MAX_REQUEST_BYTES)
+            if self._omera_mode:
+                @web.middleware
+                async def omera_middleware(request, handler):
+                    return await self._handle_omera_http(request, handler)
+
+                mws.insert(0, omera_middleware)
+            self._app = web.Application(
+                middlewares=mws,
+                client_max_size=256000 if self._omera_mode else MAX_REQUEST_BYTES,
+            )
             self._app["api_server_adapter"] = self
             self._app.router.add_get("/health", self._handle_health)
             self._app.router.add_get("/health/detailed", self._handle_health_detailed)
