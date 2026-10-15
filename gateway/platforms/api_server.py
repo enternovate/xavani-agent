@@ -724,7 +724,9 @@ class APIServerAdapter(BasePlatformAdapter):
         self._app: Optional["web.Application"] = None
         self._runner: Optional["web.AppRunner"] = None
         self._site: Optional["web.TCPSite"] = None
-        self._response_store = ResponseStore()
+        self._response_store = (
+            ResponseStore(db_path=":memory:") if self._omera_mode else ResponseStore()
+        )
         # Active run streams: run_id -> asyncio.Queue of SSE event dicts
         self._run_streams: Dict[str, "asyncio.Queue[Optional[Dict]]"] = {}
         # Creation timestamps for orphaned-run TTL sweep
@@ -3676,6 +3678,13 @@ class APIServerAdapter(BasePlatformAdapter):
             return False
 
         try:
+            if self._omera_mode:
+                from xavani_cli.auth import has_usable_secret
+
+                if not has_usable_secret(self._api_key, min_length=32):
+                    logger.error("Omera requires a non-placeholder service key.")
+                    return False
+
             mws = [mw for mw in (cors_middleware, body_limit_middleware, security_headers_middleware) if mw is not None]
             self._app = web.Application(middlewares=mws, client_max_size=MAX_REQUEST_BYTES)
             self._app["api_server_adapter"] = self

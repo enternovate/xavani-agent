@@ -13,7 +13,7 @@ from gateway.platforms import api_server as api
 @pytest.fixture
 def make_adapter(monkeypatch):
     store = api.ResponseStore
-    monkeypatch.setattr(api, "ResponseStore", lambda: store(db_path=":memory:"))
+    monkeypatch.setattr(api, "ResponseStore", lambda **kwargs: store(db_path=":memory:"))
     instances = []
 
     def create(extra):
