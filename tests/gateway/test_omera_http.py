@@ -49,6 +49,24 @@ async def restricted_client():
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize("method,path", [
+    ("GET", "/health/detailed"),
+    ("GET", "/v1/profiles"),
+    ("GET", "/v1/profiles/active"),
+    ("GET", "/v1/skills"),
+    ("GET", "/api/jobs"),
+    ("POST", "/api/jobs"),
+    ("POST", "/v1/responses"),
+    ("POST", "/v1/runs"),
+])
+async def test_restricted_routes_deny_general_operations(method, path):
+    async with restricted_client() as (client, adapter):
+        response = await client.request(method, path, json={})
+        assert response.status == 404
+        adapter._run_agent.assert_not_called()
+
+
+@pytest.mark.asyncio
 @pytest.mark.parametrize("path", ["/health", "/v1/models", "/v1/capabilities"])
 async def test_restricted_routes_require_auth(path):
     async with restricted_client() as (client, adapter):
