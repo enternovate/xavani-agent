@@ -49,6 +49,18 @@ async def restricted_client():
 
 
 @pytest.mark.asyncio
+async def test_restricted_exception_stays_out_of_response_and_logs(caplog):
+    async with restricted_client() as (client, adapter):
+        adapter._run_agent.side_effect = RuntimeError("SYNTHETIC_PRIVATE_PROVIDER_MARKER")
+        response = await client.post("/v1/chat/completions", json=chat_body())
+        text = await response.text()
+        assert response.status == 502
+        assert "CHAT_UNAVAILABLE" in text
+        assert "SYNTHETIC_PRIVATE_PROVIDER_MARKER" not in text
+        assert "SYNTHETIC_PRIVATE_PROVIDER_MARKER" not in caplog.text
+
+
+@pytest.mark.asyncio
 async def test_restricted_identical_prompts_have_distinct_request_sessions():
     async with restricted_client() as (client, adapter):
         for _ in range(2):

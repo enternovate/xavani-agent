@@ -1519,6 +1519,12 @@ class APIServerAdapter(BasePlatformAdapter):
             try:
                 result, usage = await _idem_cache.get_or_set(idempotency_key, fp, _compute_completion)
             except Exception as e:
+                if self._omera_mode:
+                    logger.warning("Omera inference failed.")
+                    return web.json_response(
+                        _openai_error("CHAT_UNAVAILABLE", err_type="server_error"),
+                        status=502,
+                    )
                 logger.error("Error running agent for chat completions: %s", e, exc_info=True)
                 return web.json_response(
                     _openai_error(f"Internal server error: {e}", err_type="server_error"),
@@ -1528,6 +1534,12 @@ class APIServerAdapter(BasePlatformAdapter):
             try:
                 result, usage = await _compute_completion()
             except Exception as e:
+                if self._omera_mode:
+                    logger.warning("Omera inference failed.")
+                    return web.json_response(
+                        _openai_error("CHAT_UNAVAILABLE", err_type="server_error"),
+                        status=502,
+                    )
                 logger.error("Error running agent for chat completions: %s", e, exc_info=True)
                 return web.json_response(
                     _openai_error(f"Internal server error: {e}", err_type="server_error"),
@@ -1637,9 +1649,9 @@ class APIServerAdapter(BasePlatformAdapter):
         cors = self._cors_headers_for_origin(origin) if origin else None
         if cors:
             sse_headers.update(cors)
-        if session_id:
+        if session_id and not self._omera_mode:
             sse_headers["X-Xavani-Session-Id"] = session_id
-        if gateway_session_key:
+        if gateway_session_key and not self._omera_mode:
             sse_headers["X-Xavani-Session-Key"] = gateway_session_key
         response = web.StreamResponse(status=200, headers=sse_headers)
         await response.prepare(request)
