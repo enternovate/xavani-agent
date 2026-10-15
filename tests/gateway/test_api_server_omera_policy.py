@@ -317,3 +317,18 @@ def test_restricted_factory_disables_all_persistence(
     assert agent.session_log_file is None
     assert agent._session_db is None
     assert agent._fallback_chain == []
+
+
+def test_disabled_json_writer_skips_content_and_io(tmp_path, monkeypatch):
+    import run_agent
+
+    agent = make_persistence_agent(tmp_path, disabled=True)
+    clean = Mock(wraps=agent._clean_session_content)
+    write = Mock(wraps=run_agent.atomic_json_write)
+    monkeypatch.setattr(agent, "_clean_session_content", clean)
+    monkeypatch.setattr(run_agent, "atomic_json_write", write)
+    messages = [{"role": "assistant", "content": "SYNTHETIC_OMERA_PRIVACY_CANARY"}]
+    agent._save_session_log(messages)
+    clean.assert_not_called()
+    write.assert_not_called()
+    assert not agent.session_log_file.exists()

@@ -1601,6 +1601,8 @@ class AIAgent:
         REASONING_SCRATCHPAD tags are converted to <think> blocks for consistency.
         Overwritten after each turn so it always reflects the latest state.
         """
+        if getattr(self, "_persist_disabled", False):
+            return
         messages = messages or self._session_messages
         if not messages:
             return
