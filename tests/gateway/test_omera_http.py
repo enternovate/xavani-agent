@@ -174,6 +174,24 @@ async def test_restricted_requests_reject_state_headers(name, value):
 
 
 @pytest.mark.asyncio
+async def test_restricted_capabilities_match_enforced_contract():
+    async with restricted_client() as (client, adapter):
+        response = await client.get("/v1/capabilities")
+        assert response.status == 200
+        data = await response.json()
+        assert data["model"] == "omera"
+        assert data["auth"]["required"] is True
+        assert data["service"] == {
+            "name": "omera", "contract": 1, "stateless_requests": True,
+            "tools_enabled": False, "memory_enabled": False,
+            "context_files_enabled": False, "transcript_persistence": False,
+        }
+        assert data["features"]["responses_api"] is False
+        assert data["features"]["profiles_api"] is False
+        adapter._run_agent.assert_not_called()
+
+
+@pytest.mark.asyncio
 @pytest.mark.parametrize("method,path", [
     ("GET", "/health/detailed"),
     ("GET", "/v1/profiles"),

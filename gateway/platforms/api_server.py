@@ -1164,6 +1164,32 @@ class APIServerAdapter(BasePlatformAdapter):
         if auth_err:
             return auth_err
 
+        if self._omera_mode:
+            return web.json_response({
+                "object": "xavani.api_server.capabilities",
+                "model": self._model_name,
+                "auth": {"type": "bearer", "required": True},
+                "service": {
+                    "name": "omera",
+                    "contract": 1,
+                    "stateless_requests": True,
+                    "tools_enabled": False,
+                    "memory_enabled": False,
+                    "context_files_enabled": False,
+                    "transcript_persistence": False,
+                },
+                "features": {
+                    "chat_completions": True,
+                    "chat_completions_streaming": True,
+                    "responses_api": False,
+                    "run_submission": False,
+                    "profiles_api": False,
+                    "skills_api": False,
+                    "session_continuity_header": None,
+                    "session_key_header": None,
+                },
+            })
+
         return web.json_response({
             "object": "xavani.api_server.capabilities",
             "platform": "xavani-agent",
