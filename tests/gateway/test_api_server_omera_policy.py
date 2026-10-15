@@ -343,3 +343,21 @@ def test_disabled_db_writer_skips_content_and_io(tmp_path, monkeypatch):
     agent._session_db.create_session.assert_not_called()
     agent._session_db.append_message.assert_not_called()
     assert agent._last_flushed_db_idx == 0
+
+
+def test_disabled_persistence_drain_skips_all_processing(tmp_path, monkeypatch):
+    agent = make_persistence_agent(tmp_path, disabled=True)
+    names = (
+        "_drop_trailing_empty_response_scaffolding",
+        "_apply_persist_user_message_override",
+        "_save_session_log",
+        "_flush_messages_to_session_db_unlocked",
+    )
+    spies = {name: Mock() for name in names}
+    for name, spy in spies.items():
+        monkeypatch.setattr(agent, name, spy)
+    messages = persistence_messages()
+    agent._persist_session(messages)
+    for spy in spies.values():
+        spy.assert_not_called()
+    assert agent._session_messages == []

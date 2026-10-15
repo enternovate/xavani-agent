@@ -1228,6 +1228,8 @@ class AIAgent:
         without a single funnel both could observe the same unmarked message
         list and write duplicate durable rows.
         """
+        if getattr(self, "_persist_disabled", False):
+            return
         def _persist_and_drain() -> None:
             self._drop_trailing_empty_response_scaffolding(messages)
             self._apply_persist_user_message_override(messages)
