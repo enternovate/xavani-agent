@@ -332,3 +332,14 @@ def test_disabled_json_writer_skips_content_and_io(tmp_path, monkeypatch):
     clean.assert_not_called()
     write.assert_not_called()
     assert not agent.session_log_file.exists()
+
+
+def test_disabled_db_writer_skips_content_and_io(tmp_path, monkeypatch):
+    agent = make_persistence_agent(tmp_path, disabled=True)
+    override = Mock(wraps=agent._apply_persist_user_message_override)
+    monkeypatch.setattr(agent, "_apply_persist_user_message_override", override)
+    agent._flush_messages_to_session_db_unlocked(persistence_messages())
+    override.assert_not_called()
+    agent._session_db.create_session.assert_not_called()
+    agent._session_db.append_message.assert_not_called()
+    assert agent._last_flushed_db_idx == 0

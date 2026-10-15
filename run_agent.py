@@ -1317,6 +1317,8 @@ class AIAgent:
         written, so repeated calls (from multiple exit paths) only write
         truly new messages — preventing the duplicate-write bug (#860).
         """
+        if getattr(self, "_persist_disabled", False):
+            return
         if not self._session_db:
             return
         self._apply_persist_user_message_override(messages)
