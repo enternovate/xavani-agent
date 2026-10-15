@@ -392,3 +392,58 @@ def test_disabled_request_dump_skips_helper(tmp_path, monkeypatch):
     assert result is None
     dump.assert_not_called()
     assert not (tmp_path / "debug.json").exists()
+
+
+def test_existing_recall_and_creation_guards_stay_closed(tmp_path, monkeypatch):
+    import xavani_state
+
+    agent = make_persistence_agent(tmp_path, disabled=True)
+    agent._ensure_db_session()
+    agent._session_db.create_session.assert_not_called()
+    agent._session_db = None
+    create_db = Mock(side_effect=AssertionError("SHARED_DB_MUST_NOT_OPEN"))
+    monkeypatch.setattr(xavani_state, "SessionDB", create_db)
+    assert agent._get_session_db_for_recall() is None
+    create_db.assert_not_called()
+
+
+def test_ordinary_persistence_drain_writes_json_and_db(tmp_path):
+    import json
+
+    agent = make_persistence_agent(tmp_path, disabled=False)
+    messages = persistence_messages()
+    agent._persist_session(messages)
+    saved = json.loads(agent.session_log_file.read_text(encoding="utf-8"))
+    assert saved["messages"] == messages
+    assert saved["message_count"] == 1
+    agent._session_db.create_session.assert_called_once()
+    agent._session_db.append_message.assert_called_once()
+    assert agent._session_db.append_message.call_args.kwargs["content"] == messages[0]["content"]
+    assert agent._last_flushed_db_idx == 1
+
+
+def test_ordinary_timeline_writes_canary(tmp_path):
+    import json
+    from agent.work_timeline import record_event, timeline_path
+
+    agent = make_persistence_agent(tmp_path, disabled=False)
+    record = record_event(
+        agent, "task.started", summary="SYNTHETIC_OMERA_PRIVACY_CANARY",
+    )
+    path = timeline_path(agent)
+    assert path is not None
+    saved = json.loads(path.read_text(encoding="utf-8"))
+    assert saved == record
+    assert saved["summary"] == "SYNTHETIC_OMERA_PRIVACY_CANARY"
+
+
+def test_ordinary_request_dump_still_calls_helper(tmp_path, monkeypatch):
+    from agent import agent_runtime_helpers
+
+    agent = make_persistence_agent(tmp_path, disabled=False)
+    target = tmp_path / "debug.json"
+    dump = Mock(return_value=target)
+    monkeypatch.setattr(agent_runtime_helpers, "dump_api_request_debug", dump)
+    payload = {"messages": persistence_messages()}
+    assert agent._dump_api_request_debug(payload, reason="unit") == target
+    dump.assert_called_once_with(agent, payload, reason="unit", error=None)
