@@ -114,3 +114,34 @@ async def test_a_failed_model_is_skipped_for_two_minutes(monkeypatch):
     await keyless.answer("q", None, env=env)
     assert len(calls) == 1
     assert keyless.mode_for(env) == "research"
+
+
+def test_marketing_snippets_are_skipped():
+    result = ResearchResult(
+        status="ok", provider="ddgs", query="cipc annual return", elapsed_ms=1,
+        hits=[Hit(
+            "Company Partners", "https://partners.example/a",
+            "We begin with a free consultation, offering tailored support "
+            "to align with your business objectives.",
+        )],
+        pages=[],
+    )
+    text = keyless.compose_research_answer("CIPC annual return", result)
+    assert "free consultation" not in text.lower()
+    assert "No live sources" in text
+
+
+def test_a_factual_sentence_beats_marketing():
+    result = ResearchResult(
+        status="ok", provider="ddgs", query="cipc annual return", elapsed_ms=1,
+        hits=[Hit("CIPC", "https://cipc.example/a", "Annual return.")],
+        pages=[Page(
+            "https://cipc.example/a", "CIPC",
+            "We offer a free consultation for every new client. "
+            "A company must file its annual return within 30 days of the "
+            "anniversary of its incorporation date.",
+        )],
+    )
+    text = keyless.compose_research_answer("When is the annual return due?", result)
+    assert "within 30 days" in text
+    assert "free consultation" not in text.lower()

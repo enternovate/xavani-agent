@@ -20,7 +20,8 @@ USER_AGENT = "XavaniOmeraResearch/1.0"
 SNIPPET_CHARS = 300
 CACHE_TTL_S = 900
 CACHE_MAX = 64
-DEFAULT_ORDER = ("tavily", "exa", "bing", "ddgs")
+DEFAULT_ORDER = ("tavily", "exa", "ddgs", "bing")
+BACKEND_TIMEOUT_S = 8.0
 
 
 @dataclass(frozen=True)
@@ -298,7 +299,10 @@ async def search_with_fallback(
     try:
         for backend in available_backends(env):
             try:
-                hits = await backend.search(query, limit, client)
+                hits = await asyncio.wait_for(
+                    backend.search(query, limit, client),
+                    timeout=BACKEND_TIMEOUT_S,
+                )
             except Exception as exc:
                 logger.warning(
                     "search_failed provider=%s error=%s",

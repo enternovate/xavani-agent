@@ -43,7 +43,7 @@ def test_python_version_is_pinned():
 
 def test_research_chain_is_configured():
     env = {item["key"]: item.get("value") for item in service()["envVars"]}
-    assert env["RESEARCH_PROVIDER"] == "tavily,exa,bing,ddgs"
+    assert env["RESEARCH_PROVIDER"] == "tavily,exa,ddgs,bing"
     assert env["JINA_READER"] == "auto"
 
 

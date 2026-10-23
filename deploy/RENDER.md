@@ -45,9 +45,9 @@ All other keys are optional. Without them the service runs in research mode.
 | `KEYLESS_MODEL_NAME` | `openai-fast` | keyless model id |
 | `TAVILY_API_KEY` | empty | optional search upgrade |
 | `EXA_API_KEY` | empty | optional search upgrade |
-| `RESEARCH_PROVIDER` | `tavily,exa,bing,ddgs` | search order |
+| `RESEARCH_PROVIDER` | `tavily,exa,ddgs,bing` | search order |
 | `JINA_READER` | `auto` | page fallback |
-| `RESEARCH_MAX_PAGES` | `2` | pages per answer |
+| `RESEARCH_MAX_PAGES` | `1` | pages per answer |
 | `RESEARCH_BUDGET_MS` | `6000` | research time budget |
 
 ## Modes

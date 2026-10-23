@@ -31,10 +31,10 @@ services:
       - key: XAVANI_MODEL_NAME
         value: omera
       - key: RESEARCH_PROVIDER
-        value: "tavily,exa,bing,ddgs"
+        value: "tavily,exa,ddgs,bing"
       - key: JINA_READER
         value: "auto"
       - key: RESEARCH_MAX_PAGES
-        value: "2"
+        value: "1"
       - key: RESEARCH_BUDGET_MS
         value: "6000"

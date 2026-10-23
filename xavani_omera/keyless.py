@@ -41,7 +41,14 @@ STOPWORDS = {
 
 BOILERPLATE = re.compile(
     r"cookie|privacy policy|subscribe|newsletter|javascript|all rights reserved|"
-    r"sign in|log in|enable javascript|browser does not support",
+    r"sign in|log in|enable javascript|browser does not support|"
+    r"free consultation|we offer|we provide|we specialise|we specialize|"
+    r"contact us|our team|tailored support|book a|sign up",
+    re.I,
+)
+TIME_WORDS = re.compile(
+    r"\b(within|by|before|after|annually|each year|every year|deadline|due|"
+    r"days?|months?|weeks?)\b",
     re.I,
 )
 
@@ -110,7 +117,9 @@ def _score(sentence: str, tokens: set[str], position: int) -> float:
     definition = 1 if re.search(
         r"\b(is|are|means|stands for|refers to|defined as)\b", sentence, re.I,
     ) else 0
-    return overlap * 2 + density * 3 + dated + definition - position * 0.05
+    temporal = 1.5 if TIME_WORDS.search(sentence) else 0
+    return (overlap * 2 + density * 3 + dated + definition + temporal
+            - position * 0.05)
 
 
 def compose_research_answer(
@@ -135,32 +144,48 @@ def compose_research_answer(
                 continue
             candidates.append((_score(sentence, tokens, position), sentence, page.url))
 
-    if not candidates:
-        for hit in result.hits[:max_sentences]:
-            snippet = " ".join((hit.snippet or "").split())
-            if snippet:
-                candidates.append((1.0, snippet, hit.url))
+    for hit in result.hits[:max_sentences]:
+        snippet = " ".join((hit.snippet or "").split())
+        if not 40 <= len(snippet) <= 320 or BOILERPLATE.search(snippet):
+            continue
+        if tokens and not (tokens & _tokens(snippet)):
+            continue
+        candidates.append((1.0, snippet, hit.url))
 
     candidates.sort(key=lambda item: item[0], reverse=True)
+
+    lead: list[tuple[str, str]] = []
+    lead_keys: set[str] = set()
+    for hit in result.hits[:2]:
+        snippet = " ".join((hit.snippet or "").split())
+        if not 40 <= len(snippet) <= 320 or BOILERPLATE.search(snippet):
+            continue
+        if tokens and not (tokens & _tokens(snippet)):
+            continue
+        key = re.sub(r"\W+", "", snippet.lower())[:60]
+        if key in lead_keys:
+            continue
+        lead_keys.add(key)
+        lead.append((snippet, hit.url))
 
     picked: list[tuple[str, str]] = []
     seen: set[str] = set()
     for _, sentence, url in candidates:
         key = re.sub(r"\W+", "", sentence.lower())[:60]
-        if key in seen:
+        if key in seen or any(key in lead_key for lead_key in lead_keys):
             continue
         seen.add(key)
         picked.append((sentence, url))
-        if len(picked) >= max_sentences:
+        if len(picked) >= max(2, max_sentences - 2):
             break
 
-    if not picked:
+    if not picked and not lead:
         return MODE_LABEL + "\n\nNo live sources were reachable for this question."
 
     titles = {hit.url: hit.title for hit in result.hits}
     order: list[str] = []
     lines: list[str] = []
-    for sentence, url in picked:
+    for sentence, url in lead + picked:
         if url not in order:
             order.append(url)
         lines.append(f"- {sentence} [{order.index(url) + 1}]")

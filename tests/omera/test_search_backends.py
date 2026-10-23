@@ -7,7 +7,7 @@ from xavani_omera.search import BingBackend, ExaBackend, TavilyBackend, backend_
 
 
 def test_order_defaults_to_the_ranked_chain():
-    assert backend_order({}) == ["tavily", "exa", "bing", "ddgs"]
+    assert backend_order({}) == ["tavily", "exa", "ddgs", "bing"]
 
 
 def test_order_respects_an_explicit_list():
