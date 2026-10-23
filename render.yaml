@@ -1,0 +1,42 @@
+services:
+  - type: web
+    name: xavani-omera
+    runtime: python
+    plan: free
+    region: virginia
+    branch: feat/omera-api-mode
+    autoDeploy: false
+    buildCommand: pip install -r requirements-omera.txt
+    startCommand: uvicorn xavani_omera.app:app --host 0.0.0.0 --port $PORT --proxy-headers --forwarded-allow-ips "*" --no-access-log
+    healthCheckPath: /health
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.12"
+      - key: API_SERVER_KEY
+        sync: false
+      - key: API_SERVER_KEY_PREVIOUS
+        sync: false
+      - key: INFERENCE_BASE_URL
+        value: https://generativelanguage.googleapis.com/v1beta/openai
+      - key: INFERENCE_API_KEY
+        sync: false
+      - key: INFERENCE_MODEL
+        value: gemini-2.5-flash
+      - key: INFERENCE_FALLBACK_MODELS
+        value: gemini-2.5-flash-lite
+      - key: INFERENCE_MAX_TOKENS
+        value: "2048"
+      - key: XAVANI_MODEL_NAME
+        value: omera
+      - key: TAVILY_API_KEY
+        sync: false
+      - key: EXA_API_KEY
+        sync: false
+      - key: RESEARCH_PROVIDER
+        value: "tavily,exa,ddgs"
+      - key: JINA_READER
+        value: "auto"
+      - key: RESEARCH_MAX_PAGES
+        value: "2"
+      - key: RESEARCH_BUDGET_MS
+        value: "6000"

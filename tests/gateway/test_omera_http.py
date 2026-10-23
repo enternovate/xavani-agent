@@ -11,6 +11,12 @@ from gateway.platforms import api_server as api
 SERVICE_KEY = "unit-service-key-with-32-characters-minimum"
 
 
+@pytest.fixture(autouse=True)
+def no_research(monkeypatch):
+    """Keep the HTTP contract tests off the network."""
+    monkeypatch.setenv("RESEARCH_PROVIDER", "nope")
+
+
 def chat_body():
     return {
         "model": "omera", "stream": False,
@@ -226,11 +232,17 @@ async def test_restricted_capabilities_match_enforced_contract():
         data = await response.json()
         assert data["model"] == "omera"
         assert data["auth"]["required"] is True
-        assert data["service"] == {
-            "name": "omera", "contract": 1, "stateless_requests": True,
-            "tools_enabled": False, "memory_enabled": False,
-            "context_files_enabled": False, "transcript_persistence": False,
-        }
+        service = data["service"]
+        assert service["name"] == "omera"
+        assert service["contract"] == 1
+        assert service["stateless_requests"] is True
+        assert service["tools_enabled"] is False
+        assert service["memory_enabled"] is False
+        assert service["context_files_enabled"] is False
+        assert service["transcript_persistence"] is False
+        assert service["research"]["server_side"] is True
+        assert service["research"]["fetches_pages"] is True
+        assert "research" in service
         assert data["features"]["responses_api"] is False
         assert data["features"]["profiles_api"] is False
         adapter._run_agent.assert_not_called()
@@ -277,3 +289,31 @@ async def test_restricted_start_rejects_missing_or_placeholder_key(key):
     finally:
         await adapter.disconnect()
         adapter._response_store.close()
+
+
+@pytest.mark.asyncio
+async def test_restricted_chat_accepts_the_research_flag():
+    async with restricted_client() as (client, adapter):
+        response = await client.post("/v1/chat/completions", json={
+            "model": "omera", "stream": False, "xavani_research": True,
+            "messages": [
+                {"role": "system", "content": "You are Omera."},
+                {"role": "user", "content": "Help me obtain my first customer."},
+            ],
+        })
+        assert response.status == 200
+        adapter._run_agent.assert_awaited_once()
+
+
+@pytest.mark.asyncio
+async def test_restricted_chat_rejects_a_non_bool_research_flag():
+    async with restricted_client() as (client, adapter):
+        response = await client.post("/v1/chat/completions", json={
+            "model": "omera", "stream": False, "xavani_research": "yes",
+            "messages": [
+                {"role": "system", "content": "You are Omera."},
+                {"role": "user", "content": "Help me obtain my first customer."},
+            ],
+        })
+        assert response.status == 400
+        adapter._run_agent.assert_not_called()

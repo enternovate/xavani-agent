@@ -55,6 +55,8 @@ from gateway.platforms.base import (
     SendResult,
     is_network_accessible,
 )
+from xavani_omera.capabilities import omera_service_payload
+from xavani_omera.chat_research import research_system_block
 
 logger = logging.getLogger(__name__)
 try:
@@ -1074,9 +1076,16 @@ class APIServerAdapter(BasePlatformAdapter):
                 return web.json_response(_openai_error("REQUEST_TOO_LARGE"), status=413)
             except Exception:
                 return web.json_response(_openai_error("INVALID_REQUEST"), status=400)
-            valid = isinstance(body, dict) and set(body) == {"model", "stream", "messages"}
+            roots = {"model", "stream", "messages"}
+            valid = (
+                isinstance(body, dict)
+                and roots <= set(body)
+                and set(body) <= roots | {"xavani_research"}
+            )
             if valid:
                 valid = body["model"] == self._model_name and type(body["stream"]) is bool
+            if valid and "xavani_research" in body:
+                valid = type(body["xavani_research"]) is bool
             messages = body.get("messages") if isinstance(body, dict) else None
             valid = valid and isinstance(messages, list) and 2 <= len(messages) <= 41
             if valid:
@@ -1167,17 +1176,7 @@ class APIServerAdapter(BasePlatformAdapter):
         if self._omera_mode:
             return web.json_response({
                 "object": "xavani.api_server.capabilities",
-                "model": self._model_name,
-                "auth": {"type": "bearer", "required": True},
-                "service": {
-                    "name": "omera",
-                    "contract": 1,
-                    "stateless_requests": True,
-                    "tools_enabled": False,
-                    "memory_enabled": False,
-                    "context_files_enabled": False,
-                    "transcript_persistence": False,
-                },
+                **omera_service_payload(self._model_name),
                 "features": {
                     "chat_completions": True,
                     "chat_completions_streaming": True,
@@ -1369,6 +1368,17 @@ class APIServerAdapter(BasePlatformAdapter):
                 {"error": {"message": "No user message found in messages", "type": "invalid_request_error"}},
                 status=400,
             )
+
+        # Live research runs before the model call in Omera mode.
+        if self._omera_mode and _coerce_request_bool(
+            body.get("xavani_research"), default=True,
+        ):
+            try:
+                block = await research_system_block(user_message)
+            except Exception:
+                block = None
+            if block:
+                system_prompt = f"{system_prompt}\n\n{block}" if system_prompt else block
 
         # Allow caller to scope long-term memory (e.g. Honcho) with a
         # stable per-channel identifier via X-Xavani-Session-Key.  This
@@ -3107,6 +3117,15 @@ class APIServerAdapter(BasePlatformAdapter):
                 conversation_history=conversation_history,
                 task_id=effective_task_id,
             )
+            if (
+                self._omera_mode
+                and isinstance(result, dict)
+                and not result.get("failed")
+                and not result.get("partial")
+                and result.get("final_response") is not None
+                and result.get("turn_exit_reason") == "text_response(finish_reason=stop)"
+            ):
+                result["completed"] = True
             try:
                 from agent.work_timeline import record_event
 
