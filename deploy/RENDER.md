@@ -29,20 +29,37 @@
 
 ## Environment
 
-| Key | Value |
-|---|---|
-| `API_SERVER_KEY` | long random service key |
-| `API_SERVER_KEY_PREVIOUS` | old key during rotation, else empty |
-| `INFERENCE_BASE_URL` | `https://generativelanguage.googleapis.com/v1beta/openai` |
-| `INFERENCE_API_KEY` | Gemini AI Studio key |
-| `INFERENCE_MODEL` | `gemini-2.5-flash` |
-| `INFERENCE_FALLBACK_MODELS` | `gemini-2.5-flash-lite` |
-| `TAVILY_API_KEY` | free Tavily key, 1,000 credits per month |
-| `EXA_API_KEY` | free Exa key, $10 monthly credit |
-| `RESEARCH_PROVIDER` | `tavily,exa,ddgs` |
-| `JINA_READER` | `auto` |
-| `RESEARCH_MAX_PAGES` | `2` |
-| `RESEARCH_BUDGET_MS` | `6000` |
+The Blueprint applies with no secret input. `API_SERVER_KEY` is generated.
+All other keys are optional. Without them the service runs in research mode.
+
+| Key | Default | Purpose |
+|---|---|---|
+| `API_SERVER_KEY` | generated | Bearer key for Omera |
+| `API_SERVER_KEY_PREVIOUS` | empty | old key during rotation |
+| `INFERENCE_BASE_URL` | Gemini OpenAI-compatible | model endpoint when a key exists |
+| `INFERENCE_API_KEY` | empty | enables model mode |
+| `INFERENCE_MODEL` | `gemini-2.5-flash` | primary model |
+| `INFERENCE_FALLBACK_MODELS` | `gemini-2.5-flash-lite` | model fallback |
+| `KEYLESS_MODEL` | `off` | `on` tries a no-key model |
+| `KEYLESS_MODEL_URL` | Pollinations | keyless endpoint |
+| `KEYLESS_MODEL_NAME` | `openai-fast` | keyless model id |
+| `TAVILY_API_KEY` | empty | optional search upgrade |
+| `EXA_API_KEY` | empty | optional search upgrade |
+| `RESEARCH_PROVIDER` | `tavily,exa,bing,ddgs` | search order |
+| `JINA_READER` | `auto` | page fallback |
+| `RESEARCH_MAX_PAGES` | `2` | pages per answer |
+| `RESEARCH_BUDGET_MS` | `6000` | research time budget |
+
+## Modes
+
+- `model`: an inference key exists. Replies come from the model.
+- `keyless`: `KEYLESS_MODEL=on`. A no-key endpoint answers. It allows about one
+  reply every 30 seconds per IP, so a shared host can hit the limit.
+- `research`: no model. The answer is assembled from live sources and cites
+  them. This is the default and the fallback.
+
+`/health` reports the current mode. A keyless failure pauses that path for
+120 seconds, so the next request answers in about 2 seconds.
 
 ## Rotate the service key
 

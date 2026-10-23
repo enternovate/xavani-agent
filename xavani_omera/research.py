@@ -50,6 +50,16 @@ QUERY_PREFIX = re.compile(
     r"^(?:please\s+)?(?:(?:can|could)\s+you\s+)?(?:(?:the\s+)?ai\s+)?(?:must\s+)?"
     r"(?:google|search(?:\s+the\s+web|\s+online)?|look\s+up)\s+(?:for\s+)?", re.I,
 )
+QUESTION_PREFIX = re.compile(
+    r"^(?:(?:please\s+)?(?:can|could|would|will|should|do|does|did|is|are|was|were|"
+    r"when|what|where|who|why|how|which|must|may|might|shall)\b[\s,]*)+", re.I,
+)
+LEADING_ARTICLE = re.compile(r"^(?:a|an|the)\s+", re.I)
+QUERY_STOPWORDS = {
+    "the", "and", "for", "with", "that", "this", "from", "its", "their",
+    "have", "has", "had", "are", "was", "were", "you", "your", "our",
+    "must", "can", "could", "should", "would", "will", "does", "did",
+}
 
 
 @dataclass
@@ -115,10 +125,20 @@ def build_query(text: str) -> str:
     """Turn a user message into a search query."""
     first = (text or "").strip().split("\n")[0].strip()
     query = QUERY_PREFIX.sub("", first)
-    query = re.sub(r"\b(?:please|thanks|thank you)\.?$", "", query, flags=re.I).strip()
-    query = re.sub(r"\s+", " ", query)[:256]
+    query = QUESTION_PREFIX.sub("", query)
+    query = LEADING_ARTICLE.sub("", query).strip(" ?.!,")
+    query = re.sub(r"\s+", " ", query)
+
+    if len(query.split()) > 8:
+        words = [
+            word for word in re.findall(r"[A-Za-z0-9']+", query)
+            if word.lower() not in QUERY_STOPWORDS
+        ]
+        if len(words) >= 2:
+            query = " ".join(words[:10])
+
     if len(query) >= 3:
-        return query
+        return query[:256]
     brand = re.search(r"\b(vilatech|vilakazi|omera|cipc|sars)\b", text or "", re.I)
     return brand.group(0) if brand else (text or "").strip()[:120]
 
@@ -222,12 +242,16 @@ async def research(
 
         pages: list[Page] = []
         for hit in hits[:max_pages]:
-            if time.monotonic() >= deadline:
+            remaining = deadline - time.monotonic()
+            if remaining < 2.0:
                 break
             if hit.content:
                 pages.append(Page(hit.url, hit.title, hit.content[:MAX_PAGE_CHARS]))
                 continue
-            pages.append(await fetch_page(hit.url, client, env=resolved))
+            pages.append(await fetch_page(
+                hit.url, client, timeout=min(TIMEOUT_S, max(2.0, remaining)),
+                env=resolved,
+            ))
 
         status = "ok" if (hits or any(p.text for p in pages)) else "empty"
         return ResearchResult(status, used, query, hits, pages,

@@ -2,9 +2,12 @@
 from __future__ import annotations
 
 import asyncio
+import html
 import logging
 import os
+import re
 import time
+import xml.etree.ElementTree as ET
 from dataclasses import dataclass
 from typing import Protocol
 
@@ -13,10 +16,11 @@ import httpx
 logger = logging.getLogger(__name__)
 
 TIMEOUT_S = 12.0
+USER_AGENT = "XavaniOmeraResearch/1.0"
 SNIPPET_CHARS = 300
 CACHE_TTL_S = 900
 CACHE_MAX = 64
-DEFAULT_ORDER = ("tavily", "exa", "ddgs")
+DEFAULT_ORDER = ("tavily", "exa", "bing", "ddgs")
 
 
 @dataclass(frozen=True)
@@ -127,6 +131,47 @@ class ExaBackend:
         return hits
 
 
+class BingBackend:
+    """Bing RSS. No key, no card, stable XML."""
+
+    name = "bing"
+
+    def __init__(self, env=None) -> None:
+        self._env = env if env is not None else os.environ
+
+    def available(self) -> bool:
+        return True
+
+    async def search(self, query, limit, client):
+        response = await client.get(
+            "https://www.bing.com/search",
+            params={"q": query, "format": "rss", "count": limit},
+            headers={"User-Agent": USER_AGENT},
+            timeout=TIMEOUT_S,
+        )
+        response.raise_for_status()
+        return _parse_bing_rss(response.text, limit)
+
+
+def _clean(text: str) -> str:
+    return " ".join(html.unescape(re.sub(r"<[^>]+>", " ", text or "")).split())
+
+
+def _parse_bing_rss(markup: str, limit: int) -> list[Hit]:
+    try:
+        root = ET.fromstring(markup)
+    except ET.ParseError:
+        return []
+    hits: list[Hit] = []
+    for item in root.findall(".//item")[:limit]:
+        title = _clean(item.findtext("title") or "")
+        url = (item.findtext("link") or "").strip()
+        if not title or not url.startswith(("http://", "https://")):
+            continue
+        hits.append(Hit(title[:200], url, _clean(item.findtext("description") or "")[:SNIPPET_CHARS]))
+    return hits
+
+
 class DdgsBackend:
     """DuckDuckGo scraping. No key, no card, weakest results."""
 
@@ -146,7 +191,12 @@ class DdgsBackend:
         return await asyncio.to_thread(_ddgs_search, query, limit)
 
 
-BACKENDS = {"tavily": TavilyBackend, "exa": ExaBackend, "ddgs": DdgsBackend}
+BACKENDS = {
+    "tavily": TavilyBackend,
+    "exa": ExaBackend,
+    "bing": BingBackend,
+    "ddgs": DdgsBackend,
+}
 
 
 def _ddgs_search(query: str, limit: int) -> list[Hit]:

@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import os
 
+from xavani_omera.keyless import mode_for
 from xavani_omera.research import DEFAULT_MAX_PAGES, jina_enabled
 from xavani_omera.search import CACHE_TTL_S, available_backends
 
@@ -42,6 +43,7 @@ def omera_service_payload(model_name: str, env=None) -> dict:
             "memory_enabled": False,
             "context_files_enabled": False,
             "transcript_persistence": False,
+            "mode": mode_for(env),
             "research": research_capabilities(env),
         },
     }

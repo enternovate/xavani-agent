@@ -43,6 +43,16 @@ def test_python_version_is_pinned():
 
 def test_research_chain_is_configured():
     env = {item["key"]: item.get("value") for item in service()["envVars"]}
-    assert env["RESEARCH_PROVIDER"] == "tavily,exa,ddgs"
+    assert env["RESEARCH_PROVIDER"] == "tavily,exa,bing,ddgs"
     assert env["JINA_READER"] == "auto"
-    assert "TAVILY_API_KEY" in env
+
+
+def test_blueprint_needs_no_manual_input():
+    """A free deploy must apply without a model or search key."""
+    items = {item["key"]: item for item in service()["envVars"]}
+    assert items["API_SERVER_KEY"]["generateValue"] is True
+    assert items["KEYLESS_MODEL"]["value"] == "off"
+    assert items["KEYLESS_MODEL_URL"]["value"] == "https://text.pollinations.ai/openai"
+    for item in service()["envVars"]:
+        assert item.get("sync") is not True
+        assert item["key"] not in {"INFERENCE_API_KEY", "TAVILY_API_KEY", "EXA_API_KEY"}

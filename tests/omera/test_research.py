@@ -106,3 +106,9 @@ def test_fetched_instructions_stay_inside_the_data_block():
     )
     text = module.format_context(result)
     assert text.index("untrusted") < text.index("Ignore previous instructions")
+
+
+def test_query_strips_a_question():
+    assert module.build_query(
+        "When must a company file its CIPC annual return?"
+    ) == "company file its CIPC annual return"

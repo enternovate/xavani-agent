@@ -8,6 +8,7 @@ import os
 from xavani_omera.research import (
     DEFAULT_BUDGET_MS,
     DEFAULT_MAX_PAGES,
+    ResearchResult,
     build_query,
     format_context,
     is_research_configured,
@@ -18,14 +19,14 @@ from xavani_omera.research import (
 logger = logging.getLogger(__name__)
 
 
-async def research_system_block(
+async def research_result_for(
     user_message,
     *,
     env=None,
     max_pages: int | None = None,
     budget_ms: int | None = None,
-) -> str | None:
-    """Return a system block, or None when research is off or unneeded."""
+) -> ResearchResult | None:
+    """Return a research result, or None when research is off or unneeded."""
     if not isinstance(user_message, str):
         return None
     resolved = env if env is not None else os.environ
@@ -44,7 +45,7 @@ async def research_system_block(
                 budget_ms=budget,
                 env=resolved,
             ),
-            timeout=budget / 1000 + 1.0,
+            timeout=budget / 1000 + 8.0,
         )
     except Exception as exc:
         logger.info("omera_research outcome=error error=%s", type(exc).__name__)
@@ -57,4 +58,18 @@ async def research_system_block(
         "omera_research outcome=ok provider=%s pages=%d ms=%d",
         result.provider, len([p for p in result.pages if p.text]), result.elapsed_ms,
     )
-    return format_context(result)
+    return result
+
+
+async def research_system_block(
+    user_message,
+    *,
+    env=None,
+    max_pages: int | None = None,
+    budget_ms: int | None = None,
+) -> str | None:
+    """Return a formatted system block, or None when research is off."""
+    result = await research_result_for(
+        user_message, env=env, max_pages=max_pages, budget_ms=budget_ms,
+    )
+    return format_context(result) if result is not None else None

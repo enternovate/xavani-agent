@@ -20,14 +20,16 @@ class Settings:
 
     @property
     def configured(self) -> bool:
-        return bool(self.api_key and self.inference_api_key and self.inference_model)
+        return bool(self.api_key)
+
+    @property
+    def model_available(self) -> bool:
+        return bool(self.inference_api_key and self.inference_model)
 
     def validate(self) -> None:
         """Raise when the service key cannot protect the endpoint."""
         if len(self.api_key) < MIN_KEY_LENGTH:
             raise ValueError("API_SERVER_KEY_TOO_SHORT")
-        if not self.inference_api_key:
-            raise ValueError("INFERENCE_API_KEY_MISSING")
 
     @classmethod
     def from_env(cls, env=None) -> "Settings":

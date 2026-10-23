@@ -34,3 +34,10 @@ def test_reads_the_previous_key():
         "INFERENCE_MODEL": "model",
     })
     assert settings.api_key_previous == "y" * 32
+
+
+def test_configured_without_a_model_key():
+    settings = Settings.from_env({"API_SERVER_KEY": "x" * 32})
+    assert settings.configured is True
+    assert settings.model_available is False
+    settings.validate()

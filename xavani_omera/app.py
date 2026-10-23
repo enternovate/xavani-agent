@@ -9,9 +9,9 @@ import uuid
 from fastapi import APIRouter, FastAPI, Request
 from fastapi.responses import JSONResponse, StreamingResponse
 
-from xavani_omera import inference
+from xavani_omera import inference, keyless
 from xavani_omera.capabilities import omera_service_payload, research_capabilities
-from xavani_omera.chat_research import research_system_block
+from xavani_omera.chat_research import research_result_for, research_system_block
 from xavani_omera.config import Settings
 
 MAX_BODY_BYTES = 262_144
@@ -85,8 +85,9 @@ async def health():
     return {
         "status": "ok" if settings.configured else "unconfigured",
         "service": "xavani-omera",
+        "mode": keyless.mode_for(),
         "research": research_capabilities(),
-        "inference": bool(settings.inference_api_key and settings.inference_model),
+        "inference": settings.model_available,
         "model": settings.model_name,
     }
 
@@ -134,6 +135,18 @@ async def chat_completions(request: Request):
     except (json.JSONDecodeError, ValueError):
         return _error("Invalid request.", 400)
 
+    completion_id = f"chatcmpl-{uuid.uuid4().hex[:29]}"
+    created = int(time.time())
+
+    if not settings.model_available:
+        result = await research_result_for(user_message) if research else None
+        content = await keyless.answer(
+            user_message, result, system_prompt=system_prompt,
+        )
+        if not stream:
+            return _completion(completion_id, created, settings.model_name, content)
+        return _stream_text(content, completion_id, created, settings.model_name)
+
     if research:
         block = await research_system_block(user_message)
         if block:
@@ -142,26 +155,13 @@ async def chat_completions(request: Request):
     upstream = (
         [{"role": "system", "content": system_prompt}] if system_prompt else []
     ) + conversation
-    completion_id = f"chatcmpl-{uuid.uuid4().hex[:29]}"
-    created = int(time.time())
 
     if not stream:
         try:
             content = await inference.complete(upstream, settings)
         except Exception:
             return _error("Model is unavailable.", 502, "upstream_error")
-        return {
-            "id": completion_id,
-            "object": "chat.completion",
-            "created": created,
-            "model": settings.model_name,
-            "choices": [{
-                "index": 0,
-                "message": {"role": "assistant", "content": content},
-                "finish_reason": "stop",
-            }],
-            "xavani": {"completed": True, "partial": False, "failed": False},
-        }
+        return _completion(completion_id, created, settings.model_name, content)
 
     iterator = inference.stream(upstream, settings)
     try:
@@ -181,6 +181,34 @@ async def chat_completions(request: Request):
             yield "data: [DONE]\n\n"
             return
         yield _final(completion_id, created, settings.model_name, "stop")
+        yield "data: [DONE]\n\n"
+
+    return StreamingResponse(frames(), media_type="text/event-stream", headers={
+        "Cache-Control": "no-cache, no-transform",
+        "X-Accel-Buffering": "no",
+    })
+
+
+def _completion(completion_id, created, model, content) -> dict:
+    return {
+        "id": completion_id,
+        "object": "chat.completion",
+        "created": created,
+        "model": model,
+        "choices": [{
+            "index": 0,
+            "message": {"role": "assistant", "content": content},
+            "finish_reason": "stop",
+        }],
+        "xavani": {"completed": True, "partial": False, "failed": False},
+    }
+
+
+def _stream_text(text, completion_id, created, model) -> StreamingResponse:
+    async def frames():
+        for start in range(0, len(text), 48):
+            yield _chunk(completion_id, created, model, text[start:start + 48])
+        yield _final(completion_id, created, model, "stop")
         yield "data: [DONE]\n\n"
 
     return StreamingResponse(frames(), media_type="text/event-stream", headers={

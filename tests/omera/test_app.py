@@ -4,8 +4,10 @@ import httpx
 import pytest
 
 from xavani_omera import app as app_module
+from xavani_omera import keyless
 from xavani_omera import inference
 from xavani_omera.app import app
+from xavani_omera.research import Hit, Page, ResearchResult
 
 ENV = {
     "API_SERVER_KEY": "s" * 40,
@@ -17,6 +19,13 @@ ENV = {
     "XAVANI_MODEL_NAME": "omera",
 }
 HEADERS = {"Authorization": "Bearer " + "s" * 40}
+
+
+@pytest.fixture(autouse=True)
+def reset_keyless_breaker():
+    keyless.clear_keyless_breaker()
+    yield
+    keyless.clear_keyless_breaker()
 
 
 @pytest.fixture(autouse=True)
@@ -153,3 +162,68 @@ async def test_research_block_names_the_chain(monkeypatch):
     assert research["providers"][0] == "tavily"
     assert research["returns_content"] is True
     assert research["cache_ttl_s"] == 900
+
+
+def sample_result() -> ResearchResult:
+    return ResearchResult(
+        status="ok", provider="ddgs", query="cipc annual return", elapsed_ms=5,
+        hits=[Hit("CIPC", "https://cipc.example/a", "Annual return.")],
+        pages=[Page(
+            "https://cipc.example/a", "CIPC",
+            "Every company must file an annual return within 30 days of its "
+            "anniversary date. The fee is R100 for a standard company.",
+        )],
+    )
+
+
+@pytest.mark.asyncio
+async def test_research_only_mode_answers_with_sources(monkeypatch):
+    monkeypatch.delenv("INFERENCE_API_KEY", raising=False)
+    monkeypatch.setenv("KEYLESS_MODEL", "off")
+
+    async def fake_result(message, **kwargs):
+        return sample_result()
+
+    monkeypatch.setattr(app_module, "research_result_for", fake_result)
+    response = await call("POST", "/v1/chat/completions", headers=HEADERS, json={
+        "model": "omera", "xavani_research": True,
+        "messages": [{"role": "user", "content": "When is the CIPC annual return due?"}],
+    })
+    assert response.status_code == 200
+    content = response.json()["choices"][0]["message"]["content"]
+    assert "Research mode" in content
+    assert "https://cipc.example/a" in content
+
+
+@pytest.mark.asyncio
+async def test_research_only_mode_streams(monkeypatch):
+    monkeypatch.delenv("INFERENCE_API_KEY", raising=False)
+    monkeypatch.setenv("KEYLESS_MODEL", "off")
+
+    async def fake_result(message, **kwargs):
+        return sample_result()
+
+    monkeypatch.setattr(app_module, "research_result_for", fake_result)
+    response = await call("POST", "/v1/chat/completions", headers=HEADERS, json={
+        "model": "omera", "stream": True, "xavani_research": True,
+        "messages": [{"role": "user", "content": "When is the CIPC annual return due?"}],
+    })
+    assert response.status_code == 200
+    assert "data: [DONE]" in response.text
+    assert "Research mode" in response.text
+
+
+@pytest.mark.asyncio
+async def test_health_reports_the_mode(monkeypatch):
+    monkeypatch.delenv("INFERENCE_API_KEY", raising=False)
+    monkeypatch.setenv("KEYLESS_MODEL", "off")
+    response = await call("GET", "/health")
+    assert response.json()["mode"] == "research"
+
+
+@pytest.mark.asyncio
+async def test_health_reports_keyless_mode(monkeypatch):
+    monkeypatch.delenv("INFERENCE_API_KEY", raising=False)
+    monkeypatch.setenv("KEYLESS_MODEL", "on")
+    response = await call("GET", "/health")
+    assert response.json()["mode"] == "keyless"
