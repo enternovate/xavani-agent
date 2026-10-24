@@ -91,7 +91,7 @@ Residual:
 | Task 26, package from evidence | Manifest checker, build guard, and checklist delivered. A signed public candidate needs owner credentials. |
 | Task 27, recurring release | Delivered: `upstream-review.md`, `release-cadence.md`, CI change filters. |
 
-Task 25 decision: pending owner choice between a gateway top-up and accepting the 2-of-9 partial matrix. The report keeps its measured numbers either way.
+Task 25 decision: the owner accepted the 2-of-9 partial matrix on 2026-10-24. The report keeps its measured numbers and drops the billing blocker from the status line.
 
 ### Test evidence
 

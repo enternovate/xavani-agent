@@ -3,13 +3,16 @@
 Date: 2026-09-15. Corpus and runner revision: `15d99644`.
 Spec of record: `planning/reliability-master-plan.md`, Task 25.
 
-## STATUS: PARTIAL — blocked on gateway billing
+## STATUS: PARTIAL — accepted by the owner on 2026-10-24
 
 Two of nine passes completed before the gateway account ran out of
-balance. The gateway returned HTTP 402 `insufficient_balance` on every
-call from 03:11:35 SAST. Section "Billing blocker" holds the details and
-the resume steps. The method below is complete and applies to every
-pass; the results cover the measured passes only.
+balance. The owner accepted the partial matrix on 2026-10-24. No release
+claim depends on the 7 missing rows: the release gate cites the measured
+passes and the faux-gate evidence only. The gateway returned HTTP 402
+`insufficient_balance` on every call from 03:11:35 SAST. Section "Billing
+blocker" holds the details and the resume steps. The method below is
+complete and applies to every pass; the results cover the measured
+passes only.
 
 ## Scope
 
