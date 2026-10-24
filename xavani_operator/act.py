@@ -18,11 +18,116 @@ Tier discipline at execution:
 
 from __future__ import annotations
 
+from concurrent.futures import ThreadPoolExecutor
+from dataclasses import dataclass
 from typing import Any, Callable
 
+from xavani_operator.approval_queue import ActionRequest, ApprovalQueue, BoundApproval
 from xavani_operator.types import PlanStep, Proposal, StepResult, Tier
 
 Handler = Callable[[PlanStep, Any], Any]
+
+
+@dataclass
+class ActionOutcome:
+    """The result of one exact-action attempt or reconciliation."""
+
+    ok: bool
+    state: str
+    error: str = ""
+    output: str = ""
+    unavailable: bool = False
+
+
+def _connector_unavailable(connector: Any) -> bool:
+    """True when no usable connector is configured for the action."""
+    return connector is None or not bool(getattr(connector, "configured", True))
+
+
+def _submit_with_timeout(connector: Any, record: BoundApproval, timeout_s: float) -> Any:
+    """Submit with a hard deadline; a timeout leaves the outcome unknown."""
+    pool = ThreadPoolExecutor(max_workers=1)
+    future = pool.submit(connector.submit, record)
+    try:
+        return future.result(timeout=timeout_s)
+    finally:
+        pool.shutdown(wait=False)
+
+
+def execute_action(
+    queue: ApprovalQueue,
+    approval_id: str,
+    connector: Any,
+    *,
+    request: ActionRequest | None = None,
+    now: float | None = None,
+    submit_timeout_s: float = 30.0,
+) -> ActionOutcome:
+    """Execute exactly one approved action attempt (Code Pack O discipline).
+
+    Order of guards: known connector, unresolved-unknown retry block,
+    atomic consume (digest + expiry + single attempt), then dispatch.
+    """
+    record = queue.get_action(approval_id)
+    if record is None:
+        return ActionOutcome(ok=False, state="missing", error="unknown approval")
+    if _connector_unavailable(connector):
+        return ActionOutcome(
+            ok=False, state=record.state, unavailable=True,
+            error="Unavailable: no connector is configured for this action",
+        )
+    if request is not None and record.state == "approved":
+        guard = queue.unresolved_unknown(request)
+        if guard is not None:
+            return ActionOutcome(
+                ok=False, state=record.state,
+                error=f"blocked: unresolved unknown outcome ({guard.id})",
+            )
+    consumed, reason = queue.consume_action(approval_id, request=request, now=now)
+    if reason:
+        state = consumed.state if consumed is not None else "missing"
+        return ActionOutcome(ok=False, state=state, error=reason)
+    assert consumed is not None  # a successful consume always returns the record
+    try:
+        receipt = _submit_with_timeout(connector, consumed, submit_timeout_s)
+    except TimeoutError:
+        queue.resolve_action(approval_id, "unknown", note="submit timed out")
+        return ActionOutcome(ok=False, state="unknown", error="submit timed out; outcome unknown")
+    except Exception as exc:  # the attempt failed; the approval stays consumed
+        queue.resolve_action(approval_id, "failed", note=str(exc))
+        return ActionOutcome(ok=False, state="failed", error=str(exc))
+    return ActionOutcome(ok=True, state=consumed.state, output=str(receipt or ""))
+
+
+def reconcile_action(
+    queue: ApprovalQueue,
+    approval_id: str,
+    connector: Any,
+    *,
+    now: float | None = None,
+) -> ActionOutcome:
+    """Resolve an executing/unknown action by reading the exact target."""
+    record = queue.get_action(approval_id)
+    if record is None:
+        return ActionOutcome(ok=False, state="missing", error="unknown approval")
+    if record.state not in ("executing", "unknown"):
+        return ActionOutcome(
+            ok=False, state=record.state,
+            error=f"cannot reconcile: only executing or unknown actions reconcile (state: {record.state})",
+        )
+    if _connector_unavailable(connector):
+        return ActionOutcome(
+            ok=False, state=record.state, unavailable=True,
+            error="Unavailable: no connector is configured for this action",
+        )
+    try:
+        read = connector.read_target(record.request.get("target"), record) or {}
+    except Exception as exc:  # noqa: BLE001 - report, never mask
+        return ActionOutcome(ok=False, state=record.state, error=f"reconciliation read failed: {exc}")
+    matched = read.get("action_digest") == record.digest
+    outcome = "verified" if matched else "failed"
+    queue.resolve_action(approval_id, outcome, note="reconciled against the external target")
+    return ActionOutcome(ok=matched, state=outcome, output=str(read))
 
 
 def execute_plan(

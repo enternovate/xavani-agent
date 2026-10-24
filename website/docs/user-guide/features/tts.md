@@ -8,8 +8,10 @@ description: "Text-to-speech and voice message transcription across all platform
 
 Xavani Agent supports both text-to-speech output and voice message transcription across all messaging platforms.
 
-:::tip Nous Subscribers
-If you have a paid [Nous Portal](https://portal.nousresearch.com) subscription, OpenAI TTS is available through the **[Tool Gateway](tool-gateway.md)** without a separate OpenAI API key. Run `xavani model` or `xavani tools` to enable it.
+:::tip Xavani Portal subscribers
+> Note: this integration is not available in current Xavani builds; portal services are disabled.
+
+If you have a paid Xavani Portal subscription, OpenAI TTS is available through the **[Tool Gateway](tool-gateway.md)** without a separate OpenAI API key. Run `xavani model` or `xavani tools` to enable it.
 :::
 
 ## Text-to-Speech

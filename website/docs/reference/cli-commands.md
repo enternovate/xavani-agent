@@ -45,7 +45,7 @@ xavani [global-options] <command> [subcommand/options]
 | `xavani setup` | Interactive setup wizard for all or part of the configuration. |
 | `xavani whatsapp` | Configure and pair the WhatsApp bridge. |
 | `xavani slack` | Slack helpers (currently: generate the app manifest with every command as a native slash). |
-| `xavani auth` | Manage credentials — add, list, remove, reset, set strategy. Handles OAuth flows for Codex/Nous/Anthropic. |
+| `xavani auth` | Manage credentials — add, list, remove, reset, set strategy. Handles OAuth flows for Codex/Xavani Portal/Anthropic. |
 | `xavani login` / `logout` | **Deprecated** — use `xavani auth` instead. |
 | `xavani status` | Show agent, auth, and platform status. |
 | `xavani cron` | Inspect and tick the cron scheduler. |
@@ -157,7 +157,7 @@ xavani model
 
 Use this when you want to:
 - **add a new provider** (OpenRouter, Anthropic, Copilot, DeepSeek, custom, etc.)
-- log into OAuth-backed providers (Anthropic, Copilot, Codex, Nous Portal)
+- log into OAuth-backed providers (Anthropic, Copilot, Codex, Xavani Portal)
 - enter or update API keys
 - pick from provider-specific model lists
 - configure a custom/self-hosted endpoint
@@ -437,7 +437,7 @@ Board resolution order (highest precedence first): `--board <slug>` flag → `XA
 
 All actions are also available as a slash command in the gateway (`/kanban …`), with the same argument surface — including `boards` subcommands and the `--board` flag.
 
-For the full design — comparison with Cline Kanban / Paperclip / NanoClaw / Gemini Enterprise, eight collaboration patterns, four user stories, concurrency correctness proof — see `docs/xavani-kanban-v1-spec.pdf` in the repository or the [Kanban user guide](/docs/user-guide/features/kanban).
+For the full design — comparison with Cline Kanban / Paperclip / NanoClaw / Gemini Enterprise, eight collaboration patterns, four user stories, concurrency correctness proof — see [the Kanban user guide](/docs/user-guide/features/kanban).
 
 ## `xavani webhook`
 

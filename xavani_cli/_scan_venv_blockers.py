@@ -406,7 +406,7 @@ def main() -> None:
         # never argv) explaining which holders the deferral consumed (#98350).
         "deferred_backend_evidence": _deferred_backend_evidence(deferred_entries),
     }
-    print(json.dumps(data))
+    print(json.dumps(data))  # nosec B105 - venv-blocker diagnostic JSON; process metadata only, no credentials
     sys.exit(0)
 
 

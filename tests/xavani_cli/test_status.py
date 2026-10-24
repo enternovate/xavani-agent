@@ -84,7 +84,7 @@ def test_show_status_reports_nous_auth_error(monkeypatch, capsys, tmp_path):
     status_mod.show_status(SimpleNamespace(all=False, deep=False))
 
     output = capsys.readouterr().out
-    assert "Nous Portal   ✗ not logged in (run: xavani auth add nous --type oauth)" in output
+    assert "Xavani Portal" in output and "✗ not logged in (run: xavani auth add nous --type oauth)" in output
     assert "Error:      Refresh session has been revoked" in output
     assert "Access exp:" in output
     assert "Key exp:" in output
@@ -309,7 +309,7 @@ class TestShowStatusXaiOAuth:
         status_mod.show_status(SimpleNamespace(all=False, deep=False))
         out = capsys.readouterr().out
 
-        assert "Nous Portal" in out
+        assert "Xavani Portal" in out
         assert "MiniMax OAuth" in out
 
     def test_status_function_exception_does_not_crash(self, monkeypatch, capsys, tmp_path):

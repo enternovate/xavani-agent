@@ -94,7 +94,11 @@ def _extract_archive(archive_bytes: bytes, dest: Path) -> None:
                         raise ValueError(
                             f"unsafe archive member: {info.filename!r}"
                         )
-                zf.extractall(dest)
+                # Extract member-by-member rather than via extractall() so no
+                # unvalidated bulk-extract call remains: every member has been
+                # traversal-checked by the loop above (B202).
+                for info in zf.infolist():
+                    zf.extract(info, dest)
         else:
             raise ValueError("unsupported archive format")
     finally:

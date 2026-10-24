@@ -16,8 +16,8 @@ All variables go in `~/.xavani/.env`. You can also set them with `xavani config 
 | `OPENROUTER_BASE_URL` | Override the OpenRouter-compatible base URL |
 | `XAVANI_OPENROUTER_CACHE` | Enable OpenRouter response caching (`1`/`true`/`yes`/`on`). Overrides `openrouter.response_cache` in config.yaml. See [Response Caching](https://openrouter.ai/docs/guides/features/response-caching). |
 | `XAVANI_OPENROUTER_CACHE_TTL` | Cache TTL in seconds (1-86400). Overrides `openrouter.response_cache_ttl` in config.yaml. |
-| `NOUS_BASE_URL` | Override Nous Portal base URL (rarely needed; development/testing only) |
-| `NOUS_INFERENCE_BASE_URL` | Override Nous inference endpoint directly |
+| `NOUS_BASE_URL` | Override Xavani Portal base URL (rarely needed; development/testing only) |
+| `NOUS_INFERENCE_BASE_URL` | Override Xavani Portal inference endpoint directly |
 | `AI_GATEWAY_API_KEY` | Vercel AI Gateway API key ([ai-gateway.vercel.sh](https://ai-gateway.vercel.sh)) |
 | `AI_GATEWAY_BASE_URL` | Override AI Gateway base URL (default: `https://ai-gateway.vercel.sh/v1`) |
 | `OPENAI_API_KEY` | API key for custom OpenAI-compatible endpoints (used with `OPENAI_BASE_URL`) |
@@ -114,10 +114,10 @@ For native Anthropic auth, Xavani prefers Claude Code's own credential files whe
 | Variable | Description |
 |----------|-------------|
 | `XAVANI_INFERENCE_PROVIDER` | Override provider selection: `auto`, `custom`, `openrouter`, `nous`, `openai-codex`, `copilot`, `copilot-acp`, `anthropic`, `huggingface`, `novita`, `gemini`, `zai`, `kimi-coding`, `kimi-coding-cn`, `minimax`, `minimax-cn`, `minimax-oauth` (browser OAuth login — no API key required; see [MiniMax OAuth guide](../guides/minimax-oauth.md)), `kilocode`, `xiaomi`, `arcee`, `gmi`, `stepfun`, `alibaba`, `alibaba-coding-plan` (alias `alibaba_coding`), `deepseek`, `nvidia`, `ollama-cloud`, `xai` (alias `grok`), `xai-oauth` (browser OAuth login for SuperGrok subscribers — no API key required; see [xAI Grok OAuth guide](../guides/xai-grok-oauth.md)), `google-gemini-cli`, `qwen-oauth`, `bedrock`, `opencode-zen`, `opencode-go`, `ai-gateway`, `tencent-tokenhub` (default: `auto`) |
-| `XAVANI_PORTAL_BASE_URL` | Override Nous Portal URL (for development/testing) |
-| `NOUS_INFERENCE_BASE_URL` | Override Nous inference API URL |
+| `XAVANI_PORTAL_BASE_URL` | Override Xavani Portal URL (for development/testing) |
+| `NOUS_INFERENCE_BASE_URL` | Override Xavani Portal inference API URL |
 | `XAVANI_NOUS_MIN_KEY_TTL_SECONDS` | Min agent key TTL before re-mint (default: 1800 = 30min) |
-| `XAVANI_NOUS_TIMEOUT_SECONDS` | HTTP timeout for Nous credential / token flows |
+| `XAVANI_NOUS_TIMEOUT_SECONDS` | HTTP timeout for Xavani Portal credential / token flows |
 | `XAVANI_DUMP_REQUESTS` | Dump API request payloads to log files (`true`/`false`) |
 | `XAVANI_PREFILL_MESSAGES_FILE` | Path to a JSON file of ephemeral prefill messages injected at API-call time |
 | `XAVANI_TIMEZONE` | IANA timezone override (for example `America/New_York`) |
@@ -178,15 +178,15 @@ Environment variables for the bundled [`observability/langfuse`](/docs/user-guid
 | `XAVANI_LANGFUSE_DEBUG` | `true` enables verbose plugin logging to `agent.log` |
 | `LANGFUSE_PUBLIC_KEY` / `LANGFUSE_SECRET_KEY` / `LANGFUSE_BASE_URL` | Standard Langfuse SDK names. Accepted as fallbacks when the `XAVANI_LANGFUSE_*` equivalents are unset. |
 
-### Nous Tool Gateway
+### Xavani Tool Gateway
 
-These variables configure the [Tool Gateway](/docs/user-guide/features/tool-gateway) for paid Nous subscribers or self-hosted gateway deployments. Most users don't need to set these — the gateway is configured automatically via `xavani model` or `xavani tools`.
+These variables configure the [Tool Gateway](/docs/user-guide/features/tool-gateway) for paid Xavani Portal subscribers or self-hosted gateway deployments. Most users don't need to set these — the gateway is configured automatically via `xavani model` or `xavani tools`.
 
 | Variable | Description |
 |----------|-------------|
 | `TOOL_GATEWAY_DOMAIN` | Base domain for Tool Gateway routing (default: `nousresearch.com`) |
 | `TOOL_GATEWAY_SCHEME` | HTTP or HTTPS scheme for gateway URLs (default: `https`) |
-| `TOOL_GATEWAY_USER_TOKEN` | Auth token for the Tool Gateway (normally auto-populated from Nous auth) |
+| `TOOL_GATEWAY_USER_TOKEN` | Auth token for the Tool Gateway (normally auto-populated from Xavani Portal auth) |
 | `FIRECRAWL_GATEWAY_URL` | Override URL for the Firecrawl gateway endpoint specifically |
 
 ## Terminal Backend

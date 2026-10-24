@@ -360,8 +360,12 @@ async def gated_auth_middleware(
         except ProviderError as e:
             # At least one provider's IDP/JWKS was unreachable and none
             # verified the token — transient outage, not bad credentials.
+            # Log the provider detail server-side only: it can echo the
+            # request URL/params, so the 503 body stays generic and leaks
+            # no internal error text (CodeQL py/stack-trace-exposure).
+            _log.warning("auth gate: bearer verify provider unreachable: %r", e)
             return JSONResponse(
-                {"detail": f"Auth provider {str(e)!r} unreachable"},
+                {"detail": "Auth provider unreachable"},
                 status_code=503,
             )
         if bearer_session is not None:
@@ -463,8 +467,12 @@ async def gated_auth_middleware(
             # At least one provider could not confirm or reject the RT, and no
             # other provider refreshed it. Preserve the cookies and surface a
             # transient outage instead of turning uncertainty into a logout.
+            # Provider detail goes to the server log only; the 503 body is
+            # generic so no internal error text reaches the client (CodeQL
+            # py/stack-trace-exposure).
+            _log.warning("auth gate: token refresh provider unreachable: %r", e)
             return JSONResponse(
-                {"detail": f"Auth provider {str(e)!r} unreachable"},
+                {"detail": "Auth provider unreachable"},
                 status_code=503,
             )
         if refreshed is not None:

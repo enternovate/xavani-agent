@@ -1,0 +1,5 @@
+BASELINE 2026-10-24 tests/omera: 3 failed, 73 passed
+FAILED tests/omera/test_search_chain.py::test_a_rate_limited_provider_falls_through
+FAILED tests/omera/test_search_chain.py::test_the_cache_prevents_a_second_call
+FAILED tests/omera/test_search_chain.py::test_the_cache_expires
+ROOT CAUSE: DdgsBackend.available() imports the ddgs package; ddgs is in requirements-omera.txt but not in any pyproject extra, so the test venv and CI skip the provider.

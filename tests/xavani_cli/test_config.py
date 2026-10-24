@@ -68,13 +68,13 @@ class TestEnsureXavaniHome:
 
     def test_seeded_soul_md_has_xavani_enternovate_identity(self, tmp_path):
         """A freshly seeded SOUL.md must carry the assertive Xavani/Enternovate
-        identity that rejects the upstream Hermes/Nous persona."""
+        identity that rejects any other agent persona."""
         with patch.dict(os.environ, {"XAVANI_HOME": str(tmp_path)}):
             ensure_xavani_home()
             soul = (tmp_path / "SOUL.md").read_text(encoding="utf-8")
             assert "Xavani Agent" in soul
             assert "Enternovate" in soul
-            assert "NOT Hermes" in soul
+            assert "NOT affiliated with any other agent product" in soul
 
     def test_refreshes_unmodified_autoseed_soul_md(self, tmp_path):
         """An unmodified historical auto-seed is refreshed to the current
@@ -86,7 +86,7 @@ class TestEnsureXavaniHome:
             soul_path.write_text(_STALE_SOUL_BASE_IDENTITIES[0], encoding="utf-8")
             _ensure_default_soul_md(tmp_path)
             refreshed = soul_path.read_text(encoding="utf-8")
-            assert "NOT Hermes" in refreshed
+            assert "NOT affiliated with any other agent product" in refreshed
             assert refreshed != _STALE_SOUL_BASE_IDENTITIES[0]
 
     def test_does_not_refresh_customized_soul_md(self, tmp_path):

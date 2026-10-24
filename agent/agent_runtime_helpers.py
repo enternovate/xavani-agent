@@ -46,7 +46,7 @@ from agent.message_sanitization import (
 from agent.tool_dispatch_helpers import _trajectory_normalize_msg
 from agent.trajectory import convert_scratchpad_to_think
 from agent.error_classifier import classify_api_error, FailoverReason
-from utils import base_url_host_matches, base_url_hostname, env_var_enabled, atomic_json_write
+from utils import base_url_host_matches, base_url_hostname, env_var_enabled, atomic_json_write, is_portal_base_url
 
 logger = logging.getLogger(__name__)
 
@@ -1138,7 +1138,7 @@ def anthropic_prompt_cache_policy(
     # Xavani Portal proxies to OpenRouter behind the scenes — identical
     # OpenAI-wire envelope cache_control semantics. Treat it as an
     # OpenRouter-equivalent endpoint for caching layout purposes.
-    is_nous_portal = "nousresearch" in eff_base_url.lower()
+    is_nous_portal = is_portal_base_url(eff_base_url)
     is_anthropic_wire = eff_api_mode == "anthropic_messages"
     is_native_anthropic = (
         is_anthropic_wire

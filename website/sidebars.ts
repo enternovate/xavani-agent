@@ -40,6 +40,8 @@ const sidebars: SidebarsConfig = {
         'user-guide/features/skins',
         'user-guide/features/voice-mode',
         'user-guide/features/computer-use',
+        'user-guide/features/omera-api',
+        'user-guide/features/kanban',
       ],
     },
     {

@@ -417,7 +417,7 @@ async def _redirect_handler(authorization_url: str) -> None:
     # opened.  Print a port-forward hint so the user knows to tunnel first.
     if _oauth_port and (os.getenv("SSH_CLIENT") or os.getenv("SSH_TTY")):
         print(
-            f"  Remote session detected. The OAuth provider will redirect your browser to\n"
+            f"  Remote session detected. The OAuth provider will redirect your browser to\n"  # nosec B105 - OAuth authorization URL shown to the user's own browser; no client secret
             f"    http://127.0.0.1:{_oauth_port}/callback\n"
             f"  which the callback listener on THIS machine is waiting on. If your browser\n"
             f"  is on a different machine, forward the port first in a separate terminal:\n"

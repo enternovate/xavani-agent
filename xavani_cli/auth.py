@@ -7402,7 +7402,7 @@ def _login_nous(args, pconfig: ProviderConfig) -> None:
             elif unavailable_models:
                 _url = (_portal or DEFAULT_NOUS_PORTAL_URL).rstrip("/")
                 print("No free models currently available.")
-                print(f"Upgrade at {_url} to access paid models.")
+                print(f"Upgrade at {_url} to access paid models.")  # nosec B105 - public upgrade URL; no credentials
             else:
                 print("No curated models available for Xavani Portal.")
         except Exception as exc:

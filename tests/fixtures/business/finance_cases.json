@@ -1,0 +1,116 @@
+{
+  "fixture": "finance_cases",
+  "schema_version": "1.0",
+  "synthetic": true,
+  "data_classification": "SYNTHETIC TEST DATA",
+  "disclaimer": "SYNTHETIC TEST DATA. Hand-authored for deterministic validation tests only. This is NOT company financial data, not a customer dataset, and not derived from any real ledger, invoice, or filing. Do not cite, report, or publish these figures.",
+  "generated_by": "tests/operator/test_finance_validation.py",
+  "cases": {
+    "balanced_statement": {
+      "currency": "ZAR",
+      "period": "2026-Q2",
+      "source": "synthetic fixture",
+      "assets": "100.00",
+      "liabilities": "60.00",
+      "equity": "40.00"
+    },
+    "unbalanced_statement": {
+      "currency": "ZAR",
+      "period": "2026-Q2",
+      "source": "synthetic fixture",
+      "assets": "100.00",
+      "liabilities": "60.00",
+      "equity": "39.99"
+    },
+    "missing_period_statement": {
+      "currency": "ZAR",
+      "source": "synthetic fixture",
+      "assets": "100.00",
+      "liabilities": "100.00",
+      "equity": "0.00"
+    },
+    "missing_currency_statement": {
+      "period": "2026-Q2",
+      "source": "synthetic fixture",
+      "assets": "100.00",
+      "liabilities": "100.00",
+      "equity": "0.00"
+    },
+    "negative_equity_statement": {
+      "currency": "ZAR",
+      "period": "2026-Q2",
+      "source": "synthetic fixture",
+      "assets": "50.00",
+      "liabilities": "80.00",
+      "equity": "-30.00"
+    },
+    "mixed_currency_rows": {
+      "rows": [
+        {
+          "supplier_id": "supplier-1",
+          "invoice_number": "INV-1",
+          "currency": "ZAR",
+          "amount_minor": 10000
+        },
+        {
+          "supplier_id": "supplier-2",
+          "invoice_number": "INV-2",
+          "currency": "EUR",
+          "amount_minor": 5000
+        }
+      ],
+      "reporting_currency": "ZAR",
+      "conversions": {
+        "EUR>ZAR": "20.00"
+      }
+    },
+    "duplicate_invoice_rows": [
+      {
+        "supplier_id": "supplier-1",
+        "invoice_number": "INV-1",
+        "currency": "ZAR",
+        "amount_minor": 10000
+      },
+      {
+        "supplier_id": "supplier-1",
+        "invoice_number": "INV-1",
+        "currency": "ZAR",
+        "amount_minor": 10000
+      },
+      {
+        "supplier_id": "supplier-2",
+        "invoice_number": "INV-1",
+        "currency": "ZAR",
+        "amount_minor": 2500
+      }
+    ],
+    "dcf_rates": {
+      "valid": {
+        "discount_rate": "0.12",
+        "terminal_growth": "0.04"
+      },
+      "perpetuity_undefined": {
+        "discount_rate": "0.08",
+        "terminal_growth": "0.08"
+      }
+    },
+    "tax": {
+      "valid": {
+        "rate": "0.15",
+        "jurisdiction": "ZA"
+      },
+      "missing_jurisdiction": {
+        "rate": "0.15",
+        "jurisdiction": ""
+      },
+      "missing_rate": {
+        "rate": null,
+        "jurisdiction": "ZA"
+      }
+    },
+    "zero_denominator_ratio": {
+      "numerator": "10",
+      "denominator": "0"
+    }
+  }
+}

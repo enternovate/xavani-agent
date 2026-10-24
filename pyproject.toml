@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "xavani-agent"
-version = "0.3.0"
+version = "0.3.1"
 description = "Xavani Agent — The open-source AI agent gateway. Fully local, private, cross-platform. Built by Enternovate."
 readme = "README.md"
 requires-python = ">=3.11,<3.14"
@@ -57,7 +57,7 @@ dependencies = [
   # Cron scheduler (built-in feature — scheduled cron/interval jobs use croniter).
   "croniter==6.2.4",
   # Skills Hub (GitHub App JWT auth — optional, only needed for bot identity)
-  "PyJWT[crypto]==2.13.0",  # CVE-2026-32597
+  "PyJWT[crypto]==2.15.0",  # CVE-2026-32597, PYSEC-2026-4140..4183
   # CVE-2026-58821: cryptography <48.0.1 includes vulnerable OpenSSL
   "cryptography>=50.0.0",
   # Windows has no IANA tzdata shipped with the OS, so Python's ``zoneinfo``
@@ -200,7 +200,7 @@ youtube = [
   "youtube-transcript-api==1.2.4",
 ]
 # `xavani dashboard` (localhost SPA + API).  Not in core to keep the default install lean.
-web = ["fastapi==0.133.1", "uvicorn[standard]==0.41.0"]
+web = ["fastapi==0.133.1", "uvicorn[standard]==0.41.0", "ddgs==9.16.0"]
 all = [
   # Policy (2026-05-12): `[all]` includes only extras that genuinely
   # CAN'T be lazy-installed via `tools/lazy_deps.py` — i.e. things every
@@ -265,7 +265,7 @@ plugins = [
 ]
 
 [tool.setuptools.packages.find]
-include = ["agent", "agent.*", "xavani_memory", "xavani_memory.*", "tools", "tools.*", "xavani_cli", "gateway", "gateway.*", "tui_gateway", "tui_gateway.*", "cron", "acp_adapter", "plugins", "plugins.*", "providers", "providers.*", "xavani_observability", "xavani_observability.*", "xavani_runtime", "xavani_runtime.*", "xavani_operator", "xavani_operator.*", "xavani_learner", "xavani_learner.*"]
+include = ["agent", "agent.*", "xavani_memory", "xavani_memory.*", "xavani_omera", "xavani_omera.*", "tools", "tools.*", "xavani_cli", "gateway", "gateway.*", "tui_gateway", "tui_gateway.*", "cron", "acp_adapter", "plugins", "plugins.*", "providers", "providers.*", "xavani_observability", "xavani_observability.*", "xavani_runtime", "xavani_runtime.*", "xavani_operator", "xavani_operator.*", "xavani_learner", "xavani_learner.*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

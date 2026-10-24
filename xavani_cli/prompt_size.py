@@ -372,6 +372,6 @@ def cmd_prompt_size(args: Any) -> None:
         print(f"Could not compute prompt-size breakdown: {e}")
         return
     if as_json:
-        print(json.dumps(data, ensure_ascii=False, indent=2))
+        print(json.dumps(data, ensure_ascii=False, indent=2))  # nosec B105 - prompt-size breakdown JSON; no credentials
     else:
-        print(render_breakdown(data))
+        print(render_breakdown(data))  # nosec B105 - rendered prompt-size table; no credentials

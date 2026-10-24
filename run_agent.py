@@ -1228,6 +1228,8 @@ class AIAgent:
         without a single funnel both could observe the same unmarked message
         list and write duplicate durable rows.
         """
+        if getattr(self, "_persist_disabled", False):
+            return
         def _persist_and_drain() -> None:
             self._drop_trailing_empty_response_scaffolding(messages)
             self._apply_persist_user_message_override(messages)
@@ -1317,6 +1319,8 @@ class AIAgent:
         written, so repeated calls (from multiple exit paths) only write
         truly new messages — preventing the duplicate-write bug (#860).
         """
+        if getattr(self, "_persist_disabled", False):
+            return
         if not self._session_db:
             return
         self._apply_persist_user_message_override(messages)
@@ -1576,6 +1580,8 @@ class AIAgent:
         error: Optional[Exception] = None,
     ) -> Optional[Path]:
         """Forwarder — see ``agent.agent_runtime_helpers.dump_api_request_debug``."""
+        if getattr(self, "_persist_disabled", False):
+            return None
         from agent.agent_runtime_helpers import dump_api_request_debug
         return dump_api_request_debug(self, api_kwargs, reason=reason, error=error)
 
@@ -1601,6 +1607,8 @@ class AIAgent:
         REASONING_SCRATCHPAD tags are converted to <think> blocks for consistency.
         Overwritten after each turn so it always reflects the latest state.
         """
+        if getattr(self, "_persist_disabled", False):
+            return
         messages = messages or self._session_messages
         if not messages:
             return

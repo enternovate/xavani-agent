@@ -5,6 +5,47 @@ All notable changes to Xavani Agent are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.1] - 2026-10-24 — "Closure"
+
+Reliability and security close-out for the 0.3 line. The Omera API ships
+with a keyless research chain and a Vercel edge host. Every dependency
+advisory with a published fix is closed: 66 npm advisories across the
+bridge, web console, docs site, and TUI, plus 19 Python advisories. The
+nightly action pin, the skills-index watchdog, and the reported version
+are repaired. Plans, branches, and docs are consolidated under one
+closure record.
+
+### Added
+- Omera API surface: `/health`, `/v1/capabilities`, `/v1/chat/completions` with server-side research.
+- Vercel edge host for the Omera API under `deploy/vercel-edge/`.
+- Release manifest checker `scripts/check_release_manifest.py` with tests.
+- Documentation index at `docs/README.md`, guarded by a test, and `planning/README.md`.
+- Omera API user guide, listed in the site sidebar.
+- Release checklist for task 26.
+
+### Changed
+- `ddgs` is declared in the `web` extra, so the keyless search chain is installed, not assumed.
+- Omera deploy pins now match the engine `web` extra: `fastapi==0.133.1`, `uvicorn==0.41.0`.
+- The desktop build requires a clean `XAVANI_ENGINE_SRC` and writes `release-manifest.json`.
+- Docs and planning trees are indexed; closed plans live in `planning/archive/`.
+- The parity report moved to `docs/reliability/parity-report.md`.
+
+### Fixed
+- Version drift: `xavani_cli.__version__` reported `0.1.2` while the package reported `0.3.0`.
+- Nightly pinned an artifact action SHA that does not resolve.
+- The skills-index watchdog crashed on an empty published body and read a host that 404s the index.
+- Portal detection now covers `inference-api.enternovate.co.za` (#141).
+- Dead upstream docs URL in the kanban systemd unit (#142).
+- Ten references to a missing kanban spec PDF now point at the live guide (#143).
+- Desktop backend tests no longer die at collection when the engine tree is absent.
+- Adversarial corpus tests no longer depend on parser OWS handling or filesystem normalisation.
+
+### Security
+- `scripts/whatsapp-bridge` 4 to 0, `web` 6 to 0, `website` 48 to 0, `ui-tui` 8 to 0 runtime.
+- `pyjwt` 2.15.0, `urllib3` 2.8.0, `certifi` 2026.10.23 close 19 `pip-audit` findings.
+- Desktop `dompurify` 3.4.17, including the `monaco-editor` copy; vendored bundle and notices refreshed.
+- `website` overrides: `tinypool` 2.2.0, `postcss-selector-parser` 7.1.7.
+
 ## [0.3.0] - 2026-08-23 — "Everyday Carry"
 
 Desktop-first minor release: the desktop app gains a persistent To-Do
@@ -48,7 +89,7 @@ from upstream with attribution) ships separately.
 ## [0.2.0] - 2026-08-22 — "The Big Bang"
 
 Minor release across ten workstreams: approval-gate hardening, the loop
-engine, an expanded eval harness, harness cost hardening, oh-my-pi ports,
+engine, an expanded eval harness, harness cost hardening, reliability ports,
 an overlooked-feature pack, CLI polish, workflow packs, and release
 engineering. No breaking changes.
 
@@ -65,7 +106,7 @@ engineering. No breaking changes.
 - Harness hardening: model roles (default/smol/slow/plan/advisor) with
   config overrides; fallback chains, parallel tool execution, cache-hit
   telemetry, budget governor audited as already present in 0.1.x.
-- Ports from oh-my-pi, implemented better: advisor reviewer role with
+- Reliability ports, implemented better: advisor reviewer role with
   inline severity notes (/advisor), agent hub roster with steer/kill/
   revive (/hub), atomic commit splitter with cycle rejection, conflict
   resolver, magic keywords (ultrathink/orchestrate/workflowz), NDJSON
@@ -315,5 +356,5 @@ G Autonomy & Proactivity (10). Highlights:
 - PyPI wheel (`pip install xavani-agent`), Homebrew formula, Docker image
   with HEALTHCHECK, Nix flake + Cachix cache, Windows portable installer,
   one-line installers (`curl -fsSL https://get.xavani.dev | bash`).
-- MIT licensed. Derived from Hermes Agent by Nous Research (MIT) with
-  attribution; maintained independently by Enternovate.
+- MIT licensed. See LICENSE for upstream attribution and notices;
+  maintained independently by Enternovate.

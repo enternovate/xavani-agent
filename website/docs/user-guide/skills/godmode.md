@@ -231,7 +231,7 @@ Claude Sonnet 4 is robust against all current techniques for clearly harmful con
 | GPT-4/4o (OpenAI) | OG GODMODE l33t + prefill | Responds to the classic divider format |
 | Gemini (Google) | Refusal inversion + rebel persona | Gemini's refusal can be semantically inverted |
 | Grok (xAI) | Unfiltered liberated + GODMODE divider | Already less filtered; light prompting works |
-| Xavani (Nous) | No jailbreak needed | Already uncensored — use directly |
+| Xavani (Enternovate) | No jailbreak needed | Already uncensored — use directly |
 | DeepSeek | Parseltongue + multi-attempt | Input classifiers are keyword-based; obfuscation effective |
 | Llama (Meta) | Prefill + simple system prompt | Open models respond well to prefill engineering |
 | Qwen (Alibaba) | Parseltongue + refusal inversion | Similar to DeepSeek — keyword classifiers |

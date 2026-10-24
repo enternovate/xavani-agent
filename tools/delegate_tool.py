@@ -924,7 +924,7 @@ def _build_child_agent(
     When override_* params are set (from delegation config), the child uses
     those credentials instead of inheriting from the parent.  This enables
     routing subagents to a different provider:model pair (e.g. cheap/fast
-    model on OpenRouter while the parent runs on Nous Portal).
+    model on OpenRouter while the parent runs on Xavani Portal).
     """
     from run_agent import AIAgent
     import uuid as _uuid
@@ -1025,7 +1025,7 @@ def _build_child_agent(
         child_depth=child_depth,
         persona=persona,
     )
-    # Extract parent's API key so subagents inherit auth (e.g. Nous Portal).
+    # Extract parent's API key so subagents inherit auth (e.g. Xavani Portal).
     parent_api_key = getattr(parent_agent, "api_key", None)
     if (not parent_api_key) and hasattr(parent_agent, "_client_kwargs"):
         parent_api_key = parent_agent._client_kwargs.get("api_key")
@@ -1529,6 +1529,16 @@ def _run_single_child(
             }
         )
 
+    # File-state coordination: reuse the stable subagent_id as the child's
+    # task_id so file_state writes, active-subagents registry, and TUI
+    # events all share one key.  Falls back to a fresh uuid only if the
+    # pre-built id is somehow missing.  Resolved before the try so the
+    # finally block can always drop the child's task-scoped hashline
+    # snapshots.
+    import uuid as _uuid
+
+    child_task_id = _subagent_id or f"subagent-{task_index}-{_uuid.uuid4().hex[:8]}"
+
     try:
         _heartbeat_thread.start()
         if child_progress_cb:
@@ -1537,13 +1547,6 @@ def _run_single_child(
             except Exception as e:
                 logger.debug("Progress callback start failed: %s", e)
 
-        # File-state coordination: reuse the stable subagent_id as the child's
-        # task_id so file_state writes, active-subagents registry, and TUI
-        # events all share one key.  Falls back to a fresh uuid only if the
-        # pre-built id is somehow missing.
-        import uuid as _uuid
-
-        child_task_id = _subagent_id or f"subagent-{task_index}-{_uuid.uuid4().hex[:8]}"
         parent_task_id = getattr(parent_agent, "_current_task_id", None)
         wall_start = time.time()
         parent_reads_snapshot = (
@@ -1917,6 +1920,16 @@ def _run_single_child(
         # child was never registered (e.g. ID missing on test doubles).
         if _subagent_id:
             _unregister_subagent(_subagent_id)
+
+        # Hashline snapshots are task-scoped observations: the child is
+        # finished, so its store can never authorize another edit.  Free it
+        # deterministically instead of waiting for the 32-task LRU eviction.
+        try:
+            from tools.hashline.snapshots import task_stores
+
+            task_stores.discard(child_task_id)
+        except Exception as exc:
+            logger.debug("Failed to discard hashline store for %s: %s", child_task_id, exc)
 
         if child_pool is not None and leased_cred_id is not None:
             try:

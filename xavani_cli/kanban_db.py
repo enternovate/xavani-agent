@@ -59,7 +59,7 @@ Docker layouts.
 Schema is intentionally small: tasks, task_links, task_comments,
 task_events.  The ``workspace_kind`` field decouples coordination from git
 worktrees so that research / ops / digital-twin workloads work alongside
-coding workloads.  See ``docs/xavani-kanban-v1-spec.pdf`` for the full
+coding workloads.  See ``website/docs/user-guide/features/kanban.md`` for the full
 design specification.
 
 Concurrency strategy: WAL mode + ``BEGIN IMMEDIATE`` for write

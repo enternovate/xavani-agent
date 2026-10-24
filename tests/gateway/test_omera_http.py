@@ -1,0 +1,319 @@
+import asyncio
+from contextlib import asynccontextmanager
+from unittest.mock import AsyncMock
+
+import aiohttp
+import pytest
+
+from gateway.config import PlatformConfig
+from gateway.platforms import api_server as api
+
+SERVICE_KEY = "unit-service-key-with-32-characters-minimum"
+
+
+@pytest.fixture(autouse=True)
+def no_research(monkeypatch):
+    """Keep the HTTP contract tests off the network."""
+    monkeypatch.setenv("RESEARCH_PROVIDER", "nope")
+
+
+def chat_body():
+    return {
+        "model": "omera", "stream": False,
+        "messages": [
+            {"role": "system", "content": "Business rules."},
+            {"role": "user", "content": "Help me obtain my first customer."},
+        ],
+    }
+
+
+@asynccontextmanager
+async def restricted_client():
+    adapter = api.APIServerAdapter(PlatformConfig(enabled=True, extra={
+        "key": SERVICE_KEY, "host": "127.0.0.1", "port": 0,
+        "model_name": "omera", "omera_mode": True,
+    }))
+    adapter._run_agent = AsyncMock(return_value=({
+        "final_response": "Speak to 5 potential customers.",
+        "completed": True, "partial": False, "failed": False,
+    }, {}))
+    try:
+        assert await adapter.connect() is True
+        port = adapter._site._server.sockets[0].getsockname()[1]
+        async with aiohttp.ClientSession(
+            base_url=f"http://127.0.0.1:{port}",
+            headers={"Authorization": f"Bearer {SERVICE_KEY}"},
+        ) as client:
+            yield client, adapter
+    finally:
+        await adapter.disconnect()
+        tasks = tuple(adapter._background_tasks)
+        for task in tasks:
+            task.cancel()
+        await asyncio.gather(*tasks, return_exceptions=True)
+        adapter._response_store.close()
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("result", [
+    {"completed": False},
+    {"completed": True, "partial": True, "error": "SYNTHETIC_PRIVATE_PROVIDER_MARKER"},
+    {"completed": True, "failed": True, "error": "SYNTHETIC_PRIVATE_PROVIDER_MARKER"},
+    {"final_response": "No completion evidence."},
+])
+async def test_restricted_nonstream_requires_complete_result(result, caplog):
+    async with restricted_client() as (client, adapter):
+        adapter._run_agent.return_value = (result, {})
+        response = await client.post("/v1/chat/completions", json=chat_body())
+        text = await response.text()
+        assert response.status == 502
+        assert "SYNTHETIC_PRIVATE_PROVIDER_MARKER" not in text
+        assert "SYNTHETIC_PRIVATE_PROVIDER_MARKER" not in caplog.text
+
+
+@pytest.mark.asyncio
+async def test_restricted_exception_stays_out_of_response_and_logs(caplog):
+    async with restricted_client() as (client, adapter):
+        adapter._run_agent.side_effect = RuntimeError("SYNTHETIC_PRIVATE_PROVIDER_MARKER")
+        response = await client.post("/v1/chat/completions", json=chat_body())
+        text = await response.text()
+        assert response.status == 502
+        assert "CHAT_UNAVAILABLE" in text
+        assert "SYNTHETIC_PRIVATE_PROVIDER_MARKER" not in text
+        assert "SYNTHETIC_PRIVATE_PROVIDER_MARKER" not in caplog.text
+
+
+@pytest.mark.asyncio
+async def test_restricted_identical_prompts_have_distinct_request_sessions():
+    async with restricted_client() as (client, adapter):
+        for _ in range(2):
+            response = await client.post("/v1/chat/completions", json=chat_body())
+            assert response.status == 200
+            assert "X-Xavani-Session-Id" not in response.headers
+            await response.read()
+        sessions = [call.kwargs["session_id"] for call in adapter._run_agent.call_args_list]
+        assert len(sessions) == 2
+        assert len(set(sessions)) == 2
+
+
+@pytest.mark.asyncio
+async def test_restricted_chat_enforces_chunked_body_limit():
+    async def chunks():
+        for _ in range(17):
+            yield b"x" * 16000
+
+    async with restricted_client() as (client, adapter):
+        response = await client.post(
+            "/v1/chat/completions", data=chunks(),
+            headers={"Content-Type": "application/json"},
+        )
+        assert response.status == 413
+        adapter._run_agent.assert_not_called()
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("case", ["message_count", "single_text", "system_text", "total_text"])
+async def test_restricted_chat_accepts_exact_limits(case):
+    body = chat_body()
+    if case == "message_count":
+        body["messages"] = [body["messages"][0]] + [
+            {"role": "user", "content": "x"} for _ in range(40)
+        ]
+    elif case == "single_text":
+        body["messages"][1]["content"] = "x" * 8000
+    elif case == "system_text":
+        body["messages"][0]["content"] = "x" * 16000
+    else:
+        body["messages"] = [body["messages"][0]] + [
+            {"role": "user", "content": "x" * 8000} for _ in range(4)
+        ]
+    async with restricted_client() as (client, adapter):
+        response = await client.post("/v1/chat/completions", json=body)
+        assert response.status == 200
+        await response.read()
+        adapter._run_agent.assert_awaited_once()
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("case", ["message_count", "single_text", "system_text", "total_text"])
+async def test_restricted_chat_rejects_excess_limits(case):
+    body = chat_body()
+    if case == "message_count":
+        body["messages"] = [body["messages"][0]] + [
+            {"role": "user", "content": "x"} for _ in range(41)
+        ]
+    elif case == "single_text":
+        body["messages"][1]["content"] = "x" * 8001
+    elif case == "system_text":
+        body["messages"][0]["content"] = "x" * 16001
+    else:
+        body["messages"] = [body["messages"][0]] + [
+            {"role": "user", "content": "x" * 8000} for _ in range(4)
+        ] + [{"role": "user", "content": "x"}]
+    async with restricted_client() as (client, adapter):
+        response = await client.post("/v1/chat/completions", json=body)
+        assert response.status == 400
+        adapter._run_agent.assert_not_called()
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("change", [
+    {"tools": []}, {"model": "other"}, {"stream": "false"},
+    {"messages": []}, {"messages": ["not-a-message"]},
+])
+async def test_restricted_chat_rejects_invalid_request(change):
+    async with restricted_client() as (client, adapter):
+        response = await client.post(
+            "/v1/chat/completions", json={**chat_body(), **change},
+        )
+        assert response.status == 400
+        adapter._run_agent.assert_not_called()
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("index,key,value", [
+    (0, "role", "user"),
+    (1, "role", "system"),
+    (1, "role", "assistant"),
+    (1, "role", []),
+    (1, "role", {"unexpected": "role"}),
+    (1, "content", []),
+    (1, "content", {"type": "text", "text": "nested"}),
+    (1, "content", ""),
+    (1, "content", "   "),
+])
+async def test_restricted_chat_rejects_invalid_message_values(index, key, value):
+    body = chat_body()
+    body["messages"][index][key] = value
+    async with restricted_client() as (client, adapter):
+        response = await client.post("/v1/chat/completions", json=body)
+        assert response.status == 400
+        adapter._run_agent.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_restricted_chat_rejects_unknown_message_fields():
+    body = chat_body()
+    body["messages"][1]["tool_calls"] = []
+    async with restricted_client() as (client, adapter):
+        response = await client.post("/v1/chat/completions", json=body)
+        assert response.status == 400
+        adapter._run_agent.assert_not_called()
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("body", [[], None, "invalid-root"])
+async def test_restricted_chat_rejects_invalid_roots(body):
+    async with restricted_client() as (client, adapter):
+        response = await client.post("/v1/chat/completions", json=body)
+        assert response.status == 400
+        adapter._run_agent.assert_not_called()
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("name", [
+    "X-Xavani-Session-Id", "X-Xavani-Session-Key", "Idempotency-Key",
+])
+@pytest.mark.parametrize("value", ["caller-state", ""])
+async def test_restricted_requests_reject_state_headers(name, value):
+    async with restricted_client() as (client, adapter):
+        response = await client.post(
+            "/v1/chat/completions", json=chat_body(), headers={name: value},
+        )
+        assert response.status == 403
+        adapter._run_agent.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_restricted_capabilities_match_enforced_contract():
+    async with restricted_client() as (client, adapter):
+        response = await client.get("/v1/capabilities")
+        assert response.status == 200
+        data = await response.json()
+        assert data["model"] == "omera"
+        assert data["auth"]["required"] is True
+        service = data["service"]
+        assert service["name"] == "omera"
+        assert service["contract"] == 1
+        assert service["stateless_requests"] is True
+        assert service["tools_enabled"] is False
+        assert service["memory_enabled"] is False
+        assert service["context_files_enabled"] is False
+        assert service["transcript_persistence"] is False
+        assert service["research"]["server_side"] is True
+        assert service["research"]["fetches_pages"] is True
+        assert "research" in service
+        assert data["features"]["responses_api"] is False
+        assert data["features"]["profiles_api"] is False
+        adapter._run_agent.assert_not_called()
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("method,path", [
+    ("GET", "/health/detailed"),
+    ("GET", "/v1/profiles"),
+    ("GET", "/v1/profiles/active"),
+    ("GET", "/v1/skills"),
+    ("GET", "/api/jobs"),
+    ("POST", "/api/jobs"),
+    ("POST", "/v1/responses"),
+    ("POST", "/v1/runs"),
+])
+async def test_restricted_routes_deny_general_operations(method, path):
+    async with restricted_client() as (client, adapter):
+        response = await client.request(method, path, json={})
+        assert response.status == 404
+        adapter._run_agent.assert_not_called()
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("path", ["/health", "/v1/models", "/v1/capabilities"])
+async def test_restricted_routes_require_auth(path):
+    async with restricted_client() as (client, adapter):
+        response = await client.get(path, headers={"Authorization": ""})
+        assert response.status == 401
+        adapter._run_agent.assert_not_called()
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("key", ["", "change-me"])
+async def test_restricted_start_rejects_missing_or_placeholder_key(key):
+    adapter = api.APIServerAdapter(PlatformConfig(enabled=True, extra={
+        "key": key, "port": 0, "omera_mode": True, "model_name": "omera",
+    }))
+    before = set(adapter._background_tasks)
+    try:
+        assert await adapter.connect() is False
+        assert adapter._app is None
+        assert set(adapter._background_tasks) == before
+    finally:
+        await adapter.disconnect()
+        adapter._response_store.close()
+
+
+@pytest.mark.asyncio
+async def test_restricted_chat_accepts_the_research_flag():
+    async with restricted_client() as (client, adapter):
+        response = await client.post("/v1/chat/completions", json={
+            "model": "omera", "stream": False, "xavani_research": True,
+            "messages": [
+                {"role": "system", "content": "You are Omera."},
+                {"role": "user", "content": "Help me obtain my first customer."},
+            ],
+        })
+        assert response.status == 200
+        adapter._run_agent.assert_awaited_once()
+
+
+@pytest.mark.asyncio
+async def test_restricted_chat_rejects_a_non_bool_research_flag():
+    async with restricted_client() as (client, adapter):
+        response = await client.post("/v1/chat/completions", json={
+            "model": "omera", "stream": False, "xavani_research": "yes",
+            "messages": [
+                {"role": "system", "content": "You are Omera."},
+                {"role": "user", "content": "Help me obtain my first customer."},
+            ],
+        })
+        assert response.status == 400
+        adapter._run_agent.assert_not_called()

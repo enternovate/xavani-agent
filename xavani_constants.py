@@ -495,7 +495,7 @@ def iter_xavani_node_dirs(home: Path | None = None) -> list[Path]:
     root = home or get_xavani_home()
     dirs = [root / "node"]
     bin_dir = root / "node" / "bin"
-    # NOTE: keep this ordering in sync with hermesManagedNodePathEntries() in
+    # NOTE: keep this ordering in sync with the upstream managed-node helper in
     # apps/desktop/electron/backend-env.ts — the Electron main process is Node
     # and cannot import this module, so the platform-ordering rule is mirrored
     # there (once; main.ts imports it rather than keeping its own copy).

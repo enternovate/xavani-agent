@@ -41,7 +41,7 @@ Env vars::
 
     FIRECRAWL_API_KEY=...            # direct cloud auth
     FIRECRAWL_API_URL=...            # self-hosted Firecrawl
-    FIRECRAWL_GATEWAY_URL=...        # Nous tool-gateway (subscribers)
+    FIRECRAWL_GATEWAY_URL=...        # Xavani Portal tool-gateway (subscribers)
     TOOL_GATEWAY_DOMAIN=...          # alternate gateway env
     TOOL_GATEWAY_SCHEME=...
     TOOL_GATEWAY_USER_TOKEN=...
@@ -153,7 +153,7 @@ def _get_firecrawl_gateway_url() -> str:
 
 
 def _is_tool_gateway_ready() -> bool:
-    """Return True when gateway URL + Nous Subscriber token are available.
+    """Return True when gateway URL + Xavani Portal Subscriber token are available.
 
     Reads ``read_nous_access_token`` and ``resolve_managed_tool_gateway``
     via :mod:`tools.web_tools` rather than direct imports, so unit tests
@@ -189,7 +189,7 @@ def _firecrawl_backend_help_suffix() -> str:
     if not _wt.managed_nous_tools_enabled():
         return ""
     return (
-        ", or use the Nous Tool Gateway via your subscription "
+        ", or use the Xavani Portal Tool Gateway via your subscription "
         "(FIRECRAWL_GATEWAY_URL or TOOL_GATEWAY_DOMAIN)"
     )
 
@@ -205,8 +205,8 @@ def _raise_web_backend_configuration_error() -> None:
     )
     if _wt.managed_nous_tools_enabled():
         message += (
-            " With your Nous subscription you can also use the Tool Gateway — "
-            "run `xavani tools` and select Nous Subscription as the web provider."
+            " With your Xavani Portal subscription you can also use the Tool Gateway — "
+            "run `xavani tools` and select Xavani Portal subscription as the web provider."
         )
     raise ValueError(message)
 
@@ -770,7 +770,7 @@ class FirecrawlWebSearchProvider(WebSearchProvider):
             "badge": "paid · optional gateway",
             "tag": (
                 "Full search + extract + crawl; supports direct API and "
-                "Nous tool-gateway routing."
+                "Xavani Portal tool-gateway routing."
             ),
             "env_vars": [
                 {

@@ -21,7 +21,7 @@ body:
       label: What's Going Wrong?
       description: Describe what you're trying to do and where it fails.
       placeholder: |
-        I ran `xavani setup` and selected Nous Portal, but when I try to
+        I ran `xavani setup` and selected Xavani Portal, but when I try to
         start the gateway I get...
     validations:
       required: true

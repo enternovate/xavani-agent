@@ -1270,7 +1270,7 @@ def _create_environment(env_type: str, image: str, cwd: str, timeout: int,
             if modal_state["managed_mode_blocked"]:
                 raise ValueError(
                     "Modal backend is configured for managed mode, but "
-                    "a paid Nous subscription is required for the Tool Gateway and no direct "
+                    "a paid portal subscription is required for the Tool Gateway and no direct "
                     "Modal credentials/config were found. Log in with `xavani model` or "
                     "choose TERMINAL_MODAL_MODE=direct/auto."
                 )
@@ -2277,7 +2277,7 @@ def check_terminal_requirements() -> bool:
                 if modal_state["managed_mode_blocked"]:
                     logger.error(
                         "Modal backend selected with TERMINAL_MODAL_MODE=managed, but "
-                        "a paid Nous subscription is required for the Tool Gateway and no direct "
+                        "a paid portal subscription is required for the Tool Gateway and no direct "
                         "Modal credentials/config were found. Log in with `xavani model` "
                         "or choose TERMINAL_MODAL_MODE=direct/auto."
                     )

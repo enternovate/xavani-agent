@@ -1,18 +1,18 @@
 /**
- * Hermes Kanban — Dashboard Plugin
+ * Xavani Kanban — Dashboard Plugin
  *
  * Board view for the multi-agent collaboration board backed by
  * ~/.xavani/kanban.db. Calls the plugin's backend at /api/plugins/kanban/
  * and tails task_events over a WebSocket for live updates.
  *
- * Plain IIFE, no build step. Uses window.__HERMES_PLUGIN_SDK__ for React +
+ * Plain IIFE, no build step. Uses window.__XAVANI_PLUGIN_SDK__ for React +
  * shadcn primitives; HTML5 drag-and-drop for card movement on desktop and
  * a pointer-based fallback for touch.
  */
 (function () {
   "use strict";
 
-  const SDK = window.__HERMES_PLUGIN_SDK__;
+  const SDK = window.__XAVANI_PLUGIN_SDK__;
   if (!SDK) return;
 
   const { React } = SDK;
@@ -576,7 +576,7 @@ function renderInline(esc) {
       wsClosedRef.current = false;
       function openWs() {
         if (wsClosedRef.current) return;
-        const token = window.__HERMES_SESSION_TOKEN__ || "";
+        const token = window.__XAVANI_SESSION_TOKEN__ || "";
         const proto = window.location.protocol === "https:" ? "wss:" : "ws:";
         const qsParams = {
           since: String(cursorRef.current || 0),
@@ -1454,8 +1454,8 @@ function renderInline(esc) {
       target: "_blank",
       rel: "noopener noreferrer",
       className: "xavani-kanban-docs-link",
-      title: "Open Hermes Kanban docs in a new tab",
-      "aria-label": "Hermes Kanban documentation",
+      title: "Open Xavani Kanban docs in a new tab",
+      "aria-label": "Xavani Kanban documentation",
     }, "?");
   }
 
@@ -1972,7 +1972,7 @@ function renderInline(esc) {
         ),
       ),
       h("div", { className: "flex flex-col gap-1",
-                 title: "Filter by assigned Hermes profile. Profiles are the named agent identities that claim and work on tasks." },
+                 title: "Filter by assigned Xavani profile. Profiles are the named agent identities that claim and work on tasks." },
         h(Label, { className: "text-xs text-muted-foreground" }, tx(t, "assignee", "Assignee")),
         h(Select, Object.assign({
           value: props.assigneeFilter,
@@ -2104,7 +2104,7 @@ function renderInline(esc) {
         }, tx(t, "setPriority", "Set priority")),
       ),
       h("div", { className: "xavani-kanban-bulk-reassign",
-                 title: "Reassign selected tasks to a different Hermes profile. Pick a profile (or unassign) and click Apply." },
+                 title: "Reassign selected tasks to a different Xavani profile. Pick a profile (or unassign) and click Apply." },
         h(Select, Object.assign({
           value: assignee,
           className: "h-7 text-xs",
@@ -2556,7 +2556,7 @@ function renderInline(esc) {
           h("div", { className: "xavani-kanban-card-row xavani-kanban-card-meta" },
             t.assignee
               ? h("span", { className: "xavani-kanban-assignee",
-                            title: `Assigned to Hermes profile @${t.assignee}` }, "@", t.assignee)
+                            title: `Assigned to Xavani profile @${t.assignee}` }, "@", t.assignee)
               : h("span", { className: "xavani-kanban-unassigned",
                             title: needsAssignee
                               ? tx(i18n, "needsAssigneeHint", "Dependencies are satisfied, but the dispatcher skips this task until you assign a profile.")
@@ -2658,8 +2658,8 @@ function renderInline(esc) {
             : tx(t, "assigneePlaceholder", "assignee"),
           className: "h-7 text-xs flex-1",
           title: props.columnName === "triage"
-            ? "Hermes profile that will spec this task (default: the dispatcher's configured specifier). Leave blank to let the dispatcher pick."
-            : "Hermes profile to assign. Leave blank and the dispatcher will pick from available profiles when the task is Ready.",
+            ? "Xavani profile that will spec this task (default: the dispatcher's configured specifier). Leave blank to let the dispatcher pick."
+            : "Xavani profile to assign. Leave blank and the dispatcher will pick from available profiles when the task is Ready.",
           style: { textTransform: "none" },
           autoCapitalize: "none",
           autoCorrect: "off",

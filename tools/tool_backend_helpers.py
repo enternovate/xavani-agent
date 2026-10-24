@@ -39,9 +39,9 @@ def inert_subscription_features(config=None):
 
 
 def managed_nous_tools_enabled() -> bool:
-    """Return True when the user has an active paid Nous subscription.
+    """Return True when the user has an active paid portal subscription.
 
-    The Tool Gateway is available to any Nous subscriber who is NOT on
+    The Tool Gateway is available to any Xavani Portal subscriber who is NOT on
     the free tier.  We intentionally catch all exceptions and return
     False — never block the agent startup path.
     """

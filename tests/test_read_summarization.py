@@ -8,7 +8,8 @@
 
 Verifies that:
 (a) read_file_tool emits a `[path#TAG]` header whose tag matches
-    compute_tag(full file content), recorded in snapshots.default_store;
+    compute_tag(full file content), recorded in the TASK-scoped snapshot
+    store (snapshots.task_stores.for_task(task_id));
 (b) files over 100 lines are summarized by default: first 25 + last 25
     lines, a `...` elision marker, and a footer with concrete re-read
     ranges that actually re-read the omitted middle;
@@ -26,7 +27,7 @@ import pytest
 
 import tools.file_tools as file_tools
 from tools.file_tools import read_file_tool
-from tools.hashline.snapshots import compute_tag, default_store
+from tools.hashline.snapshots import compute_tag, task_stores
 
 _HEADER_RE = re.compile(r"^\[(.+?)#([0-9A-F]{4})\]$")
 _FOOTER_RE = re.compile(r"re-read needed ranges, e.g. (.+?):(\d+)-(\d+)\]")
@@ -100,7 +101,7 @@ def test_tag_header_present_and_matches_compute_tag(tmp_path, monkeypatch):
     ops = _FakeFileOps(content)
     ops.path = str(f)
     monkeypatch.setattr(file_tools, "_get_file_ops", lambda tid="default": ops)
-    default_store.invalidate(str(f))
+    task_stores.discard("t-a")
 
     result = json.loads(read_file_tool(str(f), task_id="t-a"))
     body = result["content"]
@@ -122,7 +123,7 @@ def test_tag_header_parseable_by_hashline_edit(tmp_path, monkeypatch):
     ops = _FakeFileOps(content)
     ops.path = str(f)
     monkeypatch.setattr(file_tools, "_get_file_ops", lambda tid="default": ops)
-    default_store.invalidate(str(f))
+    task_stores.discard("t-a2")
 
     result = json.loads(read_file_tool(str(f), task_id="t-a2"))
     header = result["content"].split("\n", 1)[0]
@@ -141,7 +142,7 @@ def test_large_file_summarized_with_elision_footer(tmp_path, monkeypatch):
     ops = _FakeFileOps(content)
     ops.path = str(f)
     monkeypatch.setattr(file_tools, "_get_file_ops", lambda tid="default": ops)
-    default_store.invalidate(str(f))
+    task_stores.discard("t-b")
 
     result = json.loads(read_file_tool(str(f), task_id="t-b"))
     body = result["content"]
@@ -177,7 +178,7 @@ def test_summary_elision_count_and_range(tmp_path, monkeypatch):
     ops = _FakeFileOps(content)
     ops.path = str(f)
     monkeypatch.setattr(file_tools, "_get_file_ops", lambda tid="default": ops)
-    default_store.invalidate(str(f))
+    task_stores.discard("t-b3")
 
     result = json.loads(read_file_tool(str(f), task_id="t-b3"))
     body = result["content"]
@@ -197,7 +198,7 @@ def test_small_file_full_content_with_tag(tmp_path, monkeypatch):
     ops = _FakeFileOps(content)
     ops.path = str(f)
     monkeypatch.setattr(file_tools, "_get_file_ops", lambda tid="default": ops)
-    default_store.invalidate(str(f))
+    task_stores.discard("t-c")
 
     result = json.loads(read_file_tool(str(f), task_id="t-c"))
     body = result["content"]
@@ -218,13 +219,13 @@ def test_summary_records_same_tag_as_full_content(tmp_path, monkeypatch):
     ops = _FakeFileOps(content)
     ops.path = str(f)
     monkeypatch.setattr(file_tools, "_get_file_ops", lambda tid="default": ops)
-    default_store.invalidate(str(f))
+    task_stores.discard("t-d")
 
     result = json.loads(read_file_tool(str(f), task_id="t-d"))
     header = result["content"].split("\n", 1)[0]
     header_tag = _HEADER_RE.match(header).group(2)
 
-    snap = default_store.get(str(f))
+    snap = task_stores.for_task("t-d").get(str(f))
     assert snap is not None
     assert snap.tag == header_tag
     assert snap.tag == compute_tag(content)
@@ -241,7 +242,7 @@ def test_explicit_window_bypasses_summarization(tmp_path, monkeypatch):
     ops = _FakeFileOps(content)
     ops.path = str(f)
     monkeypatch.setattr(file_tools, "_get_file_ops", lambda tid="default": ops)
-    default_store.invalidate(str(f))
+    task_stores.discard("t-e")
 
     result = json.loads(
         read_file_tool(str(f), offset=26, limit=150, task_id="t-e")
@@ -260,7 +261,7 @@ def test_full_true_bypasses_summarization(tmp_path, monkeypatch):
     ops = _FakeFileOps(content)
     ops.path = str(f)
     monkeypatch.setattr(file_tools, "_get_file_ops", lambda tid="default": ops)
-    default_store.invalidate(str(f))
+    task_stores.discard("t-e2")
 
     result = json.loads(read_file_tool(str(f), full=True, task_id="t-e2"))
     body = result["content"]
@@ -307,7 +308,7 @@ def test_unterminated_file_labels_and_ranges_use_split_count(tmp_path, monkeypat
     ops = _WcStyleFileOps(content)
     ops.path = str(f)
     monkeypatch.setattr(file_tools, "_get_file_ops", lambda tid="default": ops)
-    default_store.invalidate(str(f))
+    task_stores.discard("t-unterm")
 
     result = json.loads(read_file_tool(str(f), task_id="t-unterm"))
     body = result["content"]
@@ -319,6 +320,22 @@ def test_unterminated_file_labels_and_ranges_use_split_count(tmp_path, monkeypat
     assert f"{f}:26-125" in footer, footer
 
     # The recorded snapshot's visible ranges must match the labels (1-25, 126-150).
-    snap = default_store.get(str(f))
+    snap = task_stores.for_task("t-unterm").get(str(f))
     assert snap is not None
     assert snap.visible_ranges == ((1, 25), (126, 150)), snap.visible_ranges
+
+
+def test_anonymous_read_still_summarizes(tmp_path, monkeypatch):
+    """The default identity loses only the header, never summarization."""
+    f, content = _make_file(tmp_path, "anon_big.py", 200)
+    ops = _FakeFileOps(content)
+    ops.path = str(f)
+    monkeypatch.setattr(file_tools, "_get_file_ops", lambda tid="default": ops)
+
+    result = json.loads(read_file_tool(str(f), task_id="default"))
+
+    body = result["content"]
+    assert body.startswith("1|line 1")
+    assert "lines elided" in body
+    assert result.get("_summarized") is True
+    assert not body.startswith("[")

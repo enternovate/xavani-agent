@@ -2,8 +2,14 @@
 
 Covers mode resolution order (per-model table -> XAVANI_EDIT_MODE ->
 config edit.mode -> default 'patch'), patch-mode delegation to the existing
-patch handler, hashline-mode application through the default snapshot store,
-replace-mode exact-string substitution, and unknown-mode error handling.
+patch handler, hashline-mode application through the calling task's
+snapshot store, replace-mode exact-string substitution, and unknown-mode
+error handling.
+
+R1 Task 07 changed the hashline contract: snapshots are per-task and the
+edit path no longer auto-records, so the hashline cases here seed the TASK
+store (``task_stores.for_task(...)``) the way a read would, and an unseen
+file is refused instead of auto-recorded.
 """
 
 import json
@@ -18,7 +24,7 @@ from tools.edit_tool import (
     _handle_edit,
     resolve_edit_mode,
 )
-from tools.hashline.snapshots import compute_tag, default_store
+from tools.hashline.snapshots import compute_tag, task_stores
 
 
 # ---------------------------------------------------------------------------
@@ -90,9 +96,10 @@ def test_hashline_mode_applies_to_file(monkeypatch, tmp_path):
 
     f = tmp_path / "greet.py"
     f.write_text("a\nb\nc\n", encoding="utf-8")
-    # Simulate the read tool's snapshot: record content, then use its tag.
-    default_store.record(str(f), "a\nb\nc\n", ranges=((1, 3),))
-    tag = default_store.get(str(f)).tag
+    # Simulate the read tool's snapshot: the TASK observes the content, then
+    # uses the tag its read emitted.
+    task_stores.for_task("t2").record(str(f), "a\nb\nc\n", ranges=((1, 3),))
+    tag = task_stores.for_task("t2").get(str(f)).tag
 
     payload = f"[{f}#{tag}]\nPUT 2.=3:\n+X\n+Y\n"
     result = _handle_edit({"input": payload, "mode": "hashline"}, task_id="t2")
@@ -110,9 +117,9 @@ def test_hashline_parse_error_returns_error_string(tmp_path):
 
 
 def test_hashline_stale_tag_error_returns_fresh_tag(monkeypatch, tmp_path):
-    """First-edit loop: on a stale/unknown tag, the error must hand back the
-    fresh on-disk tag so the model can re-issue the edit immediately
-    (read_file does not emit [path#TAG] tags yet)."""
+    """First-edit loop: on an unseen snapshot the error must lead with the
+    read-first contract and name the header a fresh read emits, so one
+    re-read is all it takes to retry (nothing is recorded by the edit path)."""
     monkeypatch.delenv("XAVANI_EDIT_MODE", raising=False)
     monkeypatch.setattr(edit_tool, "get_config_path", lambda: tmp_path / "no-such-config.yaml")
 
@@ -126,9 +133,14 @@ def test_hashline_stale_tag_error_returns_fresh_tag(monkeypatch, tmp_path):
     data = json.loads(result)
     assert "error" in data
     # The stale tag alone would be an undocumented error-leak retry: the
-    # error must name the exact retryable header with the fresh tag.
+    # error must state the read-first contract and name the exact header a
+    # real re-read returns.
+    assert "Read the target lines before the edit" in data["error"]
     assert f"[{f}#{fresh_tag}]" in data["error"]
     assert "re-issue" in data["error"].lower()
+    # Nothing was recorded or written on the edit path.
+    assert task_stores.for_task("t6").get(str(f)) is None
+    assert f.read_text(encoding="utf-8") == "a\nb\nc\n"
 
 
 def test_hashline_mode_refuses_sensitive_path(monkeypatch, tmp_path):
@@ -223,8 +235,8 @@ def test_hashline_mv_moves_source_to_dest(monkeypatch, tmp_path):
     src = tmp_path / "old.py"
     src.write_text("a\nb\nc\n", encoding="utf-8")
     dest = tmp_path / "new.py"
-    default_store.record(str(src), "a\nb\nc\n", ranges=((1, 3),))
-    tag = default_store.get(str(src)).tag
+    task_stores.for_task("t-mv").record(str(src), "a\nb\nc\n", ranges=((1, 3),))
+    tag = task_stores.for_task("t-mv").get(str(src)).tag
 
     payload = f"[{src}#{tag}]\nPUT 1.=1:\n+A1\nMV {dest}\n"
     result = _handle_edit({"input": payload, "mode": "hashline"}, task_id="t-mv")
@@ -243,8 +255,8 @@ def test_hashline_mv_refuses_sensitive_dest(monkeypatch, tmp_path):
     src = tmp_path / "old.py"
     src.write_text("a\nb\nc\n", encoding="utf-8")
     dest = tmp_path / "new.py"
-    default_store.record(str(src), "a\nb\nc\n", ranges=((1, 3),))
-    tag = default_store.get(str(src)).tag
+    task_stores.for_task("t-mv-sens").record(str(src), "a\nb\nc\n", ranges=((1, 3),))
+    tag = task_stores.for_task("t-mv-sens").get(str(src)).tag
 
     monkeypatch.setattr(
         file_tools,
@@ -260,22 +272,45 @@ def test_hashline_mv_refuses_sensitive_dest(monkeypatch, tmp_path):
     assert not dest.exists()
 
 
-def test_hashline_auto_records_unseen_file_before_apply(monkeypatch, tmp_path):
-    """Auto-record success path: a hashline edit on a file that was never
-    read (no recorded snapshot) must auto-record from disk and apply."""
+def test_hashline_does_not_auto_record_an_unseen_file(monkeypatch, tmp_path):
+    """CONTRACT CHANGE (R1 Task 07): a hashline edit on a file this task never
+    observed must be REFUSED with the read-first contract — the old behaviour
+    auto-recorded from disk and applied, which let any caller edit anything."""
     monkeypatch.delenv("XAVANI_EDIT_MODE", raising=False)
     monkeypatch.setattr(edit_tool, "get_config_path", lambda: tmp_path / "no-such-config.yaml")
 
     f = tmp_path / "fresh.py"
     f.write_text("a\nb\nc\n", encoding="utf-8")
-    assert default_store.get(str(f)) is None
+    assert task_stores.for_task("t-auto").get(str(f)) is None
     tag = compute_tag("a\nb\nc\n")
 
     payload = f"[{f}#{tag}]\nPUT 2.=2:\n+X\n"
     result = _handle_edit({"input": payload, "mode": "hashline"}, task_id="t-auto")
     data = json.loads(result)
-    assert data.get("ok") is True, data
-    assert f.read_text(encoding="utf-8") == "a\nX\nc\n"
+    assert "error" in data, data
+    assert "Read the target lines before the edit" in data["error"]
+    assert f.read_text(encoding="utf-8") == "a\nb\nc\n"
+    assert task_stores.for_task("t-auto").get(str(f)) is None
+
+
+def test_hashline_requires_an_explicit_task_identity(monkeypatch, tmp_path):
+    """The anonymous 'default' identity carries no snapshot provenance."""
+    monkeypatch.delenv("XAVANI_EDIT_MODE", raising=False)
+    monkeypatch.setattr(edit_tool, "get_config_path", lambda: tmp_path / "no-such-config.yaml")
+
+    f = tmp_path / "anon.py"
+    f.write_text("a\nb\nc\n", encoding="utf-8")
+    payload = f"[{f}#DEAD]\nPUT 2.=2:\n+X\n"
+
+    for task_id in ("default", ""):
+        result = _handle_edit({"input": payload, "mode": "hashline"}, task_id=task_id)
+        data = json.loads(result)
+        assert "error" in data, data
+        assert "explicit task identity" in data["error"], data
+    # ... and with no task_id kwarg at all.
+    data = json.loads(_handle_edit({"input": payload, "mode": "hashline"}))
+    assert "explicit task identity" in data["error"], data
+    assert f.read_text(encoding="utf-8") == "a\nb\nc\n"
 
 
 def test_replace_mode_unique_required_when_multiple_occurrences(tmp_path):

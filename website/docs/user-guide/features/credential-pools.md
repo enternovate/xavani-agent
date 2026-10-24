@@ -84,7 +84,7 @@ What would you like to do?
   5. Exit
 ```
 
-For providers that support both API keys and OAuth (Anthropic, Nous, Codex), the add flow asks which type:
+For providers that support both API keys and OAuth (Anthropic, Xavani Portal, Codex), the add flow asks which type:
 
 ```
 anthropic supports both API keys and OAuth login.
@@ -171,7 +171,7 @@ Xavani automatically discovers credentials from multiple sources and seeds the p
 | Source | Example | Auto-seeded? |
 |--------|---------|-------------|
 | Environment variables | `OPENROUTER_API_KEY`, `ANTHROPIC_API_KEY` | Yes |
-| OAuth tokens (auth.json) | Codex device code, Nous device code | Yes |
+| OAuth tokens (auth.json) | Codex device code, Xavani Portal device code | Yes |
 | Claude Code credentials | `~/.claude/.credentials.json` | Yes (Anthropic) |
 | Xavani PKCE OAuth | `~/.xavani/auth.json` | Yes (Anthropic) |
 | Custom endpoint config | `model.api_key` in config.yaml | Yes (custom endpoints) |

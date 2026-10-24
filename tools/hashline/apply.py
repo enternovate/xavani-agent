@@ -370,13 +370,6 @@ def _resolve_base(
     return head, recovered
 
 
-def _full_ranges(content: str) -> Tuple[Tuple[int, int], ...]:
-    lines = content.split("\n")
-    if content.endswith("\n"):
-        lines = lines[:-1]
-    return ((1, len(lines)),) if lines else ()
-
-
 def _commit(
     sec: Section, base: Snapshot, sim: Tuple[str, object], store: SnapshotStore
 ) -> Tuple[FileResult, List[str]]:
@@ -391,7 +384,10 @@ def _commit(
     action, value = sim
     if action == "edit":
         content = cast(str, value)
-        tag = store.record(sec.path, content, ranges=_full_ranges(content))
+        # The post-edit record keeps the fresh tag for staleness checks but
+        # authorizes no lines: an edit must never widen what the task has
+        # observed, so any further edit needs a fresh read.
+        tag = store.record(sec.path, content, ranges=())
         return FileResult(sec.path, tag, content, "edit"), warnings
     if action == "remove":
         store.invalidate(sec.path)
@@ -402,7 +398,7 @@ def _commit(
             f"MV {sec.path!r} -> {dest!r}: destination already has a "
             "recorded snapshot; overwriting"
         )
-    tag = store.record(dest, content, ranges=_full_ranges(content))
+    tag = store.record(dest, content, ranges=())
     store.invalidate(sec.path)
     return FileResult(dest, tag, content, "move", source=sec.path), warnings
 

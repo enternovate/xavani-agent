@@ -96,16 +96,16 @@ class TestCliSkinPromptIntegration:
 
 
 class TestCompactBannerSkinIntegration:
-    def test_default_compact_banner_keeps_legacy_nous_xavani_branding(self):
+    def test_default_compact_banner_uses_xavani_branding(self):
         set_active_skin("default")
 
         with patch("cli.shutil.get_terminal_size", return_value=SimpleNamespace(columns=90)), \
              patch.dict(_build_compact_banner.__globals__, {"format_banner_version_label": lambda: "Xavani Agent v0.1.0 (test)"}):
             banner = _build_compact_banner()
 
-        assert "NOUS XAVANI" in banner
+        assert "XAVANI" in banner
 
-    def test_poseidon_compact_banner_uses_skin_branding_instead_of_nous_xavani(self):
+    def test_poseidon_compact_banner_uses_skin_branding(self):
         set_active_skin("poseidon")
 
         with patch("cli.shutil.get_terminal_size", return_value=SimpleNamespace(columns=90)), \
@@ -113,7 +113,7 @@ class TestCompactBannerSkinIntegration:
             banner = _build_compact_banner()
 
         assert "Poseidon Agent" in banner
-        assert "NOUS XAVANI" not in banner
+        assert "XAVANI" not in banner
 
     def test_poseidon_compact_banner_uses_skin_colors(self):
         set_active_skin("poseidon")

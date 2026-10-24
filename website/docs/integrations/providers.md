@@ -14,7 +14,7 @@ You need at least one way to connect to an LLM. Use `xavani model` to switch pro
 
 | Provider | Setup |
 |----------|-------|
-| **Nous Portal** | `xavani model` (OAuth, subscription-based) |
+| **Xavani Portal** | `xavani model` (OAuth, subscription-based) |
 | **OpenAI Codex** | `xavani model` (ChatGPT OAuth, uses Codex models) |
 | **GitHub Copilot** | `xavani model` (OAuth device code flow, `COPILOT_GITHUB_TOKEN`, `GH_TOKEN`, or `gh auth token`) |
 | **GitHub Copilot ACP** | `xavani model` (spawns local `copilot --acp --stdio`) |
@@ -144,11 +144,13 @@ If a token refresh fails with a terminal error (HTTP 4xx, `invalid_grant`, revok
 :::
 
 :::warning
-Even when using Nous Portal, Codex, or a custom endpoint, some tools (vision, web summarization, MoA) use a separate "auxiliary" model. By default (`auxiliary.*.provider: "auto"`), Xavani routes these tasks to your **main chat model** — the same model you picked in `xavani model`. You can override each task individually to route it to a cheaper/faster model (e.g. Gemini Flash on OpenRouter) — see [Auxiliary Models](/docs/user-guide/configuration#auxiliary-models).
+Even when using Xavani Portal, Codex, or a custom endpoint, some tools (vision, web summarization, MoA) use a separate "auxiliary" model. By default (`auxiliary.*.provider: "auto"`), Xavani routes these tasks to your **main chat model** — the same model you picked in `xavani model`. You can override each task individually to route it to a cheaper/faster model (e.g. Gemini Flash on OpenRouter) — see [Auxiliary Models](/docs/user-guide/configuration#auxiliary-models).
 :::
 
-:::tip Nous Tool Gateway
-Paid Nous Portal subscribers also get access to the **[Tool Gateway](/docs/user-guide/features/tool-gateway)** — web search, image generation, TTS, and browser automation routed through your subscription. No extra API keys needed. It's offered automatically during `xavani model` setup, or enable it later with `xavani tools`.
+:::tip Xavani Tool Gateway
+> Note: this integration is not available in current Xavani builds; portal services are disabled.
+
+Paid Xavani Portal subscribers also get access to the **[Tool Gateway](/docs/user-guide/features/tool-gateway)** — web search, image generation, TTS, and browser automation routed through your subscription. No extra API keys needed. It's offered automatically during `xavani model` setup, or enable it later with `xavani tools`.
 :::
 
 ### Two Commands for Model Management
@@ -162,15 +164,15 @@ Xavani has **two** model commands that serve different purposes:
 
 If you're trying to switch to a provider you haven't set up yet (e.g. you only have OpenRouter configured and want to use Anthropic), you need `xavani model`, not `/model`. Exit your session first (`Ctrl+C` or `/quit`), run `xavani model`, complete the provider setup, then start a new session.
 
-### Nous Portal
+### Xavani Portal
 
-Subscription-based access to Xavani-4 models (`Xavani-4-70B`, `Xavani-4.3-36B`, `Xavani-4-405B`) via Enternovate's portal. Run `xavani model`, pick **Nous Portal**, sign in through the browser — Xavani stores a long-lived refresh token at `~/.xavani/auth.json`.
+Subscription-based access to Xavani-4 models (`Xavani-4-70B`, `Xavani-4.3-36B`, `Xavani-4-405B`) via Enternovate's portal. Run `xavani model`, pick **Xavani Portal**, sign in through the browser — Xavani stores a long-lived refresh token at `~/.xavani/auth.json`.
 
 The refresh token is also shared across profiles via a shared token store, so logging in on one profile carries over to the others.
 
 #### Token handling
 
-Xavani mints a short-lived JWT from your stored Nous refresh token on each inference call rather than reusing a long-lived API key. The token lifecycle is fully automatic — refresh, mint, retry on transient 401 — and you never see it.
+Xavani mints a short-lived JWT from your stored Xavani Portal refresh token on each inference call rather than reusing a long-lived API key. The token lifecycle is fully automatic — refresh, mint, retry on transient 401 — and you never see it.
 
 If the portal invalidates the refresh token (password change, manual revoke, session expiry), the invalid refresh token is quarantined locally so Xavani stops replaying it and you don't see a stream of identical 401s. The next call surfaces a clear "re-authentication required" message. Run `xavani auth add nous` to log in again; the quarantine clears on the next successful login.
 
@@ -1171,7 +1173,7 @@ Xavani uses a multi-source resolution chain to detect the correct context window
 4. **Endpoint `/models`** — queries your server's API (local/custom endpoints)
 5. **Anthropic `/v1/models`** — queries Anthropic's API for `max_input_tokens` (API-key users only)
 6. **OpenRouter API** — live model metadata from OpenRouter
-7. **Nous Portal** — suffix-matches Nous model IDs against OpenRouter metadata
+7. **Xavani Portal** — suffix-matches Xavani Portal model IDs against OpenRouter metadata
 8. **[models.dev](https://models.dev)** — community-maintained registry with provider-specific context lengths for 3800+ models across 100+ providers
 9. **Fallback defaults** — broad model family patterns (128K default)
 
@@ -1353,7 +1355,7 @@ model:
 
 | Use Case | Recommended |
 |----------|-------------|
-| **Just want it to work** | OpenRouter (default) or Nous Portal |
+| **Just want it to work** | OpenRouter (default) or Xavani Portal |
 | **Local models, easy setup** | Ollama |
 | **Production GPU serving** | vLLM or SGLang |
 | **Mac / no GPU** | Ollama or llama.cpp |

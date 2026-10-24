@@ -397,7 +397,7 @@ def compress_context(
     logger.info(
         "context compression started: session=%s messages=%d tokens=~%s model=%s focus=%r",
         agent.session_id or "none", _pre_msg_count,
-        f"{approx_tokens:,}" if approx_tokens else "unknown", agent.model,
+        f"{approx_tokens:,}" if approx_tokens else "unknown", agent.model,  # nosec B105 - compression diagnostic (token counts, model name); no credentials
         focus_topic,
     )
 
@@ -476,6 +476,17 @@ def compress_context(
     todo_snapshot = agent._todo_store.format_for_injection()
     if todo_snapshot:
         compressed.append({"role": "user", "content": todo_snapshot})
+
+    # Workflow skill receipts survive compression.  The summariser drops the
+    # loaded skill bodies, so mark the receipts pruned and re-inject the
+    # receipt block plus the reload instruction; a consequential action then
+    # has to reload each body and confirm its content hash first.
+    try:
+        from agent.workflow_skills import retain_workflow_receipts
+
+        retain_workflow_receipts(agent, compressed)
+    except Exception:
+        logger.debug("workflow skill receipt retention failed", exc_info=True)
 
     agent._invalidate_system_prompt()
     new_system_prompt = agent._build_system_prompt(system_message)

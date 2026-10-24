@@ -30,8 +30,10 @@ Brave Search and DDGS are **search-only** — pair either with Firecrawl/Tavily/
 
 **Per-capability split:** you can use different providers for search and extract independently — for example SearXNG (free) for search and Firecrawl for extract. See [Per-capability configuration](#per-capability-configuration) below.
 
-:::tip Nous Subscribers
-If you have a paid [Nous Portal](https://portal.nousresearch.com) subscription, web search and extract are available through the **[Tool Gateway](tool-gateway.md)** via managed Firecrawl — no API key needed. Run `xavani tools` to enable it.
+:::tip Xavani Portal subscribers
+> Note: this integration is not available in current Xavani builds; portal services are disabled.
+
+If you have a paid Xavani Portal subscription, web search and extract are available through the **[Tool Gateway](tool-gateway.md)** via managed Firecrawl — no API key needed. Run `xavani tools` to enable it.
 :::
 
 ---

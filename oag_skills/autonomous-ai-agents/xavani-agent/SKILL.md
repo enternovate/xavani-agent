@@ -372,7 +372,7 @@ Full config reference: https://enternovate.co.za/xavani-agent/docs/user-guide/co
 |----------|------|-------------|
 | OpenRouter | API key | `OPENROUTER_API_KEY` |
 | Anthropic | API key | `ANTHROPIC_API_KEY` |
-| Nous Portal | OAuth | `xavani auth` |
+| Xavani Portal | OAuth | `xavani auth` |
 | OpenAI Codex | OAuth | `xavani auth` |
 | GitHub Copilot | Token | `COPILOT_GITHUB_TOKEN` |
 | Google Gemini | API key | `GOOGLE_API_KEY` or `GEMINI_API_KEY` |

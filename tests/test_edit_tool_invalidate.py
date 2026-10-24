@@ -16,7 +16,7 @@ import json
 import tools.edit_tool as edit_tool
 import tools.fs_scan_cache as fsc
 from tools.edit_tool import _handle_edit
-from tools.hashline.snapshots import default_store
+from tools.hashline.snapshots import task_stores
 
 
 def test_hashline_edit_invalidates_cache(monkeypatch, tmp_path):
@@ -27,8 +27,8 @@ def test_hashline_edit_invalidates_cache(monkeypatch, tmp_path):
     tree.mkdir()
     f = tree / "greet.py"
     f.write_text("a\nb\nc\n", encoding="utf-8")
-    default_store.record(str(f), "a\nb\nc\n", ranges=((1, 3),))
-    tag = default_store.get(str(f)).tag
+    task_stores.for_task("t-inv-edit").record(str(f), "a\nb\nc\n", ranges=((1, 3),))
+    tag = task_stores.for_task("t-inv-edit").get(str(f)).tag
 
     fsc.hits = 0
     fsc.walk(str(tree))  # prime the cache entry
@@ -82,8 +82,8 @@ def test_hashline_move_invalidates_both_paths(monkeypatch, tmp_path):
     dst_tree.mkdir()
     src = src_tree / "old.py"
     src.write_text("a\nb\nc\n", encoding="utf-8")
-    default_store.record(str(src), "a\nb\nc\n", ranges=((1, 3),))
-    tag = default_store.get(str(src)).tag
+    task_stores.for_task("t-inv-mv").record(str(src), "a\nb\nc\n", ranges=((1, 3),))
+    tag = task_stores.for_task("t-inv-mv").get(str(src)).tag
     dest = dst_tree / "new.py"
 
     fsc.hits = 0

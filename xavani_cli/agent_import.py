@@ -1006,7 +1006,7 @@ def print_import_report(report: Dict[str, Any], dry_run: bool) -> None:
     if stripped:
         print(color("  ⚷ Secrets stripped (never imported):", Colors.YELLOW))
         for name in stripped:
-            print(f"      {name}")
+            print(f"      {name}")  # nosec B105 - prints the NAMES of stripped secrets, never their values
         print_info("Re-add credentials deliberately via 'xavani setup' or ~/.xavani/.env.")
         print()
 

@@ -744,16 +744,16 @@ class TestPromptBuilderConstants:
         assert len(DEFAULT_AGENT_IDENTITY) > 50
 
     def test_default_identity_is_xavani_by_enternovate(self):
-        """Identity must assert Xavani Agent / Enternovate and reject the
-        upstream Hermes / Nous Research persona (regression: base models
-        otherwise default to their trained identity when asked who they are)."""
+        """Identity must assert Xavani Agent / Enternovate and reject any other
+        agent persona (regression: base models otherwise default to their
+        trained identity when asked who they are)."""
         ident = DEFAULT_AGENT_IDENTITY
         assert "Xavani Agent" in ident
         assert "Enternovate" in ident
-        # Explicitly denies the upstream identity so a Hermes-trained base
-        # model cannot fall back to "I'm Hermes by Nous Research".
-        assert "Hermes" in ident and "NOT Hermes" in ident
-        assert "Nous Research" in ident
+        # Explicitly denies other agent identities so a base model cannot
+        # fall back to a trained vendor identity.
+        assert "NOT affiliated with any other agent product" in ident
+        assert "NOT made by any other research organization" in ident
 
     def test_platform_hints_known_platforms(self):
         assert "whatsapp" in PLATFORM_HINTS

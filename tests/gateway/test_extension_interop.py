@@ -2,7 +2,7 @@
 
 Covers the three gaps versus the browser extension's capability
 probes: /v1/profiles, /v1/skills, and acceptance of
-``hermes.browser.turn.v2`` envelopes on /v1/runs.
+``xavani.browser.turn.v2`` envelopes on /v1/runs.
 """
 
 import json
@@ -26,25 +26,32 @@ class TestCapabilitiesAdvertised:
 class TestEnvelopeParsing:
     def test_extract_human_input_from_turn_v2(self):
         envelope = {
-            "protocol": "hermes.browser.turn.v2",
+            "protocol": "xavani.browser.turn.v2",
             "human_input": {"source": "composer", "text": "summarize this page"},
             "browser_context": {},
-            "source_receipt": {"protocol": "hermes.browser.turn.v2", "version": 2},
+            "source_receipt": {"protocol": "xavani.browser.turn.v2", "version": 2},
         }
         text = api_mod.extract_browser_turn_text(envelope)
         assert text == "summarize this page"
+
+    def test_legacy_envelope_suffix_still_accepted(self):
+        env = {
+            "protocol": "legacy.browser.turn.v2",
+            "human_input": {"text": "kept for older extension builds"},
+        }
+        assert api_mod.extract_browser_turn_text(env) == "kept for older extension builds"
 
     def test_plain_input_untouched(self):
         assert api_mod.extract_browser_turn_text("hello") == "hello"
         assert api_mod.extract_browser_turn_text({"input": "hey"}) == "hey"
 
     def test_envelope_without_human_input_falls_back(self):
-        env = {"protocol": "hermes.browser.turn.v2"}
+        env = {"protocol": "xavani.browser.turn.v2"}
         assert api_mod.extract_browser_turn_text(env) is None
 
     def test_attachment_context_appended(self):
         env = {
-            "protocol": "hermes.browser.turn.v2",
+            "protocol": "xavani.browser.turn.v2",
             "human_input": {"text": "question"},
             "attachment_context": {"items": [{"label": "notes.txt", "text": "file body"}]},
         }
@@ -54,7 +61,7 @@ class TestEnvelopeParsing:
 
     def test_budget_reject_oversize_human_input(self):
         env = {
-            "protocol": "hermes.browser.turn.v2",
+            "protocol": "xavani.browser.turn.v2",
             "human_input": {"text": "x" * 60_000},  # over the 48k BCP budget
         }
         # Extension clamps client-side; server must not crash either way.

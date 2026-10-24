@@ -1232,7 +1232,7 @@ class TestDoctorXaiOAuthStatus:
         with contextlib.redirect_stdout(buf):
             doctor_mod.run_doctor(Namespace(fix=False))
         out = buf.getvalue()
-        assert "Nous Portal auth" in out
+        assert "Xavani Portal auth" in out
         assert "logged in" in out
 
     def test_function_raises_does_not_crash_doctor(self, monkeypatch, tmp_path):

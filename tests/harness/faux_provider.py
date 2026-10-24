@@ -232,6 +232,27 @@ class ScriptedSession:
             )
         )
 
+    def tool_calls(self, *calls, model: str = "faux-model") -> None:
+        """Script one assistant response carrying SEVERAL tool calls.
+
+        Each entry is a ``(name, arguments)`` pair; ids are distinct
+        (``call_0``, ``call_1``, …) so a batch can be keyed per call —
+        ``tool_call()`` alone cannot build a multi-call assistant turn.
+        """
+        pairs = list(calls)
+
+        def _step() -> Any:
+            return _Completion(
+                content="",
+                tool_calls=[
+                    _ToolCall(name, arguments, index=index)
+                    for index, (name, arguments) in enumerate(pairs)
+                ],
+                model=model,
+            )
+
+        self._script.append(_step)
+
     def stream_text(self, content: str, model: str = "faux-model") -> None:
         """Script a streaming text response (chunked deltas)."""
         def _stream() -> List[_Chunk]:

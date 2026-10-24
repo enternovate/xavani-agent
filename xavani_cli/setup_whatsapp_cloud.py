@@ -214,7 +214,7 @@ def _prompt_validated(
         ok, reason = validator(value)
         if ok:
             return value.strip()
-        print(f"    ✗ {reason}")
+        print(f"    ✗ {reason}")  # nosec B105 - validation-failure reason text; not the secret value
         if attempts >= 3:
             try:
                 cont = input("    Try again, or press Enter to skip: ").strip()
@@ -293,7 +293,7 @@ def run_whatsapp_cloud_setup() -> int:
             return 1
     else:
         save_env_value("WHATSAPP_CLOUD_PHONE_NUMBER_ID", phone_id)
-        print(f"  ✓ Saved: {phone_id}")
+        print(f"  ✓ Saved: {phone_id}")  # nosec B105 - WhatsApp Cloud phone-number ID; a public identifier
     print()
 
     print("─" * 50)
@@ -384,7 +384,7 @@ def run_whatsapp_cloud_setup() -> int:
     )
     if app_id:
         save_env_value("WHATSAPP_CLOUD_APP_ID", app_id)
-        print(f"  ✓ Saved: {app_id}")
+        print(f"  ✓ Saved: {app_id}")  # nosec B105 - WhatsApp Cloud app ID; a public identifier
     elif current_app_id:
         print(f"  ✓ Keeping existing: {current_app_id}")
 
@@ -402,7 +402,7 @@ def run_whatsapp_cloud_setup() -> int:
     )
     if waba_id:
         save_env_value("WHATSAPP_CLOUD_WABA_ID", waba_id)
-        print(f"  ✓ Saved: {waba_id}")
+        print(f"  ✓ Saved: {waba_id}")  # nosec B105 - WhatsApp Cloud WABA ID; a public identifier
     elif current_waba_id:
         print(f"  ✓ Keeping existing: {current_waba_id}")
     print()
@@ -521,7 +521,7 @@ def run_whatsapp_cloud_setup() -> int:
     effective_waba = waba_id or current_waba_id
     if effective_waba:
         print("    • Display name + profile picture:")
-        print("        https://business.facebook.com/wa/manage/phone-numbers/"
+        print("        https://business.facebook.com/wa/manage/phone-numbers/"  # nosec B105 - public Facebook Business Manager phone-numbers URL
               f"?waba_id={effective_waba}")
     else:
         print("    • Display name + profile picture:")

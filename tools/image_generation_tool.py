@@ -197,7 +197,7 @@ FAL_MODELS: Dict[str, Dict[str, Any]] = {
             "output_format": "png",
             "safety_tolerance": "5",
             # "1K" is the cheapest tier; 4K doubles the per-image cost.
-            # Users on Nous Subscription should stay at 1K for predictable billing.
+            # Users on Xavani Portal subscription should stay at 1K for predictable billing.
             "resolution": "1K",
         },
         "supports": {
@@ -248,7 +248,7 @@ FAL_MODELS: Dict[str, Dict[str, Any]] = {
             "portrait": "portrait_4_3",       # 768x1024
         },
         "defaults": {
-            # Same quality pinning as gpt-image-1.5: medium keeps Nous
+            # Same quality pinning as gpt-image-1.5: medium keeps Xavani Portal
             # Portal billing predictable. "high" is 3-4x the per-image
             # cost at the same size; "low" is too rough for production use.
             "quality": "medium",
@@ -360,7 +360,7 @@ _managed_fal_client_lock = threading.Lock()
 
 
 # ---------------------------------------------------------------------------
-# Managed FAL gateway (Nous Subscription)
+# Managed FAL gateway (Xavani Portal subscription)
 # ---------------------------------------------------------------------------
 def _resolve_managed_fal_gateway():
     """Return managed fal-queue gateway config when the user prefers the gateway
@@ -503,9 +503,9 @@ def _submit_fal_request(model: str, arguments: Dict[str, Any]):
         status = _extract_http_status(exc)
         if status is not None and 400 <= status < 500:
             raise ValueError(
-                f"Nous Subscription gateway rejected model '{model}' "
+                f"Xavani Portal subscription gateway rejected model '{model}' "
                 f"(HTTP {status}). This model may not yet be enabled on "
-                f"the Nous Portal's FAL proxy. Either:\n"
+                f"the Xavani Portal's FAL proxy. Either:\n"
                 f"  • Set FAL_KEY in your environment to use FAL.ai directly, or\n"
                 f"  • Pick a different model via `xavani tools` → Image Generation."
             ) from exc
@@ -823,7 +823,7 @@ def _build_no_backend_setup_message() -> str:
 
     Used by the in-tree FAL path. Mentions:
       - FAL_KEY signup link
-      - managed-gateway status (if Nous tools are enabled)
+      - managed-gateway status (if Xavani Portal tools are enabled)
       - plugin alternative pointer (so users on a stale ``image_gen.provider``
         know the registry exists and how to inspect it)
     """
@@ -843,7 +843,7 @@ def _build_no_backend_setup_message() -> str:
     )
     if managed_nous_tools_enabled():
         lines.append(
-            "  2. Sign in to a Nous account that has the managed FAL "
+            "  2. Sign in to a Xavani Portal account that has the managed FAL "
             "gateway enabled (`xavani setup`)"
         )
     lines.append(

@@ -1,5 +1,5 @@
 {
-  description = "Xavani Agent - AI agent framework by Nous Research";
+  description = "Xavani Agent - AI agent framework by Enternovate";
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";

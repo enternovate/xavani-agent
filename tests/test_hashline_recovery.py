@@ -158,7 +158,9 @@ def test_apply_sections_successful_change_resets_guard():
     assert res.error is None  # real change
 
     # Same payload again is now a no-op, but the successful change reset the
-    # guard: warning (count 1), not an escalation.
+    # guard: warning (count 1), not an escalation.  A fresh read re-observes
+    # the rewritten lines first: edits never widen observations.
+    store.record("f.py", "x\ny\nz\n", ranges=((1, 3),))
     tag = store.get("f.py").tag
     noop_patch = f"[f.py#{tag}]\nPUT 1.=3:\n+x\n+y\n+z\n"
     res = apply_sections(parse(noop_patch), store, guard=guard)

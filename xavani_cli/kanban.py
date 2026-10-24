@@ -5,7 +5,7 @@
 """CLI for the Xavani Kanban board — ``xavani kanban …`` subcommand.
 
 Exposes the full Kanban command surface documented in the design spec
-(``docs/xavani-kanban-v1-spec.pdf``).  All DB work is delegated to
+(``website/docs/user-guide/features/kanban.md``).  All DB work is delegated to
 ``kanban_db``.  This module adds:
 
   * Argparse subcommand construction (``build_parser``).
@@ -205,7 +205,7 @@ def build_parser(parent_subparsers: argparse._SubParsersAction) -> argparse.Argu
             "Tasks are claimed atomically, can depend on other tasks, and "
             "are executed by a named profile in an isolated workspace. "
             "See https://enternovate.co.za/xavani-agent/docs/user-guide/features/kanban "
-            "or docs/xavani-kanban-v1-spec.pdf for the full design."
+            "or the Kanban user guide for the full design."
         ),
     )
     # --- global --board flag ---

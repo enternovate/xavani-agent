@@ -37,6 +37,7 @@ import os
 import socket as _socket
 import re
 import sqlite3
+import threading
 import time
 import uuid
 from typing import Any, Dict, List, Optional
@@ -54,6 +55,8 @@ from gateway.platforms.base import (
     SendResult,
     is_network_accessible,
 )
+from xavani_omera.capabilities import omera_service_payload
+from xavani_omera.chat_research import research_system_block
 
 logger = logging.getLogger(__name__)
 try:
@@ -589,8 +592,9 @@ class _IdempotencyCache:
 _idem_cache = _IdempotencyCache()
 
 
-# Browser extension turn envelope (hermes.browser.turn.v2) constants.
-_BROWSER_TURN_PROTOCOL_ID = "hermes.browser.turn.v2"
+# Browser extension turn envelope constants. The suffix match also accepts
+# legacy envelope ids from older extension builds.
+_BROWSER_TURN_PROTOCOL_SUFFIX = ".browser.turn.v2"
 # The extension's BCP total serialized budget; human input alone is
 # clamped client-side to 6k, so anything wildly over that is malformed.
 _BROWSER_TURN_MAX_INPUT_CHARS = 48_000
@@ -602,7 +606,7 @@ def extract_browser_turn_text(body):
     Accepts:
       - plain string (legacy /v1/runs input)
       - dict with ``input`` key (standard runs/chat bodies)
-      - dict with ``protocol == hermes.browser.turn.v2``: pulls
+      - dict with a browser turn envelope (``protocol`` ending in ``.browser.turn.v2``): pulls
         ``human_input.text`` and appends attachment text items.
 
     Returns the prompt string, or None when no usable text exists.
@@ -613,7 +617,8 @@ def extract_browser_turn_text(body):
             return body
         if not isinstance(body, dict):
             return None
-        if body.get("protocol") != _BROWSER_TURN_PROTOCOL_ID:
+        protocol = body.get("protocol")
+        if not (isinstance(protocol, str) and protocol.endswith(_BROWSER_TURN_PROTOCOL_SUFFIX)):
             inner = body.get("input")
             if isinstance(inner, str):
                 return inner
@@ -694,6 +699,18 @@ except ImportError:
     _cron_trigger = None
 
 
+def _chat_stream_finish(result, *, require_completed=False):
+    if not isinstance(result, dict):
+        return "error"
+    if result.get("failed"):
+        return "error"
+    if result.get("partial"):
+        return "length"
+    if result.get("completed", not require_completed) is not True:
+        return "error"
+    return "stop"
+
+
 class APIServerAdapter(BasePlatformAdapter):
     """
     OpenAI-compatible HTTP API server adapter.
@@ -705,6 +722,7 @@ class APIServerAdapter(BasePlatformAdapter):
     def __init__(self, config: PlatformConfig):
         super().__init__(config, Platform.API_SERVER)
         extra = config.extra or {}
+        self._omera_mode = _coerce_request_bool(extra.get("omera_mode"), default=False)
         self._host: str = extra.get("host", os.getenv("API_SERVER_HOST", DEFAULT_HOST))
         raw_port = extra.get("port")
         if raw_port is None:
@@ -720,11 +738,17 @@ class APIServerAdapter(BasePlatformAdapter):
         self._app: Optional["web.Application"] = None
         self._runner: Optional["web.AppRunner"] = None
         self._site: Optional["web.TCPSite"] = None
-        self._response_store = ResponseStore()
+        self._response_store = (
+            ResponseStore(db_path=":memory:") if self._omera_mode else ResponseStore()
+        )
         # Active run streams: run_id -> asyncio.Queue of SSE event dicts
         self._run_streams: Dict[str, "asyncio.Queue[Optional[Dict]]"] = {}
         # Creation timestamps for orphaned-run TTL sweep
         self._run_streams_created: Dict[str, float] = {}
+        # run_id -> last event seq assigned.  Guarded by a lock because tool
+        # completion callbacks fire from parallel executor threads.
+        self._run_event_seq: Dict[str, int] = {}
+        self._run_event_seq_lock = threading.Lock()
         # Active run agent/task references for stop support
         self._active_run_agents: Dict[str, Any] = {}
         self._active_run_tasks: Dict[str, "asyncio.Task"] = {}
@@ -943,18 +967,56 @@ class APIServerAdapter(BasePlatformAdapter):
         from gateway.run import _resolve_runtime_agent_kwargs, _resolve_gateway_model, _load_gateway_config, GatewayRunner
         from xavani_cli.tools_config import _get_platform_tools
 
-        runtime_kwargs = _resolve_runtime_agent_kwargs()
+        if self._omera_mode:
+            from xavani_cli.runtime_provider import resolve_runtime_provider
+
+            try:
+                runtime = resolve_runtime_provider(
+                    requested=os.getenv("XAVANI_INFERENCE_PROVIDER"),
+                )
+            except Exception as exc:
+                raise RuntimeError("PRIMARY_PROVIDER_UNAVAILABLE") from exc
+            runtime_kwargs = {
+                "api_key": runtime.get("api_key"),
+                "base_url": runtime.get("base_url"),
+                "provider": runtime.get("provider"),
+                "api_mode": runtime.get("api_mode"),
+                "command": runtime.get("command"),
+                "args": list(runtime.get("args") or []),
+                "credential_pool": runtime.get("credential_pool"),
+            }
+        else:
+            runtime_kwargs = _resolve_runtime_agent_kwargs()
         reasoning_config = GatewayRunner._load_reasoning_config()
         model = _resolve_gateway_model()
 
-        user_config = _load_gateway_config()
-        enabled_toolsets = sorted(_get_platform_tools(user_config, "api_server"))
-
-        max_iterations = int(os.getenv("XAVANI_MAX_ITERATIONS", "90"))
-
-        # Load fallback provider chain so the API server platform has the
-        # same fallback behaviour as Telegram/Discord/Slack (fixes #4954).
-        fallback_model = GatewayRunner._load_fallback_model()
+        if self._omera_mode:
+            enabled_toolsets = []
+            max_iterations = 1
+            fallback_model = None
+            session_db = None
+            session_id = None
+            gateway_session_key = None
+            tool_progress_callback = None
+            tool_start_callback = None
+            tool_complete_callback = None
+            service_kwargs = {
+                "max_tokens": 2048,
+                "skip_memory": True,
+                "skip_context_files": True,
+                "load_soul_identity": False,
+                "disabled_toolsets": ["all"],
+                "prefill_messages": [],
+                "save_trajectories": False,
+            }
+        else:
+            user_config = _load_gateway_config()
+            enabled_toolsets = sorted(_get_platform_tools(user_config, "api_server"))
+            max_iterations = int(os.getenv("XAVANI_MAX_ITERATIONS", "90"))
+            # Keep the ordinary provider fallback chain and shared sessions.
+            fallback_model = GatewayRunner._load_fallback_model()
+            session_db = self._ensure_session_db()
+            service_kwargs = {}
 
         agent = AIAgent(
             model=model,
@@ -965,21 +1027,94 @@ class APIServerAdapter(BasePlatformAdapter):
             ephemeral_system_prompt=ephemeral_system_prompt or None,
             enabled_toolsets=enabled_toolsets,
             session_id=session_id,
-            platform="api_server",
+            platform="omera" if self._omera_mode else "api_server",
             stream_delta_callback=stream_delta_callback,
             tool_progress_callback=tool_progress_callback,
             tool_start_callback=tool_start_callback,
             tool_complete_callback=tool_complete_callback,
-            session_db=self._ensure_session_db(),
+            session_db=session_db,
             fallback_model=fallback_model,
             reasoning_config=reasoning_config,
             gateway_session_key=gateway_session_key,
+            **service_kwargs,
         )
+        if self._omera_mode:
+            agent.tools = []
+            agent.valid_tool_names = set()
+            agent._persist_disabled = True
+            agent.session_log_file = None
+            agent._session_db = None
+            agent._fallback_chain = []
         return agent
 
     # ------------------------------------------------------------------
     # HTTP Handlers
     # ------------------------------------------------------------------
+
+    async def _handle_omera_http(self, request, handler):
+        if not self._api_key:
+            return web.json_response(_openai_error("SERVICE_UNAVAILABLE"), status=503)
+        auth_error = self._check_auth(request)
+        if auth_error is not None:
+            return auth_error
+        allowed = {
+            ("GET", "/health"),
+            ("GET", "/v1/health"),
+            ("GET", "/v1/models"),
+            ("GET", "/v1/capabilities"),
+            ("POST", "/v1/chat/completions"),
+        }
+        if (request.method, request.path) not in allowed:
+            return web.json_response(_openai_error("NOT_AVAILABLE"), status=404)
+        headers = ("X-Xavani-Session-Id", "X-Xavani-Session-Key", "Idempotency-Key")
+        if any(name in request.headers for name in headers):
+            return web.json_response(_openai_error("STATEFUL_REQUEST_FORBIDDEN"), status=403)
+        if request.method == "POST":
+            try:
+                body = await request.json()
+            except web.HTTPRequestEntityTooLarge:
+                return web.json_response(_openai_error("REQUEST_TOO_LARGE"), status=413)
+            except Exception:
+                return web.json_response(_openai_error("INVALID_REQUEST"), status=400)
+            roots = {"model", "stream", "messages"}
+            valid = (
+                isinstance(body, dict)
+                and roots <= set(body)
+                and set(body) <= roots | {"xavani_research"}
+            )
+            if valid:
+                valid = body["model"] == self._model_name and type(body["stream"]) is bool
+            if valid and "xavani_research" in body:
+                valid = type(body["xavani_research"]) is bool
+            messages = body.get("messages") if isinstance(body, dict) else None
+            valid = valid and isinstance(messages, list) and 2 <= len(messages) <= 41
+            if valid:
+                for index, message in enumerate(messages):
+                    if not isinstance(message, dict) or set(message) != {"role", "content"}:
+                        valid = False
+                        break
+                    roles = {"system"} if index == 0 else {"user", "assistant"}
+                    role = message["role"]
+                    content = message["content"]
+                    limit = 16000 if index == 0 else 8000
+                    if (not isinstance(role, str) or role not in roles or not isinstance(content, str)
+                            or not content.strip() or len(content) > limit):
+                        valid = False
+                        break
+            if valid:
+                valid = messages[-1]["role"] == "user"
+                valid = valid and sum(len(item["content"]) for item in messages[1:]) <= 32000
+            if not valid:
+                return web.json_response(_openai_error("INVALID_REQUEST"), status=400)
+        try:
+            return await handler(request)
+        except asyncio.CancelledError:
+            raise
+        except web.HTTPException as exc:
+            return web.json_response(_openai_error("REQUEST_UNAVAILABLE"), status=exc.status)
+        except Exception:
+            logger.warning("Omera request failed.")
+            return web.json_response(_openai_error("CHAT_UNAVAILABLE"), status=502)
 
     async def _handle_health(self, request: "web.Request") -> "web.Response":
         """GET /health — simple health check."""
@@ -1037,6 +1172,22 @@ class APIServerAdapter(BasePlatformAdapter):
         auth_err = self._check_auth(request)
         if auth_err:
             return auth_err
+
+        if self._omera_mode:
+            return web.json_response({
+                "object": "xavani.api_server.capabilities",
+                **omera_service_payload(self._model_name),
+                "features": {
+                    "chat_completions": True,
+                    "chat_completions_streaming": True,
+                    "responses_api": False,
+                    "run_submission": False,
+                    "profiles_api": False,
+                    "skills_api": False,
+                    "session_continuity_header": None,
+                    "session_key_header": None,
+                },
+            })
 
         return web.json_response({
             "object": "xavani.api_server.capabilities",
@@ -1218,6 +1369,17 @@ class APIServerAdapter(BasePlatformAdapter):
                 status=400,
             )
 
+        # Live research runs before the model call in Omera mode.
+        if self._omera_mode and _coerce_request_bool(
+            body.get("xavani_research"), default=True,
+        ):
+            try:
+                block = await research_system_block(user_message)
+            except Exception:
+                block = None
+            if block:
+                system_prompt = f"{system_prompt}\n\n{block}" if system_prompt else block
+
         # Allow caller to scope long-term memory (e.g. Honcho) with a
         # stable per-channel identifier via X-Xavani-Session-Key.  This
         # is independent of X-Xavani-Session-Id: the key persists across
@@ -1273,7 +1435,11 @@ class APIServerAdapter(BasePlatformAdapter):
                 if cm.get("role") == "user":
                     first_user = cm.get("content", "")
                     break
-            session_id = _derive_chat_session_id(system_prompt, first_user)
+            session_id = (
+                f"api-{uuid.uuid4().hex}"
+                if self._omera_mode
+                else _derive_chat_session_id(system_prompt, first_user)
+            )
             # history already set from request body above
 
         completion_id = f"chatcmpl-{uuid.uuid4().hex[:29]}"
@@ -1389,6 +1555,12 @@ class APIServerAdapter(BasePlatformAdapter):
             try:
                 result, usage = await _idem_cache.get_or_set(idempotency_key, fp, _compute_completion)
             except Exception as e:
+                if self._omera_mode:
+                    logger.warning("Omera inference failed.")
+                    return web.json_response(
+                        _openai_error("CHAT_UNAVAILABLE", err_type="server_error"),
+                        status=502,
+                    )
                 logger.error("Error running agent for chat completions: %s", e, exc_info=True)
                 return web.json_response(
                     _openai_error(f"Internal server error: {e}", err_type="server_error"),
@@ -1398,11 +1570,22 @@ class APIServerAdapter(BasePlatformAdapter):
             try:
                 result, usage = await _compute_completion()
             except Exception as e:
+                if self._omera_mode:
+                    logger.warning("Omera inference failed.")
+                    return web.json_response(
+                        _openai_error("CHAT_UNAVAILABLE", err_type="server_error"),
+                        status=502,
+                    )
                 logger.error("Error running agent for chat completions: %s", e, exc_info=True)
                 return web.json_response(
                     _openai_error(f"Internal server error: {e}", err_type="server_error"),
                     status=500,
                 )
+
+        if self._omera_mode and _chat_stream_finish(result, require_completed=True) != "stop":
+            return web.json_response(
+                _openai_error("CHAT_UNAVAILABLE", err_type="server_error"), status=502,
+            )
 
         final_response = result.get("final_response") or ""
         is_partial = bool(result.get("partial"))
@@ -1420,10 +1603,10 @@ class APIServerAdapter(BasePlatformAdapter):
         else:
             finish_reason = "stop"
 
-        response_headers = {
+        response_headers = {} if self._omera_mode else {
             "X-Xavani-Session-Id": result.get("session_id", session_id),
         }
-        if gateway_session_key:
+        if gateway_session_key and not self._omera_mode:
             response_headers["X-Xavani-Session-Key"] = gateway_session_key
 
         # Hard-fail path: no usable assistant text AND a real failure → 5xx
@@ -1507,9 +1690,9 @@ class APIServerAdapter(BasePlatformAdapter):
         cors = self._cors_headers_for_origin(origin) if origin else None
         if cors:
             sse_headers.update(cors)
-        if session_id:
+        if session_id and not self._omera_mode:
             sse_headers["X-Xavani-Session-Id"] = session_id
-        if gateway_session_key:
+        if gateway_session_key and not self._omera_mode:
             sse_headers["X-Xavani-Session-Key"] = gateway_session_key
         response = web.StreamResponse(status=200, headers=sse_headers)
         await response.prepare(request)
@@ -1580,17 +1763,25 @@ class APIServerAdapter(BasePlatformAdapter):
 
             # Get usage from completed agent
             usage = {"input_tokens": 0, "output_tokens": 0, "total_tokens": 0}
+            result = None
             try:
                 result, agent_usage = await agent_task
                 usage = agent_usage or usage
             except Exception as exc:
-                logger.warning("Agent task %s failed, usage data lost: %s", completion_id, exc)
+                if self._omera_mode:
+                    logger.warning("Omera stream failed.")
+                else:
+                    logger.warning("Agent task %s failed, usage data lost: %s", completion_id, exc)
+            finish_reason = (
+                _chat_stream_finish(result, require_completed=True)
+                if self._omera_mode else "stop"
+            )
 
             # Finish chunk
             finish_chunk = {
                 "id": completion_id, "object": "chat.completion.chunk",
                 "created": created, "model": model,
-                "choices": [{"index": 0, "delta": {}, "finish_reason": "stop"}],
+                "choices": [{"index": 0, "delta": {}, "finish_reason": finish_reason}],
                 "usage": {
                     "prompt_tokens": usage.get("input_tokens", 0),
                     "completion_tokens": usage.get("output_tokens", 0),
@@ -1621,7 +1812,10 @@ class APIServerAdapter(BasePlatformAdapter):
             # so the client gets a proper response instead of a
             # TransferEncodingError from incomplete chunked encoding.
             import traceback as _tb
-            logger.error("Agent crashed mid-stream for %s: %s", completion_id, _tb.format_exc()[:300])
+            if self._omera_mode:
+                logger.error("Omera stream failed.")
+            else:
+                logger.error("Agent crashed mid-stream for %s: %s", completion_id, _tb.format_exc()[:300])
             try:
                 error_chunk = {
                     "id": completion_id, "object": "chat.completion.chunk",
@@ -2912,11 +3106,35 @@ class APIServerAdapter(BasePlatformAdapter):
             if agent_ref is not None:
                 agent_ref[0] = agent
             effective_task_id = session_id or str(uuid.uuid4())
+            try:
+                from agent.work_timeline import record_event
+
+                record_event(agent, "task.started", summary=str(user_message)[:120])
+            except Exception:
+                pass
             result = agent.run_conversation(
                 user_message=user_message,
                 conversation_history=conversation_history,
                 task_id=effective_task_id,
             )
+            if (
+                self._omera_mode
+                and isinstance(result, dict)
+                and not result.get("failed")
+                and not result.get("partial")
+                and result.get("final_response") is not None
+                and result.get("turn_exit_reason") == "text_response(finish_reason=stop)"
+            ):
+                result["completed"] = True
+            try:
+                from agent.work_timeline import record_event
+
+                if result.get("completed"):
+                    record_event(agent, "task.completed", summary=str(user_message)[:120])
+                else:
+                    record_event(agent, "task.blocked", summary=str(user_message)[:120])
+            except Exception:
+                pass
             usage = {
                 "input_tokens": getattr(agent, "session_prompt_tokens", 0) or 0,
                 "output_tokens": getattr(agent, "session_completion_tokens", 0) or 0,
@@ -2955,6 +3173,49 @@ class APIServerAdapter(BasePlatformAdapter):
         self._run_statuses[run_id] = current
         return current
 
+    def _next_run_event_seq(self, run_id: str) -> int:
+        """Reserve the next event sequence number for a run."""
+        with self._run_event_seq_lock:
+            seq = self._run_event_seq.get(run_id, 0) + 1
+            self._run_event_seq[run_id] = seq
+        return seq
+
+    def _discard_run_event_seq(self, run_id: str) -> None:
+        with self._run_event_seq_lock:
+            self._run_event_seq.pop(run_id, None)
+
+    def _stamp_run_event(self, run_id: str, event: Dict[str, Any]) -> Dict[str, Any]:
+        """Attach the run-scoped envelope (schema_version, seq, event_id)."""
+        seq = self._next_run_event_seq(run_id)
+        event["schema_version"] = 1
+        event["seq"] = seq
+        event["event_id"] = f"{run_id}:{seq}"
+        return event
+
+    def _push_run_event(
+        self,
+        run_id: str,
+        event: Dict[str, Any],
+        loop: "Optional[asyncio.AbstractEventLoop]" = None,
+    ) -> None:
+        """Stamp and queue one run event.
+
+        Pass ``loop`` when calling from outside the run's event loop thread;
+        the seq is claimed before the hand-off so parallel tool completions
+        never collide with each other.
+        """
+        payload = self._stamp_run_event(run_id, dict(event))
+        q = self._run_streams.get(run_id)
+        if q is None:
+            return
+        try:
+            if loop is None:
+                q.put_nowait(payload)
+            else:
+                loop.call_soon_threadsafe(q.put_nowait, payload)
+        except Exception:
+            pass
+
     def _make_run_event_callback(self, run_id: str, loop: "asyncio.AbstractEventLoop"):
         """Return a tool_progress_callback that pushes structured events to the run's SSE queue."""
         def _push(event: Dict[str, Any]) -> None:
@@ -2963,16 +3224,11 @@ class APIServerAdapter(BasePlatformAdapter):
                 self._run_statuses.get(run_id, {}).get("status", "running"),
                 last_event=event.get("event"),
             )
-            q = self._run_streams.get(run_id)
-            if q is None:
-                return
-            try:
-                loop.call_soon_threadsafe(q.put_nowait, event)
-            except Exception:
-                pass
+            self._push_run_event(run_id, event, loop)
 
         def _callback(event_type: str, tool_name: str = None, preview: str = None, args=None, **kwargs):
             ts = time.time()
+            tool_call_id = kwargs.get("tool_call_id")
             if event_type == "tool.started":
                 _push({
                     "event": "tool.started",
@@ -2980,6 +3236,8 @@ class APIServerAdapter(BasePlatformAdapter):
                     "timestamp": ts,
                     "tool": tool_name,
                     "preview": preview,
+                    "tool_call_id": tool_call_id,
+                    **({"path": kwargs["path"]} if kwargs.get("path") else {}),
                 })
             elif event_type == "tool.completed":
                 _push({
@@ -2989,6 +3247,7 @@ class APIServerAdapter(BasePlatformAdapter):
                     "tool": tool_name,
                     "duration": round(kwargs.get("duration", 0), 3),
                     "error": kwargs.get("is_error", False),
+                    "tool_call_id": tool_call_id,
                     **({"diff": kwargs["diff"]} if kwargs.get("diff") else {}),
                     **({"path": kwargs["path"]} if kwargs.get("path") else {}),
                 })
@@ -3104,15 +3363,12 @@ class APIServerAdapter(BasePlatformAdapter):
         def _text_cb(delta: Optional[str]) -> None:
             if delta is None:
                 return
-            try:
-                loop.call_soon_threadsafe(q.put_nowait, {
-                    "event": "message.delta",
-                    "run_id": run_id,
-                    "timestamp": time.time(),
-                    "delta": delta,
-                })
-            except Exception:
-                pass
+            self._push_run_event(run_id, {
+                "event": "message.delta",
+                "run_id": run_id,
+                "timestamp": time.time(),
+                "delta": delta,
+            }, loop)
 
         self._set_run_status(
             run_id,
@@ -3147,10 +3403,7 @@ class APIServerAdapter(BasePlatformAdapter):
                         "waiting_for_approval",
                         last_event="approval.request",
                     )
-                    try:
-                        loop.call_soon_threadsafe(q.put_nowait, event)
-                    except Exception:
-                        pass
+                    self._push_run_event(run_id, event, loop)
 
                 def _run_sync():
                     from gateway.session_context import clear_session_vars, set_session_vars
@@ -3206,45 +3459,70 @@ class APIServerAdapter(BasePlatformAdapter):
                 # block below never fires — issue #15561).
                 if isinstance(result, dict) and result.get("failed"):
                     error_msg = result.get("error") or "agent run failed"
-                    q.put_nowait({
+                    verification_state = result.get("verification_state") or "unverified"
+                    missing_checks = result.get("missing_checks") or []
+                    failed_checks = result.get("failed_checks") or []
+                    self._push_run_event(run_id, {
                         "event": "run.failed",
                         "run_id": run_id,
                         "timestamp": time.time(),
                         "error": error_msg,
+                        "verification_state": verification_state,
+                        "missing_checks": missing_checks,
+                        "failed_checks": failed_checks,
                     })
                     self._set_run_status(
                         run_id,
                         "failed",
                         error=error_msg,
+                        verification_state=verification_state,
+                        missing_checks=missing_checks,
+                        failed_checks=failed_checks,
                         last_event="run.failed",
                     )
                 else:
-                    final_response = result.get("final_response", "") if isinstance(result, dict) else ""
-                    q.put_nowait({
+                    result_dict = result if isinstance(result, dict) else {}
+                    final_response = result_dict.get("final_response", "")
+                    verification_state = result_dict.get("verification_state") or "not_required"
+                    missing_checks = result_dict.get("missing_checks") or []
+                    failed_checks = result_dict.get("failed_checks") or []
+                    self._push_run_event(run_id, {
                         "event": "run.completed",
                         "run_id": run_id,
                         "timestamp": time.time(),
                         "output": final_response,
                         "usage": usage,
+                        "verification_state": verification_state,
+                        "missing_checks": missing_checks,
+                        "failed_checks": failed_checks,
                     })
                     self._set_run_status(
                         run_id,
                         "completed",
                         output=final_response,
                         usage=usage,
+                        verification_state=verification_state,
+                        missing_checks=missing_checks,
+                        failed_checks=failed_checks,
                         last_event="run.completed",
                     )
             except asyncio.CancelledError:
                 self._set_run_status(
                     run_id,
                     "cancelled",
+                    verification_state="unverified",
+                    missing_checks=[],
+                    failed_checks=[],
                     last_event="run.cancelled",
                 )
                 try:
-                    q.put_nowait({
+                    self._push_run_event(run_id, {
                         "event": "run.cancelled",
                         "run_id": run_id,
                         "timestamp": time.time(),
+                        "verification_state": "unverified",
+                        "missing_checks": [],
+                        "failed_checks": [],
                     })
                 except Exception:
                     pass
@@ -3255,14 +3533,20 @@ class APIServerAdapter(BasePlatformAdapter):
                     run_id,
                     "failed",
                     error=str(exc),
+                    verification_state="unverified",
+                    missing_checks=[],
+                    failed_checks=[],
                     last_event="run.failed",
                 )
                 try:
-                    q.put_nowait({
+                    self._push_run_event(run_id, {
                         "event": "run.failed",
                         "run_id": run_id,
                         "timestamp": time.time(),
                         "error": str(exc),
+                        "verification_state": "unverified",
+                        "missing_checks": [],
+                        "failed_checks": [],
                     })
                 except Exception:
                     pass
@@ -3286,6 +3570,7 @@ class APIServerAdapter(BasePlatformAdapter):
                 self._active_run_agents.pop(run_id, None)
                 self._active_run_tasks.pop(run_id, None)
                 self._run_approval_sessions.pop(run_id, None)
+                self._discard_run_event_seq(run_id)
 
         task = asyncio.create_task(_run_and_close())
         self._active_run_tasks[run_id] = task
@@ -3438,18 +3723,13 @@ class APIServerAdapter(BasePlatformAdapter):
             )
 
         self._set_run_status(run_id, "running", last_event="approval.responded")
-        q = self._run_streams.get(run_id)
-        if q is not None:
-            try:
-                q.put_nowait({
-                    "event": "approval.responded",
-                    "run_id": run_id,
-                    "timestamp": time.time(),
-                    "choice": choice,
-                    "resolved": resolved,
-                })
-            except Exception:
-                pass
+        self._push_run_event(run_id, {
+            "event": "approval.responded",
+            "run_id": run_id,
+            "timestamp": time.time(),
+            "choice": choice,
+            "resolved": resolved,
+        })
 
         return web.json_response({
             "object": "xavani.run.approval_response",
@@ -3523,6 +3803,7 @@ class APIServerAdapter(BasePlatformAdapter):
                 self._active_run_agents.pop(run_id, None)
                 self._active_run_tasks.pop(run_id, None)
                 self._run_approval_sessions.pop(run_id, None)
+                self._discard_run_event_seq(run_id)
 
             stale_statuses = [
                 run_id
@@ -3544,8 +3825,24 @@ class APIServerAdapter(BasePlatformAdapter):
             return False
 
         try:
+            if self._omera_mode:
+                from xavani_cli.auth import has_usable_secret
+
+                if not has_usable_secret(self._api_key, min_length=32):
+                    logger.error("Omera requires a non-placeholder service key.")
+                    return False
+
             mws = [mw for mw in (cors_middleware, body_limit_middleware, security_headers_middleware) if mw is not None]
-            self._app = web.Application(middlewares=mws, client_max_size=MAX_REQUEST_BYTES)
+            if self._omera_mode:
+                @web.middleware
+                async def omera_middleware(request, handler):
+                    return await self._handle_omera_http(request, handler)
+
+                mws.insert(0, omera_middleware)
+            self._app = web.Application(
+                middlewares=mws,
+                client_max_size=256000 if self._omera_mode else MAX_REQUEST_BYTES,
+            )
             self._app["api_server_adapter"] = self
             self._app.router.add_get("/health", self._handle_health)
             self._app.router.add_get("/health/detailed", self._handle_health_detailed)
