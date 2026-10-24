@@ -365,6 +365,21 @@ def base_url_host_matches(base_url: str, domain: str) -> bool:
     return hostname == domain or hostname.endswith("." + domain)
 
 
+PORTAL_HOSTS = ("inference-api.enternovate.co.za",)
+
+
+def is_portal_base_url(base_url: str) -> bool:
+    """Return True when the base URL is a first-party inference portal.
+
+    The substring branch covers the historical upstream portal host. The host
+    list covers the Enternovate inference host and rejects lookalike domains.
+    """
+    base = (base_url or "").lower()
+    if "nousresearch" in base:
+        return True
+    return any(base_url_host_matches(base, host) for host in PORTAL_HOSTS)
+
+
 def _preserve_file_owner(path: Path) -> "tuple[int, int] | None":
     """Capture the owning uid/gid of *path* if the platform supports it."""
     if os.name != "posix":
