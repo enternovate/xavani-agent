@@ -28,7 +28,7 @@ Xavani Kanban은 모든 Xavani 프로필이 함께 쓰는 **지속형 작업 보
 - **엔지니어링 파이프라인** — 분해 → 병렬 구현(worktree) → 리뷰 → 반복 → PR
 - **플릿 작업** — 한 specialist가 N개의 대상(예: 50개 소셜 계정, 12개 서비스)을 관리
 
-설계 배경, 비교 분석(Cline Kanban / Paperclip / NanoClaw / Google Gemini Enterprise), 8개의 정형 협업 패턴은 레포의 `docs/xavani-kanban-v1-spec.pdf`를 참고하세요.
+설계 배경, 비교 분석(Cline Kanban / Paperclip / NanoClaw / Google Gemini Enterprise), 8개의 정형 협업 패턴은 레포의 [the Kanban user guide](/docs/user-guide/features/kanban)를 참고하세요.
 
 ## Kanban vs. `delegate_task`
 
@@ -589,7 +589,7 @@ interactive CLI에서 `/kanban ` 뒤 Tab을 누르면 built-in subcommand hint�
 | **P8 Fleet farming** | 한 profile, N subjects | 50개 소셜 계정 |
 | **P9 Triage specifier** | rough idea → `triage` → specifier 확장 → `todo` | 한 줄 아이디어를 spec로 승격 |
 
-실전 예시는 `docs/xavani-kanban-v1-spec.pdf` 참고.
+실전 예시는 [the Kanban user guide](/docs/user-guide/features/kanban) 참고.
 
 ## 멀티 테넌트 사용
 
@@ -718,4 +718,4 @@ Kanban은 의도적으로 **single-host** 설계입니다. `~/.xavani/kanban.db`
 
 ## 설계 문서
 
-아키텍처, 동시성 정합성, 타 시스템 비교, 구현 계획, 리스크, open question을 포함한 전체 설계 문서는 `docs/xavani-kanban-v1-spec.pdf`에 있습니다. 동작 변경 PR을 넣기 전에는 이 문서를 먼저 읽는 것이 좋습니다.
+아키텍처, 동시성 정합성, 타 시스템 비교, 구현 계획, 리스크, open question을 포함한 전체 설계 문서는 [the Kanban user guide](/docs/user-guide/features/kanban)에 있습니다. 동작 변경 PR을 넣기 전에는 이 문서를 먼저 읽는 것이 좋습니다.
