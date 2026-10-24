@@ -56,3 +56,23 @@ def test_blueprint_needs_no_manual_input():
     for item in service()["envVars"]:
         assert item.get("sync") is not True
         assert item["key"] not in {"INFERENCE_API_KEY", "TAVILY_API_KEY", "EXA_API_KEY"}
+
+def test_omera_pins_match_the_web_extra():
+    """The Render image and the engine extra must run the same server versions."""
+    import tomllib
+
+    pins = {}
+    for line in (ROOT / "requirements-omera.txt").read_text(encoding="utf-8").splitlines():
+        if "==" in line:
+            name, version = line.split("==", 1)
+            pins[name.split("[", 1)[0].strip()] = version.strip()
+
+    project = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))
+    extra = {}
+    for item in project["project"]["optional-dependencies"]["web"]:
+        if "==" in item:
+            name, version = item.split("==", 1)
+            extra[name.split("[", 1)[0].strip()] = version.strip()
+
+    for name in ("fastapi", "uvicorn"):
+        assert pins[name] == extra[name], f"{name} drift: {pins[name]} != {extra[name]}"
