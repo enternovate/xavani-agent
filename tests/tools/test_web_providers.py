@@ -295,6 +295,12 @@ class TestUnconfiguredErrorEnvelopeParity:
             "TOOL_GATEWAY_DOMAIN",
         ):
             monkeypatch.delenv(k, raising=False)
+        # ddgs is keyless, so its presence depends on the installed packages,
+        # not on credentials. Force it off so this test always exercises the
+        # unconfigured envelope.
+        from tools import web_tools
+
+        monkeypatch.setattr(web_tools, "_ddgs_package_importable", lambda: False)
 
     def test_unconfigured_search_emits_top_level_error(self, monkeypatch):
         """``web_search_tool`` with no creds returns ``{"error": "Error searching web: ..."}``
