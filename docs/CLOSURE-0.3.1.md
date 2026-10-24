@@ -93,6 +93,40 @@ Residual:
 
 Task 25 decision: pending owner choice between a gateway top-up and accepting the 2-of-9 partial matrix. The report keeps its measured numbers either way.
 
+### Test evidence
+
+Canonical runner: `XAVANI_TEST_WORKERS=4 bash scripts/run_tests.sh -q`.
+
+| Run | Result |
+| --- | --- |
+| 1 | 19530 passed, 8 failed, 195 skipped, 7m54s |
+| 2, after the search-envelope test fix | 19533 passed, 5 failed, 195 skipped, 7m41s |
+
+Run 2 failures:
+
+- `tests/xavani_cli/test_opencode_go_flat_namespace.py::test_deepseek_v4_flash_stays_on_opencode_go` — pre-existing. The catalog returns `deepseek-v4.1-flash` for the bare name. `xavani_cli/model_catalog.py` last changed on 2026-09-07, before this branch. No closure commit touches it.
+- `tests/tools/test_delegate.py::TestDelegateHeartbeat::test_heartbeat_does_not_trip_idle_stale_while_inside_tool` — pre-existing timing budget. It expects more than 6 heartbeat touches in 0.4s at a 0.05s interval. `tools/` last changed on 2026-09-14. No closure commit touches it.
+- `tests/gateway/test_memory_monitor.py::test_periodic_timer_fires`, `tests/cli/test_help_context.py::test_idle_state_shows_chat_basics_only`, and `tests/gateway/test_tool_event_identity.py::TestEnvelopeOnLiveRunStream::test_every_streamed_event_carries_the_run_envelope` — load-sensitive. All 3 pass in isolation (21 passed).
+
+Targeted suites, all green:
+
+- `tests/omera`: 77 passed.
+- `tests/agent`: 3473 passed, 3 skipped.
+- `tests/scripts` version and freshness guards: 4 passed.
+- `tests/docs/test_docs_index.py`: 2 passed.
+- `tests/test_portal_detection.py`: 7 passed.
+- Kanban integration: 321 passed, 1 skipped.
+- Ruff on every changed file: `All checks passed!`
+- `uv lock --check`: clean.
+
+Desktop:
+
+- Backend suite: 204 passed.
+- `npm run test:unit`: 106 passed.
+- `npm run check:syntax`: exit 0.
+- `npm run test:e2e`: 27 to 29 of 30 specs pass across attempts. The failure reproduces on the base commit. CI does not run these specs.
+
+
 ## 9. Residual risks
 
 - The CI `test` job is non-blocking by design. Local runs are the only full-suite evidence.
@@ -101,6 +135,7 @@ Task 25 decision: pending owner choice between a gateway top-up and accepting th
 - `web_dist` is gitignored but tracked. The dashboard bundle is committed because packaging reads that directory.
 - The website depends on two exact overrides (`tinypool`, `postcss-selector-parser`). A future Docusaurus major may drop them.
 - The roadmap's 50 items are untriaged beyond file presence.
+- Two pre-existing engine test failures stay open: the opencode-go model alias assertion and the delegate heartbeat timing budget. Both predate this branch and no closure commit touches their source. They need their own fix.
 
 ## 10. Owner actions
 
