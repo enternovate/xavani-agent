@@ -57,7 +57,7 @@ dependencies = [
   # Cron scheduler (built-in feature — scheduled cron/interval jobs use croniter).
   "croniter==6.2.4",
   # Skills Hub (GitHub App JWT auth — optional, only needed for bot identity)
-  "PyJWT[crypto]==2.13.0",  # CVE-2026-32597
+  "PyJWT[crypto]==2.15.0",  # CVE-2026-32597, PYSEC-2026-4140..4183
   # CVE-2026-58821: cryptography <48.0.1 includes vulnerable OpenSSL
   "cryptography>=50.0.0",
   # Windows has no IANA tzdata shipped with the OS, so Python's ``zoneinfo``
