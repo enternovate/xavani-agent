@@ -58,6 +58,7 @@ The roadmap holds 50 items. Every item names files that exist in the tree. File 
 | The watchdog pointed at a host that 404s the index path | It now reads the Pages artifact first, then the public host | Local run reads the Pages copy |
 | Version drift: `xavani_cli.__version__` was `0.1.2` | It reports `0.3.0`; `tests/scripts/test_version_lockstep.py` locks the 3 version fields | 1 passed |
 | Desktop backend tests died during collection | The engine root is resolved at import but a missing engine is no longer fatal; the CI job checks out the engine and sets `XAVANI_ENGINE_ROOT` | 204 desktop tests pass locally |
+| Nix npm hash went stale after the dependency refresh | `fix(nix): refresh npm lockfile hashes` (`e51a901c`) | nix workflow re-runs on the closure head |
 
 Known limitation: `.github/workflows/tests.yml` sets `continue-on-error: true` on the main `test` job. A green pull request does not prove the suite passes. The local canonical run is the proof.
 
