@@ -4,7 +4,7 @@ let
   src = ../web;
   npmDeps = pkgs.fetchNpmDeps {
     inherit src;
-    hash = "sha256-cPvbXJxxjfGq0VjhYIwvP3AfZLvHFa8VFl++755reQk=";
+    hash = "sha256-+8RD1LlgqANwitGJ65egAciP9UOjlwtkAPLwsnPj1AY=";
   };
 
   npm = xavaniNpmLib.mkNpmPassthru { folder = "web"; attr = "web"; pname = "xavani-web"; };
