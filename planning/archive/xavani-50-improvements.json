@@ -1,0 +1,532 @@
+{
+  "current_findings": [
+    "scripts/benchmark.py (E10) measures only 4 cold-import latencies (import_tools=0.128ms, import_registry=13.3ms, config_load=82.9ms, state_schema=24.1ms in committed benchmark-baseline.json) via per-sample fresh subprocess; there is NO end-to-end turn latency, TTFT, throughput, cache-hit, compaction-latency, or correctness benchmark anywhere in the repo.",
+    "Prompt caching (agent/prompt_caching.py) only injects Anthropic-style cache_control markers for providers honoring that contract (native Anthropic, OpenRouter, DashScope per agent_runtime_helpers.py). Cache-hit percent is computed ad-hoc per call for display only (conversation_loop.py:1695, 1800); the repo stores raw session_cache_read_tokens and an _or_cache_hits counter (agent_init.py:481,1462) but has NO formal cache-hit denominator, per-window rate, or 99% baseline.",
+    "apply_anthropic_cache_control copy.deepcopy()s the entire message list on every API call purely to inject cache_control markers (prompt_caching.py:87), adding an O(history) allocation per turn with no benefit over mutating the already-per-call api_messages copy.",
+    "Every API call re-runs full-history pre-processing over api_messages: content.strip(), tool-argument JSON re-normalization (sort_keys), thinking-only drop, surrogate sanitize (conversation_loop.py:936-973), and re-estimates tokens via estimate_messages_tokens_rough + len(str(msg)) even in non-verbose mode (conversation_loop.py:976-977). This is O(messages) work on the whole history every turn, not incremental.",
+    "Token usage is persisted to the session SQLite DB synchronously inside each API call with a lock-retry path (conversation_loop.py:1745-1772, _ensure_db_session); this is on the latency-critical path and contends with concurrent cron/kanban writers.",
+    "Compaction runs synchronously inside the turn loop: a preflight pass (conversation_loop.py:509-575) plus mid-loop compression capped at max_compression_attempts=3 with fixed time.sleep(2) retries (lines 2463, 2627, 2785). _generate_summary (context_compressor.py:923) is a synchronous LLM call, so the whole window stalls while the summary model answers.",
+    "docs/reference/compaction-eval.md and scripts/compaction_eval/runner.py test compaction as a SINGLE-SHOT pipeline with 25 seeded facts measuring retention only; there is no latency axis, no scaling axis (25..2000 facts), and no repeated/iterative-compaction retention test.",
+    "docs/reference/memory-benchmark.md and scripts/memory_benchmark report precision@k/recall@k only; no search latency (p95) or index-build latency is measured, and the FTS5 backend's lazy index build cost is unquantified.",
+    "Tool execution is ALREADY concurrent: agent/tool_executor.py::execute_tool_calls_concurrent runs independent tool_calls in a ThreadPoolExecutor bounded by max_workers; parallelism of tool dispatch is not the gap. Delegation also runs subagents as in-process threads in a ThreadPoolExecutor (tools/delegate_tool.py:2159) via run_agent.AIAgent, not subprocesses.",
+    "Stated goal conflict: the 150-second minimum task time (task constraint / earendil compaction context) is a task-scheduling floor, whereas the 99% cache-hit + low-latency objectives are per-turn loop properties; they are only in conflict if the minimum-duration gate is implemented as a blocking wait inside the turn loop rather than as an upstream scheduling/queue policy. Any design that sleeps inside compress() or the API-call seam to enforce minimum task time would directly compete with the low-latency objective and must be resolved at the scheduler layer.",
+    "Compaction invalidates the whole cache prefix on every pass, so high-frequency compression directly undermines the 99% cache-hit objective: cache_carryover (preserving an oldest-kept boundary across compress()) is not implemented.",
+    "The earendil compaction-in-pi article could not be fetched (network fetch to earendil.com was blocked in this environment); compaction designs below therefore derive from the repo's own compression machinery (context_compressor.py, trajectory_compressor.py, trajectory_compressor.progressive_compress) plus general iterative-compaction and prompt-cache literature."
+  ],
+  "metric_definitions": [
+    "cache_hit_rate(turn): cache_read_tokens / total_prompt_tokens for that API call, computed from normalized transport usage (conversation_loop.py:1695,1800).",
+    "cache_hit_rate(window): sum(cache_read_tokens) / sum(prompt_tokens) over all non-first turns between consecutive compaction events; the 99% objective is defined against THIS denominator so compaction-mandated cache writes are excluded.",
+    "cache_write_ratio(window): sum(cache_write_tokens)/sum(prompt_tokens); the irreducible floor against which 99% budget is planned.",
+    "turn_latency_p95: p95 of (response fully received - request sent) measured at the transport seam (agent/transports/*), per ruling window and per session.",
+    "ttft_p95: p95 of time-to-first-streamed-token across the session.",
+    "compaction_stall_p95: p95 wall-clock of the synchronous compress() call inside the turn loop (preflight + mid-loop), the direct competitor to low latency.",
+    "retention@window: fraction of seeded facts surviving compress(), reusing the existing compaction_eval normalized-substring scorer (scripts/compaction_eval/runner.py).",
+    "compaction_scaling: retention and compaction_stall vs N seeded facts for N in {25, 200, 500, 2000}.",
+    "turns_per_second: completed assistant turns / wall-clock over an N-turn faux-provider workload (tests/harness/faux_provider.py) with a configurable tool plan.",
+    "delegation_spawn_p95: p95 time from delegate_task call to first child-tool availability inside the ThreadPoolExecutor child.",
+    "import_p95: existing benchmark.py p95 cold-import times (config_load, state_schema, import_registry, import_tools), retained as the startup-regression gate.",
+    "correctness_fn: agent task success rate on the golden eval set (scripts/run_golden_evals.py), the guard that latency/cache optimizations must not degrade."
+  ],
+  "improvements": [
+    {
+      "title": "Define the 99% cache-hit objective with an explicit denominator and baseline",
+      "category": "caching",
+      "problem": "No formal cache-hit metric exists; only an ad-hoc per-call percent for display (conversation_loop.py:1695,1800) and raw stored session_cache_read_tokens. 99% is currently an unmeasurable slogan.",
+      "design": "Adopt metric cache_hit_rate(window) = sum(cache_read)/sum(prompt_tokens) excluding the first turn and tokens written during compaction. Record it per session in the session DB alongside cache_write_ratio, print in /insights, and commit a first baseline from real runs so regressions are detectable, not aspirational.",
+      "likely_files": ["agent/conversation_loop.py", "xavani_cli/insights.py", "xavani_memory/manager.py", "docs/reference/cache-benchmark.md"],
+      "metric": "cache_hit_rate(window) >= 0.99 with documented baseline",
+      "risk": "Low — instrumentation only; risk of mis-defining denominator (compaction writes excluded) if not documented clearly",
+      "priority": "P0"
+    },
+    {
+      "title": "Remove full-history deepcopy when injecting cache_control markers",
+      "category": "caching",
+      "problem": "apply_anthropic_cache_control copy.deepcopy(api_messages) allocates the whole history every turn just to add markers (prompt_caching.py:87), an O(history) latency and memory cost.",
+      "design": "Mutate the per-call api_messages copy in place: apply_anthropic_cache_control already receives the disposable copy from conversation_loop.py:908; drop deepcopy and document that callers never reuse the returned list as shared state.",
+      "likely_files": ["agent/prompt_caching.py", "agent/conversation_loop.py"],
+      "metric": "reduction in per-turn allocation and turn_latency_p95",
+      "risk": "Low; any latent shared-state assumption on api_messages would surface as a mutation bug — covered by existing faux-provider tests",
+      "priority": "P1"
+    },
+    {
+      "title": "Normalize-once byte-stable history (skip re-strip/re-json per call)",
+      "category": "caching",
+      "problem": "Every turn re-runs content.strip() and tool-arg JSON sort_keys normalization over ALL history (conversation_loop.py:942-967) to guarantee a byte-stable prefix for KV/cache reuse; that is O(history) work already performed at append time.",
+      "design": "Normalize each message once when appended to the stored history, then in the API seam only validate that new tail messages are normalized and assert the stored prefix is stable (hash-check the base prefix once per session), skipping the full walk.",
+      "likely_files": ["agent/conversation_loop.py", "agent/token_optimizer.py"],
+      "metric": "turn_latency_p95 and cache_hit_rate(window) retained while removing per-call full-history normalization",
+      "risk": "Medium — must guarantee append-time normalization catches all mutation paths (tool results, assistant turns, memory injection)",
+      "priority": "P1"
+    },
+    {
+      "title": "Tools-block cache breakpoint for non-Anthropic transports + provider-aware cache reporting",
+      "category": "caching",
+      "problem": "The tools-block cache_control breakpoint is only added in the anthropic_messages path (build_anthropic_kwargs, conversation_loop.py:917); agents on OpenAI/Gemini-style transports inject no tools breakpoint even though several share the Anthropic cache_control contract.",
+      "design": "Centralize breakpoint layout in prompt_caching.py, add a tools-block breakpoint for any transport whose provider advertises cache_control support (agent_runtime_helpers.py:1107-1153), and always report cache percent from normalized usage for all providers (already partly in conversation_loop.py:1785-1805).",
+      "likely_files": ["agent/prompt_caching.py", "agent/agent_runtime_helpers.py", "agent/conversation_loop.py", "agent/skill_commands.py"],
+      "metric": "cache_hit_rate(window) on OpenAI/Gemini transports",
+      "risk": "Low-medium; gateway providers may reject unknown cache_control — needs feature probe per backend",
+      "priority": "P1"
+    },
+    {
+      "title": "System-prompt byte-drift pinning and cache-invalidation logging",
+      "category": "caching",
+      "problem": "The system prompt is spliced at import time from DEFAULT_SOUL_MD + research-guidelines pack (AGENTS.md) and rebuilt per call; any mid-session drift invalidates the whole system cache prefix without detection.",
+      "design": "Hash the effective system prompt once per session; log a cache-invalidation warning and the diff when the hash changes between calls (config reload, guideline pack update, /skin change), so cache misses are attributable rather than silent.",
+      "likely_files": ["agent/conversation_loop.py", "agent/system_prompt.py", "xavani_cli/research_guidelines.py"],
+      "metric": "cache_hit_rate(window) and count of silent cache-invalidation events",
+      "risk": "Low; logging-only",
+      "priority": "P1"
+    },
+    {
+      "title": "Cache boundary management for prefill/ephemeral messages",
+      "category": "caching",
+      "problem": "Prefill messages are inserted after the system prompt per call (conversation_loop.py:896-899); if their bytes vary between calls the stable history prefix is broken and cache hits drop, but they carry no breakpoint.",
+      "design": "Give the (constant) system prompt + (constant) prefill block a single shared breakpoint and place history breakpoints after it, so constant prefill bytes are cached and only in-motion content sits after the boundary.",
+      "likely_files": ["agent/conversation_loop.py", "agent/prompt_caching.py"],
+      "metric": "cache_hit_rate(window) for sessions using prefill/ephemeral prompts",
+      "risk": "Low; only affects prefill-emitting sessions",
+      "priority": "P2"
+    },
+    {
+      "title": "Session-level tool-schema freeze with fingerprint validation",
+      "category": "caching",
+      "problem": "Loaded tool set can change between turns (lazy auto_discovery AST scan, tools/registry.py_import_tool_modules) which shifts tool-schema bytes and invalidates the tools cache prefix mid-session.",
+      "design": "Freeze the effective tool-schema list for the session; compute a fingerprint and either assert stability before each call or, on change, log the invalidation and rebuild deterministically (already sorted-by-name per prompt_caching.py docstring).",
+      "likely_files": ["agent/agent_init.py", "tools/registry.py", "tools/auto_discovery.py", "agent/skill_commands.py"],
+      "metric": "cache_hit_rate(window) and tool-fingerprint-change event count",
+      "risk": "Low-medium; dynamic tool enable/disable (e.g. /tool toggles) must be explicitly accounted",
+      "priority": "P1"
+    },
+    {
+      "title": "Off-hot-path batched token persistence (SQLite)",
+      "category": "caching",
+      "problem": "update_token_counts runs synchronously inside every API call with a lock-retry (conversation_loop.py:1745-1772), adding per-turn DB latency and contention with concurrent cron/kanban writers.",
+      "design": "Queue token deltas in memory and flush at end-of-turn (or on a short async interval) via a single writer; keep the per-call update only for absolute-total gateway paths that already overwrite. Enable SQLite WAL (see reliability item) so flushes are cheap.",
+      "likely_files": ["agent/conversation_loop.py", "xavani_memory/manager.py", "gateway/session_store.py"],
+      "metric": "turn_latency_p95 and SQLite lock-failure count",
+      "risk": "Medium — crash between queue and flush loses a small delta; keep flush on every tool-boundary and on /exit",
+      "priority": "P1"
+    },
+    {
+      "title": "Local-inference KV-cache aware mode with prefix-reuse instrumentation",
+      "category": "caching",
+      "problem": "For vLLM/llama.cpp/Ollama, local KV prefix reuse is the cache mechanism, but there is no explicit mode surfacing prefix reuse; token normalization for prefix stability (conversation_loop.py:942-967) exists to enable it.",
+      "design": "Add an explicit local-inference mode flag that (a) always normalizes tool args, (b) emits a per-call prefix-reuse metric from the server (vLLM cached_tokens / llama.cpp eval-prefix), and (c) avoids mid-turn system-prompt drift. Wire into the transport seam.",
+      "likely_files": ["agent/agent_runtime_helpers.py", "agent/transports/chat_completions.py", "agent/chat_completion_helpers.py", "agent/transports/types.py"],
+      "metric": "prefix-reuse (cached) token fraction per call on local backends",
+      "risk": "Low-medium; server-reported cached tokens vary by engine and need tolerant parsing",
+      "priority": "P2"
+    },
+    {
+      "title": "Persistent per-session and per-window cache baseline/report in /insights",
+      "category": "caching",
+      "problem": "Cache numbers are computed for logging but never persisted per-call to the session DB (only totals); /insights cannot report the trend needed to manage the 99% objective.",
+      "design": "Store per-call cache_read, cache_write, prompt_tokens, and computed hit% in the session DB (mirroring update_token_counts) and aggregate into cache_hit_rate(window) and cache_write_ratio in /insights and the observability records.",
+      "likely_files": ["agent/conversation_loop.py", "xavani_cli/insights.py", "agent/observability/records.py"],
+      "metric": "reported cache_hit_rate(window) and cache_write_ratio in /insights",
+      "risk": "Low; additive storage",
+      "priority": "P1"
+    },
+    {
+      "title": "Async/background compaction to remove summary-generation stall",
+      "category": "compaction",
+      "problem": "compress() calls the summarizer LLM synchronously inside the turn loop (context_compressor.py:923 _generate_summary), so the whole window blocks while the summary model answers — the direct competitor to low latency.",
+      "design": "Kick off summary generation on a worker thread when should_compress fires; continue last turns on the current context, then merge the compacted message list at the next tool boundary (or pre-warm the next summary during idle). Compaction becomes concurrent with streaming.",
+      "likely_files": ["agent/context_compressor.py", "agent/conversation_loop.py", "agent/async_utils.py"],
+      "metric": "compaction_stall_p95 and turn_latency_p95",
+      "risk": "High — must guard message-list mutation with a lock and merge atomically; covered by compaction_eval + a new async race test",
+      "priority": "P0"
+    },
+    {
+      "title": "Replace fixed sleep(2) compression-retry delays with adaptive/jittered backoff",
+      "category": "compaction",
+      "problem": "Compression retries sleep a fixed 2s (conversation_loop.py:2463,2627,2785), adding deterministic stall to an already-synchronous compaction path.",
+      "design": "Reuse retry_utils.jittered_backoff/parse_retry_after between compression attempts and halt retries when a context-length step-down has been attempted, mapping stall to actual provider pressure instead of a constant.",
+      "likely_files": ["agent/conversation_loop.py", "agent/context_compressor.py", "agent/retry_utils.py"],
+      "metric": "compaction_stall_p95 and number of compression attempts per turn",
+      "risk": "Low; pure timing change on failure path",
+      "priority": "P1"
+    },
+    {
+      "title": "Progressive rolling compaction in the live loop",
+      "category": "compaction",
+      "problem": "Live ContextCompressor does one big LLM summarization over the whole middle window; trajectory_compressor.py already implements progressive_compress (line 714) but only in the offline tool, not the live loop.",
+      "design": "Adapt progressive_compress into ContextCompressor so the middle is summarized as rolling chunks with carry-forward digests, bounded summary tokens per pass and accumulating a persistent digest — improving both latency (smaller calls) and retention on very long windows.",
+      "likely_files": ["agent/trajectory_compressor.py", "agent/context_compressor.py", "agent/conversation_loop.py"],
+      "metric": "compaction_scaling (retention and stall at N=500, 2000)",
+      "risk": "High — changes the compression faithfulness contract; validate retention@window against the existing compaction_eval and baseline",
+      "priority": "P1"
+    },
+    {
+      "title": "Summary-of-summaries digest for repeated compactions",
+      "category": "compaction",
+      "problem": "compaction_eval is single-shot; in long sessions compression runs repeatedly and facts from early summaries can be lost between passes because _previous_summary only tracks the last one (context_compressor.py:594) with no structured digest.",
+      "design": "Maintain a structured running digest (entities, numbers, decisions, open actions) appended to each summary and re-serialized into the next summarizer prompt, so iterative compaction converges instead of degrading. Add an iterative retention test to compaction_eval.",
+      "likely_files": ["agent/context_compressor.py", "scripts/compaction_eval/runner.py", "tests/test_compaction_eval.py"],
+      "metric": "retention@window on a 3-pass iterative sequence vs single-pass baseline",
+      "risk": "Medium — digest must be LLM-stable; guard against the digest crowding the summarizer window",
+      "priority": "P1"
+    },
+    {
+      "title": "Cache carryover across compaction (preserve oldest-kept boundary)",
+      "category": "compaction",
+      "problem": "Every compress() invalidates the whole prefix, working against the 99% cache objective; prompt_caching keeps an oldest-kept boundary but compression ignores it.",
+      "design": "After a compression pass, ensure the retained tail (protect_last_n) plus the new summary share a contiguous byte-stable prefix and re-inject the oldest-kept boundary on the oldest retained message so some cache hits survive each pass.",
+      "likely_files": ["agent/context_compressor.py", "agent/prompt_caching.py", "agent/conversation_loop.py"],
+      "metric": "cache_hit_rate(window) across a compaction boundary (delta vs the fire-and-forget baseline)",
+      "risk": "Medium — requires knowing which tail bytes are byte-stable post-merge; measure empirically",
+      "priority": "P2"
+    },
+    {
+      "title": "Incremental delta-only token counting",
+      "category": "compaction",
+      "problem": "Each call re-estimates the whole conversation via estimate_messages_tokens_rough + len(str(msg)) (conversation_loop.py:976-977) and preflight re-walks the full history for _preflight_tokens (conversation_loop.py:529), all O(history).",
+      "design": "Maintain a running token count on the stored history, incrementing only by appended messages since the last update, and cache the last preflight estimate; re-validate with a full tiktoken count only when a tool result mutates prior messages.",
+      "likely_files": ["agent/conversation_loop.py", "agent/token_optimizer.py", "agent/context_compressor.py"],
+      "metric": "turn_latency_p95 and preflight estimate cost",
+      "risk": "Low-medium — mutated-history edge cases (edits, /compact, memory injection) must trigger full recount",
+      "priority": "P0"
+    },
+    {
+      "title": "Memoized per-message length cache for boundary alignment and pruning",
+      "category": "compaction",
+      "problem": "Boundary alignment (_align_boundary_forward/backward), tail-token cuts (_find_tail_cut_by_tokens) and tool-prune token budgets re-scan and re-serialize messages on every pass; recompression after a failed/ineffective pass recomputes the same lengths.",
+      "design": "Attach a reusable per-message (token, char) length index rebuilt only on append/mutation; boundary and prune passes consume it instead of serializing, making recompression after an ineffective pass near-free.",
+      "likely_files": ["agent/context_compressor.py", "agent/token_optimizer.py"],
+      "metric": "compaction_stall_p95 on repeated/ineffective compression",
+      "risk": "Medium — staleness if a mutation bypasses the index; add invalidation points at every history mutation",
+      "priority": "P2"
+    },
+    {
+      "title": "Guard tool-pair invariants on fallback plus hermetic large-window test",
+      "category": "compaction",
+      "problem": "On summarizer failure the fallback path can drop a middle window or abort (context_compressor.py:549-552, 604); _sanitize_tool_pairs (line 1251) heals pairs but there is no hermetic test proving invariants hold at 10k messages.",
+      "design": "Add a deterministic large-window compaction test (10k synthetic messages) asserting no orphaned tool results and no dangling tool_calls after every fallback mode, and that boundary scans stay within a latency budget (no O(n^2) blowup).",
+      "likely_files": ["tests/test_compaction_eval.py", "scripts/compaction_eval/runner.py", "agent/context_compressor.py"],
+      "metric": "retention@window and compaction_stall_p95 at N=10000",
+      "risk": "Low; test-only plus re-validation",
+      "priority": "P1"
+    },
+    {
+      "title": "Add scaling and latency axes to compaction_eval",
+      "category": "compaction",
+      "problem": "compaction_eval/runner.py is fixed at 25 facts, single-shot, measuring pipeline fidelity only with no reproducibility of latency or scaling behavior.",
+      "design": "Add --facts {25,200,500,2000}, --iterations, and a latency recorder around compress(); emit compaction_scaling and compaction_stall_p95; enforce a latency budget in tests/test_compaction_eval.py so low-latency is guarded by CI.",
+      "likely_files": ["scripts/compaction_eval/runner.py", "tests/test_compaction_eval.py", "docs/reference/compaction-eval.md"],
+      "metric": "compaction_scaling and compaction_stall_p95 with a CI threshold",
+      "risk": "Low; runner/file changes only, keeps no-LLM hermeticity",
+      "priority": "P0"
+    },
+    {
+      "title": "Adaptive compression threshold from token velocity",
+      "category": "compaction",
+      "problem": "threshold_percent is a fixed 0.50 (context_compressor.py:530) regardless of how fast the context grows, so latency-heavy models compress too late and cheap ones too eagerly.",
+      "design": "Track per-turn token delta; when velocity is high, compress earlier (lower effective threshold) and when flat, defer compression to respect cache boundaries — target the lowest compaction frequency that keeps retention.",
+      "likely_files": ["agent/context_compressor.py", "agent/conversation_loop.py"],
+      "metric": "compaction frequency (# passes per N turns) and cache_hit_rate(window)",
+      "risk": "Medium — aggressive early compression may drop live facts; gate behind should_compress anti-thrash logic",
+      "priority": "P2"
+    },
+    {
+      "title": "Turn-bank replay idempotency to prevent duplicated sub-tool work",
+      "category": "harness",
+      "problem": "Turn-bank fallback restarts remaining work after max_iterations (commit 'prevent turn bank fallback restart duplication', turn_bank.py); idempotency is partial, so replay can re-run side-effecting sub-tools and inflate latency.",
+      "design": "Record completed tool_call_ids in the turn bank and on replay skip tool calls already executed, reusing stored results; add a crash/dedup test for replay across a simulated interruption.",
+      "likely_files": ["agent/turn_bank.py", "agent/turn_retry_state.py", "tests/"],
+      "metric": "replayed-tool duplicate ratio and turns_per_second on fallback path",
+      "risk": "Medium — requires trusting stored results across process restarts; guard non-deterministic tools",
+      "priority": "P1"
+    },
+    {
+      "title": "Separate transient network retry budget from semantic turn budget",
+      "category": "harness",
+      "problem": "SDK-level retries count against the request-per-hour and max_iterations budget (conversation_loop.py:1032), so transient network errors consume user-facing turns and inflate latency.",
+      "design": "Track network/429/5xx retries in a distinct counter with its own cap; only semantic assistant turns decrement max_iterations. Preserve the 'error near max iterations' behavior for true failures.",
+      "likely_files": ["agent/conversation_loop.py", "agent/api_call_watchdog.py", "agent/rate_limit_tracker.py", "agent/turn_retry_state.py"],
+      "metric": "turn count saved under transient failure and error-rate-normalized turns_per_second",
+      "risk": "Low-medium; must not mask genuine failures — keep a total-timeout watchdog",
+      "priority": "P1"
+    },
+    {
+      "title": "Memoize the byte-stable system prompt and its hash once per session",
+      "category": "harness",
+      "problem": "effective_system is rebuilt on every API call (conversation_loop.py:890-892) even though most of it is byte-stable for the session.",
+      "design": "Build the system prompt once at session start, cache the string and its hash, and only re-build on explicit invalidation (config/skin/guideline change). Complements the runtime cache-item and shrinks per-call work.",
+      "likely_files": ["agent/conversation_loop.py", "agent/system_prompt.py", "agent/agent_init.py"],
+      "metric": "turn_latency_p95 and system-prompt rebuild count per session",
+      "risk": "Low; invalidation points already exist via config-change hooks",
+      "priority": "P1"
+    },
+    {
+      "title": "Offload background self-review/curation nudges off the turn path",
+      "category": "harness",
+      "problem": "background_review.py posts per-turn analysis and learning_mutations/curator insights run in the turn loop, blocking or delaying streaming when a review triggers mid-turn.",
+      "design": "Move review/curation nudges to a dedicated async worker (or defer to turn finalize) so they never interleave with the critical API-seam path; gate by an explicit post-turn hook.",
+      "likely_files": ["agent/background_review.py", "agent/curator.py", "agent/learning_mutations.py", "agent/turn_finalizer.py"],
+      "metric": "turn_latency_p95 with/without review triggers",
+      "risk": "Low-medium; ordering of memory writes must remain deterministic for the memory benchmark",
+      "priority": "P2"
+    },
+    {
+      "title": "Lazy-load heavy startup modules to cut cold start and delegation-triggered load",
+      "category": "harness",
+      "problem": "Cold imports show config_load=82.9ms and state_schema=24.1ms (benchmark-baseline.json); heavy modules load eagerly on startup and whenever a delegated child initializes in-process.",
+      "design": "Convert eager top-level imports of xavani_state, tools, and xavani_cli.config into lazy import wrappers triggered at first use; keep benchmark.py import_p95 as the guard so lazy refactors are measurable.",
+      "likely_files": ["xavani.py", "agent/agent_init.py", "xavani_state.py", "tools/registry.py", "scripts/benchmark.py"],
+      "metric": "import_p95 (config_load, state_schema) and CLI startup-to-prompt latency",
+      "risk": "Low-medium; lazy imports can obscure module init order — enforce with import-safety tests",
+      "priority": "P2"
+    },
+    {
+      "title": "Paged/streaming session restore for large persisted histories",
+      "category": "harness",
+      "problem": "Resuming a large session loads and materializes the full persisted message list from SQLite before the first turn (hooks into _ensure_db_session/load), delaying response on big histories.",
+      "design": "Load the protected head and tail eagerly and page the middle on demand (or on first compaction), so resume returns to interactivity immediately and the middle is streamed lazily.",
+      "likely_files": ["agent/conversation_loop.py", "xavani_memory/manager.py", "xavani_state.py", "agent/agent_init.py"],
+      "metric": "time-to-first-response on resume of an N-thousand-message session",
+      "risk": "Medium — must preserve message ordering and cache-prefix integrity across paging",
+      "priority": "P2"
+    },
+    {
+      "title": "Expose ground-truth completion signal to gateways and observability",
+      "category": "harness",
+      "problem": "The loop computes 'completed = final_response is not None and api_call_count < max_iterations' internally (conversation_loop.py:4082) but callers lack a first-class, trustworthy done signal distinguishing finished vs budget-halted work.",
+      "design": "Emit a normalized turn-exit record (completed, turn_exit_reason, iteration_used) into observability and gateway status so downstream scheduling (which sits under the 150s-min-task tier logic) can act reliably on true completion.",
+      "likely_files": ["agent/conversation_loop.py", "agent/turn_finalizer.py", "xavani_observability/", "gateway/run.py"],
+      "metric": "correctness_fn and 'done' signal precision against golden evals",
+      "risk": "Low; additive signal",
+      "priority": "P1"
+    },
+    {
+      "title": "Harden worker-thread ContextVar and callback affinity in concurrent tool execution",
+      "category": "harness",
+      "problem": "Concurrent tool execution (tool_executor.py:333 ThreadPoolExecutor) already relies on propagating ContextVars (approval_key) and thread-local callbacks (lines 231-309); any missed propagation breaks approval/sudo under parallelism.",
+      "design": "Cover the context-copy path explicitly: test concurrent execution under approval-gated and sudo-gated tools, and add a fallback that serializes any tool whose permission callback cannot run in a worker.",
+      "likely_files": ["agent/tool_executor.py", "tests/", "tools/approval.py"],
+      "metric": "parallel tool correctness (no dropped approvals) and turns_per_second under a multi-tool plan",
+      "risk": "Low; test-first hardening of existing parallel path",
+      "priority": "P2"
+    },
+    {
+      "title": "End-to-end turn-loop microbenchmark under the faux-provider",
+      "category": "latency",
+      "problem": "benchmark.py never exercises the conversation loop; there is no messages-in→response-out latency or throughput number, so per-turn optimizations are unmeasured.",
+      "design": "Add a faux-provider microbenchmark (tests/harness/faux_provider.py) driving N scripted turns through the real conversation loop and emitting turn_latency_p95, ttft_p95, and turns_per_second; register in scripts/benchmark.py with a committed baseline.",
+      "likely_files": ["scripts/benchmark.py", "tests/harness/faux_provider.py", "scripts/run_golden_evals.py"],
+      "metric": "turn_latency_p95, ttft_p95, turns_per_second with committed baseline",
+      "risk": "Low; no new deps, reusable harness",
+      "priority": "P0"
+    },
+    {
+      "title": "TTFT instrumentation in the streaming path",
+      "category": "latency",
+      "problem": "The loop streams responses but never records time-to-first-token; latency p95 is dominated by full-response time and hides first-token stalls.",
+      "design": "Capture timestamp on the first streamed chunk in the transport seam and thread it through stream_single_writer/bounded_response into the per-call usage record and observability.",
+      "likely_files": ["agent/conversation_loop.py", "agent/transports/types.py", "agent/stream_single_writer.py", "agent/bounded_response.py"],
+      "metric": "ttft_p95 reported per session",
+      "risk": "Low; pure telemetry",
+      "priority": "P1"
+    },
+    {
+      "title": "Incremental per-turn message pre-processing (only on new messages)",
+      "category": "latency",
+      "problem": "Sanitize, thinking-drop, whitespace-strip, surrogate strip and tool-arg normalization run over the full api_messages list every call (conversation_loop.py:920-973), O(history) per turn.",
+      "design": "Process only newly-appended messages (tail since last turn) in the API seam; the stored prefix is already sanitized at append time, so the full walk happens once per session (or after any history mutation).",
+      "likely_files": ["agent/conversation_loop.py", "agent/message_sanitization.py"],
+      "metric": "turn_latency_p95 at growing history sizes (O(delta) vs O(history))",
+      "risk": "Medium — must keep a dirty flag that forces full processing whenever a prior message is mutated (tool result edits, memory injection)",
+      "priority": "P0"
+    },
+    {
+      "title": "Gate hot-path size/token logging behind verbose",
+      "category": "latency",
+      "problem": "len(str(msg)) for all messages plus estimate_messages_tokens_rough run every call even in non-verbose mode (conversation_loop.py:976-977), purely for the ~📊 Request size log line.",
+      "design": "Compute the request-size string and rough token estimate only when verbose_logging/quiet logging requires it; the incremental token counter (see delta-count item) covers the compressor's needs.",
+      "likely_files": ["agent/conversation_loop.py"],
+      "metric": "turn_latency_p95 at large history (removed per-call str serialization)",
+      "risk": "Low",
+      "priority": "P2"
+    },
+    {
+      "title": "Persist and fast-load the discovered context length to avoid per-session re-probing",
+      "category": "latency",
+      "problem": "Context-length discovery happens on provider errors and step-downs (save_context_length/conversation_loop.py:1683-1689); a fresh session may re-probe instead of reloading the cached value, costing a failed call and latency.",
+      "design": "Load the persisted per-(model, base_url) context length at compressor init and skip probing when the cached value is fresh; keep error-triggered re-probe for real drift.",
+      "likely_files": ["agent/context_compressor.py", "agent/model_metadata.py"],
+      "metric": "startup-to-first-call seconds and stale-probe avoidance count",
+      "risk": "Low",
+      "priority": "P2"
+    },
+    {
+      "title": "Avoid per-call re-serialization round-trips in the transport seam",
+      "category": "latency",
+      "problem": "api_messages is deep-copied, normalized, then consumed by transports that may re-serialize; multiple full-history serializations can occur per request across prompt_caching and transport adapters.",
+      "design": "Profile serialization byte/ms per call in the transport and eliminate double-serialization (e.g. pass a lightweight message array the adapters share, co-ordinate the cache_control copy with adaptation).",
+      "likely_files": ["agent/transports/anthropic.py", "agent/transports/chat_completions.py", "agent/prompt_caching.py"],
+      "metric": "turn_latency_p95 and serialization time per call",
+      "risk": "Medium; must preserve exact cache prefix bytes across providers",
+      "priority": "P2"
+    },
+    {
+      "title": "Gateway multiplexing: batch DB writes and de-serialize sessions",
+      "category": "latency",
+      "problem": "The gateway multiplexes many sessions; per-call synchronous DB writes and shared SQLite locks force cross-session serialization (evidenced by _ensure_db_session lock-retry in conversation_loop.py:1745-1772).",
+      "design": "Route session DB writes through a single batched writer with WAL + busy_timeout, so concurrent sessions don't contend per call; measure per-session turn_latency_p95 under multi-session gateway load.",
+      "likely_files": ["gateway/session_store.py", "gateway/run.py", "xavani_memory/manager.py"],
+      "metric": "per-session turn_latency_p95 under 5-10 concurrent sessions",
+      "risk": "Low-medium; WAL requires sqlite build support (guard like the FTS5 branch)",
+      "priority": "P2"
+    },
+    {
+      "title": "Retry + last-known-value cache for account-usage fetches",
+      "category": "reliability",
+      "problem": "fetch_account_usage silently returns None on ANY exception (account_usage.py:330-331) with no retry and no caching, so account-usage status flaps and misleads users during transient network failures.",
+      "design": "Apply jittered_backoff to the three fetchers, cap total wait, and keep a last-known-usable AccountUsageSnapshot with fetched_at staleness so UI shows cached usage with a 'stale' label instead of 'unavailable'.",
+      "likely_files": ["agent/account_usage.py", "agent/retry_utils.py"],
+      "metric": "account-usage availability % and fetch latency p95",
+      "risk": "Low",
+      "priority": "P2"
+    },
+    {
+      "title": "Proactive rate-limit pre-emption from recent-429 history",
+      "category": "reliability",
+      "problem": "rate_limit_tracker/nous_rate_guard react after a 429; bursts still hit provider limits and cascade into retry storms that inflate latency (retry_utils describes the thundering-herd risk).",
+      "design": "Maintain the rolling 429/error rate per provider; before issuing a call, if the recent rate is high, back off first (or route to a fallback model) to avoid entering the limit at all.",
+      "likely_files": ["agent/rate_limit_tracker.py", "agent/outbound_limiter.py", "agent/nous_rate_guard.py", "agent/conversation_loop.py"],
+      "metric": "429 rate and p95 retry-incurred latency",
+      "risk": "Low-medium; conservative thresholds to avoid self-throttling healthy sessions",
+      "priority": "P1"
+    },
+    {
+      "title": "Enable SQLite WAL + busy_timeout on the session store",
+      "category": "reliability",
+      "problem": "Concurrent cron/kanban writers hit 'database is locked' and retry (conversation_loop.py:1745-1754 _ensure_db_session), causing lost token deltas and latency under load.",
+      "design": "Open session/db connections with PRAGMA journal_mode=WAL and a bounded busy_timeout; guard for builds without WAL. Improves both reliability and the batched-writer improvements.",
+      "likely_files": ["xavani_memory/manager.py", "gateway/session_store.py", "agent/agent_init.py"],
+      "metric": "'database is locked' event rate and lost-token-delta count",
+      "risk": "Low; major sqlite versions support WAL",
+      "priority": "P1"
+    },
+    {
+      "title": "Crash-safe checkpoints before side-effecting tools",
+      "category": "reliability",
+      "problem": "Interruptions (turn-bank fallback, SIGINT, spawn pause) can leave side-effecting tool side effects unrecorded; checkpoint_manager exists but is not uniformly run before mutating tools.",
+      "design": "Before any tool tagged side-effecting (edit, write, shell, terminal), write a crash checkpoint of pending tool_call ids and state so interrupted execution is resumable or safe-rolled-back instead of duplicated.",
+      "likely_files": ["tools/checkpoint_manager.py", "agent/tool_executor.py", "tools/file_safety.py"],
+      "metric": "recovered-versus-duplicated tool effect ratio under simulated interruption",
+      "risk": "Medium; checkpoint write itself must not become a latency cost — keep it async/eager with small payload",
+      "priority": "P1"
+    },
+    {
+      "title": "Partial-stream resume and explicit truncation guard",
+      "category": "reliability",
+      "problem": "Long responses are truncated by bounded_response output limits and interrupted streams may silently return partial content; stream_single_writer prevents interleaving but not silent partial delivery on tool-checksum-sensitive work.",
+      "design": "Record stream fragmentation/truncation flags and surface them as a distinct turn outcome so downstream knows the response was partial; add resume-by-continuation for interrupted streams where the transport supports it.",
+      "likely_files": ["agent/bounded_response.py", "agent/stream_single_writer.py", "agent/conversation_loop.py", "agent/transports/types.py"],
+      "metric": "silent-truncation event count and correct-partial-delivery ratio",
+      "risk": "Medium; resume semantics vary by transport — feature-gate",
+      "priority": "P2"
+    },
+    {
+      "title": "Per-subagent wall-clock timeout and kill for delegation hangs",
+      "category": "reliability",
+      "problem": "Subagents run as in-process threads in a ThreadPoolExecutor (delegate_tool.py:2159); a hung child blocks its thread slot and, without a per-child timeout, can stall the whole delegation.",
+      "design": "Enforce a default per-child wall-clock timeout (configurable delegation.timeout) using the existing _timeout_executor and _dump_subagent_timeout_diagnostic path, and reap hung children deterministically.",
+      "likely_files": ["tools/delegate_tool.py", "agent/agent_runtime_helpers.py", "docs/reference/"],
+      "metric": "delegation_spawn_p95 and hung-subagent reaped count",
+      "risk": "Low-medium; killing a thread mid-tool needs cleanup hooks to avoid leaving locks held",
+      "priority": "P1"
+    },
+    {
+      "title": "Memory/context guard capping retained-history size for pathological sessions",
+      "category": "reliability",
+      "problem": "Very large sessions retain full history in memory up to the context threshold; pathological sessions can approach OOM before compression triggers, and compress() itself holds the whole list.",
+      "design": "Add a memory hard-gate that forces streaming/sharded compaction below an RSS ceiling, and stream tool results off-memory to disk for tools whose output is enormous, keeping only summaries in context.",
+      "likely_files": ["agent/context_compressor.py", "agent/context_budget_ui.py", "agent/memory_manager.py", "tools/tool_result_classification.py"],
+      "metric": "peak RSS and compaction_stall_p95 over a pathological 200k-token session",
+      "risk": "Low; defensive capacity",
+      "priority": "P3"
+    },
+    {
+      "title": "Dedicated cache-hit benchmark harness with denominator and 99% baseline",
+      "category": "benchmarks",
+      "problem": "No benchmark measures cache behavior at all; the 99% objective is unquantified. benchmark.py covers imports only.",
+      "design": "Add scripts/cache_benchmark.py: script a faux-provider multi-turn session inserting varied user content, record cache_read vs prompt per turn, compute cache_hit_rate(window) excluding first turn and compaction writes, and commit a baseline + CI threshold toward 0.99.",
+      "likely_files": ["scripts/cache_benchmark.py", "tests/harness/faux_provider.py", "tests/", "docs/reference/cache-benchmark.md"],
+      "metric": "cache_hit_rate(window) and cache_write_ratio with committed baseline",
+      "risk": "Low; hermetic (no network, faux-provider) mirroring compaction_eval",
+      "priority": "P0"
+    },
+    {
+      "title": "Co-located retention+latency compaction benchmark with enforced latency budget",
+      "category": "benchmarks",
+      "problem": "Compaction correctness (retention) and latency are measured in different, non-comparable places; low latency is not enforced as a gate.",
+      "design": "Extend compaction_eval to record compaction_stall_p95 alongside retention@window in a single table and enforce a stall budget in tests/test_compaction_eval.py, so a retention-preserving-but-slow compressor fails CI.",
+      "likely_files": ["scripts/compaction_eval/runner.py", "tests/test_compaction_eval.py", "docs/reference/compaction-eval.md"],
+      "metric": "compaction_stall_p95 budget + retention@window in one report",
+      "risk": "Low",
+      "priority": "P1"
+    },
+    {
+      "title": "Add memory search latency and index-build p95 to memory_benchmark",
+      "category": "benchmarks",
+      "problem": "memory_benchmark reports precision/recall only; search latency and FTS5 lazy index-build cost (docs/reference/memory-benchmark.md) are unquantified, so index-choice is unmeasurable.",
+      "design": "Time MemoryManager.search and index build per query variant and backend; report search_p95 and index_build_p95 alongside precision/recall for both substring and FTS5 backends.",
+      "likely_files": ["scripts/memory_benchmark/runner.py", "xavani_memory/manager.py", "tests/test_memory_benchmark.py"],
+      "metric": "search_p95 and index_build_p95 per backend",
+      "risk": "Low",
+      "priority": "P1"
+    },
+    {
+      "title": "N-turn faux-provider throughput benchmark with configurable tool plan",
+      "category": "benchmarks",
+      "problem": "There is no turns_per_second or cumulative-latency benchmark; throughput and end-of-window latency can't be tracked as the loop changes.",
+      "design": "Extend the loop microbenchmark to run N scripted turns including tool calls (parallel and sequential) and variable-length tool results, reporting turns_per_second and turn_latency_p95 for the 99% cache objective window.",
+      "likely_files": ["scripts/benchmark.py", "tests/harness/faux_provider.py"],
+      "metric": "turns_per_second and turn_latency_p95 over N-turn workload",
+      "risk": "Low; reuses faux-provider determinism",
+      "priority": "P1"
+    },
+    {
+      "title": "Enforce benchmark.py and compaction/cache/memory benchmarks as CI regression gates",
+      "category": "benchmarks",
+      "problem": "benchmark.py is a standalone exit-code script (scripts/benchmark.py) not wired into the test run; compaction/cache/memory benchmarks are run inline only.",
+      "design": "Register benchmark.py and the three hermetic harnesses under a CI test marker (e.g. tests/test_perf_gates.py) with committed baselines and thresholds, so import, latency, cache, compaction, and memory regressions fail CI deterministically.",
+      "likely_files": ["scripts/benchmark.py", "tests/", ".github/workflows/", "pyproject.toml"],
+      "metric": "benchmark.py+harness green/red CI status and import_p95/turn_latency_p95 gates",
+      "risk": "Low; harnesses are hermetic by design",
+      "priority": "P0"
+    },
+    {
+      "title": "Unified per-turn usage/accounting record (single source of truth)",
+      "category": "usage-accounting",
+      "problem": "Cache/token data is computed in conversation_loop.py:1663-1805 then duplicated across budget_governor, usage_pricing, the session DB, and observability; the cache perimeter is not captured consistently (token_optimizer lost-token deltas risk).",
+      "design": "Introduce a single canonical per-turn usage record (prompt/output/reasoning/cache_read/cache_write/hit%, latency, ttft) emitted once and consumed by budget_governor, the DB writer, /insights and observability, eliminating divergent accounting.",
+      "likely_files": ["agent/usage_pricing.py", "agent/budget_governor.py", "agent/conversation_loop.py", "xavani_observability/"],
+      "metric": "accounting-consistency (DB vs budget_governor vs observability sums equal per session)",
+      "risk": "Medium; refactor touches the hottest path, mitigated by the usage fixtures in the loop",
+      "priority": "P1"
+    },
+    {
+      "title": "Fingerprint-based invalidation of the tool-discovery cache",
+      "category": "tool-discovery",
+      "problem": "tools/registry.py caches discovery via _discovery_fingerprint/_discovery_cache (lines 234-296) on file fingerprints; AST-only fingerprinting (registry.py:58 _is_registry_register_call) may miss schema-affecting edits, shipping stale tool schemas that break prefix stability.",
+      "design": "Extend the discovery fingerprint to hash emitted tool definitions/schemas (not just file mtimes/register-call presence), so a schema change invalidates the cache and keeps tool bytes stable for the cache prefix.",
+      "likely_files": ["tools/registry.py", "tools/auto_discovery.py", "tests/test_tool_discovery_cache.py"],
+      "metric": "stale-tool-schema cache-hit count and tool-schema fingerprint-change detection",
+      "risk": "Low; cache invalidation is additive",
+      "priority": "P2"
+    },
+    {
+      "title": "Warm-worker delegation pool to cut per-child cold init",
+      "category": "delegation",
+      "problem": "Delegated children initialize AIAgent in-process per task (tools/delegate_tool.py:929, 2159), paying fresh tokenizer/registry/session-DB load each child life, raising delegation_spawn_p95.",
+      "design": "Maintain a warm pool of initialized child AIAgent workers (bounded) that reuse the loaded tokenizer/registry/system prompt, so a child picks up ready state instead of cold-starting; keep config isolation between children.",
+      "likely_files": ["tools/delegate_tool.py", "agent/agent_init.py", "agent/model_metadata.py"],
+      "metric": "delegation_spawn_p95 and per-child init seconds",
+      "risk": "Medium — shared-state pollution between concurrent children must be prevented (ContextVar isolation), test under max_concurrent_children",
+      "priority": "P2"
+    }
+  ]
+}
