@@ -3991,7 +3991,7 @@ other agent without naming one), browser turn envelope id (now
 suffix so older extension builds keep working), plugin dashboard bundles
 (SDK global, session token global, header name, UI strings), release tooling
 author aliases for upstream-company addresses, changelog/release-note
-wording, XAVANI_EDGE_REPORT.md, desktop migration labels ("Legacy Agent"),
+wording, docs/reliability/parity-report.md, desktop migration labels ("Legacy Agent"),
 datagen example, and the pre-commit scrub hook scope.
 
 Documented exceptions (with evidence):
