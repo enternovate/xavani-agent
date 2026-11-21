@@ -3,8 +3,8 @@
 # Built by Enternovate -- Open source. Private. Local.
 #
 # Security CI (v0.4.0 roadmap U51): SAST + secret + dependency scanning.
-# Complements osv-scanner.yml and supply-chain-audit.yml. Advisory (continue-on-error)
-# so it reports without gating; flip to blocking once consistently clean.
+# Complements osv-scanner.yml and supply-chain-audit.yml. The secret scan gates
+# new changes; SAST and dependency scans stay advisory until consistently clean.
 #
 # Note: the R10 "deterministic-first" invariant (tests/agent/test_deterministic_no_llm.py)
 # is enforced by the main test suite (tests.yml), which installs full deps and runs it.
@@ -45,7 +45,6 @@ jobs:
       - uses: gitleaks/gitleaks-action@v3
         env:
           GITLEAKS_ENABLE_UPLOAD_ARTIFACT: "false"
-        continue-on-error: true
 
   sast-semgrep:
     name: Semgrep (rulesets)

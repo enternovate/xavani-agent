@@ -13,6 +13,7 @@ __pycache__/
 .env.production.local
 .env.development
 .env.test
+.env.production
 export*
 
 # Session handoffs
@@ -99,3 +100,12 @@ RELEASE_*.md
 .envrc
 tests/flakiness.json
 *.key
+
+# Private notes and credentials
+DECISIONS.md
+credentials.json
+id_rsa
+id_ed25519
+id_ecdsa
+*.p12
+*.pfx
